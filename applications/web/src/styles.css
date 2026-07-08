@@ -618,8 +618,12 @@ body {
   transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.social-row:hover::before {
-  transform: translateY(0);
+/* Hover-only devices: touch browsers keep :hover applied after a tap,
+   which would leave a row stuck pink after returning from the link. */
+@media (hover: hover) {
+  .social-row:hover::before {
+    transform: translateY(0);
+  }
 }
 
 /* Parallax layers are moved imperatively (motion.ts) — hint the GPU. */

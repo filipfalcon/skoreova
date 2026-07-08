@@ -1003,12 +1003,12 @@ const heroView = (): Html =>
       h.div(
         [
           h.Class(
-            'hero-fade pointer-events-none absolute inset-x-0 bottom-5 flex items-end justify-between px-5 text-[10px] tracking-[0.2em] uppercase text-paper/60 select-none md:bottom-7 md:px-8 md:text-xs',
+            'hero-fade pointer-events-none absolute inset-x-0 bottom-5 flex items-end justify-center px-5 text-[10px] tracking-[0.2em] uppercase text-paper/60 select-none md:bottom-7 md:justify-between md:px-8 md:text-xs',
           ),
           h.Style({ '--hero-delay': '1.6s' }),
         ],
         [
-          h.span([], ['Independent media']),
+          h.span([h.Class('hidden md:inline')], ['Independent media']),
           h.span([], ['Scroll for experience ', h.span([h.Class('scroll-bob')], ['↓'])]),
         ],
       ),
@@ -1542,16 +1542,17 @@ const championsView = (): Html =>
           ),
           // The champion's crest — the knight-mascot treatment (slide in
           // from the right + the shared idle float). Phones keep it IN the
-          // flow, right-aligned between the headline and the honors board
-          // (an absolute corner anchor collided with the full-width
-          // headline there); from `md` up it floats big off the right rim,
-          // tucked behind its siblings (-z-10 stays inside the container's
-          // own stacking context). The -top offset rides above the
-          // container's start, level with the kicker.
+          // flow, centered between the headline and the honors board (an
+          // absolute corner anchor collided with the full-width headline
+          // there, and right-aligning left an accidental-looking empty
+          // half); from `md` up it floats big off the right rim, tucked
+          // behind its siblings (-z-10 stays inside the container's own
+          // stacking context). The -top offset rides above the container's
+          // start, level with the kicker.
           h.div(
             [
               h.Class(
-                'pointer-events-none mt-8 ml-auto w-36 select-none md:absolute md:-top-12 md:right-16 md:mt-0 md:-z-10 md:w-[22%] md:max-w-[310px] xl:right-20',
+                'pointer-events-none mx-auto mt-8 w-36 select-none md:absolute md:-top-12 md:right-16 md:mt-0 md:-z-10 md:w-[22%] md:max-w-[310px] xl:right-20',
               ),
               h.DataAttribute('reveal', 'right'),
               h.Style({ '--reveal-delay': '0.1s' }),
@@ -2272,6 +2273,7 @@ const starView = (): Html =>
                           h.Style({ '--reveal-delay': `${index * 0.12}s` }),
                         ],
                         [
+                          h.div([h.Class('mb-4 h-1 w-12 bg-pink')], []),
                           h.dt(
                             [
                               h.Class('display text-fluid-5xl-7xl text-pink'),
@@ -2987,7 +2989,7 @@ const clubsView = (model: Model): Html =>
                       h.dd(
                         [
                           h.Class(
-                            `mt-3 text-xs leading-relaxed tracking-wider whitespace-nowrap uppercase transition-colors duration-300 ${
+                            `mt-3 text-xs leading-relaxed tracking-wider uppercase transition-colors duration-300 md:whitespace-nowrap ${
                               checked ? '' : 'text-paper/40'
                             }`,
                           ),
