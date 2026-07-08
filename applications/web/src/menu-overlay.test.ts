@@ -2,7 +2,7 @@ import { Runtime } from 'foldkit';
 import { beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 
-import { ChangedUrl, ClickedLink, Model, init, update, view } from './main';
+import { ChangedUrl, ClickedLink, Model, init, subscriptions, update, view } from './main';
 import './styles.css';
 
 // A browser-mode integration test: it mounts the real app into a real DOM so
@@ -39,6 +39,7 @@ beforeAll(async () => {
       init,
       update,
       view,
+      subscriptions,
       container: root,
       routing: {
         onUrlRequest: (request) => ClickedLink({ request }),
@@ -79,4 +80,40 @@ test('choosing a menu item also closes and hides the overlay', async () => {
   // whose accessible name contains this one.
   await page.getByRole('link', { name: 'Competitions', exact: true }).click();
   await expect.poll(overlayVisibility, { timeout: 2000 }).toBe('hidden');
+});
+
+// The keyboard contract for a full-screen overlay: while it's open the page
+// behind it is inert (Tab stays inside the overlay), Escape closes it, and
+// focus lands back on the toggle that opened it.
+
+test('the page behind the open overlay is inert', async () => {
+  const main = document.querySelector<HTMLElement>('main');
+  const footer = document.querySelector<HTMLElement>('footer');
+  expect(main?.inert).toBe(false);
+  expect(footer?.inert).toBe(false);
+
+  await page.getByRole('button', { name: 'Open menu' }).click();
+  await expect.poll(() => document.querySelector<HTMLElement>('main')?.inert).toBe(true);
+  await expect.poll(() => document.querySelector<HTMLElement>('footer')?.inert).toBe(true);
+
+  await page.getByRole('button', { name: 'Close menu' }).click();
+  await expect.poll(() => document.querySelector<HTMLElement>('main')?.inert).toBe(false);
+  await expect.poll(() => document.querySelector<HTMLElement>('footer')?.inert).toBe(false);
+});
+
+test('Escape closes the overlay and returns focus to the toggle', async () => {
+  await page.getByRole('button', { name: 'Open menu' }).click();
+  await expect.poll(overlayVisibility).toBe('visible');
+
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await expect.poll(overlayVisibility, { timeout: 2000 }).toBe('hidden');
+  expect(document.activeElement?.id).toBe('menu-toggle');
+});
+
+test('Escape does nothing while the menu is closed', async () => {
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  // Give a would-be handler a beat to misfire before asserting.
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  expect(overlayIsOpen()).toBe(false);
+  expect(overlayVisibility()).toBe('hidden');
 });
