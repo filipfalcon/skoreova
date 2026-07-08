@@ -1,6 +1,6 @@
-import { Effect, Match as M, Schema as S } from 'effect';
+import { Effect, Match as M, Schema as S, Stream } from 'effect';
 import type { Runtime } from 'foldkit';
-import { Command } from 'foldkit';
+import { Command, Subscription } from 'foldkit';
 import type { Document, Html } from 'foldkit/html';
 import { html } from 'foldkit/html';
 import { m } from 'foldkit/message';
@@ -614,6 +614,39 @@ const menuEntries: ReadonlyArray<MenuEntry> = [
 
 const platformUrl = 'https://platform.skoreova.filipfalcon.com';
 
+// SUBSCRIPTIONS
+
+// Escape closes the open menu — the standard keyboard contract for a
+// full-screen overlay. A document-level stream (not `OnKeyDown` on the
+// overlay) because focus usually sits on the header toggle right after
+// opening, so the overlay itself never sees the keydown. The subscription
+// only exists while the menu is open; closing tears it down.
+export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
+  menuEscape: entry(
+    { menuOpen: S.Boolean },
+    {
+      modelToDependencies: (model) => ({ menuOpen: model.menuOpen }),
+      dependenciesToStream: ({ menuOpen }) =>
+        menuOpen
+          ? Stream.fromEventListener<KeyboardEvent>(document, 'keydown').pipe(
+              Stream.filter((event) => event.key === 'Escape'),
+              // Focus would otherwise die with the hidden overlay — hand it
+              // back to the toggle, like a native dialog returns focus to
+              // its opener.
+              Stream.tap(() =>
+                Effect.sync(() =>
+                  document
+                    .querySelector<HTMLButtonElement>('#menu-toggle')
+                    ?.focus({ preventScroll: true }),
+                ),
+              ),
+              Stream.map(() => ClosedMenu()),
+            )
+          : Stream.empty,
+    },
+  ),
+}));
+
 // VIEW
 
 const h = html<Message>();
@@ -642,10 +675,12 @@ const kicker = (index: string, label: string, dark: boolean): Html =>
   );
 
 // One line of a masked display headline: the wrapper clips, the inner span
-// rides up into view when revealed.
+// rides up into view when revealed. Spans (not divs) so a headline built
+// from these lines can live inside <h1>/<h2>, which only allow phrasing
+// content.
 const maskedLine = (text: string, classes: string, delaySeconds: number): Html =>
-  h.div(
-    [h.Class('overflow-hidden')],
+  h.span(
+    [h.Class('block overflow-hidden')],
     [
       h.span(
         [
@@ -716,6 +751,8 @@ const headerView = (model: Model): Html =>
               ),
               h.button(
                 [
+                  // The Escape-to-close subscription returns focus here.
+                  h.Id('menu-toggle'),
                   h.OnClick(ToggledMenu()),
                   h.AriaLabel(model.menuOpen ? 'Close menu' : 'Open menu'),
                   h.AriaExpanded(model.menuOpen),
@@ -1077,7 +1114,7 @@ const storyView = (): Html =>
         [h.Class(`${container} relative z-10`)],
         [
           kicker('01', 'Why care', false),
-          h.div(
+          h.h2(
             [h.Class('mt-10 md:mt-16')],
             [
               maskedLine('Officially', 'text-fluid-6xl-9xl', 0),
@@ -1315,7 +1352,7 @@ const competitionsView = (): Html =>
         [h.Class(`${container} relative`)],
         [
           kicker('02', 'What we cover', true),
-          h.div(
+          h.h2(
             [h.Class('mt-10 md:mt-16')],
             [maskedLine('How she plays.', 'text-fluid-6xl-9xl', 0)],
           ),
@@ -1476,10 +1513,7 @@ const championsView = (): Html =>
         [h.Class(`${container} relative z-10`)],
         [
           kicker('04', 'Meet our champion', false),
-          h.div(
-            [h.Class('mt-10 md:mt-16')],
-            [maskedLine('Sparta Praha.', 'text-fluid-6xl-9xl', 0)],
-          ),
+          h.h2([h.Class('mt-10 md:mt-16')], [maskedLine('Sparta Praha.', 'text-fluid-6xl-9xl', 0)]),
           // Makes "champion" unambiguous: this is the REIGNING one, and the
           // season below is the case for it.
           h.p(
@@ -2089,7 +2123,7 @@ const starView = (): Html =>
         [h.Class(container)],
         [
           kicker('05', 'Stargirl in the making', true),
-          h.div(
+          h.h2(
             [h.Class('mt-10 md:mt-16')],
             [maskedLine('Our queen.', 'text-fluid-6xl-9xl text-pink', 0)],
           ),
@@ -2761,7 +2795,7 @@ const clubsView = (model: Model): Html =>
         [h.Class(container)],
         [
           kicker('03', 'The map', true),
-          h.div(
+          h.h2(
             [h.Class('mt-10 md:mt-16')],
             [maskedLine('Where she plays.', 'text-fluid-6xl-9xl', 0)],
           ),
@@ -3039,7 +3073,7 @@ const statementView = (): Html =>
       h.div(
         [h.Class(`${container} text-center`)],
         [
-          h.div(
+          h.h2(
             [h.Class('relative inline-block')],
             [
               maskedLine('She doesn’t play like men...', 'text-fluid-5xl-8xl', 0),
@@ -3157,7 +3191,7 @@ const nationalTeamView = (): Html =>
         [h.Class(container)],
         [
           kicker('06', 'The national team', false),
-          h.div(
+          h.h2(
             [h.Class('mt-10 md:mt-16')],
             [
               maskedLine('Not your ordinary', 'text-fluid-6xl-9xl', 0),
@@ -3308,7 +3342,7 @@ const followView = (): Html =>
         [h.Class(container)],
         [
           kicker('07', 'Week-in-week-out', true),
-          h.div(
+          h.h2(
             [h.Class('mt-10 md:mt-16')],
             [maskedLine('Follow the game.', 'text-fluid-5xl-9xl', 0)],
           ),
@@ -3359,9 +3393,13 @@ const followView = (): Html =>
     ],
   );
 
-const footerView = (): Html =>
+const footerView = (menuOpen: boolean): Html =>
   h.footer(
-    [h.Class('border-t border-paper/15 bg-ink py-10 text-paper')],
+    [
+      h.Class('border-t border-paper/15 bg-ink py-10 text-paper'),
+      // Same treatment as <main>: unreachable while the menu overlay is up.
+      ...(menuOpen ? [h.Inert(true)] : []),
+    ],
     [
       h.div(
         [
@@ -3516,7 +3554,7 @@ const clubHeroView = (club: Club): Html => {
             h.Class('mx-auto h-28 w-auto md:h-40'),
             h.DataAttribute('reveal', 'zoom'),
           ]),
-          h.div([h.Class('mt-8')], [maskedLine(club.name, 'text-fluid-5xl-8xl', 0.1)]),
+          h.h1([h.Class('mt-8')], [maskedLine(club.name, 'text-fluid-5xl-8xl', 0.1)]),
           h.div(
             [h.Class('mt-6 flex flex-wrap justify-center gap-3')],
             honors.length > 0
@@ -3743,7 +3781,7 @@ const competitionHeroView = (competition: Competition): Html =>
             h.Class('mx-auto h-28 w-auto md:h-40'),
             h.DataAttribute('reveal', 'zoom'),
           ]),
-          h.div([h.Class('mt-8')], [maskedLine(competition.label, 'text-fluid-5xl-8xl', 0.1)]),
+          h.h1([h.Class('mt-8')], [maskedLine(competition.label, 'text-fluid-5xl-8xl', 0.1)]),
           h.div(
             [h.Class('mt-6 flex justify-center')],
             [
@@ -3952,8 +3990,16 @@ export const view = (model: Model): Document => {
         menuOverlayView(model),
         // Keyed per page: switching routes recreates <main>, which re-runs
         // MountMotion so reveals/parallax/count-ups attach to the new DOM.
-        h.main([h.Key(pageKey), h.OnMount(MountMotion())], sections),
-        footerView(),
+        // While the menu overlay is open, the page content behind it goes
+        // `inert` — unfocusable and invisible to assistive tech, so Tab
+        // cycles through the overlay (and header) only. The attribute is
+        // added conditionally rather than set to `false` because `inert`
+        // is a boolean attribute: its mere presence would disable the page.
+        h.main(
+          [h.Key(pageKey), h.OnMount(MountMotion()), ...(model.menuOpen ? [h.Inert(true)] : [])],
+          sections,
+        ),
+        footerView(model.menuOpen),
       ],
     ),
   };

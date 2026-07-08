@@ -79,6 +79,16 @@ body {
   color: var(--color-ink);
 }
 
+/* Keyboard focus gets a designed ring instead of the browser default —
+   the UA outline is nearly invisible on the ink sections. `:focus-visible`
+   only: mouse/touch interactions stay ring-free. The offset keeps the ring
+   legible even on pink elements by floating it over the surrounding
+   surface. */
+:focus-visible {
+  outline: 3px solid var(--color-pink);
+  outline-offset: 3px;
+}
+
 /* ------------------------------------------------------------------ */
 /* Display type — Anton needs tighter leading than any Tailwind step  */
 /* ------------------------------------------------------------------ */
