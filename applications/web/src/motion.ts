@@ -378,12 +378,22 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
     // fires mostly below the fold — there they fall back to per-item
     // observation. 'once' groups stay grouped everywhere (the strip's whole
     // point is the phone behavior).
+    //
+    // A third policy, 'late', gathers only the container's `data-reveal-late`
+    // targets and keys them off the container crossing the LATE line
+    // (mid-viewport) — one shared scroll-gated beat (the statement strike +
+    // rebuttal land together). Non-late targets inside stay per-item, so a
+    // headline can reveal early while its payoff waits. Grouped on every
+    // viewport and replays like 'replay'.
     const desktopViewport = window.matchMedia('(min-width: 768px)').matches;
     const targetsByProxy = new Map<Element, Array<HTMLElement>>();
     for (const target of revealTargets) {
       const groupElement = target.closest<HTMLElement>('[data-reveal-group]');
+      const groupPolicy = groupElement?.dataset['revealGroup'];
       const group =
-        groupElement && (groupElement.dataset['revealGroup'] === 'once' || desktopViewport)
+        groupElement &&
+        (groupPolicy === 'once' ||
+          (groupPolicy === 'late' ? target.dataset['revealLate'] !== undefined : desktopViewport))
           ? groupElement
           : null;
       const proxy =
@@ -491,15 +501,18 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
     for (const proxy of targetsByProxy.keys()) {
       const isDraw =
         drawObserver !== null && proxy instanceof SVGElement && proxy.dataset['reveal'] === 'draw';
-      const isGroup = proxy instanceof HTMLElement && proxy.dataset['revealGroup'] !== undefined;
+      const groupPolicy = proxy instanceof HTMLElement ? proxy.dataset['revealGroup'] : undefined;
       const isLate = proxy instanceof HTMLElement && proxy.dataset['revealLate'] !== undefined;
+      // 'late' groups wait at the late line with their members.
       (isDraw && drawObserver
         ? drawObserver
-        : isGroup
-          ? groupObserver
-          : isLate
-            ? lateObserver
-            : observer
+        : groupPolicy === 'late'
+          ? lateObserver
+          : groupPolicy !== undefined
+            ? groupObserver
+            : isLate
+              ? lateObserver
+              : observer
       ).observe(proxy);
     }
     cleanups.push(() => {

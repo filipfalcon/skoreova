@@ -317,10 +317,25 @@ body {
   transform-origin: left center;
 }
 
+/* An energetic pen slash: launches hard, overshoots past the line's right
+   edge, and snaps back. `both` holds the 0% frame through the delay; when
+   `.is-in` drops, the animation goes with it and the base scaleX(0) is
+   back — replays clean on re-entry. */
 [data-reveal='strike'].is-in {
-  transform: scaleX(1);
-  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
-  transition-delay: var(--reveal-delay, 0s);
+  animation: strike-slash 0.4s cubic-bezier(0.7, 0, 0.25, 1) both;
+  animation-delay: var(--reveal-delay, 0s);
+}
+
+@keyframes strike-slash {
+  0% {
+    transform: scaleX(0);
+  }
+  65% {
+    transform: scaleX(1.08);
+  }
+  100% {
+    transform: scaleX(1);
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -646,6 +661,9 @@ body {
     transform: none;
     clip-path: none;
     transition: none;
+    /* Keyframe-driven reveals (the statement strike) too, not just
+       transitions. */
+    animation: none;
   }
 
   /* The stamp still needs its centering translate and resting tilt. */
