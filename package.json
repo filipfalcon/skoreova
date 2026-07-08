@@ -1,0 +1,43 @@
+{
+  "name": "skoreova",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "applications/*",
+    "libraries/domain/*",
+    "libraries/foundation/*",
+    "orchestrators/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev": "alchemy dev",
+    "graph": "nx graph",
+    "types:check": "nx run-many -t types:check",
+    "format": "vp fmt",
+    "format:check": "vp fmt --check",
+    "lint": "vp lint --fix",
+    "lint:check": "vp lint",
+    "test": "vp test run",
+    "test:watch": "vp test watch",
+    "test:coverage": "vp test run --coverage"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.0.2",
+    "@commitlint/config-conventional": "21.0.2",
+    "@effect/platform-bun": "4.0.0-beta.88",
+    "@effect/platform-node": "4.0.0-beta.88",
+    "@nx/js": "22.7.5",
+    "@types/bun": "1.3.14",
+    "@typescript/native-preview": "7.0.0-dev.20260629.1",
+    "alchemy": "2.0.0-beta.57",
+    "effect": "4.0.0-beta.88",
+    "nx": "22.7.5",
+    "typescript": "6.0.3",
+    "vite-plus": "0.1.24"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  }
+}

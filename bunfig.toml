@@ -1,0 +1,8 @@
+[install]
+exact = true
+globalStore = true
+linker = "isolated"
+minimumReleaseAge = 259200
+
+[install.scopes]
+jsr = "https://npm.jsr.io"

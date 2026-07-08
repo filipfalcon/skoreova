@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "analytics": true,
+  "neverConnectToCloud": true,
+  "tui": {
+    "enabled": false
+  },
+  "plugins": [
+    {
+      "plugin": "@nx/js/typescript",
+      "options": {
+        "compiler": "tsgo",
+        "typecheck": {
+          "targetName": "types:check"
+        },
+        "build": false
+      }
+    }
+  ]
+}

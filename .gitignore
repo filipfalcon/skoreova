@@ -1,0 +1,27 @@
+# Operating System
+.DS_Store
+
+# Dependencies
+node_modules/
+
+# Build
+dist/
+
+# TypeScript
+tsbuild/
+tsconfig.tsbuildinfo
+
+# Nx
+.nx/
+
+# Vitest
+coverage/
+
+# Alchemy
+.alchemy/
+
+# Agents
+.claude/
+
+# Vitest browser-mode failure screenshots
+__screenshots__/
