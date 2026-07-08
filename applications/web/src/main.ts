@@ -154,7 +154,8 @@ const animateScrollTo = (target: HTMLElement): void => {
   const distance = targetY - startY;
   const insideSection =
     startY >= targetY - 8 && startY <= targetY + rect.height - Math.min(viewport / 2, rect.height);
-  if (insideSection || Math.abs(distance) < 48) {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion || insideSection || Math.abs(distance) < 48) {
     window.scrollTo({ top: targetY, behavior: 'instant' });
     return;
   }
@@ -885,6 +886,8 @@ const heroView = (): Html =>
           // starts right at their hair.
           h.img([
             h.Src(heroImage),
+            h.Width('4000'),
+            h.Height('2667'),
             h.Alt('Four Czech players in dark red kits, arms crossed, facing the camera'),
             // Decode off the main thread and prioritize the fetch — it's the
             // one above-the-fold image, so its decode shouldn't block the
@@ -1104,6 +1107,8 @@ const storyView = (): Html =>
         [
           h.img([
             h.Src(knightImage),
+            h.Width('1100'),
+            h.Height('1694'),
             h.Alt('Illustrated footballer in pink armor and cape, resting one boot on a ball'),
             h.Loading('lazy'),
             h.Class('idle-float block w-full'),
@@ -1132,7 +1137,7 @@ const storyView = (): Html =>
               h.p(
                 [h.Class('display max-w-4xl text-fluid-2xl-4xl leading-snug')],
                 [
-                  "UEFA to make women's football Europe's most played and funded women's sport by 2030.",
+                  'UEFA to make women’s football Europe’s most played and funded women’s sport by 2030.',
                 ],
               ),
               h.a(
@@ -1141,7 +1146,7 @@ const storyView = (): Html =>
                   h.Target('_blank'),
                   h.Rel('noopener noreferrer'),
                   h.Class(
-                    'mt-6 inline-block border border-ink px-4 py-2 text-xs tracking-[0.2em] uppercase text-ink transition-colors duration-300 hover:bg-ink hover:text-paper',
+                    'mt-6 inline-block border-2 border-ink px-4 py-2 text-xs tracking-[0.2em] uppercase text-ink transition-colors duration-300 hover:bg-ink hover:text-paper',
                   ),
                 ],
                 ['UEFA Women’s Football Strategy ↗︎'],
@@ -1191,7 +1196,7 @@ const storyView = (): Html =>
               h.DataAttribute('reveal', 'up'),
               h.Style({ '--reveal-delay': '0.2s' }),
             ],
-            ["Don't sleep on it. Next generation might be the one that makes or breaks."],
+            ['Don’t sleep on it. This generation is make-or-break.'],
           ),
           // Phones: a swipeable scroll-snap strip — one big photo with the
           // next peeking in from the right edge (the peek IS the affordance),
@@ -1340,6 +1345,8 @@ const competitionsView = (): Html =>
         [
           h.img([
             h.Src(duoImage),
+            h.Width('2664'),
+            h.Height('2008'),
             h.Alt(''),
             h.Loading('lazy'),
             // On phones the framed crop hides both players; nudge the focal
@@ -1552,6 +1559,8 @@ const championsView = (): Html =>
             [
               h.img([
                 h.Src(spartaCrestImage),
+                h.Width('901'),
+                h.Height('1202'),
                 h.Alt('AC Sparta Praha crest'),
                 h.Loading('lazy'),
                 h.Class('idle-float block w-full'),
@@ -1671,7 +1680,7 @@ const championsView = (): Html =>
                                 [h.Class('display text-lg md:text-2xl md:text-right')],
                                 [rout.score],
                               ),
-                              // The light "there's a detail behind this row"
+                              // The light "there’s a detail behind this row"
                               // affordance.
                               h.span(
                                 [
@@ -1931,6 +1940,8 @@ const championsView = (): Html =>
                         [
                           h.img([
                             h.Src(domesticDoubleImage),
+                            h.Width('1170'),
+                            h.Height('859'),
                             h.Alt(
                               'Sparta Praha player kissing toward the league trophy with the cup trophy in hand, under the champions arch',
                             ),
@@ -2057,6 +2068,8 @@ const championsView = (): Html =>
                         [
                           h.img([
                             h.Src(championsTrophyImage),
+                            h.Width('1170'),
+                            h.Height('1462'),
                             h.Alt('Sparta Praha players lifting the league trophy at epet Arena'),
                             h.Loading('lazy'),
                             h.Class(
@@ -2080,6 +2093,8 @@ const championsView = (): Html =>
                         [
                           h.img([
                             h.Src(championsSquadImage),
+                            h.Width('1170'),
+                            h.Height('1462'),
                             h.Alt(
                               'The Sparta Praha squad celebrating with medals in front of the stand',
                             ),
@@ -2654,6 +2669,8 @@ const clubCardBox = (club: Club): Html =>
         [
           h.img([
             h.Src(clubRosterImage),
+            h.Width('800'),
+            h.Height('400'),
             h.Alt(`${club.name} squad photo`),
             h.Loading('lazy'),
             h.Class('h-28 w-full object-cover'),
@@ -3064,6 +3081,43 @@ const clubsView = (model: Model): Html =>
     ],
   );
 
+// One segment of the statement take. On phones the segments stack into
+// lines and EACH carries its own pen slash (a single absolute strike over
+// the wrapped block would only cross the seam between the lines); from
+// `md` up they flow inline and the slashes yield to the h2's continuous
+// full-width strike.
+const takeSegment = (text: string, maskDelaySeconds: number, strikeDelay: string): Html =>
+  h.span(
+    [h.Class('relative mx-auto block w-fit md:inline-block')],
+    [
+      h.span(
+        [h.Class('block overflow-hidden')],
+        [
+          h.span(
+            [
+              h.Class('display block text-fluid-5xl-8xl'),
+              h.DataAttribute('reveal', 'mask'),
+              h.Style({ '--reveal-delay': `${maskDelaySeconds}s` }),
+            ],
+            [text],
+          ),
+        ],
+      ),
+      h.span(
+        [
+          h.Class(
+            'pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 -rotate-2 bg-pink md:hidden',
+          ),
+          h.AriaHidden(true),
+          h.DataAttribute('reveal', 'strike'),
+          h.DataAttribute('reveal-late', ''),
+          h.Style({ '--reveal-delay': strikeDelay }),
+        ],
+        [],
+      ),
+    ],
+  );
+
 // An unnumbered full-bleed interlude — the site's attitude in three beats:
 // the tired take, the stamp slammed over it, and the deadpan analogy.
 const statementView = (): Html =>
@@ -3073,43 +3127,62 @@ const statementView = (): Html =>
       h.div(
         [h.Class(`${container} text-center`)],
         [
-          h.h2(
-            [h.Class('relative inline-block')],
-            [
-              maskedLine('She doesn’t play like men...', 'text-fluid-5xl-8xl', 0),
-              // The take gets STRUCK THROUGH once it's been read — the
-              // strike draws left-to-right when the line reaches
-              // mid-viewport (`data-reveal-late`: scroll-gated, so the
-              // pace is the reader's, not a clock's).
-              h.span(
-                [
-                  h.Class(
-                    'pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 -rotate-2 bg-pink md:h-2.5',
-                  ),
-                  h.AriaHidden(true),
-                  h.DataAttribute('reveal', 'strike'),
-                  h.DataAttribute('reveal-late', ''),
-                  h.Style({ '--reveal-delay': '0.25s' }),
-                ],
-                [],
-              ),
-            ],
-          ),
-          // The rebuttal slides in gently under the crossed-out take —
-          // horizontal, no theatrics, right after the strike lands.
+          // A 'late' reveal group: the strike and the rebuttal key off THIS
+          // wrapper crossing mid-viewport, so they land as one beat no
+          // matter where each sits on screen. The take itself is not late —
+          // it reveals early and gets read first; that's the joke's setup.
           h.div(
-            [h.Class('mt-6 md:mt-8')],
+            [h.DataAttribute('reveal-group', 'late')],
             [
-              h.span(
+              // The take gets STRUCK THROUGH once it's been read — the
+              // strike slashes left-to-right when the block reaches
+              // mid-viewport (scroll-gated, so the pace is the reader's,
+              // not a clock's). On phones each wrapped line takes its own
+              // slash, the second landing a beat after the first — one pen,
+              // two strokes.
+              h.h2(
+                // The display size sits on the h2 (not only inside the
+                // segments) so the literal space BETWEEN the inline-block
+                // segments renders at display scale — at the inherited body
+                // size it collapses to a sliver and the two words touch.
+                [h.Class('display relative inline-block text-fluid-5xl-8xl')],
                 [
-                  h.Class(
-                    'display inline-block bg-pink px-5 py-3 text-fluid-3xl-6xl whitespace-nowrap text-ink md:px-8 md:py-4',
+                  takeSegment('She doesn’t play', 0, '0.25s'),
+                  ' ',
+                  takeSegment('like men...', 0.08, '0.45s'),
+                  // From `md` up the take is one line — a single continuous
+                  // slash across the whole h2 replaces the per-line pair.
+                  h.span(
+                    [
+                      h.Class(
+                        'pointer-events-none absolute inset-x-0 top-1/2 hidden h-1.5 -translate-y-1/2 -rotate-2 bg-pink md:block md:h-2.5',
+                      ),
+                      h.AriaHidden(true),
+                      h.DataAttribute('reveal', 'strike'),
+                      h.DataAttribute('reveal-late', ''),
+                      h.Style({ '--reveal-delay': '0.25s' }),
+                    ],
+                    [],
                   ),
-                  h.DataAttribute('reveal', 'left'),
-                  h.DataAttribute('reveal-late', ''),
-                  h.Style({ '--reveal-delay': '0.6s' }),
                 ],
-                ['She does not. 💅'],
+              ),
+              // The rebuttal slides in under the crossed-out take — same
+              // beat as the strike, same delay, same trigger.
+              h.div(
+                [h.Class('mt-6 md:mt-8')],
+                [
+                  h.span(
+                    [
+                      h.Class(
+                        'display inline-block bg-pink px-5 py-3 text-fluid-3xl-6xl whitespace-nowrap text-ink md:px-8 md:py-4',
+                      ),
+                      h.DataAttribute('reveal', 'left'),
+                      h.DataAttribute('reveal-late', ''),
+                      h.Style({ '--reveal-delay': '0.25s' }),
+                    ],
+                    ['She does not. 💅'],
+                  ),
+                ],
               ),
             ],
           ),
@@ -3213,25 +3286,29 @@ const nationalTeamView = (): Html =>
                       'England can keep the trademark — these lionesses are Czech. And when they pull on the national shirt, we treat it like the main event it is: Nations League nights, EURO qualifying, friendlies in the rain. Home and away, camp to camp.',
                     ],
                   ),
+                  // Number-over-label stacks with ink ticks — the same
+                  // formation as every other stat block on the page (the
+                  // sideways label here read as a different component).
                   h.dl(
-                    [h.Class('mt-12 grid gap-8 border-t-4 border-ink pt-8')],
+                    [h.Class('mt-12 grid gap-8 border-t-4 border-ink pt-8 sm:grid-cols-2')],
                     nationalTeamStats.map((stat, index) =>
                       h.div(
                         [
-                          h.Class('flex items-baseline gap-6'),
                           h.DataAttribute('reveal', 'up'),
                           h.Style({ '--reveal-delay': `${index * 0.15}s` }),
                         ],
                         [
+                          h.div([h.Class('mb-5 h-1 w-12 bg-ink')], []),
                           h.dt(
-                            [
-                              h.Class('display w-28 text-fluid-6xl-7xl'),
-                              h.DataAttribute('countup', ''),
-                            ],
+                            [h.Class('display text-fluid-6xl-7xl'), h.DataAttribute('countup', '')],
                             [stat.value],
                           ),
                           h.dd(
-                            [h.Class('text-sm leading-relaxed tracking-wider uppercase')],
+                            [
+                              h.Class(
+                                'mt-3 max-w-52 text-sm leading-relaxed tracking-wider uppercase',
+                              ),
+                            ],
                             [stat.label],
                           ),
                         ],
@@ -3264,6 +3341,8 @@ const nationalTeamView = (): Html =>
                     [
                       h.img([
                         h.Src(lionessesImage),
+                        h.Width('1600'),
+                        h.Height('1067'),
                         h.Alt(
                           'The two Czech national team lion mascots in red home shirts, one wearing a golden crown',
                         ),
