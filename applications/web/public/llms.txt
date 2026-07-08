@@ -1,0 +1,34 @@
+# Skóreová
+
+> Independent media covering Czech women's football: the first league, the
+> second league, the domestic cup, Czech clubs in European competitions
+> (UWCL, UWEC), and the national team. Made in Czechia, written in English.
+
+Skóreová is a media brand, not a governing body. The landing site tells the
+story of the sport; the platform carries the data (fixtures, results,
+standings, top scorers, club and player profiles).
+
+## Site structure
+
+- [Landing page](https://skoreova.filipfalcon.com/): why the sport matters,
+  what we cover, the map of clubs, the reigning champion (Sparta Praha),
+  the player spotlight, and the national team.
+- [Club profiles](https://skoreova.filipfalcon.com/clubs/sparta-praha):
+  `/clubs/<slug>` — one page per covered club (19 clubs across two leagues).
+- [Competition profiles](https://skoreova.filipfalcon.com/competitions/first-league):
+  `/competitions/<slug>` — first-league, second-league, domestic-cup, uwcl,
+  uwec, national-team.
+- [Platform](https://platform.skoreova.filipfalcon.com/): the data product —
+  results, standings, charts, club/player/referee profiles.
+
+## Key facts
+
+- Czechia's three biggest cities all have top-flight women's football.
+- Sparta Praha are the reigning champions: the 2024/25 domestic double and
+  a semifinal run in the UEFA Women's Europa Cup.
+- The national team plays the 2027 World Cup qualifying play-offs
+  (Round 1: Czechia — Scotland, October 2026).
+
+## Social
+
+@skoreova on Instagram, TikTok, YouTube, Threads, Facebook, and X.
