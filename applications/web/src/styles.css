@@ -6,6 +6,52 @@
   --color-pink: #ff2f8e;
   --font-display: 'Anton', 'Arial Narrow', sans-serif;
   --font-body: 'Archivo Variable', 'Helvetica Neue', Arial, sans-serif;
+
+  /* Fluid display scale. Each step is named after the Tailwind pair it
+     replaced (`text-fluid-4xl-6xl` ~ the old `text-4xl md:text-6xl`) and
+     interpolates between exactly those sizes across 24rem–80rem viewports,
+     so phones and large desktops render identically to the old stepped
+     classes — only the hard jump at `md` is gone. Body-copy sizes stay
+     stepped on purpose: their deltas are too small to see the jump. */
+  --text-fluid-xl-3xl: clamp(1.25rem, 0.9821rem + 1.1161vw, 1.875rem);
+  --text-fluid-xl-3xl--line-height: 1.2;
+  --text-fluid-2xl-3xl: clamp(1.5rem, 1.3393rem + 0.6696vw, 1.875rem);
+  --text-fluid-2xl-3xl--line-height: 1.25;
+  --text-fluid-2xl-4xl: clamp(1.5rem, 1.1786rem + 1.3393vw, 2.25rem);
+  --text-fluid-2xl-4xl--line-height: 1.2;
+  --text-fluid-3xl-4xl: clamp(1.875rem, 1.7143rem + 0.6696vw, 2.25rem);
+  --text-fluid-3xl-4xl--line-height: 1.15;
+  --text-fluid-3xl-5xl: clamp(1.875rem, 1.3929rem + 2.0089vw, 3rem);
+  --text-fluid-3xl-5xl--line-height: 1;
+  --text-fluid-3xl-6xl: clamp(1.875rem, 1.0714rem + 3.3482vw, 3.75rem);
+  --text-fluid-3xl-6xl--line-height: 1;
+  --text-fluid-4xl-6xl: clamp(2.25rem, 1.6071rem + 2.6786vw, 3.75rem);
+  --text-fluid-4xl-6xl--line-height: 1;
+  --text-fluid-5xl-7xl: clamp(3rem, 2.3571rem + 2.6786vw, 4.5rem);
+  --text-fluid-5xl-7xl--line-height: 1;
+  --text-fluid-5xl-8xl: clamp(3rem, 1.7143rem + 5.3571vw, 6rem);
+  --text-fluid-5xl-8xl--line-height: 1;
+  --text-fluid-5xl-9xl: clamp(3rem, 0.8571rem + 8.9286vw, 8rem);
+  --text-fluid-5xl-9xl--line-height: 1;
+  --text-fluid-6xl-7xl: clamp(3.75rem, 3.4286rem + 1.3393vw, 4.5rem);
+  --text-fluid-6xl-7xl--line-height: 1;
+  --text-fluid-6xl-9xl: clamp(3.75rem, 1.9286rem + 7.5893vw, 8rem);
+  --text-fluid-6xl-9xl--line-height: 1;
+  --text-fluid-7xl-8xl: clamp(4.5rem, 3.8571rem + 2.6786vw, 6rem);
+  --text-fluid-7xl-8xl--line-height: 1;
+  --text-fluid-7xl-9xl: clamp(4.5rem, 3rem + 6.25vw, 8rem);
+  --text-fluid-7xl-9xl--line-height: 1;
+  --text-fluid-8xl-9xl: clamp(6rem, 5.1429rem + 3.5714vw, 8rem);
+  --text-fluid-8xl-9xl--line-height: 1;
+  /* The star section's giant goals watermark (was 13rem/17rem/24rem). */
+  --text-fluid-watermark: clamp(13rem, 8.2857rem + 19.6429vw, 24rem);
+}
+
+@layer base {
+  /* Kill single-word orphans on the last line of body copy. */
+  p {
+    text-wrap: pretty;
+  }
 }
 
 html {
@@ -45,6 +91,9 @@ body {
     text-transform: uppercase;
     line-height: 0.92;
     letter-spacing: -0.01em;
+    /* Even out multi-line headlines instead of leaving a lone word on the
+       last line. No-op on the single-line uses (buttons, chips, marquee). */
+    text-wrap: balance;
   }
 }
 
