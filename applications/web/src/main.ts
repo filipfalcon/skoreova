@@ -2147,7 +2147,7 @@ const starView = (): Html =>
           // spans the whole right column on desktop, standing on the
           // section's bottom edge next to everything, not just the stats.
           h.div(
-            [h.Class('mt-10 grid gap-x-16 gap-y-2 md:mt-8 md:grid-cols-2')],
+            [h.Class('mt-16 grid gap-x-16 gap-y-2 md:mt-8 md:grid-cols-2')],
             [
               h.div(
                 [
@@ -2156,8 +2156,9 @@ const starView = (): Html =>
                   ),
                 ],
                 [
-                  // The goals tally as a giant jersey-number watermark —
-                  // fills the black void behind the cutout.
+                  // Her real jersey number as a giant watermark — fills the
+                  // black void behind the cutout. (It reads as a squad
+                  // number, so it must BE her number, not a stat.)
                   h.span(
                     [
                       h.Class(
@@ -2165,16 +2166,61 @@ const starView = (): Html =>
                       ),
                       h.AriaHidden(true),
                     ],
-                    [starStats[0]?.value ?? ''],
+                    ['26'],
                   ),
-                  h.img([
-                    h.Src(rancovaImage),
-                    h.Alt('Denisa Rancová in the dark red Sparta Praha home shirt'),
-                    h.Loading('lazy'),
-                    h.Class('relative h-[24rem] w-auto sm:h-[30rem] md:h-full md:max-h-[46rem]'),
-                    h.DataAttribute('reveal', 'up'),
-                    h.Style({ '--reveal-delay': '0.2s' }),
-                  ]),
+                  // The height constraints moved from the img to this
+                  // shrink-wrapping box so the crown can anchor to the
+                  // PHOTO's coordinates, not the whole column's.
+                  h.div(
+                    [h.Class('relative h-[24rem] sm:h-[30rem] md:h-full md:max-h-[46rem]')],
+                    [
+                      h.img([
+                        h.Src(rancovaImage),
+                        h.Width('973'),
+                        h.Height('1600'),
+                        h.Alt('Denisa Rancová in the dark red Sparta Praha home shirt'),
+                        h.Loading('lazy'),
+                        h.Class('relative h-full w-auto'),
+                        h.DataAttribute('reveal', 'up'),
+                        h.Style({ '--reveal-delay': '0.2s' }),
+                      ]),
+                      // Our queen gets a crown — an original hand-drawn
+                      // scribble that pens itself in above her head (same
+                      // draw mechanism as the map: reveal on the SVG ROOT,
+                      // unit-dash paths; see the map comment for why).
+                      h.svg(
+                        [
+                          h.Xmlns('http://www.w3.org/2000/svg'),
+                          h.ViewBox('0 0 140 104'),
+                          h.Class(
+                            'star-crown pointer-events-none absolute bottom-[98%] left-[31%] w-[34%] -rotate-6 text-paper md:bottom-[102%] md:left-[23%] md:w-[48%]',
+                          ),
+                          h.Fill('none'),
+                          h.Stroke('currentColor'),
+                          h.StrokeWidth('6.5'),
+                          h.StrokeLinecap('round'),
+                          h.StrokeLinejoin('round'),
+                          h.DataAttribute('reveal', 'draw'),
+                          h.AriaHidden(true),
+                          h.Style({ '--reveal-delay': '0.5s' }),
+                        ],
+                        [
+                          // Three wobbly spikes...
+                          h.path(
+                            [
+                              h.D(
+                                'M16,76 Q13,50 20,28 Q33,46 46,52 Q57,32 68,12 Q80,34 92,50 Q105,41 118,24 Q125,50 122,74',
+                              ),
+                              h.Attribute('pathLength', '1'),
+                            ],
+                            [],
+                          ),
+                          // ...and the lazy band underneath.
+                          h.path([h.D('M13,89 Q69,80 125,86'), h.Attribute('pathLength', '1')], []),
+                        ],
+                      ),
+                    ],
+                  ),
                 ],
               ),
               // Text column keeps the section's bottom padding for itself —
