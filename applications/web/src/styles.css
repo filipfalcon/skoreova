@@ -288,6 +288,23 @@ body {
   stroke-dasharray: none;
 }
 
+/* The star section's crown scribble: far shorter strokes than the map's
+   border, so the same pen moves much quicker. Unlike the map it draws with
+   ROUND linecaps, and a parked unit-dash paints its boundary cap as a dot
+   at each path's start — so the crown stays invisible until the pen
+   actually moves (the opacity flip shares the draw's delay). */
+.star-crown[data-reveal='draw'] {
+  opacity: 0;
+}
+
+.star-crown[data-reveal='draw'].is-in {
+  opacity: 1;
+  transition:
+    stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0s linear;
+  transition-delay: var(--reveal-delay, 0s);
+}
+
 /* Stamp: slams onto the element below it from the viewer's direction —
    starts huge and transparent, drops to size with a springy overshoot, and
    lands slightly tilted like a slapped-on sticker. The centering translate
