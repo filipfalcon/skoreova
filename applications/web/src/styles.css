@@ -1,0 +1,619 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ink: #0d0c0c;
+  --color-paper: #f3efe8;
+  --color-pink: #ff2f8e;
+  --font-display: 'Anton', 'Arial Narrow', sans-serif;
+  --font-body: 'Archivo Variable', 'Helvetica Neue', Arial, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--color-ink);
+  /* iOS Safari computes the initial zoom from the DOCUMENT width — clipping
+     only <body> isn't enough, overflowing decor (map tooltips) still made
+     it zoom out and show a band. `hidden` is the fallback for engines
+     without `clip`. */
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+body {
+  font-family: var(--font-body);
+  /* Decorative absolute elements (map pin tooltips, the statement stamp)
+     can poke past the viewport edge; without this the page gains a
+     horizontal scroll and the content shifts off a black band. `clip`
+     kills the scrolling without creating a new scroll container. */
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--color-pink);
+  color: var(--color-ink);
+}
+
+/* ------------------------------------------------------------------ */
+/* Display type — Anton needs tighter leading than any Tailwind step  */
+/* ------------------------------------------------------------------ */
+
+/* In @layer components so Tailwind's leading-* utilities (a later layer)
+   can override the tight default on multi-line display paragraphs. */
+@layer components {
+  .display {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    line-height: 0.92;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Scroll reveals — elements start hidden and transition in when the  */
+/* IntersectionObserver (see motion.ts) stamps them with `.is-in`.    */
+/* ------------------------------------------------------------------ */
+
+/* The entrance transition (slow, staggered via --reveal-delay) lives on the
+   `.is-in` state; the base state only carries a quick, undelayed exit. So
+   revealing plays the full choreography, while scrolling away resets
+   everything fast and in sync — no stamp lingering over an already-hidden
+   headline when the sequence runs backwards. */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(2.5rem);
+  transition:
+    opacity 0.25s ease-out,
+    transform 0.25s ease-out,
+    clip-path 0.25s ease-out;
+  will-change: opacity, transform;
+}
+
+[data-reveal='left'] {
+  transform: translateX(-3.5rem);
+}
+
+[data-reveal='right'] {
+  transform: translateX(3.5rem);
+}
+
+/* Masked line: the parent clips, the line slides up from below the fold. */
+[data-reveal='mask'] {
+  opacity: 1;
+  transform: translateY(110%);
+}
+
+/* Pink label bars wipe open from the left. */
+[data-reveal='wipe'] {
+  opacity: 1;
+  transform: none;
+  clip-path: inset(0 100% 0 0);
+}
+
+/* Photos settle from a slight zoom while fading in. */
+[data-reveal='zoom'] {
+  transform: scale(1.12);
+}
+
+[data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    clip-path 1s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+/* Only the wipe closes its clip on reveal. The old generic
+   `clip-path: inset(0 0 0 0)` on every `.is-in` looked like a no-op but
+   isn't: inset(0) HARD-CLIPS the element to its own box, so any child
+   animating past that box gets sheared off — the floating mascot lost the
+   top of her head to it. Everything except wipe must stay unclipped. */
+[data-reveal='wipe'].is-in {
+  clip-path: inset(0 0 0 0);
+}
+
+/* Map outline: drawn in like a pen stroke — white line work on the ink
+   section. The path is normalized with pathLength=1, so
+   dasharray/dashoffset work in unit terms.
+
+   NO vector-effect: non-scaling-stroke here — GPU rasterizers compute the
+   dash pattern in SCREEN space for non-scaled strokes, so the pathLength
+   normalization stops holding and the draw-in leaves a chunk of border
+   undrawn. Strokes scale with the map instead, and the phone breakpoint
+   below compensates the width in viewBox units. */
+.map-path {
+  fill: none;
+  stroke: var(--color-paper);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+/* The three historical lands under the outline. The stroke draws the
+   INTERNAL land borders (the country's own edge is the thicker .map-path on
+   top) — it must hold its own on ink, a faint one reads as a border that
+   stops mid-way. */
+.region-path {
+  stroke: var(--color-paper);
+  stroke-opacity: 0.9;
+  stroke-width: 1.5;
+}
+
+/* Pin fans: on phones the map is a third of its desktop size but the rem
+   offsets aren't — full-length target lines dwarfed the country. Half reach
+   below `md`, full reach above. Each geometry var has an optional `-phone`
+   variant (set inline per pin in main.ts): below `md` it wins over the base
+   value, which lets crowded cities collapse onto shared anchors and re-fan
+   their crests into free space on small maps.
+
+   The z-index transition is defined here rather than via utilities because
+   it needs to be asymmetric: raising must be instant, but on hover-out the
+   z DECAYS (z-index is an integer, so the transition steps it down over the
+   shrink). A plain delayed drop glitched: the old pin held full z and kept
+   painting over a freshly hovered neighbor for the whole delay. Decaying,
+   it still beats idle pins (z-10) until the shrink lands, yet any newly
+   hovered crest (z-30, instant) wins right away. */
+.club-pin {
+  --fan-scale: 0.5;
+  left: var(--pin-x-phone, var(--pin-x));
+  top: var(--pin-y-phone, var(--pin-y));
+  --fx: var(--fan-x-phone, var(--fan-x));
+  --fy: var(--fan-y-phone, var(--fan-y));
+  --flen: var(--fan-len-phone, var(--fan-len));
+  --fangle: var(--fan-angle-phone, var(--fan-angle));
+  --chang: var(--chip-hang-phone, var(--chip-hang));
+  transition: z-index 300ms linear;
+}
+
+.club-pin:hover {
+  transition: z-index 0s;
+}
+
+@media (min-width: 768px) {
+  .club-pin {
+    --fan-scale: 1;
+    left: var(--pin-x);
+    top: var(--pin-y);
+    --fx: var(--fan-x);
+    --fy: var(--fan-y);
+    --flen: var(--fan-len);
+    --fangle: var(--fan-angle);
+    --chang: var(--chip-hang);
+  }
+}
+
+.club-pin-line {
+  height: calc(var(--flen) * var(--fan-scale));
+  transform: rotate(var(--fangle));
+}
+
+.club-pin-chip {
+  left: calc(var(--fx) * var(--fan-scale));
+  top: calc(var(--fy) * var(--fan-scale) * -1);
+  /* -50% centers on the line's end; the vertical hang is 0% (crest dangles
+     below a downward fan) or -100% (floats above an upward one). */
+  translate: -50% var(--chang);
+}
+
+/* On phones the map renders at roughly a third of its viewBox size — bump
+   the user-unit widths so the visual line weight stays ~1.3–1.8px. */
+@media (max-width: 767px) {
+  .map-path {
+    stroke-width: 5.5;
+  }
+
+  .region-path {
+    stroke-width: 4;
+  }
+}
+
+[data-reveal='draw'] {
+  opacity: 1;
+  transform: none;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.25s ease-out;
+}
+
+[data-reveal='draw'].is-in {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 2.4s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+/* Once the draw lands, motion.ts stamps `.is-drawn` and the dash comes OFF
+   entirely: GPU rasterizers were seen mis-computing the dash pattern on
+   non-scaling-stroke paths (a chunk of border missing at rest). A plain
+   undashed stroke can't break — the dash only ever exists mid-animation. */
+[data-reveal='draw'].is-drawn {
+  stroke-dasharray: none;
+}
+
+/* Stamp: slams onto the element below it from the viewer's direction —
+   starts huge and transparent, drops to size with a springy overshoot, and
+   lands slightly tilted like a slapped-on sticker. The centering translate
+   must live in every state because the reveal transition animates
+   `transform`. Declared after the generic `.is-in` rule so its rules win
+   at equal specificity. */
+[data-reveal='stamp'] {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(2.4) rotate(-14deg);
+}
+
+[data-reveal='stamp'].is-in {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1) rotate(-6deg);
+  transition:
+    opacity 0.5s ease-out,
+    transform 0.95s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+/* Strike-through: draws left-to-right across the tired take. Lives on the
+   `transform` property alone, so the Tailwind translate/rotate utilities
+   on the element (centering, the slight hand-slash tilt) stay in force. */
+[data-reveal='strike'] {
+  opacity: 1;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+[data-reveal='strike'].is-in {
+  transform: scaleX(1);
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+/* ------------------------------------------------------------------ */
+/* Hero intro — plays on load, no observer involved.                  */
+/* ------------------------------------------------------------------ */
+
+@keyframes hero-line-up {
+  from {
+    transform: translateY(110%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-photo {
+  from {
+    transform: scale(1.08);
+  }
+  /* Lands at the drift's starting scale (not 1) so the handoff between the
+     two chained animations is seamless. The 1.5% rest bleed also keeps the
+     pointer tilt's perspective from ever exposing the photo's side edges. */
+  to {
+    transform: scale(1.015);
+  }
+}
+
+/* The idle "Ken Burns" drift: an imperceptibly slow breathe that keeps the
+   hero from reading as a still for viewers who don't scroll immediately.
+   Takes over the instant the intro settle ends (2.4s) and alternates forever. */
+@keyframes hero-drift {
+  from {
+    transform: scale(1.015);
+  }
+  to {
+    transform: scale(1.05);
+  }
+}
+
+.hero-line {
+  animation: hero-line-up 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--hero-delay, 0.2s);
+  /* Looser than the site's default display tracking (-0.01em) — the hero
+     headline gets a bit more air. Kept identical on the neon line below so
+     all three lines match. Unlayered, so it beats `.display`'s @layer rule. */
+  letter-spacing: 0.03em;
+}
+
+.hero-fade {
+  animation: hero-fade 1s ease-out both;
+  animation-delay: var(--hero-delay, 1s);
+}
+
+/* Header platform CTA: hidden until the hero is scrolled past (motion.ts
+   toggles `.is-visible` off an observer on the hero). Unlayered so the
+   transition beats Tailwind's, and it carries the hover color change too
+   since we dropped `transition-colors` from the element. */
+.header-cta {
+  opacity: 0;
+  transform: translateY(-0.5rem);
+  pointer-events: none;
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+.header-cta.is-visible {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+/* The "why care" mascot's idle float — a slow, subtle bob upward so she feels
+   alive without pulling focus. Runs on the inner image; the wrapper owns the
+   reveal slide, so the two transforms never collide. Bobs UP into the empty
+   top-right corner (no copy there, and the section no longer clips), never
+   down — downward the ball would slide behind the z-10 copy and read as cut. */
+@keyframes idle-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.6rem);
+  }
+}
+
+/* Shared by the knight mascot and the champion's crest — the site's "alive
+   emblem" treatment. */
+.idle-float {
+  animation: idle-float 4.5s ease-in-out infinite;
+}
+
+.hero-photo {
+  /* The settle's easing matters for the neon sync: the original
+     cubic-bezier(0.22, 1, 0.36, 1) spent its last ~700ms in an imperceptible
+     crawl, so the zoom LOOKED finished long before the neon finale landed on
+     the animation's actual end. But a slow-start curve (0.55, 0, …) packed
+     the visible motion into the mid-flight window where page-load work drops
+     frames — it read as juddery. This one moves from the first frame, keeps
+     visible speed, and still stops definitively at the end. */
+  will-change: transform;
+  animation:
+    hero-photo 2.4s cubic-bezier(0.3, 0.4, 0.2, 1) both,
+    hero-drift 26s ease-in-out 2.4s infinite alternate;
+  /* Scale downward only — a centered zoom would crop the top of the photo
+     (the players' heads) during the intro settle, and the drift must never
+     eat into their faces either. */
+  transform-origin: top center;
+}
+
+/* The corner scroll cue's arrow bobs gently downward — a small functional
+   nudge for viewers who linger on the hero. */
+@keyframes scroll-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(0.2rem);
+  }
+}
+
+.scroll-bob {
+  display: inline-block;
+  animation: scroll-bob 2.2s ease-in-out infinite;
+}
+
+/* Film grain for the hero photo: a tiled SVG fractal-noise texture (inline
+   data URI, desaturated to mono) blended over the image. Static by design —
+   it's a texture, not an effect: cheap to paint once, and animating it would
+   force full-viewport repaints every frame. */
+.grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 240px 240px;
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+}
+
+/* "Her game" — an old-school pink neon sign, in two spans:
+
+   .hero-neon (outer) owns the flicker — its opacity is stepped from JS
+     (motion.ts), never a CSS animation.
+   .hero-glam (inner) owns the neon tubes + glow.
+
+   Anton is a heavy filled face, so solid letters + shadow read as "bold
+   blur"; real signs are bent from thin TUBES, so the letters are hollow
+   (transparent fill + a light text-stroke = the tube) and the halo is a stack
+   of drop-shadows hugging that stroke. WebKit renders a big drop-shadow badly
+   (a coarse box) on ANY composited layer, so neither element may be promoted
+   (no will-change/transform) and the flicker must not use a running CSS
+   animation — hence the JS stepping. Sizes are in `em` to scale with the
+   headline. */
+.hero-neon {
+  /* Painted above BOTH neighbouring lines so the glow reflection washes over
+     DISCOVER and IN CZECHIA equally (DOM order alone only lit the line above). */
+  position: relative;
+  z-index: 1;
+  /* The power-on and occasional winks are driven from JS (see motion.ts) by
+     setting opacity in discrete steps — NOT a CSS animation, which would keep
+     the element composited and degrade the glow on WebKit. This is just the
+     resting/fallback value for when that script hasn't run. */
+  opacity: 1;
+}
+
+.hero-glam {
+  color: transparent;
+  -webkit-text-stroke: 0.024em #ffe6f2;
+  /* Same tracking as the hero-line siblings (0.03em) so all three match. */
+  letter-spacing: 0.03em;
+  filter: drop-shadow(0 0 0.014em #ffffff) drop-shadow(0 0 0.06em #ff8ec4)
+    drop-shadow(0 0 0.24em var(--color-pink)) drop-shadow(0 0 0.7em var(--color-pink))
+    drop-shadow(0 0 1.3em rgba(255, 47, 142, 0.7));
+}
+
+/* ------------------------------------------------------------------ */
+/* Marquee                                                            */
+/* ------------------------------------------------------------------ */
+
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee-x 28s linear infinite;
+}
+
+/* ------------------------------------------------------------------ */
+/* Menu overlay                                                       */
+/* ------------------------------------------------------------------ */
+
+/* Slides the whole panel in and out from above the viewport. Deliberately
+   NOT clip-path: on iOS Safari a clip-pathed fixed overlay leaves a black
+   band in the bottom safe-area (under the floating toolbar) that never
+   clears. The transform moves it off-screen, and `visibility` flips to
+   hidden once the slide-out finishes (transition delay = the slide
+   duration), so a fully-closed menu is not painted at all and can't leave
+   any residue behind. Both open and close animate. */
+.menu-overlay {
+  transform: translateY(-100%);
+  visibility: hidden;
+  transition:
+    transform 0.6s cubic-bezier(0.76, 0, 0.24, 1),
+    visibility 0s linear 0.6s;
+  pointer-events: none;
+}
+
+.menu-overlay.is-open {
+  transform: translateY(0);
+  visibility: visible;
+  transition:
+    transform 0.6s cubic-bezier(0.76, 0, 0.24, 1),
+    visibility 0s linear 0s;
+  pointer-events: auto;
+}
+
+.menu-overlay .menu-item {
+  opacity: 0;
+  transform: translateY(2rem);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.menu-overlay.is-open .menu-item {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(0.25s + var(--menu-index, 0) * 0.07s);
+}
+
+/* Social rows: sliding pink underlay on hover. */
+.social-row {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.social-row::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--color-pink);
+  transform: translateY(101%);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.social-row:hover::before {
+  transform: translateY(0);
+}
+
+/* Parallax layers are moved imperatively (motion.ts) — hint the GPU. */
+[data-parallax] {
+  will-change: transform;
+}
+
+/* Touch devices: `:active` styles must SNAP into place — the buttons'
+   300ms color transition swallowed the tap flash entirely (the finger is
+   gone long before the color arrives). Zeroing the duration only while
+   active means the press is instant and the release still eases back. */
+@media (hover: none) {
+  a:active,
+  button:active {
+    transition-duration: 0s;
+  }
+}
+
+/* The country-area figure: hover swaps metric → imperial in place. Gated to
+   hover-CAPABLE devices — on touch, iOS's sticky hover would fight the tap
+   toggle (which goes through the model instead). Unlayered, so it beats the
+   Tailwind `invisible` utility both ways. */
+@media (hover: hover) {
+  .area-swap:hover .area-metric {
+    visibility: hidden;
+  }
+
+  .area-swap:hover .area-imperial {
+    visibility: visible;
+  }
+}
+
+/* Horizontal snap strips (the youth photos on phones) scroll without
+   showing a scrollbar — the peeking next card is the affordance. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Reduced motion: show everything, animate nothing.                  */
+/* ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  [data-reveal],
+  [data-reveal='mask'],
+  [data-reveal='wipe'] {
+    opacity: 1;
+    transform: none;
+    clip-path: none;
+    transition: none;
+  }
+
+  /* The stamp still needs its centering translate and resting tilt. */
+  [data-reveal='stamp'] {
+    transform: translate(-50%, -50%) rotate(-6deg);
+  }
+
+  [data-reveal='draw'] {
+    stroke-dashoffset: 0;
+  }
+
+  .hero-line,
+  .hero-fade,
+  .hero-photo,
+  .idle-float,
+  .scroll-bob,
+  .marquee-track {
+    animation: none;
+  }
+
+  /* Keep the neon glow, just hold it steady (no flicker). */
+
+  .menu-overlay {
+    transition: none;
+  }
+
+  .menu-overlay .menu-item {
+    transition: none;
+  }
+}
