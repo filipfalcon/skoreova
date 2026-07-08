@@ -5,8 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Skóreová — independent coverage of Czech women's football. First league, second league, domestic cup, Europe, and the national team."
+      content="Skóreová — independent coverage of Czech women’s football. First league, second league, domestic cup, Europe, and the national team."
     />
+    <link rel="canonical" href="https://skoreova.filipfalcon.com/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#0d0c0c" />
+
+    <!-- Icons: SVG (theme-aware) for modern browsers, ICO fallback, touch
+         icon and manifest tiles rendered from the brand logo. -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Social preview cards (Open Graph covers Facebook, WhatsApp, Signal,
+         iMessage, Slack, LinkedIn...; the twitter:* set covers X). -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Skóreová" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://skoreova.filipfalcon.com/" />
+    <meta property="og:title" content="Skóreová — Czech Women’s Football" />
+    <meta
+      property="og:description"
+      content="Independent coverage of Czech women’s football. First league, second league, domestic cup, Europe, and the national team."
+    />
+    <meta property="og:image" content="https://skoreova.filipfalcon.com/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Skóreová wordmark and the brand logo — a woman’s face inside a football."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@skoreova" />
+    <meta name="twitter:title" content="Skóreová — Czech Women’s Football" />
+    <meta
+      name="twitter:description"
+      content="Independent coverage of Czech women’s football. First league, second league, domestic cup, Europe, and the national team."
+    />
+    <meta name="twitter:image" content="https://skoreova.filipfalcon.com/og.png" />
+
+    <!-- Structured data for search engines and AI agents. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "NewsMediaOrganization",
+            "@id": "https://skoreova.filipfalcon.com/#organization",
+            "name": "Skóreová",
+            "url": "https://skoreova.filipfalcon.com/",
+            "logo": "https://skoreova.filipfalcon.com/icon-512.png",
+            "description": "Independent coverage of Czech women’s football.",
+            "sameAs": [
+              "https://www.instagram.com/skoreova",
+              "https://www.tiktok.com/@skoreova",
+              "https://www.youtube.com/@skoreova",
+              "https://www.threads.net/@skoreova",
+              "https://www.facebook.com/skoreova",
+              "https://x.com/skoreova"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://skoreova.filipfalcon.com/#website",
+            "url": "https://skoreova.filipfalcon.com/",
+            "name": "Skóreová",
+            "publisher": { "@id": "https://skoreova.filipfalcon.com/#organization" },
+            "inLanguage": "en"
+          }
+        ]
+      }
+    </script>
     <!-- Consent Mode v2. ORDER IS VITAL (see Google's implementation
          example): the consent DEFAULT must run before the loader and any
          config. Everything starts denied; a stored earlier choice is
@@ -45,7 +115,7 @@
       gtag('config', 'G-PJ131P52RX');
     </script>
     <link href="/src/styles.css" rel="stylesheet" />
-    <title>Skóreová — Czech Women's Football</title>
+    <title>Skóreová — Czech Women’s Football</title>
   </head>
   <body>
     <div id="root"></div>
