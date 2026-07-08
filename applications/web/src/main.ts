@@ -630,7 +630,7 @@ const kicker = (index: string, label: string, dark: boolean): Html =>
       h.span(
         [
           h.Class(
-            `display inline-block px-4 py-2 text-xl tracking-[0.2em] md:px-5 md:py-3 md:text-3xl ${
+            `display inline-block px-4 py-2 text-fluid-xl-3xl tracking-[0.2em] md:px-5 md:py-3 ${
               dark ? 'bg-pink text-ink' : 'bg-ink text-pink'
             }`,
           ),
@@ -765,7 +765,7 @@ const menuOverlayView = (model: Model): Html =>
                     h.Href(entry.target),
                     h.OnClick(ClosedMenu()),
                     h.Class(
-                      'display block py-4 text-5xl text-paper transition-colors hover:text-pink md:py-6 md:text-8xl',
+                      'display block py-4 text-fluid-5xl-8xl text-paper transition-colors hover:text-pink md:py-6',
                     ),
                   ],
                   [entry.label],
@@ -782,7 +782,7 @@ const menuOverlayView = (model: Model): Html =>
                 [
                   h.Href(platformUrl),
                   h.Class(
-                    'display block py-4 text-5xl text-pink transition-colors hover:text-paper active:text-paper md:py-6 md:text-8xl',
+                    'display block py-4 text-fluid-5xl-8xl text-pink transition-colors hover:text-paper active:text-paper md:py-6',
                   ),
                 ],
                 ['Enter platform →'],
@@ -989,8 +989,8 @@ const marqueeView = (): Html =>
             // the rhythm of the strip is perfectly even.
             [h.Class('flex shrink-0 items-baseline gap-10 pr-10 md:gap-14 md:pr-14')],
             marqueeItems.flatMap((item) => [
-              h.span([h.Class('display text-2xl whitespace-nowrap text-ink md:text-4xl')], [item]),
-              h.span([h.Class('display text-2xl text-ink md:text-4xl')], ['✦']),
+              h.span([h.Class('display text-fluid-2xl-4xl whitespace-nowrap text-ink')], [item]),
+              h.span([h.Class('display text-fluid-2xl-4xl text-ink')], ['✦']),
             ]),
           ),
         ),
@@ -1080,8 +1080,8 @@ const storyView = (): Html =>
           h.div(
             [h.Class('mt-10 md:mt-16')],
             [
-              maskedLine('Officially', 'text-6xl md:text-9xl', 0),
-              maskedLine('unstoppable.', 'text-6xl text-pink md:text-9xl', 0.12),
+              maskedLine('Officially', 'text-fluid-6xl-9xl', 0),
+              maskedLine('unstoppable.', 'text-fluid-6xl-9xl text-pink', 0.12),
             ],
           ),
           // One display sentence instead of paragraphs — the count-up row
@@ -1093,7 +1093,7 @@ const storyView = (): Html =>
             [h.Class('mt-8 md:mt-14'), h.DataAttribute('reveal', 'up')],
             [
               h.p(
-                [h.Class('display max-w-4xl text-2xl leading-snug md:text-4xl')],
+                [h.Class('display max-w-4xl text-fluid-2xl-4xl leading-snug')],
                 [
                   "UEFA to make women's football Europe's most played and funded women's sport by 2030.",
                 ],
@@ -1125,7 +1125,7 @@ const storyView = (): Html =>
                   h.div([h.Class('mb-5 h-1 w-12 bg-ink')], []),
                   h.dt(
                     [
-                      h.Class('display text-7xl text-pink md:text-8xl'),
+                      h.Class('display text-fluid-7xl-8xl text-pink'),
                       h.DataAttribute('countup', ''),
                     ],
                     [stat.value],
@@ -1143,14 +1143,14 @@ const storyView = (): Html =>
           // straight into the faces that could deliver it.
           h.div(
             [h.Class('mt-16 md:mt-24')],
-            [maskedLine('Let’s put Czechia on top.', 'text-5xl text-pink md:text-8xl', 0)],
+            [maskedLine('Let’s put Czechia on top.', 'text-fluid-5xl-8xl text-pink', 0)],
           ),
           // One display step below the UEFA sentence — the pink climax line
           // above stays the loudest voice; the smaller size alone does the
           // demoting, the ink stays solid.
           h.p(
             [
-              h.Class('display mt-6 max-w-4xl text-xl leading-snug md:mt-8 md:text-3xl'),
+              h.Class('display mt-6 max-w-4xl text-fluid-xl-3xl leading-snug md:mt-8'),
               h.DataAttribute('reveal', 'up'),
               h.Style({ '--reveal-delay': '0.2s' }),
             ],
@@ -1272,13 +1272,13 @@ const competitionCard = (competition: Competition): Html =>
                   h.Target('_blank'),
                   h.Rel('noopener noreferrer'),
                   h.Class(
-                    'display inline-block bg-pink px-4 py-2 text-3xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-4xl',
+                    'display inline-block bg-pink px-4 py-2 text-fluid-3xl-4xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper',
                   ),
                 ]
               : [
                   h.Href(competitionRouter({ slug: competition.slug })),
                   h.Class(
-                    'display inline-block bg-pink px-4 py-2 text-3xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-4xl',
+                    'display inline-block bg-pink px-4 py-2 text-fluid-3xl-4xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper',
                   ),
                 ],
             [`${competition.label} →`],
@@ -1317,13 +1317,13 @@ const competitionsView = (): Html =>
           kicker('02', 'What we cover', true),
           h.div(
             [h.Class('mt-10 md:mt-16')],
-            [maskedLine('How she plays.', 'text-6xl md:text-9xl', 0)],
+            [maskedLine('How she plays.', 'text-fluid-6xl-9xl', 0)],
           ),
           // The framing line for the card grid: plenty of football is played
           // here already — full professionalization is the open finish line.
           h.p(
             [
-              h.Class('display mt-8 max-w-3xl text-xl leading-snug md:mt-12 md:text-3xl'),
+              h.Class('display mt-8 max-w-3xl text-fluid-xl-3xl leading-snug md:mt-12'),
               h.DataAttribute('reveal', 'up'),
             ],
             [
@@ -1478,13 +1478,13 @@ const championsView = (): Html =>
           kicker('04', 'Meet our champion', false),
           h.div(
             [h.Class('mt-10 md:mt-16')],
-            [maskedLine('Sparta Praha.', 'text-6xl md:text-9xl', 0)],
+            [maskedLine('Sparta Praha.', 'text-fluid-6xl-9xl', 0)],
           ),
           // Makes "champion" unambiguous: this is the REIGNING one, and the
           // season below is the case for it.
           h.p(
             [
-              h.Class('display mt-8 max-w-3xl text-xl leading-snug md:mt-12 md:text-3xl'),
+              h.Class('display mt-8 max-w-3xl text-fluid-xl-3xl leading-snug md:mt-12'),
               h.DataAttribute('reveal', 'up'),
             ],
             [
@@ -1548,7 +1548,7 @@ const championsView = (): Html =>
               // "…left no doubt:" (the strapline above) → "The receipts." —
               // the season year lives in the pink label so the strapline's
               // "2024/25" isn't parroted by the heading.
-              h.h3([h.Class('display text-4xl md:text-6xl')], ['The receipts.']),
+              h.h3([h.Class('display text-fluid-4xl-6xl')], ['The receipts.']),
               h.span(
                 [h.Class('display text-xl tracking-wide text-pink uppercase md:text-2xl')],
                 ['Season 2024/25'],
@@ -1571,7 +1571,7 @@ const championsView = (): Html =>
                   ),
                   h.p(
                     [
-                      h.Class('display mt-3 text-8xl leading-none text-pink md:text-9xl'),
+                      h.Class('display mt-3 text-fluid-8xl-9xl leading-none text-pink'),
                       h.DataAttribute('reveal', 'up'),
                     ],
                     ['7:0'],
@@ -1668,7 +1668,7 @@ const championsView = (): Html =>
                   ),
                   h.p(
                     [
-                      h.Class('display mt-3 text-5xl leading-none md:text-7xl'),
+                      h.Class('display mt-3 text-fluid-5xl-7xl leading-none'),
                       h.DataAttribute('reveal', 'up'),
                     ],
                     ['The road raiders.'],
@@ -1772,7 +1772,7 @@ const championsView = (): Html =>
                                         [h.Class('w-12 shrink-0 md:w-20')],
                                         [
                                           h.p(
-                                            [h.Class('display text-2xl text-pink md:text-4xl')],
+                                            [h.Class('display text-fluid-2xl-4xl text-pink')],
                                             [tie.awayLeg],
                                           ),
                                           h.p(
@@ -1876,7 +1876,7 @@ const championsView = (): Html =>
                                       ]),
                                 ],
                               ),
-                              h.p([h.Class('display text-3xl text-pink md:text-4xl')], [tie.score]),
+                              h.p([h.Class('display text-fluid-3xl-4xl text-pink')], [tie.score]),
                             ],
                           ),
                         ],
@@ -1929,7 +1929,7 @@ const championsView = (): Html =>
               h.DataAttribute('reveal', 'up'),
             ],
             [
-              h.h3([h.Class('display text-4xl md:text-6xl')], ['All time.']),
+              h.h3([h.Class('display text-fluid-4xl-6xl')], ['All time.']),
               h.span(
                 [h.Class('display text-xl tracking-wide text-pink uppercase md:text-2xl')],
                 ['The honors board'],
@@ -1956,20 +1956,20 @@ const championsView = (): Html =>
                         honor.count === null
                           ? [
                               h.dd(
-                                [h.Class('display text-2xl leading-none md:text-4xl')],
+                                [h.Class('display text-fluid-2xl-4xl leading-none')],
                                 [honor.label],
                               ),
                             ]
                           : [
                               h.dt(
                                 [
-                                  h.Class('display text-5xl leading-none text-pink md:text-7xl'),
+                                  h.Class('display text-fluid-5xl-7xl leading-none text-pink'),
                                   h.DataAttribute('countup', ''),
                                 ],
                                 [honor.count],
                               ),
                               h.dd(
-                                [h.Class('display text-2xl leading-none md:text-4xl')],
+                                [h.Class('display text-fluid-2xl-4xl leading-none')],
                                 [
                                   honor.label,
                                   ...(honor.first
@@ -2091,7 +2091,7 @@ const starView = (): Html =>
           kicker('05', 'Stargirl in the making', true),
           h.div(
             [h.Class('mt-10 md:mt-16')],
-            [maskedLine('Our queen.', 'text-6xl text-pink md:text-9xl', 0)],
+            [maskedLine('Our queen.', 'text-fluid-6xl-9xl text-pink', 0)],
           ),
           // She's the section — so she shows up immediately: the portrait
           // is FIRST in the DOM (right under the headline on phones) and
@@ -2112,7 +2112,7 @@ const starView = (): Html =>
                   h.span(
                     [
                       h.Class(
-                        'display pointer-events-none absolute -top-4 right-0 leading-none text-paper/5 select-none text-[13rem] sm:text-[17rem] md:-top-8 md:text-[24rem]',
+                        'display pointer-events-none absolute -top-4 right-0 leading-none text-paper/5 select-none text-fluid-watermark md:-top-8',
                       ),
                       h.AriaHidden(true),
                     ],
@@ -2136,7 +2136,7 @@ const starView = (): Html =>
                 [
                   h.h3(
                     [
-                      h.Class('display text-4xl text-paper md:text-6xl'),
+                      h.Class('display text-fluid-4xl-6xl text-paper'),
                       h.DataAttribute('reveal', 'up'),
                     ],
                     ['Denisa Rancová'],
@@ -2179,7 +2179,7 @@ const starView = (): Html =>
                         [
                           h.dt(
                             [
-                              h.Class('display text-5xl text-pink md:text-7xl'),
+                              h.Class('display text-fluid-5xl-7xl text-pink'),
                               h.DataAttribute('countup', ''),
                             ],
                             [stat.value],
@@ -2763,14 +2763,14 @@ const clubsView = (model: Model): Html =>
           kicker('03', 'The map', true),
           h.div(
             [h.Class('mt-10 md:mt-16')],
-            [maskedLine('Where she plays.', 'text-6xl md:text-9xl', 0)],
+            [maskedLine('Where she plays.', 'text-fluid-6xl-9xl', 0)],
           ),
           // The framing line — about the country, not the map (the map
           // speaks for itself). The area carries a dotted underline and
           // reveals the imperial conversion on hover/tap.
           h.p(
             [
-              h.Class('display mt-8 max-w-3xl text-xl leading-snug md:mt-12 md:text-3xl'),
+              h.Class('display mt-8 max-w-3xl text-fluid-xl-3xl leading-snug md:mt-12'),
               h.DataAttribute('reveal', 'up'),
             ],
             [
@@ -2871,7 +2871,7 @@ const clubsView = (model: Model): Html =>
                       h.dt(
                         [
                           h.Class(
-                            `display text-6xl transition-colors duration-300 md:text-7xl ${
+                            `display text-fluid-6xl-7xl transition-colors duration-300 ${
                               checked ? 'text-pink' : 'text-paper/25'
                             }`,
                           ),
@@ -3042,7 +3042,7 @@ const statementView = (): Html =>
           h.div(
             [h.Class('relative inline-block')],
             [
-              maskedLine('She doesn’t play like men...', 'text-5xl md:text-8xl', 0),
+              maskedLine('She doesn’t play like men...', 'text-fluid-5xl-8xl', 0),
               // The take gets STRUCK THROUGH once it's been read — the
               // strike draws left-to-right when the line reaches
               // mid-viewport (`data-reveal-late`: scroll-gated, so the
@@ -3069,7 +3069,7 @@ const statementView = (): Html =>
               h.span(
                 [
                   h.Class(
-                    'display inline-block bg-pink px-5 py-3 text-3xl whitespace-nowrap text-ink md:px-8 md:py-4 md:text-6xl',
+                    'display inline-block bg-pink px-5 py-3 text-fluid-3xl-6xl whitespace-nowrap text-ink md:px-8 md:py-4',
                   ),
                   h.DataAttribute('reveal', 'left'),
                   h.DataAttribute('reveal-late', ''),
@@ -3081,7 +3081,7 @@ const statementView = (): Html =>
           ),
           h.p(
             [
-              h.Class('display mt-14 text-2xl text-pink md:mt-20 md:text-4xl'),
+              h.Class('display mt-14 text-fluid-2xl-4xl text-pink md:mt-20'),
               h.DataAttribute('reveal', 'up'),
               // Also scroll-gated, so the punchlines can't beat the stamp
               // to the screen — they sit lower, so they cross the trigger
@@ -3104,8 +3104,8 @@ const statementView = (): Html =>
           h.div(
             [h.Class('mt-20 md:mt-28')],
             [
-              maskedLine('Whole new sport is being born.', 'text-3xl md:text-6xl', 0),
-              maskedLine('Watch it rise to the top.', 'text-3xl text-pink md:text-6xl', 0.2),
+              maskedLine('Whole new sport is being born.', 'text-fluid-3xl-6xl', 0),
+              maskedLine('Watch it rise to the top.', 'text-fluid-3xl-6xl text-pink', 0.2),
             ],
           ),
         ],
@@ -3160,8 +3160,8 @@ const nationalTeamView = (): Html =>
           h.div(
             [h.Class('mt-10 md:mt-16')],
             [
-              maskedLine('Not your ordinary', 'text-6xl md:text-9xl', 0),
-              maskedLine('Lionesses.', 'text-6xl text-paper md:text-9xl', 0.12),
+              maskedLine('Not your ordinary', 'text-fluid-6xl-9xl', 0),
+              maskedLine('Lionesses.', 'text-fluid-6xl-9xl text-paper', 0.12),
             ],
           ),
           h.div(
@@ -3191,7 +3191,7 @@ const nationalTeamView = (): Html =>
                         [
                           h.dt(
                             [
-                              h.Class('display w-28 text-6xl md:text-7xl'),
+                              h.Class('display w-28 text-fluid-6xl-7xl'),
                               h.DataAttribute('countup', ''),
                             ],
                             [stat.value],
@@ -3208,7 +3208,7 @@ const nationalTeamView = (): Html =>
                   // below.
                   h.p(
                     [
-                      h.Class('display mt-8 text-2xl leading-snug md:text-3xl'),
+                      h.Class('display mt-8 text-fluid-2xl-3xl leading-snug'),
                       h.DataAttribute('reveal', 'up'),
                       h.Style({ '--reveal-delay': '0.3s' }),
                     ],
@@ -3262,7 +3262,7 @@ const nationalTeamView = (): Html =>
               h.DataAttribute('reveal', 'up'),
             ],
             [
-              h.h3([h.Class('display text-4xl md:text-6xl')], ['The road to Brazil 2027.']),
+              h.h3([h.Class('display text-fluid-4xl-6xl')], ['The road to Brazil 2027.']),
               h.span(
                 [h.Class('display text-xl tracking-wide text-paper uppercase md:text-2xl')],
                 ['World Cup qualifying — play-offs'],
@@ -3289,7 +3289,7 @@ const nationalTeamView = (): Html =>
                 ],
                 [
                   h.p([h.Class('text-[11px] tracking-[0.2em] text-pink uppercase')], [tie.label]),
-                  h.p([h.Class('display mt-3 text-3xl md:text-4xl')], [tie.matchup]),
+                  h.p([h.Class('display mt-3 text-fluid-3xl-4xl')], [tie.matchup]),
                   h.p([h.Class('mt-4 text-sm leading-relaxed text-paper/70')], [tie.note]),
                 ],
               ),
@@ -3310,7 +3310,7 @@ const followView = (): Html =>
           kicker('07', 'Week-in-week-out', true),
           h.div(
             [h.Class('mt-10 md:mt-16')],
-            [maskedLine('Follow the game.', 'text-5xl md:text-9xl', 0)],
+            [maskedLine('Follow the game.', 'text-fluid-5xl-9xl', 0)],
           ),
           h.ul(
             [h.Class('mt-14 border-t border-paper/20 md:mt-24')],
@@ -3335,7 +3335,7 @@ const followView = (): Html =>
                       h.span(
                         [
                           h.Class(
-                            'display text-4xl text-paper transition-colors group-hover:text-ink md:text-6xl',
+                            'display text-fluid-4xl-6xl text-paper transition-colors group-hover:text-ink',
                           ),
                         ],
                         [channel.name],
@@ -3488,7 +3488,7 @@ const blockLabel = (label: string, dark: boolean): Html =>
       h.span(
         [
           h.Class(
-            `display inline-block px-4 py-2 text-xl tracking-[0.2em] md:px-5 md:py-3 md:text-3xl ${
+            `display inline-block px-4 py-2 text-fluid-xl-3xl tracking-[0.2em] md:px-5 md:py-3 ${
               dark ? 'bg-pink text-ink' : 'bg-ink text-pink'
             }`,
           ),
@@ -3516,7 +3516,7 @@ const clubHeroView = (club: Club): Html => {
             h.Class('mx-auto h-28 w-auto md:h-40'),
             h.DataAttribute('reveal', 'zoom'),
           ]),
-          h.div([h.Class('mt-8')], [maskedLine(club.name, 'text-5xl md:text-8xl', 0.1)]),
+          h.div([h.Class('mt-8')], [maskedLine(club.name, 'text-fluid-5xl-8xl', 0.1)]),
           h.div(
             [h.Class('mt-6 flex flex-wrap justify-center gap-3')],
             honors.length > 0
@@ -3577,8 +3577,8 @@ const leagueTable = (rows: ReadonlyArray<StandingsRow>, highlightTeam: string | 
           h.Style({ '--reveal-delay': `${index * 0.06}s` }),
         ],
         [
-          h.span([h.Class('display w-8 text-2xl md:text-3xl')], [`${index + 1}`]),
-          h.span([h.Class('display flex-1 text-2xl md:text-4xl')], [row.team]),
+          h.span([h.Class('display w-8 text-fluid-2xl-3xl')], [`${index + 1}`]),
+          h.span([h.Class('display flex-1 text-fluid-2xl-4xl')], [row.team]),
           h.span(
             [
               h.Class(
@@ -3589,7 +3589,7 @@ const leagueTable = (rows: ReadonlyArray<StandingsRow>, highlightTeam: string | 
             ],
             [`${row.played} played`],
           ),
-          h.span([h.Class('display w-14 text-right text-2xl md:text-4xl')], [`${row.points}`]),
+          h.span([h.Class('display w-14 text-right text-fluid-2xl-4xl')], [`${row.points}`]),
         ],
       ),
     ),
@@ -3617,7 +3617,7 @@ const cupRunView = (): Html =>
                   h.Style({ '--reveal-delay': `${index * 0.1}s` }),
                 ],
                 [
-                  h.span([h.Class('display text-2xl md:text-4xl')], [tie.round]),
+                  h.span([h.Class('display text-fluid-2xl-4xl')], [tie.round]),
                   h.span(
                     [
                       h.Class(
@@ -3676,11 +3676,11 @@ const topScorerView = (club: Club, model: Model): Html => {
           h.div(
             [h.Class('mt-10 flex flex-wrap items-baseline gap-x-8 gap-y-4 md:mt-14')],
             [
-              h.span([h.Class('display text-7xl text-pink md:text-9xl')], [`${scorer.goals}`]),
+              h.span([h.Class('display text-fluid-7xl-9xl text-pink')], [`${scorer.goals}`]),
               h.div(
                 [],
                 [
-                  h.span([h.Class('display block text-3xl md:text-5xl')], [scorer.name]),
+                  h.span([h.Class('display block text-fluid-3xl-5xl')], [scorer.name]),
                   h.span(
                     [h.Class('mt-1 block text-xs tracking-[0.2em] uppercase text-paper/50')],
                     [model.scorerScope === 'current' ? 'Goals this season' : 'Goals all time'],
@@ -3743,7 +3743,7 @@ const competitionHeroView = (competition: Competition): Html =>
             h.Class('mx-auto h-28 w-auto md:h-40'),
             h.DataAttribute('reveal', 'zoom'),
           ]),
-          h.div([h.Class('mt-8')], [maskedLine(competition.label, 'text-5xl md:text-8xl', 0.1)]),
+          h.div([h.Class('mt-8')], [maskedLine(competition.label, 'text-fluid-5xl-8xl', 0.1)]),
           h.div(
             [h.Class('mt-6 flex justify-center')],
             [
@@ -3791,7 +3791,7 @@ const competitionStandingsView = (competition: Competition): Html =>
                       h.Style({ '--reveal-delay': `${index * 0.1}s` }),
                     ],
                     [
-                      h.span([h.Class('display text-2xl md:text-4xl')], [tie.primary]),
+                      h.span([h.Class('display text-fluid-2xl-4xl')], [tie.primary]),
                       h.span(
                         [h.Class('text-xs tracking-[0.2em] uppercase text-pink md:text-sm')],
                         [tie.secondary],
@@ -3823,7 +3823,7 @@ const competitionFormatView = (competition: Competition): Html =>
                   h.Style({ '--reveal-delay': `${index * 0.12}s` }),
                 ],
                 [
-                  h.span([h.Class('display text-4xl text-pink md:text-6xl')], [`0${index + 1}`]),
+                  h.span([h.Class('display text-fluid-4xl-6xl text-pink')], [`0${index + 1}`]),
                   h.p([h.Class('text-lg leading-relaxed md:text-2xl')], [rule]),
                 ],
               ),
@@ -3853,7 +3853,7 @@ const competitionHistoryView = (competition: Competition): Html =>
                 [
                   h.dt(
                     [
-                      h.Class('display text-7xl text-pink md:text-8xl'),
+                      h.Class('display text-fluid-7xl-8xl text-pink'),
                       h.DataAttribute('countup', ''),
                     ],
                     [stat.value],
