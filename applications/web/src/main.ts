@@ -744,7 +744,21 @@ const headerView = (model: Model): Html =>
                 'display text-xl tracking-wide text-paper transition-colors duration-300 hover:text-pink md:text-2xl',
               ),
             ],
-            ['Skóreová', h.span([h.Class('text-pink')], ['.'])],
+            [
+              'Skóreová',
+              h.span([h.Class('text-pink')], ['.']),
+              // The stage stamp — same pink-chip language as the AWAY chips.
+              // Body font (the anchor carries display Anton) and explicit ink
+              // so the anchor's pink hover can't touch it.
+              h.span(
+                [
+                  h.Class(
+                    'font-body ml-2.5 inline-block bg-pink px-1.5 py-0.5 align-middle text-[9px] tracking-[0.2em] text-ink uppercase select-none md:ml-3 md:text-[10px]',
+                  ),
+                ],
+                ['Alpha'],
+              ),
+            ],
           ),
           h.div(
             [h.Class('flex items-center gap-6 md:gap-8')],
