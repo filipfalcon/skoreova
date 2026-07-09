@@ -449,7 +449,7 @@ const competitions: ReadonlyArray<Competition> = [
     label: 'Second League',
     image: secondLeagueImage,
     badge: secondLeagueBadge,
-    alt: 'Two second-league players duelling for the ball on an autumn pitch',
+    alt: 'Two second-league players dueling for the ball on an autumn pitch',
     copy: 'A world away from the top flight, and Sparta’s B side’s stomping ground — yet it keeps sending players up who stick.',
     tagline: 'The second tier — the road up',
     format: [
@@ -1642,7 +1642,7 @@ const championsView = (): Html =>
                       h.DataAttribute('reveal', 'up'),
                     ],
                     [
-                      'Seven unanswered goals — four times in one season, twice of those in somebody else’s stadium.',
+                      'Seven unanswered goals — four times in one season, two of them in somebody else’s stadium.',
                     ],
                   ),
                   h.ul(
@@ -3317,7 +3317,7 @@ const statementView = (): Html =>
           h.div(
             [h.Class('mt-20 md:mt-28')],
             [
-              maskedLine('Whole new sport is being born.', 'text-fluid-3xl-6xl', 0),
+              maskedLine('A whole new sport is being born.', 'text-fluid-3xl-6xl', 0),
               maskedLine('Watch it rise to the top.', 'text-fluid-3xl-6xl text-pink', 0.2),
             ],
           ),
@@ -3482,7 +3482,7 @@ const nationalTeamView = (): Html =>
               h.h3([h.Class('display text-fluid-4xl-6xl')], ['The road to Brazil 2027.']),
               h.span(
                 [h.Class('display text-xl tracking-wide text-paper uppercase md:text-2xl')],
-                ['World Cup qualifying — play-offs'],
+                ['World Cup qualifying — playoffs'],
               ),
             ],
           ),
@@ -3492,7 +3492,7 @@ const nationalTeamView = (): Html =>
               h.DataAttribute('reveal', 'up'),
             ],
             [
-              'The group stage is done — the lionesses went through Group B1 as runners-up. What remains is knockout football: two two-legged ties between Czechia and its first World Cup.',
+              'The group stage is done — the Lionesses went through Group B1 as runners-up. What remains is knockout football: two two-legged ties between Czechia and its first World Cup.',
             ],
           ),
           h.div(
@@ -3657,8 +3657,8 @@ interface CupTie {
 }
 
 const cupRun: ReadonlyArray<CupTie> = [
-  { round: 'Round of 16', result: 'Won 3–0', upcoming: false },
-  { round: 'Quarterfinal', result: 'Won 2–1', upcoming: false },
+  { round: 'Round of 16', result: 'Won 3:0', upcoming: false },
+  { round: 'Quarterfinal', result: 'Won 2:1', upcoming: false },
   { round: 'Semifinal', result: 'Coming up', upcoming: true },
 ];
 
