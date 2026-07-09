@@ -571,12 +571,6 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
     };
   }
 
-  // ----- Pointer state -----------------------------------------------------
-
-  let mouseX = window.innerWidth / 2;
-  let mouseY = window.innerHeight / 2;
-  let mouseSeen = false;
-
   // ----- Parallax ------------------------------------------------------------
 
   const parallaxLayers: ReadonlyArray<ParallaxLayer> = Array.from(
@@ -601,79 +595,6 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
   const scrubAlignLayers: ReadonlyArray<HTMLElement> = Array.from(
     root.querySelectorAll<HTMLElement>('[data-scrub-align]'),
   );
-
-  // ----- Hero tilt -----------------------------------------------------------
-  // The hero photo's parallax layer leans very slightly with the input —
-  // capped around a degree and lazily lerped, so it reads as depth, not
-  // movement. Composed into the layer's parallax transform each frame (below);
-  // the photo's 1.5% resting overscale covers the perspective edge shift.
-  // Two sources feed the same target: the pointer on desktop, the gyroscope
-  // on touch devices.
-
-  const heroTiltLayer = root.querySelector<HTMLElement>('#top [data-parallax]');
-  const HERO_TILT_MAX_DEGREES = 0.7;
-  let heroTiltX = 0;
-  let heroTiltY = 0;
-  let heroTiltTargetX = 0;
-  let heroTiltTargetY = 0;
-
-  if (heroTiltLayer && !finePointer && 'DeviceOrientationEvent' in window) {
-    // Gyroscope tilt: deltas from a slowly-following baseline, so the effect
-    // tracks how the phone MOVES from its natural hold angle (whatever that
-    // is) and recenters itself when the hand comes to rest again.
-    const GYRO_TILT_MAX_DEGREES = 1.2;
-    const GYRO_RANGE_DEGREES = 18; // physical tilt that maps to the full effect
-    let baseBeta: number | null = null;
-    let baseGamma: number | null = null;
-
-    const onOrientation = (event: DeviceOrientationEvent): void => {
-      const { beta, gamma } = event;
-      if (beta === null || gamma === null) return;
-      if (baseBeta === null || baseGamma === null) {
-        baseBeta = beta;
-        baseGamma = gamma;
-        return;
-      }
-      baseBeta = lerp(baseBeta, beta, 0.02);
-      baseGamma = lerp(baseGamma, gamma, 0.02);
-      const clamp = (value: number): number =>
-        Math.max(-GYRO_RANGE_DEGREES, Math.min(GYRO_RANGE_DEGREES, value));
-      heroTiltTargetX = -(clamp(beta - baseBeta) / GYRO_RANGE_DEGREES) * GYRO_TILT_MAX_DEGREES;
-      heroTiltTargetY = (clamp(gamma - baseGamma) / GYRO_RANGE_DEGREES) * GYRO_TILT_MAX_DEGREES;
-    };
-
-    const attachGyro = (): void => {
-      window.addEventListener('deviceorientation', onOrientation, { passive: true });
-      cleanups.push(() => window.removeEventListener('deviceorientation', onOrientation));
-    };
-
-    // iOS 13+ gates the API behind a permission prompt that can only be
-    // requested from a user gesture. A landing page must not greet visitors
-    // with a system dialog, so the request rides ONLY on a tap inside the
-    // hero itself — anyone tapping elsewhere never sees it. Elsewhere
-    // (Android, desktop touch) the events just flow, no request needed.
-    const withPermission = DeviceOrientationEvent as unknown as {
-      requestPermission?: () => Promise<string>;
-    };
-    const hero = root.querySelector<HTMLElement>('#top');
-    if (typeof withPermission.requestPermission === 'function') {
-      if (hero) {
-        const requestOnGesture = (): void => {
-          hero.removeEventListener('touchend', requestOnGesture);
-          withPermission
-            .requestPermission?.()
-            .then((state) => {
-              if (state === 'granted') attachGyro();
-            })
-            .catch(() => {});
-        };
-        hero.addEventListener('touchend', requestOnGesture, { passive: true });
-        cleanups.push(() => hero.removeEventListener('touchend', requestOnGesture));
-      }
-    } else {
-      attachGyro();
-    }
-  }
 
   // ----- Scroll-velocity-reactive marquees ---------------------------------
 
@@ -721,18 +642,6 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
         return tilt;
       })
     : [];
-
-  // ----- Shared listeners ----------------------------------------------------
-
-  if (finePointer) {
-    const onMouseMove = (event: MouseEvent): void => {
-      mouseX = event.clientX;
-      mouseY = event.clientY;
-      mouseSeen = true;
-    };
-    window.addEventListener('mousemove', onMouseMove, { passive: true });
-    cleanups.push(() => window.removeEventListener('mousemove', onMouseMove));
-  }
 
   // ----- Smooth wheel scrolling ----------------------------------------------
   // Wheel input feeds a target that the rAF loop eases toward (Lenis-style
@@ -826,23 +735,7 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       const rect = layer.host.getBoundingClientRect();
       const centerDelta = rect.top + rect.height / 2 - viewportCenterY;
       const scrollOffset = -centerDelta * layer.speed;
-      if (layer.element === heroTiltLayer) {
-        // On desktop the pointer sets the target each frame; on touch the
-        // gyro handler above writes it directly.
-        if (finePointer) {
-          heroTiltTargetY = mouseSeen
-            ? ((mouseX / window.innerWidth) * 2 - 1) * HERO_TILT_MAX_DEGREES
-            : 0;
-          heroTiltTargetX = mouseSeen
-            ? -((mouseY / window.innerHeight) * 2 - 1) * HERO_TILT_MAX_DEGREES
-            : 0;
-        }
-        heroTiltY = lerp(heroTiltY, heroTiltTargetY, 0.06);
-        heroTiltX = lerp(heroTiltX, heroTiltTargetX, 0.06);
-        layer.element.style.transform = `perspective(1200px) translate3d(0, ${scrollOffset.toFixed(1)}px, 0) rotateX(${heroTiltX.toFixed(3)}deg) rotateY(${heroTiltY.toFixed(3)}deg)`;
-      } else {
-        layer.element.style.transform = `translate3d(0, ${scrollOffset.toFixed(1)}px, 0)`;
-      }
+      layer.element.style.transform = `translate3d(0, ${scrollOffset.toFixed(1)}px, 0)`;
     }
 
     for (const layer of scrubAlignLayers) {

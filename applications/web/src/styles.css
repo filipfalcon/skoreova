@@ -403,8 +403,7 @@ body {
     transform: scale(1.08);
   }
   /* Lands at the drift's starting scale (not 1) so the handoff between the
-     two chained animations is seamless. The 1.5% rest bleed also keeps the
-     pointer tilt's perspective from ever exposing the photo's side edges. */
+     two chained animations is seamless. */
   to {
     transform: scale(1.015);
   }
