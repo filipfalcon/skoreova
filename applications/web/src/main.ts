@@ -157,7 +157,13 @@ export type Message = typeof Message.Type;
 const animateScrollTo = (target: HTMLElement): void => {
   const startY = window.scrollY;
   const rect = target.getBoundingClientRect();
-  const targetY = Math.max(0, rect.top + startY);
+  // Respect the CSS scroll-margin-top (styles.css sets it to the fixed
+  // header's height on anchored sections) — without it the section's top
+  // lands UNDER the header and its first rows arrive decapitated. Native
+  // fragment jumps honor the property on their own; this animation has to
+  // read it explicitly.
+  const scrollMargin = Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+  const targetY = Math.max(0, rect.top + startY - scrollMargin);
   const viewport = window.innerHeight;
   const distance = targetY - startY;
   const insideSection =
