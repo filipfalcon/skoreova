@@ -1195,12 +1195,33 @@ const marqueeView = (): Html =>
     ],
   );
 
-// UEFA's Unstoppable strategy targets for 2030 — real numbers, see the
-// source link in the section.
-const unstoppableTargets: ReadonlyArray<Stat> = [
-  { value: '6', label: 'Professional leagues in Europe' },
-  { value: '5000+', label: 'Professional players in Europe' },
-  { value: '14', label: 'UEFA Championships hosted' },
+// Receipts for the "unstoppable" claim, one per axis: money (the
+// Unstoppable strategy commits €1bn of competition revenues and UEFA
+// investment over 2024–30), attention (Women's EURO 2025 total attendance),
+// and one concrete goosebump moment (Camp Nou, Barcelona–Wolfsburg, UWCL
+// semifinal 2022 — the women's football attendance world record).
+const unstoppableProof: ReadonlyArray<Stat> = [
+  {
+    // "B", not "BN" — American English abbreviates billion as $1B/€1B;
+    // "bn" is the British-press convention.
+    value: '€1B',
+    label: 'UEFA investment through 2030',
+    countup: false,
+    source:
+      'https://uefa.com/news-media/news/0292-1c36af487b82-bf311b3a1522-1000--unstoppable-new-uefa-strategy-focused-on-the-future-of-t/',
+  },
+  {
+    value: '657,291',
+    label: 'EURO 2025 total attendance',
+    source:
+      'https://uefa.com/womenseuro/news/0276-15748cb0ba74-f342af5f57b8-1000--biggest-women-s-euro-crowds-and-uefa-women-s-competition-c/',
+  },
+  {
+    value: '91,648',
+    label: 'World-record women’s football crowd',
+    source:
+      'https://uefa.com/womenseuro/news/0276-15748cb0ba74-f342af5f57b8-1000--biggest-women-s-euro-crowds-and-uefa-women-s-competition-c/',
+  },
 ];
 
 // The youth strip in Why care — the generation the UEFA strategy is about.
@@ -1315,8 +1336,16 @@ const storyView = (): Html =>
           // Each stat carries its own short ink tick instead of one heavy
           // full-width rule — lighter, and the ticks column-align the grid.
           h.dl(
-            [h.Class('mt-14 grid gap-10 md:mt-20 md:grid-cols-3')],
-            unstoppableTargets.map((stat, index) =>
+            [
+              // Content-sized columns spread with space-between, NOT three
+              // equal tracks: the values differ a lot in width ("€1B" vs
+              // "657,291"), and equal tracks left the visual gutters
+              // between them wildly uneven.
+              h.Class(
+                'mt-14 grid gap-10 md:mt-20 md:grid-cols-[auto_auto_auto] md:justify-between',
+              ),
+            ],
+            unstoppableProof.map((stat, index) =>
               h.div(
                 [
                   h.DataAttribute('reveal', 'up'),
@@ -1334,10 +1363,29 @@ const storyView = (): Html =>
                   h.dd(
                     [
                       h.Class(
-                        'mt-3 max-w-52 text-xs leading-relaxed tracking-[0.2em] uppercase md:text-sm',
+                        // max-w-64, not 52: the longest label ("World-record
+                        // women's football crowd") must break at TWO lines.
+                        'mt-3 max-w-64 text-xs leading-relaxed tracking-[0.2em] uppercase md:text-sm',
                       ),
                     ],
-                    [stat.label],
+                    [
+                      stat.label,
+                      ...(stat.source === undefined
+                        ? []
+                        : [
+                            h.a(
+                              [
+                                h.Href(stat.source),
+                                h.Target('_blank'),
+                                h.Rel('noopener noreferrer'),
+                                h.Class(
+                                  'mt-2 block w-fit text-[10px] tracking-[0.2em] text-ink/50 uppercase transition-colors duration-300 hover:text-pink',
+                                ),
+                              ],
+                              ['uefa.com ↗︎'],
+                            ),
+                          ]),
+                    ],
                   ),
                 ],
               ),
@@ -3480,6 +3528,12 @@ const statementView = (): Html =>
 interface Stat {
   readonly value: string;
   readonly label: string;
+  // Set false on values whose leading figure is a single digit ("€1BN") —
+  // a 0→1 count-up would display the wrong number for most of its run.
+  readonly countup?: boolean;
+  // A receipt for the figure — rendered as a quiet "uefa.com ↗" under the
+  // label so every claim is one click from its evidence.
+  readonly source?: string;
 }
 
 // National team pedigree — REAL data: one Nations League season among the
