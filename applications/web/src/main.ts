@@ -643,9 +643,9 @@ const marqueeItems: ReadonlyArray<string> = [
   'Domestic Cup',
   'Champions League',
   'Europa Cup',
-  'Nations League',
-  'EURO',
   'World Cup',
+  'EURO',
+  'Nations League',
   'Finalissima',
 ];
 
