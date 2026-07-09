@@ -1256,7 +1256,7 @@ const storyView = (): Html =>
             // the viewport's — on wide screens a viewport anchor left a dead
             // band between the copy's measure and her (80rem = the container's
             // max-w-7xl, 2.5rem = its px-10).
-            'pointer-events-none absolute top-8 right-4 z-0 w-28 select-none sm:w-40 md:top-6 md:right-10 md:w-[28%] md:max-w-[360px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
+            'pointer-events-none absolute top-8 right-4 z-0 w-28 select-none sm:w-40 md:top-12 md:right-10 md:w-[28%] md:max-w-[360px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
           ),
           h.DataAttribute('reveal', 'right'),
           h.Style({ '--reveal-delay': '0.1s' }),
@@ -1294,7 +1294,9 @@ const storyView = (): Html =>
               h.p(
                 [h.Class('display max-w-4xl text-fluid-2xl-4xl leading-snug')],
                 [
-                  'UEFA to make women’s football Europe’s most played and funded women’s sport by 2030.',
+                  // "For women and girls" is UEFA's own Unstoppable-strategy
+                  // vocabulary — it also dodges doubling "women's" in one line.
+                  'UEFA to make women’s football Europe’s most played and funded sport for women and girls by 2030.',
                 ],
               ),
               h.a(
