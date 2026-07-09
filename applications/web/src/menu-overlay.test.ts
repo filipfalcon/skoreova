@@ -117,3 +117,40 @@ test('Escape does nothing while the menu is closed', async () => {
   expect(overlayIsOpen()).toBe(false);
   expect(overlayVisibility()).toBe('hidden');
 });
+
+// The overlay marks the section the viewport sat in when it opened: the
+// matching anchor carries aria-current and the brand full stop. At the top
+// of the page (the hero) nothing is marked.
+
+test('the open overlay marks the section the viewport is in', async () => {
+  // An earlier test navigated to /#competitions — park back at the hero.
+  window.scrollTo({ top: 0, behavior: 'instant' });
+
+  await page.getByRole('button', { name: 'Open menu' }).click();
+  await expect.poll(overlayVisibility).toBe('visible');
+  // At the hero there is no section to mark.
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  expect(overlay().querySelector('a[aria-current="location"]')).toBeNull();
+
+  await page.getByRole('button', { name: 'Close menu' }).click();
+  await expect.poll(overlayVisibility, { timeout: 2000 }).toBe('hidden');
+  // Wait out the scroll-lock release before scrolling, or its restore
+  // (scrollTo the locked position) would undo the jump below.
+  await waitUntil(() => document.body.style.position !== 'fixed');
+
+  const clubs = document.getElementById('clubs');
+  if (!clubs) throw new Error('clubs section not rendered');
+  window.scrollTo({
+    top: clubs.getBoundingClientRect().top + window.scrollY + 10,
+    behavior: 'instant',
+  });
+
+  await page.getByRole('button', { name: 'Open menu' }).click();
+  await expect.poll(overlayVisibility).toBe('visible');
+  await expect
+    .poll(() => overlay().querySelector('a[aria-current="location"]')?.textContent)
+    .toBe('Clubs.');
+
+  await page.getByRole('button', { name: 'Close menu' }).click();
+  await expect.poll(overlayVisibility, { timeout: 2000 }).toBe('hidden');
+});

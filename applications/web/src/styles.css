@@ -636,6 +636,13 @@ body {
   transform: translateX(0.14em);
 }
 
+/* The menu's arrow knocks only while the overlay is up; its delay waits
+   out the item's stagger fade-in (0.25s delay + 0.5s fade), so the first
+   knock lands right as the row finishes arriving. */
+.menu-overlay.is-open .menu-platform svg {
+  animation: platform-beckon 2s ease-in-out 0.7s infinite;
+}
+
 /* The hero's arrow starts once its own fade-in has landed (--hero-delay
    1.3s + the fade). */
 .hero-cta svg {
@@ -666,6 +673,41 @@ body {
 .header-cta.is-visible svg {
   animation: platform-beckon-rested 4.4s ease-in-out 1s infinite;
 }
+
+/* Every menu anchor — Platform included — hovers with the social rows'
+   language: a pink underlay slides up and the type flips to ink. At rest
+   the menu's pink belongs to Platform alone (the main event); on hover the
+   pink bar means "you are pointing here", the same statement on every row.
+   Hover-gated like .social-row (touch browsers keep :hover after a tap —
+   a row would come back from the link stuck pink). */
+.menu-anchor {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.menu-anchor::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--color-pink);
+  transform: translateY(101%);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) {
+  .menu-anchor:hover::before {
+    transform: translateY(0);
+  }
+
+  /* The span is the active-section dot — pink on pink would vanish. */
+  .menu-anchor:hover,
+  .menu-anchor:hover span {
+    color: var(--color-ink);
+  }
+}
+
 /* Social rows: sliding pink underlay on hover. */
 .social-row {
   position: relative;
