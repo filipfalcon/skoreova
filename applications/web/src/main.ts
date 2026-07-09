@@ -1151,7 +1151,7 @@ const heroView = (): Html =>
                 [
                   h.Href(platformUrl),
                   h.Class(
-                    'hero-cta platform-beckon display bg-pink px-10 py-4 text-2xl tracking-[0.08em] text-ink transition-colors duration-300 active:bg-paper md:px-9 md:py-3.5 md:text-xl md:hover:bg-paper',
+                    'hero-cta platform-beckon display bg-pink px-10 py-4 text-2xl tracking-[0.08em] text-ink transition-colors duration-300 active:bg-paper md:px-9 md:hover:bg-paper',
                   ),
                 ],
                 // The same drawn arrow as the menu's Platform entry — the
