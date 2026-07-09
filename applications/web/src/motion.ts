@@ -11,6 +11,8 @@ import { m } from 'foldkit/message';
 // Subsystems (each marked by a data attribute in the view):
 // - [data-reveal]        in/out reveal classes, replaying on every re-entry
 // - [data-countup]       numbers count up from 0 when their reveal enters
+// - [data-scramble]      slot-machine roll for values a count-up can't
+//                        serve ("€1B") — see the Scrambles section
 // - [data-parallax]      scroll-lagged layers (speed = fraction of scroll)
 // - [data-scrub-align]   scroll-scrubbed cancel of the element's own top
 //                        margin — staggered until its parent reaches the
@@ -212,6 +214,89 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
 
   cleanups.push(() => {
     for (const countUp of countUps.values()) cancelCountUp(countUp);
+  });
+
+  // ----- Scrambles -----------------------------------------------------------
+  // [data-scramble] — the calculating feel for display values a count-up
+  // can't serve (single-significant-digit figures like "€1B"): every
+  // character rolls through a pool of its own KIND — currency signs,
+  // digits 1–9, magnitude letters — and the text locks left to right onto
+  // the real value, slot-machine style.
+
+  interface Scramble {
+    readonly element: HTMLElement;
+    readonly final: string;
+    timeout: number;
+    interval: number;
+  }
+
+  const SCRAMBLE_MILLISECONDS = COUNT_UP_MILLISECONDS; // one shared tempo
+  const SCRAMBLE_TICK_MS = 60;
+  // Pool per character position. Currency signs are limited to glyphs Anton
+  // actually carries — an exotic sign would fall back to Arial Narrow
+  // mid-roll and visibly jump in width.
+  const SCRAMBLE_POOLS: ReadonlyArray<string> = ['$£¥¢€', '123456789', 'KMBT'];
+
+  const scrambles = new Map<HTMLElement, Scramble>();
+  for (const element of root.querySelectorAll<HTMLElement>('[data-scramble]')) {
+    scrambles.set(element, {
+      element,
+      final: element.textContent ?? '',
+      timeout: 0,
+      interval: 0,
+    });
+  }
+
+  const renderScramble = (scramble: Scramble, text: string): void => {
+    // Mutate the existing text node — the same Foldkit-patcher constraint
+    // as renderCount above.
+    const node = scramble.element.firstChild;
+    if (node !== null && node.nodeType === Node.TEXT_NODE) {
+      node.nodeValue = text;
+    } else {
+      scramble.element.textContent = text;
+    }
+  };
+
+  const stopScramble = (scramble: Scramble): void => {
+    window.clearTimeout(scramble.timeout);
+    window.clearInterval(scramble.interval);
+    renderScramble(scramble, scramble.final);
+  };
+
+  const startScramble = (scramble: Scramble, delaySeconds: number): void => {
+    window.clearTimeout(scramble.timeout);
+    window.clearInterval(scramble.interval);
+    scramble.timeout = window.setTimeout(() => {
+      const startedAt = performance.now();
+      const tick = (): void => {
+        const progress = (performance.now() - startedAt) / SCRAMBLE_MILLISECONDS;
+        if (progress >= 1) {
+          stopScramble(scramble);
+          return;
+        }
+        let text = '';
+        for (let index = 0; index < scramble.final.length; index++) {
+          // Position i locks once progress passes (i+1)/n; until then it
+          // rolls random characters of its own kind.
+          if (progress >= (index + 1) / scramble.final.length) {
+            text += scramble.final[index];
+          } else {
+            const pool = SCRAMBLE_POOLS[Math.min(index, SCRAMBLE_POOLS.length - 1)]!;
+            text += pool[Math.floor(Math.random() * pool.length)];
+          }
+        }
+        renderScramble(scramble, text);
+      };
+      // First frame immediately — waiting a full interval tick would flash
+      // the resting (final) text before the roll starts.
+      tick();
+      scramble.interval = window.setInterval(tick, SCRAMBLE_TICK_MS);
+    }, delaySeconds * 1000);
+  };
+
+  cleanups.push(() => {
+    for (const scramble of scrambles.values()) stopScramble(scramble);
   });
 
   // ----- Neon flicker (the "Her game" sign) --------------------------------
@@ -445,6 +530,15 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
               startCountUp(countUp, parseRevealDelaySeconds(target));
             } else if (!revealOnce) {
               cancelCountUp(countUp);
+            }
+          }
+          for (const element of target.querySelectorAll<HTMLElement>('[data-scramble]')) {
+            const scramble = scrambles.get(element);
+            if (!scramble) continue;
+            if (entry.isIntersecting) {
+              startScramble(scramble, parseRevealDelaySeconds(target));
+            } else if (!revealOnce) {
+              stopScramble(scramble);
             }
           }
         }
