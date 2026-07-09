@@ -701,6 +701,38 @@ const maskedLine = (text: string, classes: string, delaySeconds: number): Html =
     ],
   );
 
+// A chunky inline arrow for display-type CTAs. The text glyph "→" renders
+// hairline-thin next to Anton and sits on the baseline instead of the cap
+// centre. One filled silhouette rather than strokes — square line caps left
+// a nub poking past the head's point. Sized in em so it scales with the
+// type: the box spans baseline to cap height (~0.72em in Anton), so the
+// shaft lands on the optical centre of the uppercase line.
+const displayArrow: Html = h.svg(
+  [
+    h.Xmlns('http://www.w3.org/2000/svg'),
+    h.ViewBox('0 0 32 24'),
+    h.Class('ml-[0.22em] inline-block h-[0.72em] w-auto'),
+    h.Fill('currentColor'),
+    h.AriaHidden(true),
+  ],
+  [h.path([h.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')], [])],
+);
+
+// The drawn arrow's downward sibling — the hero's scroll cue. Its own
+// viewBox (not a CSS rotation of the right arrow, which would keep the
+// sideways layout box); a touch taller than the cap-height convention so
+// the small caption still reads it as a mark, not a speck.
+const displayArrowDown: Html = h.svg(
+  [
+    h.Xmlns('http://www.w3.org/2000/svg'),
+    h.ViewBox('0 0 24 32'),
+    h.Class('inline-block h-[0.85em] w-auto'),
+    h.Fill('currentColor'),
+    h.AriaHidden(true),
+  ],
+  [h.path([h.D('M9.6 0 V18 H3 L12 31 L21 18 H14.4 V0 Z')], [])],
+);
+
 // The two-/three-line glyph shown inside the menu toggle — a hamburger when
 // closed, an X when open.
 const menuGlyph = (open: boolean): Html =>
@@ -774,10 +806,10 @@ const headerView = (model: Model): Html =>
                 [
                   h.Href(platformUrl),
                   h.Class(
-                    'header-cta display hidden bg-pink px-4 py-1 text-lg tracking-[0.08em] text-ink hover:bg-paper active:bg-paper md:inline-block',
+                    'header-cta platform-beckon display hidden bg-pink px-4 py-1 text-lg tracking-[0.08em] text-ink hover:bg-paper active:bg-paper md:inline-block',
                   ),
                 ],
-                ['Enter platform'],
+                ['Enter platform', displayArrow],
               ),
               h.button(
                 [
@@ -1016,10 +1048,12 @@ const heroView = (): Html =>
                 [
                   h.Href(platformUrl),
                   h.Class(
-                    'display bg-pink px-10 py-4 text-2xl tracking-[0.08em] text-ink transition-colors duration-300 active:bg-paper md:px-9 md:py-3.5 md:text-xl md:hover:bg-paper',
+                    'hero-cta platform-beckon display bg-pink px-10 py-4 text-2xl tracking-[0.08em] text-ink transition-colors duration-300 active:bg-paper md:px-9 md:py-3.5 md:text-xl md:hover:bg-paper',
                   ),
                 ],
-                ['Enter platform →'],
+                // The same drawn arrow as the menu's Platform entry — the
+                // text glyph "→" reads hairline-thin next to Anton.
+                ['Enter platform', displayArrow],
               ),
             ],
           ),
@@ -1037,7 +1071,10 @@ const heroView = (): Html =>
         ],
         [
           h.span([h.Class('hidden md:inline')], ['Independent media']),
-          h.span([], ['Scroll for experience ', h.span([h.Class('scroll-bob')], ['↓'])]),
+          h.span(
+            [],
+            ['Scroll for experience ', h.span([h.Class('scroll-bob')], [displayArrowDown])],
+          ),
         ],
       ),
     ],
@@ -1431,7 +1468,7 @@ const competitionsView = (): Html =>
                         'display inline-block bg-pink px-8 py-4 text-xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
                       ),
                     ],
-                    ['Discover all competitions →'],
+                    ['Discover all competitions', displayArrow],
                   ),
                 ],
               ),
