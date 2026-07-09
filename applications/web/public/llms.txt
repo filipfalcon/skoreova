@@ -10,15 +10,15 @@ standings, top scorers, club and player profiles).
 
 ## Site structure
 
-- [Landing page](https://skoreova.filipfalcon.com/): why the sport matters,
+- [Landing page](https://beta.skoreova.com/): why the sport matters,
   what we cover, the map of clubs, the reigning champion (Sparta Praha),
   the player spotlight, and the national team.
-- [Club profiles](https://skoreova.filipfalcon.com/clubs/sparta-praha):
+- [Club profiles](https://beta.skoreova.com/clubs/sparta-praha):
   `/clubs/<slug>` — one page per covered club (19 clubs across two leagues).
-- [Competition profiles](https://skoreova.filipfalcon.com/competitions/first-league):
+- [Competition profiles](https://beta.skoreova.com/competitions/first-league):
   `/competitions/<slug>` — first-league, second-league, domestic-cup, uwcl,
   uwec, national-team.
-- [Platform](https://platform.skoreova.filipfalcon.com/): the data product —
+- [Platform](https://beta.platform.skoreova.com/): the data product —
   results, standings, charts, club/player/referee profiles.
 
 ## Key facts
