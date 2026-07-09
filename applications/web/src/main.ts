@@ -462,10 +462,6 @@ interface Competition {
   readonly alt: string;
   readonly copy: string;
   readonly tagline: string;
-  // When set, the card links straight out to this URL (new tab) instead of an
-  // internal profile page — used for the national team, whose story lives in
-  // its own section and whose competition is UEFA's Women's Nations League.
-  readonly href?: string;
   // The format explainer, one rule per line. Placeholder — verify against
   // the real regulations before publishing.
   readonly format: ReadonlyArray<string>;
@@ -601,7 +597,6 @@ const competitions: ReadonlyArray<Competition> = [
     alt: 'Two Czech national team players celebrating in the red home shirt',
     copy: 'Playing for your country — there’s no bigger honor. A first major tournament appearance is still out there, and our time is coming.',
     tagline: 'UEFA Women’s Nations League',
-    href: 'https://uefa.com/womensnationsleague/',
     format: [
       'Europe’s national teams split into tiered leagues — League A down to League C.',
       'Home-and-away group games, with promotion and relegation between the tiers.',
@@ -1570,27 +1565,19 @@ const competitionCard = (competition: Competition): Html =>
       // image's reveal transform creates a stacking context that would
       // otherwise cover the overlapping bar. The label IS the card's button:
       // same colorway as the CTAs (pink block, ink text, paper on hover),
-      // arrow included. It links to the competition's profile page — or
-      // straight out to an external site when `href` is set.
+      // arrow included. Every card routes to its internal profile page —
+      // the national team's profile covers the Nations League, so even that
+      // card stays in-app now (the old external uefa.com escape is gone).
       h.h3(
         [h.Class('relative z-10 -mt-6 ml-4 inline-block')],
         [
           h.a(
-            competition.href
-              ? [
-                  h.Href(competition.href),
-                  h.Target('_blank'),
-                  h.Rel('noopener noreferrer'),
-                  h.Class(
-                    'display inline-block bg-pink px-4 py-2 text-fluid-3xl-4xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper',
-                  ),
-                ]
-              : [
-                  h.Href(competitionRouter({ slug: competition.slug })),
-                  h.Class(
-                    'display inline-block bg-pink px-4 py-2 text-fluid-3xl-4xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper',
-                  ),
-                ],
+            [
+              h.Href(competitionRouter({ slug: competition.slug })),
+              h.Class(
+                'display inline-block bg-pink px-4 py-2 text-fluid-3xl-4xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper',
+              ),
+            ],
             [competition.label, displayArrow],
           ),
         ],
