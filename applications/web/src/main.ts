@@ -701,18 +701,19 @@ const maskedLine = (text: string, classes: string, delaySeconds: number): Html =
     ],
   );
 
-// The two-/three-line glyph shown inside the menu toggle on phones — a
-// hamburger when closed, an X when open.
+// The two-/three-line glyph shown inside the menu toggle — a hamburger when
+// closed, an X when open.
 const menuGlyph = (open: boolean): Html =>
   h.svg(
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
       h.ViewBox('0 0 24 24'),
-      h.Class('h-6 w-6'),
+      h.Class('h-6 w-6 md:h-7 md:w-7'),
       h.Fill('none'),
       h.Stroke('currentColor'),
       h.StrokeWidth('2.5'),
-      h.StrokeLinecap('round'),
+      // Flat butt caps — the site's whole graphic language is hard edges
+      // (Anton, square chips, the drawn arrow); rounded line ends read soft.
       h.AriaHidden(true),
     ],
     open
@@ -789,14 +790,9 @@ const headerView = (model: Model): Html =>
                     'display flex cursor-pointer items-center text-paper transition-colors duration-300 hover:text-pink',
                   ),
                 ],
-                [
-                  // Hamburger/X on phones, the word on larger screens.
-                  h.span([h.Class('md:hidden')], [menuGlyph(model.menuOpen)]),
-                  h.span(
-                    [h.Class('hidden text-lg tracking-[0.15em] md:inline md:text-xl')],
-                    [model.menuOpen ? 'Close' : 'Menu'],
-                  ),
-                ],
+                // The hamburger/X glyph on every breakpoint — the aria-label
+                // carries the wording the icon dropped.
+                [menuGlyph(model.menuOpen)],
               ),
             ],
           ),
