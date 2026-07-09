@@ -9,28 +9,28 @@ export default Alchemy.Stack(
     state: Cloudflare.state(),
   },
   Effect.gen(function* () {
-    const studio = yield* Cloudflare.Vite('Studio', {
+    const studio = yield* Cloudflare.Website.Vite('Studio', {
       rootDir: 'applications/studio',
-      url: false,
-      domain: 'studio.skoreova.filipfalcon.com',
+      workersDev: false,
+      domains: ['beta.studio.skoreova.com', 'beta.studio.skoreova.cz'],
       assets: {
         notFoundHandling: 'single-page-application',
       },
     });
 
-    const platform = yield* Cloudflare.Vite('Platform', {
+    const platform = yield* Cloudflare.Website.Vite('Platform', {
       rootDir: 'applications/platform',
-      url: false,
-      domain: 'platform.skoreova.filipfalcon.com',
+      workersDev: false,
+      domains: ['beta.platform.skoreova.com', 'beta.platform.skoreova.cz'],
       assets: {
         notFoundHandling: 'single-page-application',
       },
     });
 
-    const web = yield* Cloudflare.Vite('Web', {
+    const web = yield* Cloudflare.Website.Vite('Web', {
       rootDir: 'applications/web',
-      url: false,
-      domain: 'skoreova.filipfalcon.com',
+      workersDev: false,
+      domains: ['beta.skoreova.com', 'beta.skoreova.cz'],
       assets: {
         notFoundHandling: 'single-page-application',
       },

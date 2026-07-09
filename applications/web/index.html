@@ -7,7 +7,7 @@
       name="description"
       content="Skóreová — independent coverage of Czech women’s football. First league, second league, domestic cup, Europe, and the national team."
     />
-    <link rel="canonical" href="https://skoreova.filipfalcon.com/" />
+    <link rel="canonical" href="https://beta.skoreova.com/" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="theme-color" content="#0d0c0c" />
 
@@ -23,13 +23,13 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Skóreová" />
     <meta property="og:locale" content="en_US" />
-    <meta property="og:url" content="https://skoreova.filipfalcon.com/" />
+    <meta property="og:url" content="https://beta.skoreova.com/" />
     <meta property="og:title" content="Skóreová — Czech Women’s Football" />
     <meta
       property="og:description"
       content="Independent coverage of Czech women’s football. First league, second league, domestic cup, Europe, and the national team."
     />
-    <meta property="og:image" content="https://skoreova.filipfalcon.com/og.png" />
+    <meta property="og:image" content="https://beta.skoreova.com/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
@@ -43,7 +43,7 @@
       name="twitter:description"
       content="Independent coverage of Czech women’s football. First league, second league, domestic cup, Europe, and the national team."
     />
-    <meta name="twitter:image" content="https://skoreova.filipfalcon.com/og.png" />
+    <meta name="twitter:image" content="https://beta.skoreova.com/og.png" />
 
     <!-- Structured data for search engines and AI agents. -->
     <script type="application/ld+json">
@@ -52,10 +52,10 @@
         "@graph": [
           {
             "@type": "NewsMediaOrganization",
-            "@id": "https://skoreova.filipfalcon.com/#organization",
+            "@id": "https://beta.skoreova.com/#organization",
             "name": "Skóreová",
-            "url": "https://skoreova.filipfalcon.com/",
-            "logo": "https://skoreova.filipfalcon.com/icon-512.png",
+            "url": "https://beta.skoreova.com/",
+            "logo": "https://beta.skoreova.com/icon-512.png",
             "description": "Independent coverage of Czech women’s football.",
             "sameAs": [
               "https://www.instagram.com/skoreova",
@@ -68,10 +68,10 @@
           },
           {
             "@type": "WebSite",
-            "@id": "https://skoreova.filipfalcon.com/#website",
-            "url": "https://skoreova.filipfalcon.com/",
+            "@id": "https://beta.skoreova.com/#website",
+            "url": "https://beta.skoreova.com/",
             "name": "Skóreová",
-            "publisher": { "@id": "https://skoreova.filipfalcon.com/#organization" },
+            "publisher": { "@id": "https://beta.skoreova.com/#organization" },
             "inLanguage": "en"
           }
         ]
@@ -83,10 +83,13 @@
          re-applied immediately, otherwise the banner at the end of <body>
          asks. Ad parameters stay denied forever — this site runs no ads. -->
     <script>
-      // Measurement runs ONLY on the production hostname — everything else
-      // (localhost, LAN phone testing, preview deploys, tunnels) hits
+      // Measurement runs ONLY on the production hostnames (.com is
+      // canonical, .cz is the alias — both are live deploys) — everything
+      // else (localhost, LAN phone testing, preview deploys, tunnels) hits
       // Google's official kill switch: gtag.js loads but records nothing.
-      window.skoreovaAnalyticsOff = location.hostname !== 'skoreova.filipfalcon.com';
+      window.skoreovaAnalyticsOff = !['beta.skoreova.com', 'beta.skoreova.cz'].includes(
+        location.hostname,
+      );
       if (window.skoreovaAnalyticsOff) {
         window['ga-disable-G-PJ131P52RX'] = true;
       }

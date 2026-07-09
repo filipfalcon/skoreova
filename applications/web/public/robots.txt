@@ -44,4 +44,4 @@ Allow: /
 User-agent: meta-externalagent
 Allow: /
 
-Sitemap: https://skoreova.filipfalcon.com/sitemap.xml
+Sitemap: https://beta.skoreova.com/sitemap.xml
