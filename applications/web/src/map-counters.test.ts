@@ -46,7 +46,8 @@ beforeAll(async () => {
   if (!section) throw new Error('clubs section missing');
   window.scrollTo({ top: section.offsetTop - 80, behavior: 'instant' });
   // Let the reveal fire and the count-up animation fully land (1.4s + delays).
-  await waitUntil(() => counterValues().join(',') === '11,4,1', 20000);
+  // 10/5/1: Jihlava counts as Moravian — the map draws the real land border.
+  await waitUntil(() => counterValues().join(',') === '10,5,1', 20000);
 }, 40000);
 
 // DOM-level clicks on purpose: the chips sit under the fixed header once
@@ -62,11 +63,11 @@ const clickChip = (label: string): void => {
 
 test('league filter drives the land counters', async () => {
   clickChip('Second League');
-  await expect.poll(() => counterValues().join(','), { timeout: 10000 }).toBe('9,2,0');
+  await expect.poll(() => counterValues().join(','), { timeout: 10000 }).toBe('8,3,0');
 
   clickChip('First League');
   await expect.poll(() => counterValues().join(','), { timeout: 10000 }).toBe('5,2,1');
 
   clickChip('All clubs');
-  await expect.poll(() => counterValues().join(','), { timeout: 10000 }).toBe('11,4,1');
+  await expect.poll(() => counterValues().join(','), { timeout: 10000 }).toBe('10,5,1');
 }, 40000);
