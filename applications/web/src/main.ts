@@ -2698,8 +2698,16 @@ const clubs: ReadonlyArray<Club> = [
 // and switching back feels instant.
 // Which historical land each club belongs to — everything not listed is
 // Bohemian. Drives the region checkboxes: unchecking a land removes its
-// pins from the map entirely.
-const MORAVIAN_CLUBS = new Set(['lokomotiva-brno', 'artis-brno', 'sigma-olomouc', 'slovacko']);
+// pins from the map entirely. Jihlava counts as Moravian: the map draws
+// the REAL land border (czechia.ts), and the city sits on its Moravian
+// side — the kraj Vysočina grouping doesn't apply here.
+const MORAVIAN_CLUBS = new Set([
+  'lokomotiva-brno',
+  'artis-brno',
+  'sigma-olomouc',
+  'slovacko',
+  'vysocina-jihlava',
+]);
 const SILESIAN_CLUBS = new Set(['banik-ostrava']);
 
 const clubLand = (club: Club): string =>
