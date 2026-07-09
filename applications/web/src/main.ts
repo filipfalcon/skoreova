@@ -772,16 +772,22 @@ const maskedLine = (
 // a nub poking past the head's point. Sized in em so it scales with the
 // type: the box spans baseline to cap height (~0.72em in Anton), so the
 // shaft lands on the optical centre of the uppercase line.
-const displayArrow: Html = h.svg(
-  [
-    h.Xmlns('http://www.w3.org/2000/svg'),
-    h.ViewBox('0 0 32 24'),
-    h.Class('ml-[0.22em] inline-block h-[0.72em] w-auto'),
-    h.Fill('currentColor'),
-    h.AriaHidden(true),
-  ],
-  [h.path([h.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')], [])],
-);
+const drawnRightArrow = (classes: string): Html =>
+  h.svg(
+    [
+      h.Xmlns('http://www.w3.org/2000/svg'),
+      h.ViewBox('0 0 32 24'),
+      h.Class(classes),
+      h.Fill('currentColor'),
+      h.AriaHidden(true),
+    ],
+    [h.path([h.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')], [])],
+  );
+
+// Follows text (the left margin is the word gap)…
+const displayArrow: Html = drawnRightArrow('ml-[0.22em] inline-block h-[0.72em] w-auto');
+// …or stands alone (the row-affordance chips) — no gap to carry.
+const displayArrowSolo: Html = drawnRightArrow('inline-block h-[0.72em] w-auto');
 
 // The drawn arrow's downward sibling — the hero's scroll cue. Its own
 // viewBox (not a CSS rotation of the right arrow, which would keep the
@@ -1575,7 +1581,7 @@ const competitionCard = (competition: Competition): Html =>
                     'display inline-block bg-pink px-4 py-2 text-fluid-3xl-4xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper',
                   ),
                 ],
-            [`${competition.label} →`],
+            [competition.label, displayArrow],
           ),
         ],
       ),
@@ -1824,7 +1830,7 @@ const championsView = (): Html =>
                     'display pointer-events-auto mt-4 block bg-pink px-4 py-3 text-center text-sm text-ink transition-colors duration-300 hover:bg-ink hover:text-paper active:bg-ink active:text-paper md:mt-6 md:text-lg',
                   ),
                 ],
-                ['Learn about Sparta →'],
+                ['Learn about Sparta', displayArrow],
               ),
             ],
           ),
@@ -1937,7 +1943,7 @@ const championsView = (): Html =>
                                     'display hidden self-center border border-ink/25 px-2 py-0.5 text-sm transition-colors duration-300 group-hover:border-pink group-hover:bg-pink group-hover:text-ink md:inline-block',
                                   ),
                                 ],
-                                ['→'],
+                                [displayArrowSolo],
                               ),
                             ],
                           ),
@@ -2095,7 +2101,7 @@ const championsView = (): Html =>
                                             'display hidden border border-ink/25 px-2 py-0.5 text-sm transition-colors duration-300 group-hover:border-pink group-hover:bg-pink group-hover:text-ink md:inline-block',
                                           ),
                                         ],
-                                        ['→'],
+                                        [displayArrowSolo],
                                       ),
                                     ],
                                   ),
@@ -2294,7 +2300,7 @@ const championsView = (): Html =>
                       h.DataAttribute('reveal', 'up'),
                       h.Style({ '--reveal-delay': '0.4s' }),
                     ],
-                    ['Discover other records →'],
+                    ['Discover other records', displayArrow],
                   ),
                 ],
               ),
@@ -2580,7 +2586,7 @@ const starView = (): Html =>
                       h.DataAttribute('reveal', 'up'),
                       h.Style({ '--reveal-delay': '0.5s' }),
                     ],
-                    ['Discover other stars →'],
+                    ['Discover other stars', displayArrow],
                   ),
                 ],
               ),
@@ -3080,7 +3086,7 @@ const clubCardBox = (club: Club): Html =>
                 'display mt-5 block bg-pink px-4 py-2.5 text-center text-lg tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-paper active:bg-paper',
               ),
             ],
-            ['Open profile →'],
+            ['Open profile', displayArrow],
           ),
         ],
       ),
@@ -3416,7 +3422,7 @@ const clubsView = (model: Model): Html =>
                         'display inline-block bg-pink px-8 py-4 text-xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
                       ),
                     ],
-                    ['Discover all clubs →'],
+                    ['Discover all clubs', displayArrow],
                   ),
                 ],
               ),
