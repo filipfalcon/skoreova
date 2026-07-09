@@ -604,12 +604,16 @@ interface MenuEntry {
 }
 
 // Absolute paths so the anchors also work from a club profile page.
+// Mirrors the real landing section order — keep in sync with
+// `landingSections` (the statement and the marquee are unnumbered
+// interludes without ids, so they get no entry).
 const menuEntries: ReadonlyArray<MenuEntry> = [
   { label: 'Why care', target: '/#why-care' },
   { label: 'Competitions', target: '/#competitions' },
-  { label: 'Champions', target: '/#champions' },
-  { label: 'National team', target: '/#national-team' },
   { label: 'Clubs', target: '/#clubs' },
+  { label: 'Records', target: '/#champions' },
+  { label: 'Players', target: '/#star' },
+  { label: 'National', target: '/#national-team' },
   { label: 'Follow', target: '/#follow' },
 ];
 
@@ -791,11 +795,31 @@ const menuOverlayView = (model: Model): Html =>
       h.ul(
         [h.Class(`${container} flex flex-col`)],
         [
+          // The platform CTA opens the list in pink — the destination the
+          // menu exists to sell, and the one entry that leaves the site, so
+          // it doesn't blend in with the anchors below.
+          h.li(
+            [h.Class('menu-item border-b border-paper/15'), h.Style({ '--menu-index': '0' })],
+            [
+              h.a(
+                [
+                  h.Href(platformUrl),
+                  h.Class(
+                    'display block py-4 text-fluid-5xl-8xl text-pink transition-colors hover:text-paper active:text-paper md:py-6',
+                  ),
+                ],
+                ['Platform →'],
+              ),
+            ],
+          ),
           ...menuEntries.map((entry, index) =>
             h.li(
               [
-                h.Class('menu-item border-b border-paper/15'),
-                h.Style({ '--menu-index': `${index}` }),
+                // The last anchor closes the list — no rule under it.
+                h.Class(
+                  `menu-item ${index < menuEntries.length - 1 ? 'border-b border-paper/15' : ''}`,
+                ),
+                h.Style({ '--menu-index': `${index + 1}` }),
               ],
               [
                 h.a(
@@ -810,22 +834,6 @@ const menuOverlayView = (model: Model): Html =>
                 ),
               ],
             ),
-          ),
-          // The platform CTA closes the list in pink — the one entry that
-          // leaves the site, so it doesn't blend in with the anchors.
-          h.li(
-            [h.Class('menu-item'), h.Style({ '--menu-index': `${menuEntries.length}` })],
-            [
-              h.a(
-                [
-                  h.Href(platformUrl),
-                  h.Class(
-                    'display block py-4 text-fluid-5xl-8xl text-pink transition-colors hover:text-paper active:text-paper md:py-6',
-                  ),
-                ],
-                ['Enter platform →'],
-              ),
-            ],
           ),
         ],
       ),
