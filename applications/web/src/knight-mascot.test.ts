@@ -5,7 +5,7 @@ import { beforeAll, expect, test } from 'vitest';
 import { ChangedUrl, ClickedLink, Model, init, update, view } from './main';
 import './styles.css';
 
-// Guards the "cut-off knight" saga: the mascot in the why-care section must
+// Guards the "cut-off knight" saga: the mascot in the on-the-rise section must
 // be fully painted. Two distinct failure modes are pinned down separately:
 // an ancestor clipping her box (overflow), and actual content painting over
 // her head (stacking). The content container legitimately sits at z-10 above
@@ -22,7 +22,7 @@ const waitUntil = async (predicate: () => boolean, timeout = 3000): Promise<void
 
 // `.idle-float` is shared with the champion's crest — scope to the section.
 const knight = (): HTMLImageElement => {
-  const element = document.querySelector<HTMLImageElement>('#why-care .idle-float');
+  const element = document.querySelector<HTMLImageElement>('#on-the-rise .idle-float');
   if (!element) throw new Error('knight not rendered');
   return element;
 };
@@ -49,12 +49,12 @@ beforeAll(async () => {
     }),
   );
 
-  await waitUntil(() => document.querySelector('#why-care .idle-float') !== null);
+  await waitUntil(() => document.querySelector('#on-the-rise .idle-float') !== null);
 
   // Bring the section in with its top ~150px below the viewport top: clear of
   // the fixed header (z-50), and high enough that the reveal observer fires.
-  const section = document.querySelector<HTMLElement>('#why-care');
-  if (!section) throw new Error('why-care section not rendered');
+  const section = document.querySelector<HTMLElement>('#on-the-rise');
+  if (!section) throw new Error('on-the-rise section not rendered');
   window.scrollTo({ top: section.offsetTop - 150, behavior: 'instant' });
 
   const wrapper = knight().closest<HTMLElement>('[data-reveal]');
