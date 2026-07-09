@@ -76,9 +76,7 @@ test('choosing a menu item also closes and hides the overlay', async () => {
   await page.getByRole('button', { name: 'Open menu' }).click();
   await expect.poll(overlayVisibility).toBe('visible');
 
-  // `exact` — the landing page also has a "Discover all competitions →" CTA
-  // whose accessible name contains this one.
-  await page.getByRole('link', { name: 'Competitions', exact: true }).click();
+  await page.getByRole('link', { name: 'Battling through', exact: true }).click();
   await expect.poll(overlayVisibility, { timeout: 2000 }).toBe('hidden');
 });
 
@@ -123,7 +121,7 @@ test('Escape does nothing while the menu is closed', async () => {
 // of the page (the hero) nothing is marked.
 
 test('the open overlay marks the section the viewport is in', async () => {
-  // An earlier test navigated to /#competitions — park back at the hero.
+  // An earlier test navigated to /#battling-through — park back at the hero.
   window.scrollTo({ top: 0, behavior: 'instant' });
 
   await page.getByRole('button', { name: 'Open menu' }).click();

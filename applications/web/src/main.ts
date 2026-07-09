@@ -659,8 +659,8 @@ interface MenuEntry {
 // `landingSections` (the statement and the marquee are unnumbered
 // interludes without ids, so they get no entry).
 const menuEntries: ReadonlyArray<MenuEntry> = [
-  { label: 'Why care', target: '/#why-care' },
-  { label: 'Competitions', target: '/#competitions' },
+  { label: 'On the rise', target: '/#on-the-rise' },
+  { label: 'Battling through', target: '/#battling-through' },
   { label: 'Clubs', target: '/#clubs' },
   { label: 'Records', target: '/#champions' },
   { label: 'Players', target: '/#star' },
@@ -1229,7 +1229,7 @@ const unstoppableProof: ReadonlyArray<Stat> = [
   },
 ];
 
-// The youth strip in Why care — the generation the UEFA strategy is about.
+// The youth strip in On the rise — the generation the UEFA strategy is about.
 // The three photos are deliberately a LADDER — senior national team, youth
 // internationals, club grassroots — and the level chip above each caption
 // makes that thesis explicit: the make-or-break generation exists on every
@@ -1271,7 +1271,7 @@ const storyView = (): Html =>
     // by `overflow-x: clip` on <body>, so nothing here needs to clip.
     // Slightly deeper bottom padding than top: the youth strip needs room to
     // exhale before the ink-black competitions section slams in.
-    [h.Id('why-care'), h.Class('relative bg-paper pt-16 pb-20 text-ink md:pt-24 md:pb-32')],
+    [h.Id('on-the-rise'), h.Class('relative bg-paper pt-16 pb-20 text-ink md:pt-24 md:pb-32')],
     [
       // The armored mascot — a decorative accent anchored to the section's
       // right edge, sitting behind the copy (the container below is z-10) so
@@ -1310,7 +1310,7 @@ const storyView = (): Html =>
       h.div(
         [h.Class(`${container} relative z-10`)],
         [
-          kicker('01', 'Why care', false, '/#why-care'),
+          kicker('01', 'On the rise', false, '/#on-the-rise'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [
@@ -1585,7 +1585,10 @@ const competitionCard = (competition: Competition): Html =>
 
 const competitionsView = (): Html =>
   h.section(
-    [h.Id('competitions'), h.Class('relative overflow-hidden bg-ink py-16 text-paper md:py-24')],
+    [
+      h.Id('battling-through'),
+      h.Class('relative overflow-hidden bg-ink py-16 text-paper md:py-24'),
+    ],
     [
       // Dimmed parallax backdrop behind the cards — kept faint enough that
       // the card captions never fight it for legibility.
@@ -1610,7 +1613,7 @@ const competitionsView = (): Html =>
       h.div(
         [h.Class(`${container} relative`)],
         [
-          kicker('02', 'What we cover', true, '/#competitions'),
+          kicker('02', 'Battling through', true, '/#battling-through'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [maskedLine('How she plays.', 'text-fluid-6xl-9xl', 0)],
@@ -3219,7 +3222,7 @@ const clubsView = (model: Model): Html =>
             ],
             [
               // The geography of the coverage, in the same count-up device
-              // as the "Why care" targets — the lands' imbalance IS the
+              // as the "On the rise" receipts — the lands' imbalance IS the
               // story. Each counter is a CHECKBOX: all three lands start
               // checked, unchecking one hides its clubs from the map
               // entirely. Clicking the land in the map toggles it too.
@@ -4355,7 +4358,7 @@ const backToCompetitionsView = (): Html =>
         [
           h.a(
             [
-              h.Href('/#competitions'),
+              h.Href('/#battling-through'),
               h.Class(
                 'display inline-block bg-ink px-8 py-4 text-xl text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
               ),
