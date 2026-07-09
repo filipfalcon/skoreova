@@ -74,6 +74,11 @@ export type MapLeague = typeof MapLeague.Type;
 
 export const Model = S.Struct({
   menuOpen: S.Boolean,
+  // Id of the landing section the viewport sat in when the menu was last
+  // opened ('' = none, e.g. the hero or a profile page). Resolved once per
+  // open by DetectActiveSection — scroll is locked while the overlay is up,
+  // so it cannot go stale.
+  activeSection: S.String,
   // '' = not on a club profile; otherwise the slug of the open club.
   clubSlug: S.String,
   // '' = not on a competition profile; otherwise the competition's slug.
@@ -103,6 +108,8 @@ export const ToggledMenu = m('ToggledMenu');
 // Sent by every anchor inside the overlay: close the menu and let navigation
 // take care of the rest.
 export const ClosedMenu = m('ClosedMenu');
+// Reports which landing section the viewport is in — see DetectActiveSection.
+export const DetectedActiveSection = m('DetectedActiveSection', { section: S.String });
 export const ClickedLink = m('ClickedLink', { request: UrlRequest });
 export const ChangedUrl = m('ChangedUrl', { url: Url });
 export const CompletedNavigate = m('CompletedNavigate');
@@ -121,6 +128,7 @@ export const ToggledAreaUnit = m('ToggledAreaUnit');
 export const Message = S.Union([
   ToggledMenu,
   ClosedMenu,
+  DetectedActiveSection,
   ClickedLink,
   ChangedUrl,
   CompletedNavigate,
@@ -264,10 +272,39 @@ export const SetScrollLock = Command.define(
   }),
 );
 
+// Resolves which landing section the viewport centre sits in, so the open
+// menu can mark "you are here". Runs once per menu open. Measures
+// viewport-relative rects, which the scroll lock's position:fixed trick
+// preserves (window.scrollY would read 0 under it). The candidate ids come
+// from menuEntries itself, so the two can't drift apart.
+export const DetectActiveSection = Command.define(
+  'DetectActiveSection',
+  {},
+  DetectedActiveSection,
+)(() =>
+  Effect.sync(() => {
+    const centre = window.innerHeight / 2;
+    let section = '';
+    for (const entry of menuEntries) {
+      const id = entry.target.split('#')[1];
+      if (id === undefined) continue;
+      const rect = document.getElementById(id)?.getBoundingClientRect();
+      // The last section whose top has passed the centre line wins — the
+      // unnumbered interludes (statement, marquee) then count toward the
+      // section above them. Above the first section (the hero) none wins.
+      if (rect !== undefined && rect.top <= centre) {
+        section = id;
+      }
+    }
+    return DetectedActiveSection({ section });
+  }),
+);
+
 // UPDATE
 
 const initialModel: Model = {
   menuOpen: false,
+  activeSection: '',
   clubSlug: '',
   competitionSlug: '',
   scorerScope: 'current',
@@ -321,9 +358,17 @@ export const update = (
     M.tagsExhaustive({
       ToggledMenu: () => {
         const menuOpen = !model.menuOpen;
-        return [{ ...model, menuOpen }, [SetScrollLock({ locked: menuOpen })]];
+        return [
+          // Opening resets the marker to "unknown" so a stale highlight from
+          // the previous open can't flash before detection lands.
+          { ...model, menuOpen, ...(menuOpen ? { activeSection: '' } : {}) },
+          menuOpen
+            ? [SetScrollLock({ locked: true }), DetectActiveSection({})]
+            : [SetScrollLock({ locked: false })],
+        ];
       },
       ClosedMenu: () => [{ ...model, menuOpen: false }, [SetScrollLock({ locked: false })]],
+      DetectedActiveSection: ({ section }) => [{ ...model, activeSection: section }, []],
       // In-app links (club pins, menu anchors, back links) apply their route
       // immediately and push the URL; external links load normally. Any
       // in-app navigation also closes the menu, so release the scroll lock.
@@ -856,16 +901,28 @@ const menuOverlayView = (model: Model): Html =>
               h.a(
                 [
                   h.Href(platformUrl),
+                  // menu-anchor gives it the same sliding pink underlay as
+                  // the section anchors (hover flips the type to ink — the
+                  // header CTA's language); active:text-paper stays as the
+                  // tap feedback on touch, where the hover-gated bar never
+                  // runs. The arrow beckons (menu-platform-beckon). Margin/
+                  // padding pair = the underlay's left breathing room,
+                  // matching the section anchors.
                   h.Class(
-                    'display block py-4 text-fluid-5xl-8xl text-pink transition-colors duration-300 hover:text-paper active:text-paper md:py-6',
+                    'menu-platform platform-beckon menu-anchor -ml-3 display block py-4 pl-3 text-fluid-5xl-8xl text-pink transition-colors duration-300 active:text-paper md:-ml-5 md:py-6 md:pl-5',
                   ),
                 ],
-                ['Platform →'],
+                ['Platform', displayArrow],
               ),
             ],
           ),
-          ...menuEntries.map((entry, index) =>
-            h.li(
+          ...menuEntries.map((entry, index) => {
+            // "You are here" — the section the viewport sat in when the menu
+            // opened gets the brand full stop, the same mark the wordmark
+            // carries. Detection runs per open; see DetectActiveSection.
+            const active =
+              model.activeSection !== '' && entry.target === `/#${model.activeSection}`;
+            return h.li(
               [
                 // The last anchor closes the list — no rule under it.
                 h.Class(
@@ -878,15 +935,23 @@ const menuOverlayView = (model: Model): Html =>
                   [
                     h.Href(entry.target),
                     h.OnClick(ClosedMenu()),
+                    ...(active ? [h.AriaCurrent('location')] : []),
+                    // Hover = the sliding pink underlay (menu-anchor in
+                    // styles.css), not a pink text flip — pink type stays
+                    // reserved for the Platform entry. The negative
+                    // margin/padding pair pushes the underlay's left edge
+                    // past the type, so the highlight breathes instead of
+                    // starting flush on the first glyph; it eats into the
+                    // container padding, so the resting alignment holds.
                     h.Class(
-                      'display block py-4 text-fluid-5xl-8xl text-paper transition-colors duration-300 hover:text-pink md:py-6',
+                      'menu-anchor -ml-3 display block py-4 pl-3 text-fluid-5xl-8xl text-paper transition-colors duration-300 md:-ml-5 md:py-6 md:pl-5',
                     ),
                   ],
-                  [entry.label],
+                  [entry.label, ...(active ? [h.span([h.Class('text-pink')], ['.'])] : [])],
                 ),
               ],
-            ),
-          ),
+            );
+          }),
         ],
       ),
       h.div(
