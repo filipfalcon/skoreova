@@ -1356,7 +1356,12 @@ const storyView = (): Html =>
                   h.dt(
                     [
                       h.Class('display text-fluid-7xl-8xl text-pink'),
-                      h.DataAttribute('countup', ''),
+                      // Values a count-up can't serve get the slot-machine
+                      // scramble instead (motion.ts) — same tempo, so the
+                      // three stats still land together.
+                      ...(stat.countup === false
+                        ? [h.DataAttribute('scramble', '')]
+                        : [h.DataAttribute('countup', '')]),
                     ],
                     [stat.value],
                   ),
