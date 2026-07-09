@@ -715,15 +715,24 @@ const container = 'mx-auto w-full max-w-7xl px-5 md:px-10';
 // A `01 — LABEL` section kicker on a pink bar that wipes in from the left.
 // Deliberately large — it sets the section's context and shouldn't be
 // skimmed past.
-const kicker = (index: string, label: string, dark: boolean): Html =>
+// The numbered chips are self-links: a click parks the scroll back on the
+// section's own top AND stamps the fragment into the URL — an in-place
+// permalink you can copy. Same ClickedLink → Navigate path as the menu
+// anchors, so the header offset (scroll-margin-top) is honored. Hovers
+// follow the CTA language: pink chips lift to paper, ink chips swap their
+// pink type to paper.
+const kicker = (index: string, label: string, dark: boolean, target: string): Html =>
   h.div(
     [h.Class('flex')],
     [
-      h.span(
+      h.a(
         [
+          h.Href(target),
           h.Class(
-            `display inline-block px-4 py-2 text-fluid-xl-3xl tracking-[0.2em] md:px-5 md:py-3 ${
-              dark ? 'bg-pink text-ink' : 'bg-ink text-pink'
+            `display inline-block px-4 py-2 text-fluid-xl-3xl tracking-[0.2em] transition-colors duration-300 md:px-5 md:py-3 ${
+              dark
+                ? 'bg-pink text-ink hover:bg-paper active:bg-paper'
+                : 'bg-ink text-pink hover:text-paper active:text-paper'
             }`,
           ),
           h.DataAttribute('reveal', 'wipe'),
@@ -1254,7 +1263,7 @@ const storyView = (): Html =>
       h.div(
         [h.Class(`${container} relative z-10`)],
         [
-          kicker('01', 'Why care', false),
+          kicker('01', 'Why care', false, '/#why-care'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [
@@ -1494,7 +1503,7 @@ const competitionsView = (): Html =>
       h.div(
         [h.Class(`${container} relative`)],
         [
-          kicker('02', 'What we cover', true),
+          kicker('02', 'What we cover', true, '/#competitions'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [maskedLine('How she plays.', 'text-fluid-6xl-9xl', 0)],
@@ -1655,7 +1664,7 @@ const championsView = (): Html =>
       h.div(
         [h.Class(`${container} relative z-10`)],
         [
-          kicker('04', 'Meet our champion', false),
+          kicker('04', 'Meet our champion', false, '/#champions'),
           h.h2([h.Class('mt-10 md:mt-16')], [maskedLine('Sparta Praha.', 'text-fluid-6xl-9xl', 0)]),
           // Makes "champion" unambiguous: this is the REIGNING one, and the
           // season below is the case for it.
@@ -2304,7 +2313,7 @@ const starView = (): Html =>
       h.div(
         [h.Class(container)],
         [
-          kicker('05', 'Stargirl in the making', true),
+          kicker('05', 'Stargirl in the making', true, '/#star'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [maskedLine('Our queen.', 'text-fluid-6xl-9xl text-pink', 0)],
@@ -3026,7 +3035,7 @@ const clubsView = (model: Model): Html =>
       h.div(
         [h.Class(container)],
         [
-          kicker('03', 'The map', true),
+          kicker('03', 'The map', true, '/#clubs'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [maskedLine('Where she plays.', 'text-fluid-6xl-9xl', 0)],
@@ -3489,7 +3498,7 @@ const nationalTeamView = (): Html =>
       h.div(
         [h.Class(container)],
         [
-          kicker('06', 'The national team', false),
+          kicker('06', 'The national team', false, '/#national-team'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [
@@ -3644,7 +3653,7 @@ const followView = (): Html =>
       h.div(
         [h.Class(container)],
         [
-          kicker('07', 'Week-in-week-out', true),
+          kicker('07', 'Week-in-week-out', true, '/#follow'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [maskedLine('Follow the game.', 'text-fluid-5xl-9xl', 0)],
