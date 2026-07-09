@@ -605,6 +605,67 @@ body {
   transition-delay: calc(0.25s + var(--menu-index, 0) * 0.07s);
 }
 
+/* Platform CTAs sell the click through their arrow: a double nudge to the
+   right — "go on" — knocking on repeat, and a held push once the pointer
+   commits (hover). The word itself stays planted; the invitation is the
+   gesture. `.platform-beckon` marks the CTA anchor; each usage site scopes
+   WHEN the knock runs (below), because an off-screen or hidden arrow
+   shouldn't tick an animation. */
+@keyframes platform-beckon {
+  0%,
+  48%,
+  100% {
+    transform: none;
+  }
+  12%,
+  36% {
+    transform: translateX(0.16em);
+  }
+  24% {
+    transform: none;
+  }
+}
+
+.platform-beckon svg {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.platform-beckon:hover svg,
+.platform-beckon:active svg {
+  animation: none;
+  transform: translateX(0.14em);
+}
+
+/* The hero's arrow starts once its own fade-in has landed (--hero-delay
+   1.3s + the fade). */
+.hero-cta svg {
+  animation: platform-beckon 2s ease-in-out 2.2s infinite;
+}
+
+/* The header's arrow knocks at the same speed but rests much longer — it
+   sits on screen for the entire scroll, so it should remind, not nag.
+   Separate keyframes because stretching the 2s cycle would slow the knock
+   itself down with it: here the knock keeps its ~0.9s and the remaining
+   80% of the cycle is stillness. Runs only while motion.ts actually shows
+   the CTA (.is-visible). */
+@keyframes platform-beckon-rested {
+  0%,
+  20%,
+  100% {
+    transform: none;
+  }
+  5%,
+  15% {
+    transform: translateX(0.16em);
+  }
+  10% {
+    transform: none;
+  }
+}
+
+.header-cta.is-visible svg {
+  animation: platform-beckon-rested 4.4s ease-in-out 1s infinite;
+}
 /* Social rows: sliding pink underlay on hover. */
 .social-row {
   position: relative;
@@ -743,5 +804,9 @@ body {
 
   .menu-overlay .menu-item {
     transition: none;
+  }
+
+  .platform-beckon svg {
+    animation: none;
   }
 }
