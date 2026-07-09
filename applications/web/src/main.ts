@@ -544,7 +544,7 @@ const competitions: ReadonlyArray<Competition> = [
   },
   {
     slug: 'uwcl',
-    label: 'UWCL',
+    label: 'Champions League',
     image: uwclImage,
     badge: uwclBadge,
     alt: 'A Slavia Praha player driving past a Galatasaray captain on a European night',
@@ -570,7 +570,7 @@ const competitions: ReadonlyArray<Competition> = [
   },
   {
     slug: 'uwec',
-    label: 'UWEC',
+    label: 'Europa Cup',
     image: uwecImage,
     badge: uwecBadge,
     alt: 'A Sparta Praha player in the black away kit striking the ball in the rain',
@@ -1532,27 +1532,37 @@ const competitionCard = (competition: Competition): Html =>
       // The photo is NOT a link — only the label button below navigates, so
       // it alone carries the hover state and the arrow.
       h.div(
-        [h.Class('relative overflow-hidden')],
+        [h.Class('relative')],
         [
-          // Reveal on its own layer so the img's hover transition stays
-          // clean (see the youth strip note).
+          // The zoom reveal's clip lives one layer down, NOT on the
+          // positioning wrapper — the badge below straddles the photo's
+          // corner and an outer overflow-hidden would slice it off.
           h.div(
-            [h.DataAttribute('reveal', 'zoom'), h.Style({ '--reveal-delay': '0.1s' })],
+            [h.Class('overflow-hidden')],
             [
-              h.img([
-                h.Src(competition.image),
-                h.Alt(competition.alt),
-                h.Loading('lazy'),
-                h.Class('aspect-square w-full object-cover'),
-              ]),
+              h.div(
+                [h.DataAttribute('reveal', 'zoom'), h.Style({ '--reveal-delay': '0.1s' })],
+                [
+                  h.img([
+                    h.Src(competition.image),
+                    h.Alt(competition.alt),
+                    h.Loading('lazy'),
+                    h.Class('aspect-square w-full object-cover'),
+                  ]),
+                ],
+              ),
             ],
           ),
-          // The competition's brand tile, stamped in the photo's corner.
+          // The competition's brand tile, straddling the photo's top-right
+          // corner — the same poking-into-space language as the label bar
+          // on the bottom edge.
           h.img([
             h.Src(competition.badge),
             h.Alt(''),
             h.Loading('lazy'),
-            h.Class('pointer-events-none absolute top-0 right-0 h-12 w-12 md:h-14 md:w-14'),
+            h.Class(
+              'pointer-events-none absolute -top-4 -right-4 h-12 w-12 md:-top-5 md:-right-5 md:h-14 md:w-14',
+            ),
           ]),
         ],
       ),
