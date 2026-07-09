@@ -617,6 +617,9 @@ const menuEntries: ReadonlyArray<MenuEntry> = [
   { label: 'Follow', target: '/#follow' },
 ];
 
+// Platform links deliberately open in the SAME tab — the platform is our own
+// product, so the jump is a continuation, not a departure. Only third-party
+// links (socials, UEFA, competition sites) get target=_blank + noopener.
 const platformUrl = 'https://platform.skoreova.filipfalcon.com';
 
 // SUBSCRIPTIONS
@@ -735,7 +738,12 @@ const headerView = (model: Model): Html =>
             // Plain `/` — a soft in-app reset to the landing page top (the
             // Navigate command scrolls to 0 when there's no fragment), not a
             // `#top` anchor smooth-scroll.
-            [h.Href('/'), h.Class('display text-xl tracking-wide text-paper md:text-2xl')],
+            [
+              h.Href('/'),
+              h.Class(
+                'display text-xl tracking-wide text-paper transition-colors duration-300 hover:text-pink md:text-2xl',
+              ),
+            ],
             ['Skóreová', h.span([h.Class('text-pink')], ['.'])],
           ),
           h.div(
@@ -749,7 +757,7 @@ const headerView = (model: Model): Html =>
                 [
                   h.Href(platformUrl),
                   h.Class(
-                    'header-cta display hidden bg-pink px-4 py-1 text-lg tracking-[0.08em] text-ink hover:bg-paper md:inline-block',
+                    'header-cta display hidden bg-pink px-4 py-1 text-lg tracking-[0.08em] text-ink hover:bg-paper active:bg-paper md:inline-block',
                   ),
                 ],
                 ['Enter platform'],
@@ -762,7 +770,7 @@ const headerView = (model: Model): Html =>
                   h.AriaLabel(model.menuOpen ? 'Close menu' : 'Open menu'),
                   h.AriaExpanded(model.menuOpen),
                   h.Class(
-                    'display flex cursor-pointer items-center text-paper transition-colors hover:text-pink',
+                    'display flex cursor-pointer items-center text-paper transition-colors duration-300 hover:text-pink',
                   ),
                 ],
                 [
@@ -805,7 +813,7 @@ const menuOverlayView = (model: Model): Html =>
                 [
                   h.Href(platformUrl),
                   h.Class(
-                    'display block py-4 text-fluid-5xl-8xl text-pink transition-colors hover:text-paper active:text-paper md:py-6',
+                    'display block py-4 text-fluid-5xl-8xl text-pink transition-colors duration-300 hover:text-paper active:text-paper md:py-6',
                   ),
                 ],
                 ['Platform →'],
@@ -827,7 +835,7 @@ const menuOverlayView = (model: Model): Html =>
                     h.Href(entry.target),
                     h.OnClick(ClosedMenu()),
                     h.Class(
-                      'display block py-4 text-fluid-5xl-8xl text-paper transition-colors hover:text-pink md:py-6',
+                      'display block py-4 text-fluid-5xl-8xl text-paper transition-colors duration-300 hover:text-pink md:py-6',
                     ),
                   ],
                   [entry.label],
@@ -849,7 +857,7 @@ const menuOverlayView = (model: Model): Html =>
               h.Target('_blank'),
               h.Rel('noopener noreferrer'),
               h.Class(
-                'text-sm tracking-[0.2em] uppercase text-paper/60 transition-colors hover:text-pink',
+                'text-sm tracking-[0.2em] uppercase text-paper/60 transition-colors duration-300 hover:text-pink',
               ),
             ],
             [channel.name],
@@ -1140,7 +1148,7 @@ const storyView = (): Html =>
           // reveal sits on this wrapper, not the children) so the button lands
           // at the same moment as the line it belongs to.
           h.div(
-            [h.Class('mt-8 md:mt-14'), h.DataAttribute('reveal', 'up')],
+            [h.Class('mt-8 md:mt-12'), h.DataAttribute('reveal', 'up')],
             [
               h.p(
                 [h.Class('display max-w-4xl text-fluid-2xl-4xl leading-snug')],
@@ -1164,7 +1172,7 @@ const storyView = (): Html =>
           // Each stat carries its own short ink tick instead of one heavy
           // full-width rule — lighter, and the ticks column-align the grid.
           h.dl(
-            [h.Class('mt-16 grid gap-10 md:mt-20 md:grid-cols-3')],
+            [h.Class('mt-14 grid gap-10 md:mt-20 md:grid-cols-3')],
             unstoppableTargets.map((stat, index) =>
               h.div(
                 [
@@ -1172,7 +1180,7 @@ const storyView = (): Html =>
                   h.Style({ '--reveal-delay': `${index * 0.15}s` }),
                 ],
                 [
-                  h.div([h.Class('mb-5 h-1 w-12 bg-ink')], []),
+                  h.div([h.Class('mb-4 h-1 w-12 bg-ink')], []),
                   h.dt(
                     [
                       h.Class('display text-fluid-7xl-8xl text-pink'),
@@ -1181,7 +1189,11 @@ const storyView = (): Html =>
                     [stat.value],
                   ),
                   h.dd(
-                    [h.Class('mt-3 max-w-52 text-sm leading-relaxed tracking-wider uppercase')],
+                    [
+                      h.Class(
+                        'mt-3 max-w-52 text-xs leading-relaxed tracking-[0.2em] uppercase md:text-sm',
+                      ),
+                    ],
                     [stat.label],
                   ),
                 ],
@@ -1253,9 +1265,7 @@ const storyView = (): Html =>
                             h.Src(photo.image),
                             h.Alt(photo.alt),
                             h.Loading('lazy'),
-                            h.Class(
-                              'aspect-square w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.02]',
-                            ),
+                            h.Class('aspect-square w-full object-cover'),
                           ]),
                         ],
                       ),
@@ -1291,9 +1301,7 @@ const competitionCard = (competition: Competition): Html =>
                 h.Src(competition.image),
                 h.Alt(competition.alt),
                 h.Loading('lazy'),
-                h.Class(
-                  'aspect-square w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.02]',
-                ),
+                h.Class('aspect-square w-full object-cover'),
               ]),
             ],
           ),
@@ -1398,7 +1406,7 @@ const competitionsView = (): Html =>
             [h.DataAttribute('reveal-group', 'replay')],
             [
               h.div(
-                [h.Class('mt-14 grid gap-10 md:mt-20 md:grid-cols-3 md:gap-8')],
+                [h.Class('mt-14 grid gap-10 md:mt-20 md:grid-cols-3')],
                 competitions.map(competitionCard),
               ),
               h.div(
@@ -1592,7 +1600,7 @@ const championsView = (): Html =>
           h.div(
             [
               h.Class(
-                'mt-14 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t-4 border-ink pt-5 md:mt-24',
+                'mt-16 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t-4 border-ink pt-5 md:mt-24',
               ),
               h.DataAttribute('reveal', 'up'),
             ],
@@ -1608,7 +1616,7 @@ const championsView = (): Html =>
             ],
           ),
           h.div(
-            [h.Class('mt-10 grid gap-14 md:mt-14 md:grid-cols-2 md:gap-16')],
+            [h.Class('mt-10 grid gap-12 md:mt-14 md:grid-cols-2 md:gap-16')],
             [
               // Left: the 7:0 habit.
               h.div(
@@ -1680,7 +1688,7 @@ const championsView = (): Html =>
                               h.span(
                                 [
                                   h.Class(
-                                    'order-last w-full text-xs tracking-wider uppercase opacity-60 md:order-none md:w-auto md:text-sm',
+                                    'order-last w-full text-xs tracking-[0.2em] uppercase opacity-60 md:order-none md:w-auto md:text-sm',
                                   ),
                                 ],
                                 [rout.stage],
@@ -1920,7 +1928,7 @@ const championsView = (): Html =>
                                         h.p(
                                           [
                                             h.Class(
-                                              'mt-1 text-[10px] tracking-[0.15em] uppercase opacity-60',
+                                              'mt-1 text-[10px] tracking-[0.2em] uppercase opacity-60',
                                             ),
                                           ],
                                           [tie.note],
@@ -1955,16 +1963,14 @@ const championsView = (): Html =>
                               'Sparta Praha player kissing toward the league trophy with the cup trophy in hand, under the champions arch',
                             ),
                             h.Loading('lazy'),
-                            h.Class(
-                              'w-full transition-transform duration-700 ease-out hover:scale-[1.02]',
-                            ),
+                            h.Class('w-full'),
                           ]),
                         ],
                       ),
                     ],
                   ),
                   h.figcaption(
-                    [h.Class('mt-3 text-center text-xs tracking-[0.2em] uppercase opacity-60')],
+                    [h.Class('mt-3 text-center text-xs tracking-[0.2em] uppercase text-ink/60')],
                     ['Ellie Ospeck enjoying the trophies.'],
                   ),
                 ],
@@ -1978,7 +1984,7 @@ const championsView = (): Html =>
           h.div(
             [
               h.Class(
-                'mt-16 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t-4 border-ink pt-5 md:mt-28',
+                'mt-16 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t-4 border-ink pt-5 md:mt-24',
               ),
               h.DataAttribute('reveal', 'up'),
             ],
@@ -2051,7 +2057,7 @@ const championsView = (): Html =>
                       // the dashboard.
                       h.Href(platformUrl),
                       h.Class(
-                        'display mt-10 inline-block bg-ink px-8 py-4 text-xl text-paper transition-colors duration-300 hover:bg-pink hover:text-ink md:text-2xl',
+                        'display mt-10 inline-block bg-ink px-8 py-4 text-xl text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
                       ),
                       h.DataAttribute('reveal', 'up'),
                       h.Style({ '--reveal-delay': '0.4s' }),
@@ -2100,9 +2106,7 @@ const championsView = (): Html =>
                                       'Sparta Praha players lifting the league trophy at epet Arena',
                                     ),
                                     h.Loading('lazy'),
-                                    h.Class(
-                                      'aspect-[4/5] w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.02]',
-                                    ),
+                                    h.Class('aspect-[4/5] w-full object-cover'),
                                   ]),
                                 ],
                               ),
@@ -2140,9 +2144,7 @@ const championsView = (): Html =>
                                       'The Sparta Praha squad celebrating with medals in front of the stand',
                                     ),
                                     h.Loading('lazy'),
-                                    h.Class(
-                                      'aspect-[4/5] w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.02]',
-                                    ),
+                                    h.Class('aspect-[4/5] w-full object-cover'),
                                   ]),
                                 ],
                               ),
@@ -2328,7 +2330,7 @@ const starView = (): Html =>
                           h.dd(
                             [
                               h.Class(
-                                'mt-2 text-xs tracking-[0.2em] uppercase text-paper/60 md:text-sm',
+                                'mt-3 text-xs tracking-[0.2em] uppercase text-paper/60 md:text-sm',
                               ),
                             ],
                             [stat.label],
@@ -2713,7 +2715,7 @@ const clubPin = (model: Model, club: Club): Html => {
       h.span(
         [
           h.Class(
-            `pointer-events-none absolute hidden -translate-x-1/2 border border-paper/20 bg-ink px-3 py-2 text-left whitespace-nowrap opacity-0 transition-opacity duration-200 group-hover:opacity-100 md:block ${
+            `pointer-events-none absolute hidden -translate-x-1/2 border border-paper/15 bg-ink px-3 py-2 text-left whitespace-nowrap opacity-0 transition-opacity duration-200 group-hover:opacity-100 md:block ${
               below ? 'translate-y-0' : '-translate-y-full'
             }`,
           ),
@@ -2738,7 +2740,7 @@ const clubPin = (model: Model, club: Club): Html => {
               [team.name],
             ),
             h.span(
-              [h.Class('block text-[10px] tracking-[0.15em] uppercase text-pink')],
+              [h.Class('block text-[10px] tracking-[0.2em] uppercase text-pink')],
               [`${team.city} — ${team.league}`],
             ),
           ]),
@@ -2754,7 +2756,7 @@ const clubPin = (model: Model, club: Club): Html => {
 // which can lay out TWO of these side by side (a club and its B side).
 const clubCardBox = (club: Club): Html =>
   h.div(
-    [h.Class('w-72 border border-paper/20 bg-ink shadow-[0_20px_60px_rgba(0,0,0,0.6)]')],
+    [h.Class('w-72 border border-paper/15 bg-ink shadow-[0_20px_60px_rgba(0,0,0,0.6)]')],
     [
       h.div(
         [h.Class('relative')],
@@ -2791,7 +2793,7 @@ const clubCardBox = (club: Club): Html =>
               h.OnClick(ClosedMapClubCard({ slug: club.slug })),
               h.AriaLabel(`Close ${club.name} card`),
               h.Class(
-                'display absolute top-2 right-2 flex h-7 w-7 cursor-pointer items-center justify-center bg-ink/70 text-sm text-paper transition-colors hover:bg-pink hover:text-ink',
+                'display absolute top-2 right-2 flex h-7 w-7 cursor-pointer items-center justify-center bg-ink/70 text-sm text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink',
               ),
             ],
             ['✕'],
@@ -2803,7 +2805,7 @@ const clubCardBox = (club: Club): Html =>
         [
           h.p([h.Class('display text-2xl text-paper')], [club.name]),
           h.p(
-            [h.Class('mt-1 text-[10px] tracking-[0.15em] uppercase text-pink')],
+            [h.Class('mt-1 text-[10px] tracking-[0.2em] uppercase text-pink')],
             [`${club.city} — ${club.league}`],
           ),
           h.div(
@@ -2814,7 +2816,7 @@ const clubCardBox = (club: Club): Html =>
                 [
                   h.p([h.Class('display text-2xl text-paper')], [`${club.leagueTitles}×`]),
                   h.p(
-                    [h.Class('mt-0.5 text-[10px] tracking-[0.15em] uppercase text-paper/70')],
+                    [h.Class('mt-0.5 text-[10px] tracking-[0.2em] uppercase text-paper/60')],
                     ['League titles'],
                   ),
                 ],
@@ -2824,7 +2826,7 @@ const clubCardBox = (club: Club): Html =>
                 [
                   h.p([h.Class('display text-2xl text-paper')], [`${club.cupTitles}×`]),
                   h.p(
-                    [h.Class('mt-0.5 text-[10px] tracking-[0.15em] uppercase text-paper/70')],
+                    [h.Class('mt-0.5 text-[10px] tracking-[0.2em] uppercase text-paper/60')],
                     ['Cup titles'],
                   ),
                 ],
@@ -2881,7 +2883,8 @@ const mapLeagueChip = (model: Model, league: MapLeague, label: string): Html =>
     [
       h.Type('button'),
       h.OnClick(SelectedMapLeague({ league })),
-      // Compact on phones so all three fit one row; roomier from `md` up.
+      // Compact on phones so all three fit one row (incl. the tighter
+      // tracking — the canonical 0.2em wraps the row); roomier from `md` up.
       h.Class(
         `cursor-pointer border px-2.5 py-1.5 text-[10px] tracking-[0.15em] uppercase transition-colors duration-300 md:px-4 md:py-2 md:tracking-[0.2em] ${
           model.mapLeague === league
@@ -2925,12 +2928,17 @@ const clubsView = (model: Model): Html =>
               // occupy the same grid cell, so the width never shifts — it's
               // fixed by the wider one, and the sentence period lives inside
               // each variant to hug its own number.
-              h.span(
+              // A real button so the unit swap also works from the keyboard
+              // and gets the pink focus ring; cursor-help still signals
+              // "informational" rather than navigational.
+              h.button(
                 [
+                  h.Type('button'),
                   h.Class(
                     'area-swap inline-grid cursor-help justify-items-center whitespace-nowrap underline decoration-pink decoration-dotted decoration-2 underline-offset-4 select-none',
                   ),
                   h.OnClick(ToggledAreaUnit()),
+                  h.AriaLabel('Toggle between metric and imperial area'),
                 ],
                 [
                   h.span(
@@ -2974,7 +2982,11 @@ const clubsView = (model: Model): Html =>
               // The numbers REACT to the league filter: with only the
               // second league selected they count that land's second-league
               // sides (B teams count via their parent's pin).
-              h.dl(
+              // Real buttons (not a styled dl): keyboard toggling and the
+              // global pink focus ring come for free, and `aria-pressed`
+              // tells AT what the tap does. Text left-aligned to override
+              // the UA's centered button text.
+              h.div(
                 [h.Class('grid grid-cols-3 gap-8 md:gap-12')],
                 (
                   [
@@ -2992,11 +3004,13 @@ const clubsView = (model: Model): Html =>
                   const value = `${count}`;
                   const label = `${adjective} ${count === 1 ? 'Club' : 'Clubs'}`;
                   const checked = model.mapRegions.includes(region);
-                  return h.div(
+                  return h.button(
                     [
-                      h.Class('group cursor-pointer select-none'),
+                      h.Type('button'),
+                      h.Class('group cursor-pointer text-left select-none'),
                       h.OnClick(ToggledMapRegion({ region })),
                       h.AriaLabel(`${checked ? 'Hide' : 'Show'} ${region} on the map`),
+                      h.AriaPressed(checked ? 'true' : 'false'),
                       h.DataAttribute('reveal', 'up'),
                       h.Style({ '--reveal-delay': `${index * 0.15}s` }),
                     ],
@@ -3011,7 +3025,7 @@ const clubsView = (model: Model): Html =>
                         ],
                         [],
                       ),
-                      h.dt(
+                      h.div(
                         [
                           h.Class(
                             `display text-fluid-6xl-7xl transition-colors duration-300 ${
@@ -3030,10 +3044,10 @@ const clubsView = (model: Model): Html =>
                         ],
                         [value],
                       ),
-                      h.dd(
+                      h.div(
                         [
                           h.Class(
-                            `mt-3 text-xs leading-relaxed tracking-wider uppercase transition-colors duration-300 md:whitespace-nowrap ${
+                            `mt-3 text-xs leading-relaxed tracking-[0.2em] uppercase transition-colors duration-300 md:whitespace-nowrap ${
                               checked ? '' : 'text-paper/40'
                             }`,
                           ),
@@ -3292,7 +3306,7 @@ const statementView = (): Html =>
           ),
           h.p(
             [
-              h.Class('mx-auto mt-8 max-w-xl text-base leading-relaxed text-paper/60 md:text-lg'),
+              h.Class('mx-auto mt-8 max-w-xl text-base leading-relaxed text-paper/70 md:text-lg'),
               h.DataAttribute('reveal', 'up'),
               h.DataAttribute('reveal-late', ''),
               h.Style({ '--reveal-delay': '0.7s' }),
@@ -3364,7 +3378,7 @@ const nationalTeamView = (): Html =>
             ],
           ),
           h.div(
-            [h.Class('mt-12 grid items-center gap-12 md:mt-20 md:grid-cols-2 md:gap-16')],
+            [h.Class('mt-14 grid items-center gap-12 md:mt-20 md:grid-cols-2 md:gap-16')],
             [
               h.div(
                 [],
@@ -3390,7 +3404,7 @@ const nationalTeamView = (): Html =>
                           h.Style({ '--reveal-delay': `${index * 0.15}s` }),
                         ],
                         [
-                          h.div([h.Class('mb-5 h-1 w-12 bg-ink')], []),
+                          h.div([h.Class('mb-4 h-1 w-12 bg-ink')], []),
                           h.dt(
                             [h.Class('display text-fluid-6xl-7xl'), h.DataAttribute('countup', '')],
                             [stat.value],
@@ -3398,7 +3412,7 @@ const nationalTeamView = (): Html =>
                           h.dd(
                             [
                               h.Class(
-                                'mt-3 max-w-52 text-sm leading-relaxed tracking-wider uppercase',
+                                'mt-3 max-w-52 text-xs leading-relaxed tracking-[0.2em] uppercase md:text-sm',
                               ),
                             ],
                             [stat.label],
@@ -3439,9 +3453,7 @@ const nationalTeamView = (): Html =>
                           'The two Czech national team lion mascots in red home shirts, one wearing a golden crown',
                         ),
                         h.Loading('lazy'),
-                        h.Class(
-                          'aspect-[3/2] w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.02]',
-                        ),
+                        h.Class('aspect-[3/2] w-full object-cover'),
                       ]),
                     ],
                   ),
@@ -3518,11 +3530,11 @@ const followView = (): Html =>
             [maskedLine('Follow the game.', 'text-fluid-5xl-9xl', 0)],
           ),
           h.ul(
-            [h.Class('mt-14 border-t border-paper/20 md:mt-24')],
+            [h.Class('mt-14 border-t border-paper/15 md:mt-20')],
             socialChannels.map((channel, index) =>
               h.li(
                 [
-                  h.Class('border-b border-paper/20'),
+                  h.Class('border-b border-paper/15'),
                   h.DataAttribute('reveal', 'up'),
                   h.Style({ '--reveal-delay': `${index * 0.08}s` }),
                 ],
@@ -3540,7 +3552,7 @@ const followView = (): Html =>
                       h.span(
                         [
                           h.Class(
-                            'display text-fluid-4xl-6xl text-paper transition-colors group-hover:text-ink',
+                            'display text-fluid-4xl-6xl text-paper transition-colors duration-300 group-hover:text-ink',
                           ),
                         ],
                         [channel.name],
@@ -3548,7 +3560,7 @@ const followView = (): Html =>
                       h.span(
                         [
                           h.Class(
-                            'text-sm tracking-[0.2em] text-paper/50 transition-colors group-hover:text-ink md:text-base',
+                            'text-sm tracking-[0.2em] text-paper/60 transition-colors duration-300 group-hover:text-ink md:text-base',
                           ),
                         ],
                         [`${channel.handle} ↗︎`],
@@ -3575,7 +3587,7 @@ const footerView = (menuOpen: boolean): Html =>
       h.div(
         [
           h.Class(
-            `${container} flex flex-col gap-4 text-xs tracking-[0.2em] uppercase text-paper/50 md:flex-row md:items-center md:justify-between`,
+            `${container} flex flex-col gap-4 text-xs tracking-[0.2em] uppercase text-paper/60 md:flex-row md:items-center md:justify-between`,
           ),
         ],
         [
@@ -3891,7 +3903,7 @@ const topScorerView = (club: Club, model: Model): Html => {
                 [
                   h.span([h.Class('display block text-fluid-3xl-5xl')], [scorer.name]),
                   h.span(
-                    [h.Class('mt-1 block text-xs tracking-[0.2em] uppercase text-paper/50')],
+                    [h.Class('mt-1 block text-xs tracking-[0.2em] uppercase text-paper/60')],
                     [model.scorerScope === 'current' ? 'Goals this season' : 'Goals all time'],
                   ),
                 ],
@@ -3915,7 +3927,7 @@ const backToMapView = (): Html =>
             [
               h.Href('/#clubs'),
               h.Class(
-                'display inline-block bg-ink px-8 py-4 text-xl text-paper transition-colors duration-300 hover:bg-pink hover:text-ink md:text-2xl',
+                'display inline-block bg-ink px-8 py-4 text-xl text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
               ),
             ],
             ['← Back to the map'],
@@ -4070,7 +4082,7 @@ const competitionHistoryView = (competition: Competition): Html =>
                   h.dd(
                     [
                       h.Class(
-                        'mt-3 max-w-60 text-sm leading-relaxed tracking-wider uppercase text-paper/60',
+                        'mt-3 max-w-60 text-xs leading-relaxed tracking-[0.2em] uppercase text-paper/60 md:text-sm',
                       ),
                     ],
                     [stat.label],
@@ -4095,7 +4107,7 @@ const backToCompetitionsView = (): Html =>
             [
               h.Href('/#competitions'),
               h.Class(
-                'display inline-block bg-ink px-8 py-4 text-xl text-paper transition-colors duration-300 hover:bg-pink hover:text-ink md:text-2xl',
+                'display inline-block bg-ink px-8 py-4 text-xl text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
               ),
             ],
             ['← Back to competitions'],

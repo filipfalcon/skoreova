@@ -224,8 +224,12 @@ body {
   transition: z-index 300ms linear;
 }
 
-.club-pin:hover {
-  transition: z-index 0s;
+/* Hover-only devices — on touch, iOS sticky hover would let a tapped pin
+   keep the instant z-index and stay raised over its neighbors. */
+@media (hover: hover) {
+  .club-pin:hover {
+    transition: z-index 0s;
+  }
 }
 
 @media (min-width: 768px) {
