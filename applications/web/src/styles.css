@@ -631,6 +631,32 @@ body {
   will-change: transform;
 }
 
+/* Honors collage: once the scrub has both prints level, motion.ts stamps
+   `is-assembled` on the grid and the halves click together, each crossing
+   half the column gap (gap-4 → 0.5rem each, md:gap-6 → 0.75rem). The
+   overshooting curve is the "click". Scrolling back releases them. */
+.collage-snap {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.is-assembled .collage-snap-left {
+  transform: translateX(0.5rem);
+}
+
+.is-assembled .collage-snap-right {
+  transform: translateX(-0.5rem);
+}
+
+@media (min-width: 48rem) {
+  .is-assembled .collage-snap-left {
+    transform: translateX(0.75rem);
+  }
+
+  .is-assembled .collage-snap-right {
+    transform: translateX(-0.75rem);
+  }
+}
+
 /* Touch devices: `:active` styles must SNAP into place — the buttons'
    300ms color transition swallowed the tap flash entirely (the finger is
    gone long before the color arrives). Zeroing the duration only while

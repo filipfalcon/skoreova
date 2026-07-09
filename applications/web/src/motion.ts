@@ -12,6 +12,11 @@ import { m } from 'foldkit/message';
 // - [data-reveal]        in/out reveal classes, replaying on every re-entry
 // - [data-countup]       numbers count up from 0 when their reveal enters
 // - [data-parallax]      scroll-lagged layers (speed = fraction of scroll)
+// - [data-scrub-align]   scroll-scrubbed cancel of the element's own top
+//                        margin — staggered until its parent reaches the
+//                        viewport center, then sitting level (a negative
+//                        margin scrubs downward, so a ±margin pair
+//                        converges to the middle)
 // - [data-marquee]       ticker whose speed/direction reacts to scroll velocity
 // - [data-tilt]          3D card tilt following the pointer while hovered
 //
@@ -582,6 +587,21 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
     speed: Number(element.dataset['parallax']) || 0.2,
   }));
 
+  // ----- Scroll-scrubbed alignment -------------------------------------------
+  // The element's own top margin IS the stagger being cancelled — measured
+  // per frame so responsive margins survive rotations. Progress runs from
+  // the parent entering the viewport's bottom edge (0), directly
+  // scroll-bound: no easing, no lag, reversible by scrolling back. The
+  // lead factor compresses the window — at 1 the scrub would finish with
+  // the parent's center on the viewport's center; higher finishes that
+  // much sooner, so a big stagger still assembles while the eye arrives.
+
+  const SCRUB_ALIGN_LEAD = 1.4;
+
+  const scrubAlignLayers: ReadonlyArray<HTMLElement> = Array.from(
+    root.querySelectorAll<HTMLElement>('[data-scrub-align]'),
+  );
+
   // ----- Hero tilt -----------------------------------------------------------
   // The hero photo's parallax layer leans very slightly with the input —
   // capped around a degree and lazily lerped, so it reads as depth, not
@@ -823,6 +843,25 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       } else {
         layer.element.style.transform = `translate3d(0, ${scrollOffset.toFixed(1)}px, 0)`;
       }
+    }
+
+    for (const layer of scrubAlignLayers) {
+      const host = layer.parentElement ?? layer;
+      const rect = host.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const progress = Math.min(
+        1,
+        Math.max(
+          0,
+          ((viewportHeight - rect.top) / ((viewportHeight + rect.height) / 2)) * SCRUB_ALIGN_LEAD,
+        ),
+      );
+      const stagger = Number.parseFloat(getComputedStyle(layer).marginTop) || 0;
+      layer.style.transform = `translate3d(0, ${(-stagger * progress).toFixed(1)}px, 0)`;
+      // The finishing CLICK: at full progress the host is stamped so CSS
+      // can snap its .collage-snap children together (a transition, not a
+      // scrub — it must run on its own element and its own clock).
+      host.classList.toggle('is-assembled', progress >= 1);
     }
 
     for (const marquee of marquees) {

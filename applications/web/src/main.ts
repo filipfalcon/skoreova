@@ -2052,58 +2052,94 @@ const championsView = (): Html =>
                   ),
                 ],
               ),
-              // Offset two-photo collage: the second image starts lower, like
-              // prints laid loosely on a table.
+              // Offset two-photo collage that ASSEMBLES on scroll: the first
+              // print starts below the shared center line (+margin), the
+              // second above it (-margin, pulled into the grid's matching
+              // top padding so nothing overflows the box). Each scrub layer
+              // cancels its own margin pixel-by-pixel, so both prints
+              // converge symmetrically and sit level in the middle — one
+              // photo — well before the viewport's center (the scrub's lead
+              // factor buys the big stagger a fast timeline; motion.ts). At
+              // full progress motion.ts stamps `is-assembled` on the grid
+              // and the .collage-snap halves CLICK together, closing the
+              // column gap (see styles.css). Scrub, snap, and reveal/tilt
+              // each own a separate wrapper — three transform owners that
+              // must not overwrite each other.
               h.div(
-                [h.Class('grid grid-cols-2 gap-4 md:gap-6')],
+                [h.Class('grid grid-cols-2 gap-4 pt-20 md:gap-6 md:pt-32')],
                 [
                   h.div(
-                    [
-                      h.Class('overflow-hidden'),
-                      h.DataAttribute('reveal', 'up'),
-                      h.DataAttribute('tilt', ''),
-                    ],
+                    [h.Class('mt-20 md:mt-32'), h.DataAttribute('scrub-align', '')],
                     [
                       h.div(
-                        [h.DataAttribute('reveal', 'zoom')],
+                        [h.Class('collage-snap collage-snap-left')],
                         [
-                          h.img([
-                            h.Src(championsTrophyImage),
-                            h.Width('1170'),
-                            h.Height('1462'),
-                            h.Alt('Sparta Praha players lifting the league trophy at epet Arena'),
-                            h.Loading('lazy'),
-                            h.Class(
-                              'aspect-[4/5] w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.02]',
-                            ),
-                          ]),
+                          h.div(
+                            [
+                              h.Class('overflow-hidden'),
+                              h.DataAttribute('reveal', 'up'),
+                              h.DataAttribute('tilt', ''),
+                            ],
+                            [
+                              h.div(
+                                [h.DataAttribute('reveal', 'zoom')],
+                                [
+                                  h.img([
+                                    h.Src(championsTrophyImage),
+                                    h.Width('1170'),
+                                    h.Height('1462'),
+                                    h.Alt(
+                                      'Sparta Praha players lifting the league trophy at epet Arena',
+                                    ),
+                                    h.Loading('lazy'),
+                                    h.Class(
+                                      'aspect-[4/5] w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.02]',
+                                    ),
+                                  ]),
+                                ],
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ],
                   ),
                   h.div(
-                    [
-                      h.Class('mt-12 overflow-hidden md:mt-20'),
-                      h.DataAttribute('reveal', 'up'),
-                      h.DataAttribute('tilt', ''),
-                      h.Style({ '--reveal-delay': '0.15s' }),
-                    ],
+                    [h.Class('-mt-20 md:-mt-32'), h.DataAttribute('scrub-align', '')],
                     [
                       h.div(
-                        [h.DataAttribute('reveal', 'zoom'), h.Style({ '--reveal-delay': '0.25s' })],
+                        [h.Class('collage-snap collage-snap-right')],
                         [
-                          h.img([
-                            h.Src(championsSquadImage),
-                            h.Width('1170'),
-                            h.Height('1462'),
-                            h.Alt(
-                              'The Sparta Praha squad celebrating with medals in front of the stand',
-                            ),
-                            h.Loading('lazy'),
-                            h.Class(
-                              'aspect-[4/5] w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.02]',
-                            ),
-                          ]),
+                          h.div(
+                            [
+                              h.Class('overflow-hidden'),
+                              h.DataAttribute('reveal', 'up'),
+                              h.DataAttribute('tilt', ''),
+                              h.Style({ '--reveal-delay': '0.15s' }),
+                            ],
+                            [
+                              h.div(
+                                [
+                                  h.DataAttribute('reveal', 'zoom'),
+                                  h.Style({ '--reveal-delay': '0.25s' }),
+                                ],
+                                [
+                                  h.img([
+                                    h.Src(championsSquadImage),
+                                    h.Width('1170'),
+                                    h.Height('1462'),
+                                    h.Alt(
+                                      'The Sparta Praha squad celebrating with medals in front of the stand',
+                                    ),
+                                    h.Loading('lazy'),
+                                    h.Class(
+                                      'aspect-[4/5] w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.02]',
+                                    ),
+                                  ]),
+                                ],
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ],
