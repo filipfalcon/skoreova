@@ -10,6 +10,19 @@ const testing = process.env['VITEST'] === 'true';
 export default defineConfig({
   // Studio claims 9988 — each app needs its own DevTools MCP port.
   plugins: [tailwindcss(), ...(testing ? [] : [foldkit({ devToolsMcpPort: 9989 })])],
+  // Alchemy's deploy captures the build output through a `buildApp` post
+  // hook, but Vite 8 only runs the default environment builds AFTER all
+  // buildApp hooks when no real `builder.buildApp` exists — the hook then
+  // fires before anything is built and the deploy dies with "Vite build
+  // produced neither assets nor server output". Declaring the build here
+  // restores the pre-8 ordering (build first, post hooks after). Client
+  // only: this app is a static SPA, and the default `ssr` environment has
+  // no entry (building it dies with rolldown's INVALID_OPTION).
+  builder: {
+    buildApp: async (builder) => {
+      await builder.build(builder.environments['client']!);
+    },
+  },
   optimizeDeps: {
     entries: ['src/entry.ts'],
   },
