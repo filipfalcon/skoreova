@@ -745,8 +745,13 @@ const kicker = (index: string, label: string, dark: boolean, target: string): Ht
 // One line of a masked display headline: the wrapper clips, the inner span
 // rides up into view when revealed. Spans (not divs) so a headline built
 // from these lines can live inside <h1>/<h2>, which only allow phrasing
-// content.
-const maskedLine = (text: string, classes: string, delaySeconds: number): Html =>
+// content. Content may be a plain string or mixed children (for an accent
+// span inside the line).
+const maskedLine = (
+  content: string | ReadonlyArray<Html | string>,
+  classes: string,
+  delaySeconds: number,
+): Html =>
   h.span(
     [h.Class('block overflow-hidden')],
     [
@@ -756,7 +761,7 @@ const maskedLine = (text: string, classes: string, delaySeconds: number): Html =
           h.DataAttribute('reveal', 'mask'),
           h.Style({ '--reveal-delay': `${delaySeconds}s` }),
         ],
-        [text],
+        typeof content === 'string' ? [content] : [...content],
       ),
     ],
   );
@@ -1225,10 +1230,15 @@ const unstoppableProof: ReadonlyArray<Stat> = [
 ];
 
 // The youth strip in Why care — the generation the UEFA strategy is about.
+// The three photos are deliberately a LADDER — senior national team, youth
+// internationals, club grassroots — and the level chip above each caption
+// makes that thesis explicit: the make-or-break generation exists on every
+// floor of the pyramid.
 interface YouthPhoto {
   readonly image: string;
   readonly alt: string;
   readonly caption: string;
+  readonly level: string;
 }
 
 const youthPhotos: ReadonlyArray<YouthPhoto> = [
@@ -1236,17 +1246,21 @@ const youthPhotos: ReadonlyArray<YouthPhoto> = [
     image: youthWalkoutImage,
     alt: 'A national team player walking out hand in hand with a young girl mascot',
     caption:
-      'Lionesses captain Klára Cahynová leads the young generation onto the pitch during 2027 World Cup qualifiers.',
+      'Lionesses captain Klára Cahynová leads the young generation onto the pitch during World Cup 2027 qualifiers.',
+    level: 'National team',
   },
   {
     image: youthCelebrationImage,
     alt: 'Czech youth national team players running to celebrate a goal',
-    caption: 'Nela Řehová celebrates a goal against Finland during EURO U17 qualifiers.',
+    caption:
+      'Nela Řehová celebrates her goal scored against Finland during EURO U17 2027 qualifiers.',
+    level: 'Youth internationals',
   },
   {
     image: youthTrophyImage,
     alt: 'A girls’ youth team lifting a golden trophy with their arms in the air',
     caption: 'Lokomotiva Brno U13 players celebrate their league title.',
+    level: 'Grassroots',
   },
 ];
 
@@ -1396,23 +1410,31 @@ const storyView = (): Html =>
               ),
             ),
           ),
-          // The climax stands alone: evidence above, one pink ambition line,
-          // then a display subline (same device as the UEFA sentence) handing
-          // straight into the faces that could deliver it.
+          // The climax stands alone: evidence above, one ambition line with
+          // the pink reserved for the one word that matters, then a display
+          // subline (same device as the UEFA sentence) handing straight into
+          // the faces that could deliver it.
           h.div(
             [h.Class('mt-16 md:mt-24')],
-            [maskedLine('Let’s put Czechia on top.', 'text-fluid-5xl-8xl text-pink', 0)],
+            [
+              maskedLine(
+                ['Let’s put ', h.span([h.Class('text-pink')], ['Czechia']), ' on top.'],
+                'text-fluid-5xl-8xl',
+                0,
+              ),
+            ],
           ),
-          // One display step below the UEFA sentence — the pink climax line
-          // above stays the loudest voice; the smaller size alone does the
-          // demoting, the ink stays solid.
+          // One display step below the UEFA sentence — the climax line above
+          // stays the loudest voice; the smaller size alone does the
+          // demoting, the ink stays solid. Claim first, then the imperative:
+          // "it" needs its antecedent before it lands.
           h.p(
             [
               h.Class('display mt-6 max-w-4xl text-fluid-xl-3xl leading-snug md:mt-8'),
               h.DataAttribute('reveal', 'up'),
               h.Style({ '--reveal-delay': '0.2s' }),
             ],
-            ['Don’t sleep on it. This generation is make-or-break.'],
+            ['This generation is make-or-break. Don’t sleep on it.'],
           ),
           // Phones: a swipeable scroll-snap strip — one big photo with the
           // next peeking in from the right edge (the peek IS the affordance),
@@ -1467,7 +1489,25 @@ const storyView = (): Html =>
                       ),
                     ],
                   ),
-                  h.figcaption([h.Class('mt-3 text-xs leading-relaxed')], [photo.caption]),
+                  h.figcaption(
+                    [h.Class('mt-3 text-xs leading-relaxed')],
+                    [
+                      // The pyramid-level kicker — the same micro-type tier
+                      // as the stat sources — quiet metadata, NOT a pink
+                      // chip: three filled chips at three different heights
+                      // fought the headline's pink and broke the block's
+                      // documentary calm.
+                      h.span(
+                        [
+                          h.Class(
+                            'mb-1 block text-[10px] tracking-[0.2em] text-ink/50 uppercase select-none',
+                          ),
+                        ],
+                        [photo.level],
+                      ),
+                      h.span([h.Class('block')], [photo.caption]),
+                    ],
+                  ),
                 ],
               ),
             ),
