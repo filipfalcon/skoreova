@@ -54,6 +54,21 @@
   }
 }
 
+/* Anchored sections stop below the fixed header instead of sliding under
+   it — without this, fragment navigation decapitated each section's first
+   rows. Native jumps (initial load with a #hash) honor the property on
+   their own; animateScrollTo (main.ts) reads it explicitly. The values
+   mirror the header's h-14/md:h-16. */
+section[id] {
+  scroll-margin-top: 3.5rem;
+}
+
+@media (min-width: 48rem) {
+  section[id] {
+    scroll-margin-top: 4rem;
+  }
+}
+
 html {
   scroll-behavior: smooth;
   background: var(--color-ink);
