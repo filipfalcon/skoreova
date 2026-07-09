@@ -30,8 +30,7 @@ export const CompletedMountMotion = m('CompletedMountMotion');
 export const FailedMountMotion = m('FailedMountMotion', { reason: S.String });
 
 const REVEAL_CLIPPED_VARIANTS = new Set(['mask', 'wipe']);
-const COUNT_UP_MILLISECONDS = 1400;
-const COUNT_UP_EXTRA_DELAY_MS = 250;
+const COUNT_UP_MILLISECONDS = 1000;
 const MARQUEE_BASE_SPEED = 90; // px/s leftward drift with no scrolling
 const MARQUEE_VELOCITY_GAIN = 0.4; // how much scroll velocity feeds the ticker
 const MARQUEE_MAX_SPEED = 700;
@@ -189,12 +188,11 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       countUp.suffix = match[3] ?? '';
     }
     renderCount(countUp, 0);
-    countUp.timeout = window.setTimeout(
-      () => {
-        animateCount(countUp, 0, COUNT_UP_MILLISECONDS);
-      },
-      delaySeconds * 1000 + COUNT_UP_EXTRA_DELAY_MS,
-    );
+    // No buffer past the element's own reveal delay — a revealed number
+    // that sits on 0 before it starts moving reads as a stall.
+    countUp.timeout = window.setTimeout(() => {
+      animateCount(countUp, 0, COUNT_UP_MILLISECONDS);
+    }, delaySeconds * 1000);
   };
 
   const cancelCountUp = (countUp: CountUp): void => {
