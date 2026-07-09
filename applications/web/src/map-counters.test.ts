@@ -18,7 +18,7 @@ const waitUntil = async (predicate: () => boolean, timeout = 8000): Promise<void
 };
 
 const counterValues = (): ReadonlyArray<string> =>
-  Array.from(document.querySelectorAll('#clubs dl dt'), (node) => node.textContent ?? '');
+  Array.from(document.querySelectorAll('#clubs [data-countup]'), (node) => node.textContent ?? '');
 
 // Generous timeouts throughout: on a cold cache the whole suite's browser
 // pages compile and import at once, and a starved page can spend seconds
