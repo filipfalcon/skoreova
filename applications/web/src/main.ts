@@ -1616,27 +1616,17 @@ const competitionsView = (): Html =>
           kicker('02', 'Battling through', true, '/#battling-through'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
-            [maskedLine('How she plays.', 'text-fluid-6xl-9xl', 0)],
-          ),
-          // The framing line for the card grid: plenty of football is played
-          // here already — full professionalization is the open finish line.
-          h.p(
             [
-              h.Class('display mt-8 max-w-3xl text-fluid-xl-3xl leading-snug md:mt-12'),
-              h.DataAttribute('reveal', 'up'),
-            ],
-            [
-              'Czechia already plays a full calendar of competitions — none fully professional ',
-              h.span([h.Class('text-pink')], ['yet']),
-              '. We cover the ones closest to',
-              // On desktop the pink phrase owns the third line whole — a
-              // mid-phrase wrap ("making / that leap") read broken.
-              h.br([h.Class('hidden md:inline')]),
-              ' ',
-              h.span([h.Class('text-pink')], ['making that leap']),
-              '.',
+              maskedLine(
+                ['How ', h.span([h.Class('text-pink')], ['she']), ' plays.'],
+                'text-fluid-6xl-9xl',
+                0,
+              ),
             ],
           ),
+          // No subhead on purpose: "How she plays." is a question and the
+          // card grid is its answer — every framing sentence we tried here
+          // only delayed it. The competitions speak for themselves.
           // All six cards AND the trailing CTA fire as ONE simultaneous beat
           // keyed off this wrapper, re-arming when it scrolls away
           // ('replay') — the CTA belongs to the grid's moment, not its own
@@ -1645,7 +1635,10 @@ const competitionsView = (): Html =>
             [h.DataAttribute('reveal-group', 'replay')],
             [
               h.div(
-                [h.Class('mt-14 grid gap-10 md:mt-20 md:grid-cols-3')],
+                // Same step as kicker → headline (mt-10/16): with no subhead
+                // in between, the cards are the headline's direct answer and
+                // follow on the same beat.
+                [h.Class('mt-10 grid gap-10 md:mt-16 md:grid-cols-3')],
                 competitions.map(competitionCard),
               ),
               h.div(
