@@ -550,7 +550,7 @@ const competitions: ReadonlyArray<Competition> = [
     alt: 'Two Czech national team players celebrating in the red home shirt',
     copy: 'Playing for your country — there’s no bigger honor. A first major tournament appearance is still out there, and our time is coming.',
     tagline: 'UEFA Women’s Nations League',
-    href: 'https://www.uefa.com/womensnationsleague/',
+    href: 'https://uefa.com/womensnationsleague/',
     format: [
       'Europe’s national teams split into tiered leagues — League A down to League C.',
       'Home-and-away group games, with promotion and relegation between the tiers.',
@@ -578,12 +578,12 @@ interface SocialChannel {
 }
 
 const socialChannels: ReadonlyArray<SocialChannel> = [
-  { name: 'Instagram', handle: '@skoreova', href: 'https://www.instagram.com/skoreova' },
-  { name: 'TikTok', handle: '@skoreova', href: 'https://www.tiktok.com/@skoreova' },
-  { name: 'YouTube', handle: '@skoreova', href: 'https://www.youtube.com/@skoreova' },
-  { name: 'Threads', handle: '@skoreova', href: 'https://www.threads.net/@skoreova' },
-  { name: 'Facebook', handle: '@skoreova', href: 'https://www.facebook.com/skoreova' },
+  { name: 'Instagram', handle: '@skoreova', href: 'https://instagram.com/skoreova' },
+  { name: 'TikTok', handle: '@skoreova', href: 'https://tiktok.com/@skoreova' },
   { name: 'X', handle: '@skoreova', href: 'https://x.com/skoreova' },
+  { name: 'Threads', handle: '@skoreova', href: 'https://threads.net/@skoreova' },
+  { name: 'YouTube', handle: '@skoreova', href: 'https://youtube.com/@skoreova' },
+  { name: 'Facebook', handle: '@skoreova', href: 'https://facebook.com/skoreova' },
 ];
 
 const marqueeItems: ReadonlyArray<string> = [
@@ -1170,7 +1170,7 @@ const storyView = (): Html =>
               ),
               h.a(
                 [
-                  h.Href('https://www.uefa.com/development/womens-football/'),
+                  h.Href('https://uefa.com/development/womens-football/'),
                   h.Target('_blank'),
                   h.Rel('noopener noreferrer'),
                   h.Class(
