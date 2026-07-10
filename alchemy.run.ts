@@ -31,6 +31,7 @@ export default Alchemy.Stack(
       rootDir: 'applications/web',
       workersDev: false,
       domains: ['beta.skoreova.com', 'beta.skoreova.cz'],
+      dev: { host: '0.0.0.0', port: 5173 },
       assets: {
         notFoundHandling: 'single-page-application',
       },
@@ -38,7 +39,7 @@ export default Alchemy.Stack(
 
     return {
       studio: studio.url,
-      web: web.url,
+      web: web.allUrls,
       platform: platform.url,
     };
   }),
