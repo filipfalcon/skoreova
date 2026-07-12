@@ -3126,9 +3126,11 @@ const mapLeagueChip = (model: Model, league: MapLeague, label: string): Html =>
       h.Type('button'),
       h.OnClick(SelectedMapLeague({ league })),
       // Compact on phones so all three fit one row (incl. the tighter
-      // tracking — the canonical 0.2em wraps the row); roomier from `md` up.
+      // tracking — the canonical 0.2em wraps the row); from `md` up the
+      // chips match the outlined-button spec (border-2 + text-xs — the
+      // UEFA strategy link is the reference).
       h.Class(
-        `cursor-pointer border px-2.5 py-1.5 text-[10px] tracking-[0.15em] uppercase transition-colors duration-300 md:px-4 md:py-2 md:tracking-[0.2em] ${
+        `cursor-pointer border px-2.5 py-1.5 text-[10px] tracking-[0.15em] uppercase transition-colors duration-300 md:border-2 md:px-4 md:py-2 md:text-xs md:tracking-[0.2em] ${
           model.mapLeague === league
             ? 'border-pink bg-pink text-ink'
             : 'border-paper text-paper hover:border-pink'
