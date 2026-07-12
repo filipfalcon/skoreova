@@ -15,12 +15,21 @@ export default defineConfig({
   // buildApp hooks when no real `builder.buildApp` exists — the hook then
   // fires before anything is built and the deploy dies with "Vite build
   // produced neither assets nor server output". Declaring the build here
-  // restores the pre-8 ordering (build first, post hooks after). Client
-  // only: this app is a static SPA, and the default `ssr` environment has
-  // no entry (building it dies with rolldown's INVALID_OPTION).
+  // restores the pre-8 ordering (build first, post hooks after).
+  //
+  // The `ssr` environment builds only when it has an entry: under the
+  // alchemy deploy the Cloudflare plugin points it at the Worker module
+  // (`main: 'src/worker.ts'` in alchemy.run.ts — the Sentry wrapper). In a
+  // plain local `vite build` there is no plugin and no entry, and building
+  // the bare environment dies with rolldown's INVALID_OPTION.
   builder: {
     buildApp: async (builder) => {
       await builder.build(builder.environments['client']!);
+      const ssr = builder.environments['ssr'];
+      const ssrInput = ssr?.config.build.rollupOptions.input;
+      if (ssr && ssrInput !== undefined && ssrInput !== null) {
+        await builder.build(ssr);
+      }
     },
   },
   optimizeDeps: {
