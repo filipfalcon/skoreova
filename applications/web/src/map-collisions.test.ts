@@ -81,7 +81,7 @@ const collectPins = (): ReadonlyArray<PinGeometry> =>
     if (!chip) throw new Error('chip missing');
     const chipRect = chip.getBoundingClientRect();
     return {
-      label: button.getAttribute('aria-label') ?? 'pin',
+      label: button.querySelector('button')?.getAttribute('aria-label') ?? 'pin',
       dot,
       end,
       chipCenter: {
