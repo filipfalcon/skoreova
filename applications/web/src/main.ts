@@ -2642,7 +2642,7 @@ const club = (
 const clubs: ReadonlyArray<Club> = [
   club('sparta-praha', 'Sparta Praha', 'Prague', FIRST_LEAGUE, spartaPrahaLogo2, 34.5, 38.4, 14, 5),
   club('slavia-praha', 'Slavia Praha', 'Prague', FIRST_LEAGUE, slaviaPrahaLogo, 35.3, 39.7, 9, 11),
-  club('abc-branik', 'ABC Braník', 'Prague', SECOND_LEAGUE, abcBranikLogo, 34.4, 41.0, 0, 0),
+  club('abc-branik', 'Braník', 'Prague', SECOND_LEAGUE, abcBranikLogo, 34.4, 41.0, 0, 0),
   club(
     'vysocina-jihlava',
     'Vysočina Jihlava',
@@ -2723,7 +2723,7 @@ const clubs: ReadonlyArray<Club> = [
   ),
   club(
     'dynamo-ceske-budejovice',
-    'Dynamo Č. Budějovice',
+    'Dynamo České Budějovice',
     'České Budějovice',
     SECOND_LEAGUE,
     dynamoBudejoviceLogo,
@@ -3904,8 +3904,8 @@ const secondLeagueStandings: ReadonlyArray<StandingsRow> = [
   { team: 'Artis Brno', played: 14, points: 17 },
   { team: 'Slovan Liberec B', played: 14, points: 13 },
   { team: 'Teplice', played: 14, points: 10 },
-  { team: 'Dynamo Č. Budějovice', played: 14, points: 8 },
-  { team: 'ABC Braník', played: 14, points: 4 },
+  { team: 'Dynamo České Budějovice', played: 14, points: 8 },
+  { team: 'Braník', played: 14, points: 4 },
 ];
 
 interface CupTie {
