@@ -3336,14 +3336,14 @@ const clubsView = (model: Model): Html =>
                             }`,
                           ),
                           h.DataAttribute('countup', ''),
-                          // EVERY filter interaction spins the counter,
-                          // value change or not — motion.ts watches this
-                          // attribute (filter state + target), never the
-                          // text (see the recount loop there).
-                          h.DataAttribute(
-                            'recount',
-                            `${count}|${model.mapLeague}|${model.mapRegions.join('+')}`,
-                          ),
+                          // EVERY league-filter interaction spins the
+                          // counter, value change or not — motion.ts
+                          // watches this attribute (league + target),
+                          // never the text (see the recount loop there).
+                          // Land on/off toggles are deliberately NOT in
+                          // the stamp: once counted, checking a land in
+                          // and out must not re-calculate the numbers.
+                          h.DataAttribute('recount', `${count}|${model.mapLeague}`),
                         ],
                         [value],
                       ),
