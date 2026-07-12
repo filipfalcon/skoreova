@@ -967,10 +967,14 @@ body {
     transform: translateY(0);
   }
 
-  /* The span is the active-section dot — pink on pink would vanish. */
-  .menu-anchor:hover,
-  .menu-anchor:hover span {
+  .menu-anchor:hover {
     color: var(--color-ink);
+  }
+
+  /* The span is the active-section dot — pink on pink would vanish, and
+     ink would melt into the word; paper keeps it a marker. */
+  .menu-anchor:hover span {
+    color: var(--color-paper);
   }
 }
 
