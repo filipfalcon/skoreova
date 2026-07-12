@@ -13,6 +13,8 @@
     "@foldkit/devtools": "0.118.0",
     "@fontsource-variable/archivo": "5.2.8",
     "@fontsource/anton": "5.2.7",
+    "@sentry/browser": "10.64.0",
+    "@sentry/cloudflare": "10.64.0",
     "effect": "4.0.0-beta.88",
     "foldkit": "0.118.0"
   },
