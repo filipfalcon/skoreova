@@ -536,6 +536,27 @@ body {
   }
 }
 
+/* Hover-INTENT for the land checkboxes: the tint answers a deliberate
+   rest, not a drive-by — gliding the mouse between pins was reading as a
+   glitch. Entering waits 250ms (a pass-through never fires), leaving
+   snaps back undelayed. And while any PIN is hovered the land beneath
+   holds entirely quiet — the banner owns that moment. */
+@media (hover: hover) {
+  .region-path:hover {
+    --fill-delay: 0.25s;
+  }
+
+  /* Hovering a PIN keeps its own land lit: the land is not an ancestor
+     of the pin button, so the path's :hover drops the moment the pointer
+     reaches the crest — these pairs re-apply the hover tint through the
+     shared data-land annotation instead. Pins only exist on checked
+     lands, so the checked hover value (pink 35%, mirroring
+     hover:fill-pink/35) is the only one needed. */
+  .map-stage:has(.club-pin[data-land='Bohemia']:hover) .region-path[data-land='Bohemia'],
+  .map-stage:has(.club-pin[data-land='Moravia']:hover) .region-path[data-land='Moravia'],
+  .map-stage:has(.club-pin[data-land='Silesia']:hover) .region-path[data-land='Silesia'] {
+    fill: color-mix(in oklab, var(--color-pink) 35%, transparent);
+  }
 }
 
 /* The star section's crown scribble: far shorter strokes than the map's
