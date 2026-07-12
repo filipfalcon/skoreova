@@ -134,11 +134,18 @@ body {
    headline when the sequence runs backwards. */
 [data-reveal] {
   opacity: 0;
+  /* Visibility rides every reveal transition: a delayed reveal holds
+     `hidden` through its whole delay (visibility only flips once its
+     transition starts), so a waiting element can't be hovered or clicked
+     into view — opacity alone keeps hit-testing on. On exit the 0.25s
+     visibility leg keeps the fade visible, then hides. */
+  visibility: hidden;
   transform: translateY(2.5rem);
   transition:
     opacity 0.25s ease-out,
     transform 0.25s ease-out,
-    clip-path 0.25s ease-out;
+    clip-path 0.25s ease-out,
+    visibility 0.25s;
   will-change: opacity, transform;
 }
 
@@ -170,12 +177,23 @@ body {
 
 [data-reveal].is-in {
   opacity: 1;
+  visibility: visible;
   transform: none;
   transition:
     opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.9s cubic-bezier(0.22, 1, 0.36, 1),
-    clip-path 1s cubic-bezier(0.22, 1, 0.36, 1);
+    clip-path 1s cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0.9s;
   transition-delay: var(--reveal-delay, 0s);
+}
+
+/* An un-revealed element is invisible but, left alone, still hoverable
+   and clickable — opacity: 0 keeps hit-testing on. The map pins could be
+   hovered into view before the draw-in finished, and any hidden CTA was
+   silently clickable. Not revealed = not interactive, for every variant;
+   `.is-in` restores the default automatically. */
+[data-reveal]:not(.is-in) {
+  pointer-events: none;
 }
 
 /* Only the wipe closes its clip on reveal. The old generic
@@ -295,7 +313,10 @@ body {
 
 [data-reveal='draw'].is-in {
   stroke-dashoffset: 0;
-  transition: stroke-dashoffset 2.4s cubic-bezier(0.22, 1, 0.36, 1);
+  /* A pen travels at a near-steady speed — the site's snappy front-loaded
+     curve emptied 80% of the stroke into the first second and the draw
+     read as a flash. Near-linear, eased only gently at both ends. */
+  transition: stroke-dashoffset 0.7s cubic-bezier(0.45, 0.05, 0.55, 0.95);
   transition-delay: var(--reveal-delay, 0s);
 }
 
@@ -305,6 +326,80 @@ body {
    undashed stroke can't break — the dash only ever exists mid-animation. */
 [data-reveal='draw'].is-drawn {
   stroke-dasharray: none;
+}
+
+/* The lands' INTERNAL borders don't pen-draw: each land's stroke wipes in
+   top-to-bottom behind its own clip WHILE the outline pen runs its lap,
+   timed (--border-delay/--border-duration, inline from LAND_BORDER_WIPES
+   in main.ts) so the front crosses the two points where that border meets
+   the outline at the exact moment the pen passes them — the strokes meet
+   at the junctions. The front is LINEAR on purpose: the meeting math
+   assumes constant speed. The paths opt out of the root's inherited dash
+   (their reveal is the clip, not a draw), and no `transition` shorthand
+   sits on the always-on rule — an unlayered shorthand would override the
+   path's Tailwind `transition-[fill]` utility and kill the league
+   filter's 300ms dim. */
+.region-path {
+  stroke-dasharray: none;
+}
+
+/* Phase three: the wine tint. The borders arrive bare — every land's fill
+   holds transparent until the whole figure is drawn (`.is-drawn`, stamped
+   when the outline pen closes its lap; the borders always finish
+   mid-lap), then the lands fade in one after another, Bohemia → Moravia →
+   Silesia (--tint-delay, inline from main.ts; the pins wait for the LAST
+   fade before their own land-by-land entrance). The hold is unlayered on
+   purpose so it outweighs the checked state's Tailwind fill utility. The
+   keyframes only pin the FROM — the fill lands on whatever the current
+   checkbox state says, and once the run ends the league filter's 300ms
+   fill transition owns the property again.
+
+   Everything here is scoped to no-preference: under reduced motion the
+   dash never transitions, `.is-drawn` never stamps, and these rules would
+   hold the borders and the tint back forever — instead the map simply
+   stands complete. */
+@media (prefers-reduced-motion: no-preference) {
+  /* The fill leg rides along in BOTH shorthands (they'd otherwise clobber
+     the league filter's 300ms dim entirely), with a hover-intent delay
+     var — see the hover rules below the media block. */
+  .region-path {
+    clip-path: inset(0 0 100% 0);
+    transition:
+      clip-path 0.25s ease-out,
+      fill 0.3s ease var(--fill-delay, 0s);
+  }
+
+  [data-reveal='draw'].is-in .region-path {
+    clip-path: inset(0 0 0 0);
+    transition:
+      clip-path var(--border-duration, 0s) linear var(--border-delay, 0s),
+      fill 0.3s ease var(--fill-delay, 0s);
+  }
+
+  /* The same at-rest hygiene as the outline's dash: once the figure is
+     drawn the clips come off — no reason to keep every hover repaint
+     routed through a clip. */
+  [data-reveal='draw'].is-drawn .region-path {
+    clip-path: none;
+  }
+
+  [data-reveal='draw']:not(.is-drawn) .region-path {
+    fill: transparent;
+  }
+
+  [data-reveal='draw'].is-drawn .region-path {
+    animation: land-tint-in 0.35s ease-out backwards;
+    animation-delay: var(--tint-delay, 0s);
+  }
+
+}
+
+@keyframes land-tint-in {
+  from {
+    fill: transparent;
+  }
+}
+
 }
 
 /* The star section's crown scribble: far shorter strokes than the map's
