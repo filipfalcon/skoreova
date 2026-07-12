@@ -3152,7 +3152,13 @@ const clubsView = (model: Model): Html =>
           kicker('03', 'Across the lands', true, '/#across-the-lands'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
-            [maskedLine('Where she plays.', 'text-fluid-6xl-9xl', 0)],
+            [
+              maskedLine(
+                ['Where ', h.span([h.Class('text-pink')], ['she']), ' plays.'],
+                'text-fluid-6xl-9xl',
+                0,
+              ),
+            ],
           ),
           // The framing line — about the country, not the map (the map
           // speaks for itself). The area carries a dotted underline and
