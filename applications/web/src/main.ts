@@ -3348,7 +3348,7 @@ const clubsView = (model: Model): Html =>
               h.div(
                 // Phones keep the roomier gap above the map; only desktop
                 // got the tightened one.
-                [h.Class('relative mx-auto mt-10 max-w-5xl')],
+                [h.Class('map-stage relative mx-auto mt-10 max-w-5xl')],
                 [
                   // The draw-in reveal lives on the SVG ROOT: stroke-dasharray
                   // and stroke-dashoffset are inherited properties, so the
@@ -3385,7 +3385,7 @@ const clubsView = (model: Model): Html =>
                         return h.path(
                           [
                             h.D(region.d),
-                            h.Attribute('pathLength', '1'),
+                            h.DataAttribute('land', region.name),
                             h.OnClick(ToggledMapRegion({ region: region.name })),
                             h.Style({
                               '--tint-delay': `${landTintDelaySeconds(index)}s`,
