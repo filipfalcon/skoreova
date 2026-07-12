@@ -127,7 +127,7 @@ test('draw-in animates progressively on a phone viewport', async () => {
   const path = document.querySelector('.map-path');
   if (!path) throw new Error('map path missing');
 
-  const section = document.querySelector<HTMLElement>('#clubs');
+  const section = document.querySelector<HTMLElement>('#across-the-lands');
   if (!section) throw new Error('clubs section missing');
   window.scrollTo({ top: section.offsetTop - 80, behavior: 'instant' });
 

@@ -18,7 +18,10 @@ const waitUntil = async (predicate: () => boolean, timeout = 8000): Promise<void
 };
 
 const counterValues = (): ReadonlyArray<string> =>
-  Array.from(document.querySelectorAll('#clubs [data-countup]'), (node) => node.textContent ?? '');
+  Array.from(
+    document.querySelectorAll('#across-the-lands [data-countup]'),
+    (node) => node.textContent ?? '',
+  );
 
 // Generous timeouts throughout: on a cold cache the whole suite's browser
 // pages compile and import at once, and a starved page can spend seconds
@@ -40,9 +43,9 @@ beforeAll(async () => {
       },
     }),
   );
-  await waitUntil(() => document.querySelector('#clubs') !== null);
+  await waitUntil(() => document.querySelector('#across-the-lands') !== null);
 
-  const section = document.querySelector<HTMLElement>('#clubs');
+  const section = document.querySelector<HTMLElement>('#across-the-lands');
   if (!section) throw new Error('clubs section missing');
   window.scrollTo({ top: section.offsetTop - 80, behavior: 'instant' });
   // Let the reveal fire and the count-up animation fully land (1.4s + delays).
@@ -54,9 +57,9 @@ beforeAll(async () => {
 // Playwright auto-scrolls them to the viewport top, so locator clicks get
 // intercepted and silently retried into oblivion.
 const clickChip = (label: string): void => {
-  const chip = Array.from(document.querySelectorAll<HTMLButtonElement>('#clubs button')).find(
-    (button) => button.textContent === label,
-  );
+  const chip = Array.from(
+    document.querySelectorAll<HTMLButtonElement>('#across-the-lands button'),
+  ).find((button) => button.textContent === label);
   if (!chip) throw new Error(`chip ${label} not found`);
   chip.click();
 };
