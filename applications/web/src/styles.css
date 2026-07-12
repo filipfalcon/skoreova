@@ -789,16 +789,17 @@ body {
   }
 }
 
-/* The country-area figure: hover swaps metric → imperial in place. Gated to
-   hover-CAPABLE devices — on touch, iOS's sticky hover would fight the tap
-   toggle (which goes through the model instead). Unlayered, so it beats the
-   Tailwind `invisible` utility both ways. */
+/* The country-area figure: imperial is the resting unit (the site speaks
+   American English), hover previews metric in place. Gated to hover-CAPABLE
+   devices — on touch, iOS's sticky hover would fight the tap toggle (which
+   goes through the model instead). Unlayered, so it beats the Tailwind
+   `invisible` utility both ways. */
 @media (hover: hover) {
-  .area-swap:hover .area-metric {
+  .area-swap:hover .area-imperial {
     visibility: hidden;
   }
 
-  .area-swap:hover .area-imperial {
+  .area-swap:hover .area-metric {
     visibility: visible;
   }
 }
