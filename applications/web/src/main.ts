@@ -2877,6 +2877,53 @@ const PIN_FAN_PHONE: Record<string, Fan> = {
   pardubice: { dx: 3.4, dy: -1.9 },
 };
 
+
+// The map choreography: the outline pen runs its lap while each internal
+// land border wipes in top-down, timed to MEET the pen at the two points
+// where that border joins the outline; the whole figure is done when the
+// pen closes the lap (MAP_DRAWN — the borders always finish mid-lap, see
+// LAND_BORDER_WIPES). Then the wine tint fades the lands in one by one,
+// and only on the finished figure do the pins land, land by land.
+const MAP_DRAWN_SECONDS = 0.7;
+
+// Per-land border-wipe timing (--border-delay/--border-duration, in
+// seconds from `.is-in`). Derived from the map geometry by the
+// junction-times script (session scratchpad): take the pen's lap
+// (MAP_DRAWN_SECONDS, draw easing inverted), find when it passes the two
+// junctions where a land border meets the outline, and solve the linear
+// top-down front over the carrier path's own bbox so it crosses both
+// junctions exactly then. Bohemia's path carries the Bohemia–Moravia
+// border (junctions at 0.295s/0.457s of the lap); Silesia's carries the
+// Moravia–Silesia one, enclaves included (outer junctions 0.318s/0.375s).
+// Moravia carries nothing — both its borders are drawn by its neighbours,
+// and one front could never match two junction schedules; its stroke is
+// hidden below. Regenerate these when the map geometry changes.
+const LAND_BORDER_WIPES: Record<string, { delay: number; duration: number }> = {
+  Bohemia: { delay: 0.18, duration: 0.335 },
+  Silesia: { delay: 0.303, duration: 0.075 },
+};
+
+
+// The tint wave: the lands fade in one AFTER another in CZECH_REGIONS
+// order (Bohemia, Moravia, Silesia — already west to east), spread evenly
+// across the wave window; each fade takes 0.35s (`land-tint-in` in
+// styles.css). Ordinal on purpose: Moravia's and Silesia's label anchors
+// sit at nearly the same x, so a position-mapped delay fired them
+// together. The delay counts from the `.is-drawn` stamp
+// (≈ MAP_DRAWN_SECONDS in), so only the wave component belongs here.
+const TINT_WAVE_SECONDS = 0.6;
+const landTintDelaySeconds = (index: number): string =>
+  ((index / (CZECH_REGIONS.length - 1)) * TINT_WAVE_SECONDS).toFixed(2);
+
+// The pins land WITH their land's tint — every club of a land appears the
+// moment its wine fill starts fading in. The tint counts its delay from
+// the `.is-drawn` stamp while the pins count theirs from `.is-in`, so the
+// pins re-add the drawn figure (MAP_DRAWN) on top of the land's tint slot.
+const pinRevealDelaySeconds = (club: Club): string => {
+  const landIndex = CZECH_REGIONS.findIndex((region) => region.name === clubLand(club));
+  return (MAP_DRAWN_SECONDS + Number(landTintDelaySeconds(landIndex))).toFixed(2);
+};
+
 const fanAngle = (fan: Fan): number => (Math.atan2(fan.dx, fan.dy) * 180) / Math.PI;
 const fanLength = (fan: Fan): number => Math.hypot(fan.dx, fan.dy);
 
@@ -2911,6 +2958,7 @@ const clubPin = (model: Model, club: Club): Html => {
       // lets crowded cities collapse onto shared anchors and re-fan into
       // free space on phones while desktop keeps its honest dots.
       h.Style({
+        '--reveal-delay': `${pinRevealDelaySeconds(club)}s`,
         '--pin-x': `${club.x}%`,
         '--pin-y': `${club.y}%`,
         '--fan-x': `${fan.dx}rem`,
@@ -3340,15 +3388,16 @@ const clubsView = (model: Model): Html =>
                 [h.Class('relative mx-auto mt-10 max-w-5xl')],
                 [
                   // The draw-in reveal lives on the SVG ROOT: stroke-dasharray
-                  // and stroke-dashoffset are inherited properties, so one
-                  // animated offset draws the country outline AND the internal
-                  // land borders in a single pen stroke. The root is the only
-                  // safe carrier: per-path reveals get their `.is-in` wiped when
-                  // the filter classes change, and WebKit's IntersectionObserver
-                  // doesn't reliably fire for inner SVG elements like <g> (the
-                  // map never drew on iPhones). Each path carries pathLength=1
-                  // so the unit dash math works. The labels opt back out of the
-                  // dash inheritance via `stroke-dasharray: none` (.region-label).
+                  // and stroke-dashoffset are inherited properties, so the
+                  // animated offset pen-draws the country outline. The root is
+                  // the only safe carrier: per-path reveals get their `.is-in`
+                  // wiped when the filter classes change, and WebKit's
+                  // IntersectionObserver doesn't reliably fire for inner SVG
+                  // elements like <g> (the map never drew on iPhones). Each
+                  // path carries pathLength=1 so the unit dash math works. The
+                  // labels AND the region paths opt back out of the dash
+                  // inheritance via `stroke-dasharray: none` (.region-label,
+                  // .region-path — the regions reveal behind clips instead).
                   h.svg(
                     [
                       h.Xmlns('http://www.w3.org/2000/svg'),
@@ -3363,43 +3412,74 @@ const clubsView = (model: Model): Html =>
                       // clicking it toggles the land on/off, mirroring the
                       // counters above the map. Two states only: checked wears
                       // the wine tint (pink over ink), unchecked is bare black —
-                      // no grey in-between.
-                      ...CZECH_REGIONS.map((region) =>
-                        h.path(
+                      // no grey in-between. The internal borders don't pen-draw
+                      // like the outline: each land's stroke wipes in top-down
+                      // behind its own clip, timed to meet the outline pen at
+                      // the junctions (see LAND_BORDER_WIPES). Moravia's stroke
+                      // is `stroke-none` — its neighbours draw both its borders.
+                      ...CZECH_REGIONS.map((region, index) => {
+                        const wipe = LAND_BORDER_WIPES[region.name];
+                        return h.path(
                           [
                             h.D(region.d),
                             h.Attribute('pathLength', '1'),
                             h.OnClick(ToggledMapRegion({ region: region.name })),
+                            h.Style({
+                              '--tint-delay': `${landTintDelaySeconds(index)}s`,
+                              // Inline on purpose: the unlayered .region-path
+                              // stroke in styles.css outweighs any utility.
+                              ...(wipe
+                                ? {
+                                    '--border-delay': `${wipe.delay}s`,
+                                    '--border-duration': `${wipe.duration}s`,
+                                  }
+                                : { stroke: 'none' }),
+                            }),
                             h.Class(
                               `region-path cursor-pointer transition-[fill] duration-300 ${
                                 model.mapRegions.includes(region.name)
-                                  ? 'fill-pink/15 hover:fill-pink/25'
+                                  ? 'fill-pink/25 hover:fill-pink/35'
                                   : 'fill-transparent hover:fill-pink/[0.07]'
                               }`,
                             ),
                           ],
                           [],
-                        ),
-                      ),
+                        );
+                      }),
                       h.path(
                         [h.D(CZECHIA_PATH), h.Attribute('pathLength', '1'), h.Class('map-path')],
                         [],
                       ),
                     ],
                   ),
-                  // Filters REMOVE pins outright — no dimmed in-between state:
+                  // Filters HIDE pins outright — no dimmed in-between state:
                   // unchecked lands hide their clubs, and the league filter
                   // hides every pin without a team in that league (a club whose
                   // B side plays the selected league keeps its pin). B sides
                   // never have a pin of their own — they live on their parent's.
+                  //
+                  // Hidden via display:none on a WRAPPER, never removed: the
+                  // reveal system (the west-to-east pin wave) collects its
+                  // targets once at mount, so a pin re-added after a filter
+                  // round-trip would never get `.is-in` again and stay
+                  // invisible forever. The wrapper also keeps the class churn
+                  // away from the pin button itself — a patched class string
+                  // would wipe the `is-in` the observer stamped on it.
                   ...clubs
-                    .filter(
-                      (club) =>
-                        !club.parent &&
-                        model.mapRegions.includes(clubLand(club)) &&
-                        pinTeams(club).some((team) => teamMatchesLeague(model, team)),
-                    )
-                    .map((club) => clubPin(model, club)),
+                    .filter((club) => !club.parent)
+                    .map((club) =>
+                      h.div(
+                        [
+                          h.Class(
+                            model.mapRegions.includes(clubLand(club)) &&
+                              pinTeams(club).some((team) => teamMatchesLeague(model, team))
+                              ? 'contents'
+                              : 'hidden',
+                          ),
+                        ],
+                        [clubPin(model, club)],
+                      ),
+                    ),
                   // While a card is open, an invisible backdrop over the map
                   // closes it on any click outside. It sits BELOW the pins
                   // (z-10), so clicking another pin still switches the card

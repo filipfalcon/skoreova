@@ -129,16 +129,26 @@ test('draw-in animates progressively on a phone viewport', async () => {
 
   const section = document.querySelector<HTMLElement>('#across-the-lands');
   if (!section) throw new Error('clubs section missing');
-  window.scrollTo({ top: section.offsetTop - 80, behavior: 'instant' });
 
+  // WARM-UP lap first: on a cold WebKit the first reveal lands while the
+  // page is still compiling — one long freeze swallows the whole 0.7s
+  // transition between two samples and the test sees only 1 → 0. The map
+  // is a replay reveal group, so scroll it in (spending the cold jank),
+  // away (resetting the dash), and back in to measure on a warm page.
+  window.scrollTo({ top: section.offsetTop - 80, behavior: 'instant' });
   await waitUntil(() => svg.classList.contains('is-in'));
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  await waitUntil(() => !svg.classList.contains('is-in'));
+  window.scrollTo({ top: section.offsetTop - 80, behavior: 'instant' });
+  await waitUntil(() => svg.classList.contains('is-in'));
+
   // Sample the offset for a second — a progressive draw must show
   // intermediate values, an instant one jumps straight to 0.
   const samples: Array<number> = [];
   const start = performance.now();
   while (performance.now() - start < 1200) {
     samples.push(Number.parseFloat(getComputedStyle(path).strokeDashoffset));
-    await new Promise((resolve) => setTimeout(resolve, 60));
+    await new Promise((resolve) => setTimeout(resolve, 30));
   }
   const intermediates = samples.filter((value) => value > 0.05 && value < 0.95);
   expect
