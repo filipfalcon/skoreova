@@ -95,9 +95,9 @@ export const Model = S.Struct({
   mapClub: S.String,
   // Team cards individually dismissed (via their ✕) since the pin opened —
   // lets one of a pair close while the other stays.
-  mapClubClosed: S.Array(S.String),
-  // Whether the country-area figure shows imperial units — a tap toggle on
-  // touch; desktop hover swaps it transiently via CSS, no model round-trip.
+  // Whether the country-area figure shows imperial units (the RESTING
+  // unit — the site speaks American English). A tap toggle on touch;
+  // desktop hover previews the other unit via CSS, no model round-trip.
   mapAreaImperial: S.Boolean,
 });
 export type Model = typeof Model.Type;
@@ -317,8 +317,7 @@ const initialModel: Model = {
   mapLeague: 'all',
   mapRegions: ['Bohemia', 'Moravia', 'Silesia'],
   mapClub: '',
-  mapClubClosed: [],
-  mapAreaImperial: false,
+  mapAreaImperial: true,
 };
 
 // Applies a parsed URL to the model — used for the initial load, our own
@@ -3162,7 +3161,9 @@ const clubsView = (model: Model): Html =>
           ),
           // The framing line — about the country, not the map (the map
           // speaks for itself). The area carries a dotted underline and
-          // reveals the imperial conversion on hover/tap.
+          // reveals the imperial conversion on hover/tap. (A single-line
+          // xl variant was tried and rejected: one line forces text-2xl,
+          // which reads too small under the display headline.)
           h.p(
             [
               h.Class('display mt-8 max-w-3xl text-fluid-xl-3xl leading-snug md:mt-12'),
@@ -3170,7 +3171,7 @@ const clubsView = (model: Model): Html =>
             ],
             [
               'Quite a few clubs fit into ',
-              // Desktop hover swaps the figure to imperial via CSS (see
+              // Desktop hover previews the metric figure via CSS (see
               // `.area-swap` in styles.css — gated to hover-capable devices
               // so sticky mobile hover can't fight the model); on touch a
               // tap TOGGLES it through the model. Both variants always
@@ -3196,7 +3197,7 @@ const clubsView = (model: Model): Html =>
                         `area-metric col-start-1 row-start-1 ${model.mapAreaImperial ? 'invisible' : ''}`,
                       ),
                     ],
-                    ['78,871 km².'],
+                    ['78,871 KM².'],
                   ),
                   h.span(
                     [
@@ -3204,7 +3205,7 @@ const clubsView = (model: Model): Html =>
                         `area-imperial col-start-1 row-start-1 ${model.mapAreaImperial ? '' : 'invisible'}`,
                       ),
                     ],
-                    ['30,452 sq mi.'],
+                    ['30,452 SQ MI.'],
                   ),
                 ],
               ),
