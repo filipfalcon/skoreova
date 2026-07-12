@@ -122,7 +122,6 @@ export const ToggledMapRegion = m('ToggledMapRegion', { region: S.String });
 // '' closes the club card(s).
 export const OpenedMapClub = m('OpenedMapClub', { slug: S.String });
 // Dismisses ONE card of an open pair via its ✕; the sibling stays.
-export const ClosedMapClubCard = m('ClosedMapClubCard', { slug: S.String });
 export const ToggledAreaUnit = m('ToggledAreaUnit');
 
 export const Message = S.Union([
@@ -138,7 +137,6 @@ export const Message = S.Union([
   SelectedMapLeague,
   ToggledMapRegion,
   OpenedMapClub,
-  ClosedMapClubCard,
   ToggledAreaUnit,
   CompletedMountMotion,
   FailedMountMotion,
@@ -349,7 +347,7 @@ const applyRoute = (model: Model, route: AppRoute): Model => {
   );
   // Any navigation closes the map's club card — coming back to the landing
   // page with a stale card open would be odd.
-  return { ...next, mapClub: '', mapClubClosed: [] };
+  return { ...next, mapClub: '' };
 };
 
 export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
@@ -401,7 +399,7 @@ export const update = (
       CompletedScrollLock: () => [model, []],
       SelectedScorerScope: ({ scope }) => [{ ...model, scorerScope: scope }, []],
       SelectedMapLeague: ({ league }) => [
-        { ...model, mapLeague: league, mapClub: '', mapClubClosed: [] },
+        { ...model, mapLeague: league, mapClub: '' },
         [],
       ],
       ToggledMapRegion: ({ region }) => [
@@ -410,28 +408,12 @@ export const update = (
           mapRegions: model.mapRegions.includes(region)
             ? model.mapRegions.filter((candidate) => candidate !== region)
             : [...model.mapRegions, region],
-          // Unchecking the land under an open card would strand it.
+          // Unchecking the land under an open pin would strand its pill.
           mapClub: '',
-          mapClubClosed: [],
         },
         [],
       ],
-      OpenedMapClub: ({ slug }) => [{ ...model, mapClub: slug, mapClubClosed: [] }, []],
-      // ✕ on one card of a pair: dismiss just that card. Once nothing at the
-      // pin remains visible, reset the whole selection so the next pin click
-      // opens cleanly.
-      ClosedMapClubCard: ({ slug }) => {
-        const closed = [...model.mapClubClosed, slug];
-        const opened = clubs.find((candidate) => candidate.slug === model.mapClub);
-        const anyLeft =
-          opened !== undefined &&
-          pinTeams(opened).some(
-            (team) => teamMatchesLeague(model, team) && !closed.includes(team.slug),
-          );
-        return anyLeft
-          ? [{ ...model, mapClubClosed: closed }, []]
-          : [{ ...model, mapClub: '', mapClubClosed: [] }, []];
-      },
+      OpenedMapClub: ({ slug }) => [{ ...model, mapClub: slug }, []],
       ToggledAreaUnit: () => [{ ...model, mapAreaImperial: !model.mapAreaImperial }, []],
       CompletedMountMotion: () => [model, []],
       // Motion is decorative — if it fails to attach, the page still renders
@@ -2960,25 +2942,38 @@ const clubPin = (model: Model, club: Club): Html => {
   // hover scales ONLY the crest chip (around its own center) — the dot,
   // line, and tooltip hold still, so the tooltip doesn't shrink with the
   // crest on hover-out.
-  const fan = PIN_FAN[club.slug] ?? DEFAULT_FAN;
-  const phoneFan = PIN_FAN_PHONE[club.slug] ?? fan;
+  // The banner rows (also decides the rows' heft: a lone team gets a
+  // chunkier row than an A+B pair, which must stay under the crest).
+  const bannerTeams = pinTeams(club).filter((team) => teamMatchesLeague(model, team));
+  const angle = PIN_ANGLE[club.slug] ?? 0;
+  const phoneAngle = PIN_ANGLE_PHONE[club.slug] ?? angle;
+  const fan = fanFromAngle(angle, PIN_LINE_REM);
+  const phoneFan = fanFromAngle(phoneAngle, PIN_LINE_PHONE_REM);
   const phoneAnchor = PIN_ANCHOR_PHONE[club.slug];
-  // Downward fans (Prague's lower corners) hang the chip BELOW the line's
-  // end instead of above it, and the tooltip follows to the chip's far
-  // side. The hang can differ per breakpoint (a pin may fan up on phones
-  // and down on desktop), hence a var, not a class.
-  const below = fan.dy < 0;
-  const phoneBelow = phoneFan.dy < 0;
-  return h.button(
+  // The open card's pin wears a pink ring — hover already talks (the
+  // crest grows), the ring answers WHICH one is selected.
+  const selected = model.mapClub === club.slug;
+  // The root is a DIV, not a button: the banner rows are links, and links
+  // must not nest inside a button (invalid HTML, broken for screen
+  // readers). The crest below is the actual button; the root carries the
+  // geometry vars, the reveal target and the selection/land data.
+  return h.div(
     [
-      h.Type('button'),
-      h.OnClick(OpenedMapClub({ slug: model.mapClub === club.slug ? '' : club.slug })),
-      h.AriaLabel(`${club.name} — ${club.city}, ${club.league}`),
+      // Selection as a data attribute, NOT a class: the root's class
+      // string must stay static or Foldkit's patch would wipe the
+      // observer-stamped `.is-in` (see the pin wrapper comment below).
+      h.DataAttribute('selected', model.mapClub === club.slug ? 'true' : 'false'),
       // The z-index transition lives in styles.css (.club-pin): raising is
       // instant, but the drop on hover-out DECAYS over the scale-back, so
       // the shrinking crest keeps beating idle pins yet yields immediately
       // to a freshly hovered one.
-      h.Class('club-pin group absolute z-10 cursor-pointer hover:z-30'),
+      h.Class('club-pin group absolute z-10 hover:z-30'),
+      // Pairs the pin with its land: hovering the pin keeps the land's
+      // hover tint alive (see the data-land rules in styles.css).
+      h.DataAttribute('land', clubLand(club)),
+      // Revealed as part of the map's replay group, but only after the
+      // draw-in finishes — land by land (see pinRevealDelaySeconds).
+      h.DataAttribute('reveal', 'up'),
       // All geometry rides CSS vars; the `-phone` variants (when present)
       // win below `md` via the fallback plumbing in styles.css. That's what
       // lets crowded cities collapse onto shared anchors and re-fan into
@@ -3018,8 +3013,13 @@ const clubPin = (model: Model, club: Club): Html => {
       // CREST_SCALE nudges those up to the same optical size.
       h.button(
         [
+          h.Type('button'),
+          h.OnClick(OpenedMapClub({ slug: model.mapClub === club.slug ? '' : club.slug })),
+          h.AriaLabel(`${club.name} — ${club.city}, ${club.league}`),
           h.Class(
-            'club-pin-chip absolute flex h-8 w-8 items-center justify-center rounded-full bg-paper p-1 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:scale-110 sm:h-10 sm:w-10 md:h-16 md:w-16 md:p-2',
+            `club-pin-chip absolute flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-[scale,box-shadow] delay-[250ms] duration-300 group-hover:scale-110 group-hover:delay-0 group-hover:duration-150 sm:h-10 sm:w-10 sm:p-2 md:h-16 md:w-16 md:p-3${
+              selected ? ' scale-110 ring-2 ring-pink delay-0 md:ring-[3px]' : ''
+            }`,
           ),
         ],
         [
@@ -3034,169 +3034,103 @@ const clubPin = (model: Model, club: Club): Html => {
           ]),
         ],
       ),
+      // The hover banner — an "achievement toast": a paper bar slides out
+      // of the crest to the right. The outer span is a clipping WINDOW
+      // whose left boundary sits exactly at the crest's center, so the
+      // bar's background structurally cannot paint left of the circle in
+      // any animation phase — it retreats BEHIND the crest, never into
+      // the open. Rendered AFTER the crest button (tab order: crest →
+      // its own rows) and sunk below it with -z-10 so the crest still
+      // paints on top.
       h.span(
         [
           h.Class(
-            `pointer-events-none absolute hidden -translate-x-1/2 border border-paper/15 bg-ink px-3 py-2 text-left whitespace-nowrap opacity-0 transition-opacity duration-200 group-hover:opacity-100 md:block ${
-              below ? 'translate-y-0' : '-translate-y-full'
-            }`,
+            'club-pin-banner pointer-events-none absolute -z-10 block w-max overflow-hidden py-5 pr-6 text-left whitespace-nowrap',
           ),
-          // Hugs the chip's far side (3rem tall on md, where it's visible):
-          // above upward chips, beneath downward ones.
-          h.Style({
-            left: `${fan.dx}rem`,
-            top: below ? `calc(${-fan.dy}rem + 4.6rem)` : `calc(${-fan.dy}rem - 4.6rem)`,
-          }),
         ],
-        // Every team on this pin that passes the league filter — under the
-        // second-league filter a parent pin reads as its B side.
-        pinTeams(club)
-          .filter((team) => teamMatchesLeague(model, team))
-          .flatMap((team, index) => [
-            h.span(
-              [
-                h.Class(
-                  `display block text-sm text-paper md:text-base ${index > 0 ? 'mt-1.5' : ''}`,
+        [
+          h.span(
+            [
+              // A columns grid (name / league / arrow), so the pink league
+              // labels align even when the A and B names differ in length.
+              // overflow-hidden clips the rows' hover fill to the pill's
+              // rounded cap.
+              h.Class(
+                'club-pin-banner-bar grid w-max grid-cols-[max-content_max-content_max-content] items-center gap-x-3 overflow-hidden bg-paper shadow-[0_6px_18px_rgba(0,0,0,0.45)]',
+              ),
+            ],
+            // One BUTTON-like link per team — the pill is the navigation:
+            // hover (or a tap on phones) opens it, the row click goes to
+            // the team's profile. The whole row is the hit area; its pink
+            // hover fill starts exactly at the crest's right edge (the
+            // ::before inset), so nothing peeks around the circle. One
+            // line per team keeps the bar SHORTER than the crest that
+            // hides its left edge; under the second-league filter a
+            // parent pin reads as its B side. Subgrid keeps the columns
+            // aligned across A and B.
+            bannerTeams.map((team, index) =>
+                h.a(
+                  [
+                    h.Href(clubRouter({ slug: team.slug })),
+                    // The hover fill SLIDES UP from below the row — the
+                    // same signature move as the menu anchors' underlay,
+                    // same curve. overflow-hidden keeps the slide inside
+                    // its own row; the fill runs edge to edge (the crest
+                    // hides its left reach, and the sliver of row peeking
+                    // around the circle's curve must flood too).
+                    h.Class(
+                      `group/row relative isolate col-span-3 grid grid-cols-subgrid items-center gap-x-3 overflow-hidden py-1.5 pr-5 pl-[calc(var(--chip-r)+0.8rem)] ${bannerTeams.length > 1 ? 'md:py-2' : 'md:py-3'} before:absolute before:inset-y-0 before:right-0 before:left-0 before:-z-10 before:translate-y-[101%] before:bg-pink before:transition-transform before:duration-[450ms] before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-0 ${
+                        index > 0 ? 'border-t border-ink/10' : ''
+                      }`,
+                    ),
+                  ],
+                  [
+                    h.span(
+                      [h.Class('display text-sm leading-none text-ink md:text-lg')],
+                      [team.name],
+                    ),
+                    // A split-flap cell: at rest it reads the league, on
+                    // hover the label rolls up and OPEN PROFILE rolls in
+                    // from below — the row announces its own click, in
+                    // sync with the pink flood (same duration and curve).
+                    h.span(
+                      [h.Class('block h-[1.2em] overflow-hidden text-[10px] tracking-[0.2em] uppercase md:text-[11px]')],
+                      [
+                        h.span(
+                          [
+                            h.Class(
+                              'flex flex-col transition-transform duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/row:-translate-y-1/2',
+                            ),
+                          ],
+                          [
+                            h.span([h.Class('block leading-[1.2] text-pink')], [team.league]),
+                            h.span(
+                              [h.Class('block leading-[1.2] text-ink'), h.AriaHidden(true)],
+                              ['Open profile'],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    h.span(
+                      [
+                        // Full-strength ink like every other CTA arrow;
+                        // the hover nudge is the same 0.14em press the
+                        // platform-beckon arrows use.
+                        h.Class(
+                          'flex text-sm text-ink transition-transform duration-300 group-hover/row:translate-x-[0.14em] md:text-lg',
+                        ),
+                      ],
+                      [displayArrowSolo],
+                    ),
+                  ],
                 ),
-              ],
-              [team.name],
-            ),
-            h.span(
-              [h.Class('block text-[10px] tracking-[0.2em] uppercase text-pink')],
-              [`${team.city} — ${team.league}`],
-            ),
-          ]),
-      ),
-    ],
-  );
-};
-
-// The club card — opened by a pin, floating centered over the map. Roster
-// header photo (shared placeholder for now), crest, name, honors, and the
-// button that actually navigates to the profile.
-// One card box — the anchored wrapper around it comes from `mapClubCards`,
-// which can lay out TWO of these side by side (a club and its B side).
-const clubCardBox = (club: Club): Html =>
-  h.div(
-    [h.Class('w-72 border border-paper/15 bg-ink shadow-[0_20px_60px_rgba(0,0,0,0.6)]')],
-    [
-      h.div(
-        [h.Class('relative')],
-        [
-          h.img([
-            h.Src(clubRosterImage),
-            h.Width('800'),
-            h.Height('400'),
-            h.Alt(`${club.name} squad photo`),
-            h.Loading('lazy'),
-            h.Class('h-28 w-full object-cover'),
-          ]),
-          // Ink wash so the crest reads over the photo.
-          h.div([h.Class('absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent')], []),
-          h.div(
-            [
-              h.Class(
-                'absolute -bottom-5 left-4 flex h-12 w-12 items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_4px_12px_rgba(0,0,0,0.8)]',
               ),
-            ],
-            [
-              h.img([
-                h.Src(club.logo),
-                h.Alt(''),
-                h.Loading('lazy'),
-                h.Class('h-full w-full object-contain'),
-              ]),
-            ],
-          ),
-          h.button(
-            [
-              h.Type('button'),
-              // Dismisses only THIS card — its sibling (the A/B pair) stays.
-              h.OnClick(ClosedMapClubCard({ slug: club.slug })),
-              h.AriaLabel(`Close ${club.name} card`),
-              h.Class(
-                'display absolute top-2 right-2 flex h-7 w-7 cursor-pointer items-center justify-center bg-ink/70 text-sm text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink',
-              ),
-            ],
-            ['✕'],
-          ),
-        ],
-      ),
-      h.div(
-        [h.Class('px-4 pt-8 pb-4')],
-        [
-          h.p([h.Class('display text-2xl text-paper')], [club.name]),
-          h.p(
-            [h.Class('mt-1 text-[10px] tracking-[0.2em] uppercase text-pink')],
-            [`${club.city} — ${club.league}`],
-          ),
-          h.div(
-            [h.Class('mt-4 flex gap-8')],
-            [
-              h.div(
-                [],
-                [
-                  h.p([h.Class('display text-2xl text-paper')], [`${club.leagueTitles}×`]),
-                  h.p(
-                    [h.Class('mt-0.5 text-[10px] tracking-[0.2em] uppercase text-paper/60')],
-                    ['League titles'],
-                  ),
-                ],
-              ),
-              h.div(
-                [],
-                [
-                  h.p([h.Class('display text-2xl text-paper')], [`${club.cupTitles}×`]),
-                  h.p(
-                    [h.Class('mt-0.5 text-[10px] tracking-[0.2em] uppercase text-paper/60')],
-                    ['Cup titles'],
-                  ),
-                ],
-              ),
-            ],
-          ),
-          h.a(
-            [
-              h.Href(clubRouter({ slug: club.slug })),
-              h.Class(
-                'display mt-5 block bg-pink px-4 py-2.5 text-center text-lg tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-paper active:bg-paper',
-              ),
-            ],
-            ['Open profile', displayArrow],
           ),
         ],
       ),
     ],
   );
-
-// The cards floating over the map for the opened pin: the club plus its B
-// side when both pass the league filter — side by side from `md` up,
-// stacked on phones. A B side alone (second-league filter) shows alone.
-const mapClubCards = (model: Model): ReadonlyArray<Html> => {
-  const opened = clubs.find((candidate) => candidate.slug === model.mapClub);
-  if (!opened) return [];
-  const visible = pinTeams(opened).filter(
-    (team) => teamMatchesLeague(model, team) && !model.mapClubClosed.includes(team.slug),
-  );
-  if (visible.length === 0) return [];
-  return [
-    h.div(
-      [
-        // Anchored at the clicked pin, not map-centered: horizontally the
-        // wrapper centers on the pin but clamps to the map's left edge
-        // (w-72 = 18rem per card); vertically it opens below the pin, or
-        // above it when the pin sits in the lower half.
-        h.Class('absolute z-30 flex flex-col gap-3 md:flex-row'),
-        h.Style({
-          left: `clamp(0rem, calc(${opened.x}% - 9rem), calc(100% - 18rem))`,
-          ...(opened.y > 55
-            ? { bottom: `calc(100% - ${opened.y}% + 1.75rem)` }
-            : { top: `calc(${opened.y}% + 1.75rem)` }),
-        }),
-      ],
-      visible.map(clubCardBox),
-    ),
-  ];
 };
 
 // One option of the map's league filter.
@@ -3525,9 +3459,6 @@ const clubsView = (model: Model): Html =>
                           [],
                         ),
                       ]),
-                  // The open pin's card(s) — the club and, filter permitting,
-                  // its B side next to it.
-                  ...mapClubCards(model),
                 ],
               ),
               h.div(

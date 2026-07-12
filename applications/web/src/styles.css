@@ -254,8 +254,16 @@ body {
   --fy: var(--fan-y-phone, var(--fan-y));
   --flen: var(--fan-len-phone, var(--fan-len));
   --fangle: var(--fan-angle-phone, var(--fan-angle));
-  --chang: var(--chip-hang-phone, var(--chip-hang));
-  transition: z-index 300ms linear;
+  /* 450ms: the decay must OUTLAST the banner's 400ms retraction, or the
+     pin drops level with its siblings mid-slide and any LATER club in
+     the array pops over the still-closing pill (Slavia over Sparta). */
+  transition: z-index 450ms linear;
+}
+
+@media (min-width: 640px) {
+  .club-pin {
+    --chip-r: 1.25rem;
+  }
 }
 
 /* Hover-only devices — on touch, iOS sticky hover would let a tapped pin
@@ -296,6 +304,127 @@ body {
   translate: -50% -50%;
 }
 
+/* The pin's hover banner: an "achievement toast" — the crest circle is
+   the pill's left cap and the bar slides out of it to the RIGHT, revealed
+   by an animated clip (so the text never stretches). Anchored to the
+   CHIP's center with the same trig as .club-pin-chip, then tucked one
+   radius back so the circle exactly caps the pill's rounded left end;
+   the chip is a later sibling, so the crest paints on top. */
+.club-pin-banner {
+  /* The clipping WINDOW: its left edge sits exactly at the crest's
+     center, where the circle is at its full height — anything inside can
+     only ever be visible to the RIGHT of that line, so no animation
+     phase can flash background beside the crest. Right-rounded so the
+     bar's cap never squares off against the window edge. */
+  left: calc(var(--fx) * var(--fan-scale) + var(--chip-r) * sin(var(--fangle)));
+  top: calc((var(--fy) * var(--fan-scale) + var(--chip-r) * cos(var(--fangle))) * -1);
+  translate: 0 -50%;
+  border-radius: 0 9999px 9999px 0;
+}
+
+.club-pin-banner-bar {
+  /* No padding of its own — the rows are full-bleed button links and
+     carry the pill's padding themselves, so their hover fill can run
+     edge to edge. */
+  border-radius: 0 9999px 9999px 0;
+  transform: translateX(-101%);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* A selected pin (tap on phones, click on desktop) holds its banner open
+   and clickable — selection lives in a data attribute so the button's
+   class (and its observer-stamped reveal state) never gets patched. It
+   also HOLDS the hover's elevated z-index: without it the pin dropped
+   back into the shared z-10 layer on mouse-out and every later DOM
+   sibling painted over its open banner (Sparta, first in the clubs
+   array, lost to the whole map). */
+.club-pin[data-selected='true'] {
+  z-index: 30;
+}
+
+.club-pin[data-selected='true'] .club-pin-banner-bar {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+/* While the pill RETRACTS (the pin as a whole lost hover/selection),
+   the rows freeze in their last state — a hovered row slides away still
+   fully pink instead of fading back mid-retreat, and only resets (via a
+   zero-duration, post-retraction transition) once the pill is hidden.
+   Scoped to the whole-pin unhover on purpose: moving between rows INSIDE
+   an open pill keeps the normal slide-down. */
+.club-pin:not(:hover):not([data-selected='true']):not(:focus-within)
+  .club-pin-banner-bar
+  a::before {
+  /* `translate`, not `transform`: Tailwind v4's translate utilities ride
+     the individual property. */
+  transition: translate 0s 450ms;
+}
+
+.club-pin:not(:hover):not([data-selected='true']):not(:focus-within)
+  .club-pin-banner-bar
+  a
+  * {
+  transition-duration: 0s;
+  transition-delay: 450ms;
+}
+
+/* Keyboard path: focusing the crest button (or tabbing onto the banner's
+   row links) opens and holds the banner, raises the pin and grows the
+   crest — the full hover experience without a pointer. */
+.club-pin:focus-within {
+  z-index: 30;
+}
+
+.club-pin:focus-within .club-pin-banner-bar {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.club-pin:focus-within .club-pin-chip {
+  scale: 1.1;
+  transition-delay: 0s;
+}
+
+@media (hover: hover) {
+  .club-pin:hover .club-pin-banner-bar {
+    transform: translateX(0);
+    /* A 100ms head start for the crest: it grows in 150ms, the banner
+       leaves the gate just after — so the taller bar is never out in
+       front of a still-small crest. Closing uses the base rule and stays
+       undelayed. */
+    transition-delay: 0.1s;
+  }
+
+  /* When focus JUMPS to another pin, the abandoned pill YIELDS fast:
+     the fresh hover rightly paints above everything at once, and the
+     graceful 400ms retreat would leave the new crest floating on the old
+     pill. Snappy 150ms here; leaving to empty map keeps the slow退.
+     A SELECTED pill is exempt — it holds open by design. */
+  .map-stage:has(.club-pin:hover)
+    .club-pin:not(:hover):not([data-selected='true'])
+    .club-pin-banner-bar {
+    transition: transform 0.15s ease-in;
+  }
+
+  .map-stage:has(.club-pin:hover)
+    .club-pin:not(:hover):not([data-selected='true'])
+    .club-pin-chip {
+    transition-delay: 120ms;
+    transition-duration: 200ms;
+  }
+
+  /* An OPEN banner becomes hoverable itself (it is a child of the pin
+     button, so pointing at it keeps the pin's :hover alive) — sliding
+     from the crest onto the pill no longer closes it, and a click on the
+     pill opens the card like a click on the crest. The events live on
+     the BAR, not the window: the window's shadow-room padding would
+     extend the hover well past the visible pill. Closed banners keep
+     pointer-events off entirely — the invisible window would otherwise
+     be a hover trap floating right of every crest. */
+  .club-pin:hover .club-pin-banner-bar {
+    pointer-events: auto;
+  }
 }
 
 /* On phones the map renders at roughly a third of its viewBox size — bump
