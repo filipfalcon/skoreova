@@ -656,7 +656,7 @@ interface MenuEntry {
 const menuEntries: ReadonlyArray<MenuEntry> = [
   { label: 'On the rise', target: '/#on-the-rise' },
   { label: 'Battling through', target: '/#battling-through' },
-  { label: 'Clubs', target: '/#clubs' },
+  { label: 'Across the lands', target: '/#across-the-lands' },
   { label: 'Records', target: '/#champions' },
   { label: 'Players', target: '/#star' },
   { label: 'National', target: '/#national-team' },
@@ -3144,12 +3144,12 @@ const clubsView = (model: Model): Html =>
     // Ink, not paper: the white map line work is the section's hero, and the
     // dark ground restores the light/dark rhythm around it (competitions is
     // photo-textured ink, champions after it is paper).
-    [h.Id('clubs'), h.Class('bg-ink py-16 text-paper md:py-24')],
+    [h.Id('across-the-lands'), h.Class('bg-ink py-16 text-paper md:py-24')],
     [
       h.div(
         [h.Class(container)],
         [
-          kicker('03', 'The map', true, '/#clubs'),
+          kicker('03', 'Across the lands', true, '/#across-the-lands'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [maskedLine('Where she plays.', 'text-fluid-6xl-9xl', 0)],
@@ -4174,7 +4174,7 @@ const backToMapView = (): Html =>
         [
           h.a(
             [
-              h.Href('/#clubs'),
+              h.Href('/#across-the-lands'),
               h.Class(
                 'display inline-block bg-ink px-8 py-4 text-xl text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
               ),

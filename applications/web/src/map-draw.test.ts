@@ -43,7 +43,7 @@ beforeAll(async () => {
 
   await waitUntil(() => document.querySelector('.map-path') !== null);
 
-  const section = document.querySelector<HTMLElement>('#clubs');
+  const section = document.querySelector<HTMLElement>('#across-the-lands');
   if (!section) throw new Error('clubs section not rendered');
   window.scrollTo({ top: section.offsetTop - 100, behavior: 'instant' });
 });

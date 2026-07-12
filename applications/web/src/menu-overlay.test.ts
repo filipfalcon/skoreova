@@ -136,8 +136,8 @@ test('the open overlay marks the section the viewport is in', async () => {
   // (scrollTo the locked position) would undo the jump below.
   await waitUntil(() => document.body.style.position !== 'fixed');
 
-  const clubs = document.getElementById('clubs');
-  if (!clubs) throw new Error('clubs section not rendered');
+  const clubs = document.getElementById('across-the-lands');
+  if (!clubs) throw new Error('across-the-lands section not rendered');
   window.scrollTo({
     top: clubs.getBoundingClientRect().top + window.scrollY + 10,
     behavior: 'instant',
@@ -147,7 +147,7 @@ test('the open overlay marks the section the viewport is in', async () => {
   await expect.poll(overlayVisibility).toBe('visible');
   await expect
     .poll(() => overlay().querySelector('a[aria-current="location"]')?.textContent)
-    .toBe('Clubs.');
+    .toBe('Across the lands.');
 
   await page.getByRole('button', { name: 'Close menu' }).click();
   await expect.poll(overlayVisibility, { timeout: 2000 }).toBe('hidden');
