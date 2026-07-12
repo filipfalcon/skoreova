@@ -247,6 +247,7 @@ body {
    hovered crest (z-30, instant) wins right away. */
 .club-pin {
   --fan-scale: 0.5;
+  --chip-r: 1rem;
   left: var(--pin-x-phone, var(--pin-x));
   top: var(--pin-y-phone, var(--pin-y));
   --fx: var(--fan-x-phone, var(--fan-x));
@@ -268,13 +269,13 @@ body {
 @media (min-width: 768px) {
   .club-pin {
     --fan-scale: 1;
+    --chip-r: 2rem;
     left: var(--pin-x);
     top: var(--pin-y);
     --fx: var(--fan-x);
     --fy: var(--fan-y);
     --flen: var(--fan-len);
     --fangle: var(--fan-angle);
-    --chang: var(--chip-hang);
   }
 }
 
@@ -284,11 +285,17 @@ body {
 }
 
 .club-pin-chip {
-  left: calc(var(--fx) * var(--fan-scale));
-  top: calc(var(--fy) * var(--fan-scale) * -1);
-  /* -50% centers on the line's end; the vertical hang is 0% (crest dangles
-     below a downward fan) or -100% (floats above an upward one). */
-  translate: -50% var(--chang);
+  /* The chip's CENTER sits on the connector's axis, one radius past the
+     line's tip — so the line always aims at the circle's center and meets
+     the rim perpendicular (radially). sin/cos of the fan angle project
+     that extra radius along the line; downward fans fall out of the same
+     math (cos flips negative). --chip-r mirrors the chip size classes in
+     main.ts: h-8 → sm:h-10 → md:h-16. */
+  left: calc(var(--fx) * var(--fan-scale) + var(--chip-r) * sin(var(--fangle)));
+  top: calc((var(--fy) * var(--fan-scale) + var(--chip-r) * cos(var(--fangle))) * -1);
+  translate: -50% -50%;
+}
+
 }
 
 /* On phones the map renders at roughly a third of its viewBox size — bump
