@@ -173,7 +173,10 @@ const animateScrollTo = (target: HTMLElement): void => {
     window.scrollTo({ top: targetY, behavior: 'instant' });
     return;
   }
-  const duration = Math.min(900, 400 + (Math.abs(distance) / viewport) * 80);
+  // Unhurried on purpose: ~0.7s for a one-screen hop, growing with the
+  // trip and easing at both ends, capped so a hero-to-footer ride still
+  // arrives inside a second and a half.
+  const duration = Math.min(1500, 500 + (Math.abs(distance) / viewport) * 160);
   const startedAt = performance.now();
   // The user's own scrolling wins instantly — a navigation animation that
   // fights the wheel feels broken.
