@@ -8,7 +8,7 @@ import './styles.css';
 // Geometric guard for the map's pin system: measures the real rendered
 // geometry (chips, dots, connector lines) and fails on ANY touching pair —
 // on the phone viewport and on desktop. The phone layout lives on
-// hand-tuned constants (PIN_ANCHOR_PHONE / PIN_FAN_PHONE in main.ts);
+// hand-tuned constants (PIN_ANCHOR_PHONE / PIN_ANGLE_PHONE in main.ts);
 // whenever those or the club coordinates change, this is what proves the
 // map stayed clean. Also guards that the phone draw-in actually animates
 // progressively (it must not pop in fully drawn).

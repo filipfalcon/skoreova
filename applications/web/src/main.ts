@@ -2686,8 +2686,11 @@ const clubs: ReadonlyArray<Club> = [
     'Ostrava',
     FIRST_LEAGUE,
     banikOstravaLogo,
-    90.9,
-    49.4,
+    // Bazaly, Slezská Ostrava — the SILESIAN bank of the Ostravice. The
+    // city-center dot sat a hair south-west, inside the Moravian corridor
+    // of the historic border, and read as a Moravian club.
+    91.4,
+    48.5,
     2,
     3,
   ),
@@ -2822,30 +2825,42 @@ const teamMatchesLeague = (model: Model, team: Club): boolean =>
   (model.mapLeague === 'first' && team.league === FIRST_LEAGUE) ||
   (model.mapLeague === 'second' && team.league === SECOND_LEAGUE);
 
-// Where a pin's crest sits relative to its dot, in rem. Every dot is at the
+// Where a pin's crest sits relative to its dot. Every dot is at the
 // club's TRUE projected city location; in crowded cities (Prague ×4, Brno
 // ×2) the crests fan OUT along angled target lines so the logos stay
-// readable while the dots stay honest.
+// readable while the dots stay honest. dx/dy in rem, derived from the
+// pin's angle — never authored directly.
 interface Fan {
   readonly dx: number;
   readonly dy: number;
 }
 
-const PIN_FAN: Record<string, Fan> = {
-  'sparta-praha': { dx: -2.4, dy: 2.2 },
-  'slavia-praha': { dx: 2.5, dy: 2.2 },
-  'prague-raptors': { dx: -2.5, dy: -2.1 },
-  'abc-branik': { dx: 2.4, dy: -2.2 },
-  'lokomotiva-brno': { dx: 1.3, dy: -2.2 },
-  'artis-brno': { dx: 1.7, dy: 1.4 },
-  'hradec-kralove': { dx: 1.6, dy: 1.5 },
-  // Hangs below-RIGHT of its dot: Hradec's chip owns the up-right slot and
-  // Jihlava's default fan rises into the down-left one — this diagonal is
-  // the only quadrant clear of both, on phones too.
-  pardubice: { dx: 2.8, dy: -1.8 },
-};
+// Every connector line is the SAME length within a breakpoint — a pin
+// differs only by its ANGLE, in degrees: 0 = straight up, positive leans
+// right, ±90 = flat, past ±90 the crest hangs below the dot. Both angle
+// sets are vetted against the geometric guard in map-collisions.test.ts
+// by the uniform-length solver in the session scratchpad — rerun it when
+// dots move or a pin joins.
+const PIN_LINE_REM = 2;
+// Visually halved once more by --fan-scale (see .club-pin in styles.css).
+const PIN_LINE_PHONE_REM = 2;
 
-const DEFAULT_FAN: Fan = { dx: 0, dy: 1.6 };
+const fanFromAngle = (degrees: number, length: number): Fan => ({
+  dx: Math.sin((degrees * Math.PI) / 180) * length,
+  dy: Math.cos((degrees * Math.PI) / 180) * length,
+});
+
+const PIN_ANGLE: Record<string, number> = {
+  'sparta-praha': -45,
+  'slavia-praha': 50,
+  'prague-raptors': -130,
+  'abc-branik': 135,
+  // Artis sits practically on the same dot — the Brno pair splits into a
+  // vertical stalk (Artis, default 0°) and a flat-left one.
+  'lokomotiva-brno': -90,
+  // Hradec's dot sits directly above — the Elbe pair splits the same way.
+  pardubice: 90,
+};
 
 // Phone-only geometry (see .club-pin in styles.css for the var plumbing).
 // At a third of the desktop size the true city dots of Prague and Brno sit
@@ -2864,17 +2879,24 @@ const PIN_ANCHOR_PHONE: Record<string, { readonly x: number; readonly y: number 
   'artis-brno': { x: 67.2, y: 74.4 },
 };
 
-const PIN_FAN_PHONE: Record<string, Fan> = {
-  'sparta-praha': { dx: -2.5, dy: 0.5 },
-  'slavia-praha': { dx: 1.0, dy: 3.5 },
-  'prague-raptors': { dx: 4.5, dy: 0.5 },
-  'abc-branik': { dx: 2.75, dy: -0.75 },
+// Phone-only angles: the shared-anchor clusters need their own spread,
+// and the neighbourhoods differ at a third of the size. Solved by the
+// uniform-length solver (deviation-penalized, so only pins that must
+// rotate differ from their desktop selves).
+const PIN_ANGLE_PHONE: Record<string, number> = {
+  'sparta-praha': -125,
+  'slavia-praha': 5,
+  'prague-raptors': 75,
+  'abc-branik': 145,
+  'vysocina-jihlava': -10,
   // Brno's north is pinched between Pardubice's chip and Sigma's dot, so
-  // the pair hangs side by side BELOW the shared anchor instead.
-  'artis-brno': { dx: -2.35, dy: -1.7 },
-  'lokomotiva-brno': { dx: 2.15, dy: -1.7 },
-  slovacko: { dx: 1.2, dy: 1.2 },
-  pardubice: { dx: 3.4, dy: -1.9 },
+  // the pair hangs BELOW the shared anchor instead.
+  'artis-brno': -125,
+  'lokomotiva-brno': 140,
+  'dynamo-ceske-budejovice': -15,
+  'hradec-kralove': 45,
+  slovacko: 45,
+  pardubice: 120,
 };
 
 
@@ -2924,13 +2946,17 @@ const pinRevealDelaySeconds = (club: Club): string => {
   return (MAP_DRAWN_SECONDS + Number(landTintDelaySeconds(landIndex))).toFixed(2);
 };
 
-const fanAngle = (fan: Fan): number => (Math.atan2(fan.dx, fan.dy) * 180) / Math.PI;
-const fanLength = (fan: Fan): number => Math.hypot(fan.dx, fan.dy);
+// Crest artwork with more built-in transparent padding than its peers
+// reads smaller inside the shared chip circle — scale it back up.
+const CREST_SCALE: Record<string, number> = {
+  'sparta-praha': 1.1,
+  'hradec-kralove': 1.1,
+};
 
 const clubPin = (model: Model, club: Club): Html => {
   // Target-line pin: a white dot marks the exact spot, a thin connector
   // runs from the dot to the crest floating above (angled in crowded
-  // cities — see PIN_FAN). The button is a zero-size anchor at the dot;
+  // cities — see PIN_ANGLE). The button is a zero-size anchor at the dot;
   // hover scales ONLY the crest chip (around its own center) — the dot,
   // line, and tooltip hold still, so the tooltip doesn't shrink with the
   // crest on hover-out.
@@ -2963,20 +2989,18 @@ const clubPin = (model: Model, club: Club): Html => {
         '--pin-y': `${club.y}%`,
         '--fan-x': `${fan.dx}rem`,
         '--fan-y': `${fan.dy}rem`,
-        '--fan-len': `${fanLength(fan)}rem`,
-        '--fan-angle': `${fanAngle(fan)}deg`,
-        '--chip-hang': below ? '0%' : '-100%',
+        '--fan-len': `${PIN_LINE_REM}rem`,
+        '--fan-angle': `${angle}deg`,
         ...(phoneAnchor === undefined
           ? {}
           : { '--pin-x-phone': `${phoneAnchor.x}%`, '--pin-y-phone': `${phoneAnchor.y}%` }),
-        ...(phoneFan === fan
+        ...(phoneAngle === angle && PIN_LINE_PHONE_REM === PIN_LINE_REM
           ? {}
           : {
               '--fan-x-phone': `${phoneFan.dx}rem`,
               '--fan-y-phone': `${phoneFan.dy}rem`,
-              '--fan-len-phone': `${fanLength(phoneFan)}rem`,
-              '--fan-angle-phone': `${fanAngle(phoneFan)}deg`,
-              '--chip-hang-phone': phoneBelow ? '0%' : '-100%',
+              '--fan-len-phone': `${PIN_LINE_PHONE_REM}rem`,
+              '--fan-angle-phone': `${phoneAngle}deg`,
             }),
       }),
     ],
@@ -2989,8 +3013,10 @@ const clubPin = (model: Model, club: Club): Html => {
       ),
       // The chip: every crest sits inside an identical paper circle —
       // normalization by construction (shields, circles, and star-topped
-      // crests all read as one calm system).
-      h.div(
+      // crests all read as one calm system). A few crest images carry
+      // extra transparent padding and read smaller than their peers —
+      // CREST_SCALE nudges those up to the same optical size.
+      h.button(
         [
           h.Class(
             'club-pin-chip absolute flex h-8 w-8 items-center justify-center rounded-full bg-paper p-1 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:scale-110 sm:h-10 sm:w-10 md:h-16 md:w-16 md:p-2',
@@ -3002,6 +3028,9 @@ const clubPin = (model: Model, club: Club): Html => {
             h.Alt(''),
             h.Loading('lazy'),
             h.Class('h-full w-full object-contain'),
+            ...(CREST_SCALE[club.slug]
+              ? [h.Style({ transform: `scale(${CREST_SCALE[club.slug]})` })]
+              : []),
           ]),
         ],
       ),
