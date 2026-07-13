@@ -754,7 +754,10 @@ const drawnRightArrow = (classes: string): Html =>
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
       h.ViewBox('0 0 32 24'),
-      h.Class(classes),
+      // `drawn-arrow` is the sitewide hover contract: any drawn arrow
+      // inside a hovered link or button nudges right (styles.css) — the
+      // platform-beckon arrows excluded there, they own their hover.
+      h.Class(`drawn-arrow ${classes}`),
       h.Fill('currentColor'),
       h.AriaHidden(true),
     ],
@@ -4420,7 +4423,7 @@ const backToMapView = (): Html =>
                 'display inline-block bg-ink px-8 py-4 text-xl tracking-[0.08em] text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
               ),
             ],
-            ['← Back to the map'],
+            [h.span([h.Class('arrow-back inline-block')], ['←']), ' Back to the map'],
           ),
         ],
       ),
@@ -4600,7 +4603,7 @@ const backToCompetitionsView = (): Html =>
                 'display inline-block bg-ink px-8 py-4 text-xl tracking-[0.08em] text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
               ),
             ],
-            ['← Back to competitions'],
+            [h.span([h.Class('arrow-back inline-block')], ['←']), ' Back to competitions'],
           ),
         ],
       ),
