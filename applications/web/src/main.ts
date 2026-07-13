@@ -2145,13 +2145,15 @@ const championsView = (): Html =>
               h.DataAttribute('reveal', 'up'),
             ],
             [
-              // "…left no doubt:" (the strapline above) → "The receipts." —
-              // the season year lives in the pink label so the strapline's
-              // "2024/25" isn't parroted by the heading.
-              h.h3([h.Class('display text-fluid-4xl-6xl')], ['The receipts.']),
+              // The two dividers of this section are structurally parallel:
+              // the big headline names the TIME SCOPE ("Season 2025/2026." ↔
+              // "All time."), the pink label names what's inside ("The
+              // receipts" ↔ "The honors board"). The headline is also what
+              // announces that last season's statistics follow.
+              h.h3([h.Class('display text-fluid-4xl-6xl')], ['Season 2025/2026.']),
               h.span(
                 [h.Class('display text-xl tracking-wide text-pink uppercase md:text-2xl')],
-                ['Season 2024/25'],
+                ['The receipts'],
               ),
             ],
           ),
@@ -2188,7 +2190,9 @@ const championsView = (): Html =>
                       h.DataAttribute('reveal', 'up'),
                     ],
                     [
-                      'Seven unanswered goals — four times in one season, two of them in somebody else’s stadium.',
+                      // "Four times" lives in the label above — the copy
+                      // adds only what the label doesn't say.
+                      'Seven unanswered goals — two of them in somebody else’s stadium. Going places.',
                     ],
                   ),
                   h.ul(
@@ -2237,7 +2241,11 @@ const championsView = (): Html =>
                       h.DataAttribute('reveal', 'up'),
                     ],
                     [
-                      'Every tie on the run was clinched away from home — quiet nights at the arena, then goals by the handful on the road.',
+                      // The data really does read like a spell: home legs
+                      // 0:0, 0:3, 0:0 → through; the first home goals of the
+                      // run (2:3 vs Hammarby) came a week before the away
+                      // leg ended it.
+                      'Every tie they won was scoreless at home — quiet nights at the arena, then goals by the handful on the road.',
                     ],
                   ),
                   h.ul(
@@ -2422,7 +2430,7 @@ const championsView = (): Html =>
                       h.Class('text-xs tracking-[0.2em] uppercase'),
                       h.DataAttribute('reveal', 'up'),
                     ],
-                    ['Domestic Cup — the road to the trophy'],
+                    ['Domestic Cup — the road to the double'],
                   ),
                   h.ul(
                     [h.Class('mt-5 border-t-2 border-ink')],
