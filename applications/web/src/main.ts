@@ -42,6 +42,7 @@ import duoImage from './assets/duo.webp';
 import firstLeagueImage from './assets/first-league.jpg';
 import heroImage from './assets/hero.webp';
 import knightImage from './assets/knight-mascot.webp';
+import landsScoutImage from './assets/lands-scout.webp';
 import lionessesImage from './assets/lionesses.webp';
 import nationalTeamImage from './assets/national-team.jpg';
 import rancovaImage from './assets/rancova.webp';
@@ -3156,10 +3157,41 @@ const clubsView = (model: Model): Html =>
     // Ink, not paper: the white map line work is the section's hero, and the
     // dark ground restores the light/dark rhythm around it (competitions is
     // photo-textured ink, champions after it is paper).
-    [h.Id('across-the-lands'), h.Class('bg-ink py-16 text-paper md:py-24')],
+    [h.Id('across-the-lands'), h.Class('relative bg-ink py-16 text-paper md:py-24')],
     [
+      // The lands scout — the knight-mascot treatment (section 01): a
+      // decorative accent anchored to the section's right edge, behind the
+      // copy (the container below is z-10), sliding in from the right and
+      // idle-floating. She surveys the headline and the counters through
+      // her spyglass. Narrower caps than the knight — the figure is a tall
+      // 1:2 portrait, so the knight's widths would blow her up huge.
       h.div(
-        [h.Class(container)],
+        [
+          h.Class(
+            'pointer-events-none absolute top-8 right-4 z-0 w-20 select-none sm:w-28 md:top-12 md:right-10 md:w-[17%] md:max-w-[250px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
+          ),
+          h.DataAttribute('reveal', 'right'),
+          h.Style({ '--reveal-delay': '0.1s' }),
+        ],
+        [
+          h.img([
+            h.Src(landsScoutImage),
+            h.Width('383'),
+            h.Height('800'),
+            h.Alt('Illustrated footballer in a pink kit scouting through a spyglass'),
+            h.Loading('lazy'),
+            h.Class('idle-float block w-full'),
+            // The four-direction paper drop-shadow is a thin sticker
+            // outline lifting the pink kit off the ink background.
+            h.Style({
+              filter:
+                'drop-shadow(1.5px 0 0 var(--color-paper)) drop-shadow(-1.5px 0 0 var(--color-paper)) drop-shadow(0 1.5px 0 var(--color-paper)) drop-shadow(0 -1.5px 0 var(--color-paper))',
+            }),
+          ]),
+        ],
+      ),
+      h.div(
+        [h.Class(`${container} relative z-10`)],
         [
           kicker('03', 'Across the lands', true, '/#across-the-lands'),
           h.h2(
