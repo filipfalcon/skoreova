@@ -2180,7 +2180,14 @@ const championsView = (): Html =>
                       h.Class('display mt-3 text-fluid-8xl-9xl leading-none text-pink'),
                       h.DataAttribute('reveal', 'up'),
                     ],
-                    ['7:0'],
+                    [
+                      // A score can't count up — it gets the slot-machine
+                      // scramble instead (same device as the "unstoppable"
+                      // stats in section 01). On an INNER span: the reveal
+                      // handler only scans a target's DESCENDANTS for
+                      // [data-scramble].
+                      h.span([h.DataAttribute('scramble', '')], ['7:0']),
+                    ],
                   ),
                   h.p(
                     [
