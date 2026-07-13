@@ -2574,13 +2574,12 @@ const championsView = (): Html =>
                   h.a(
                     [
                       // No records screen on the platform yet — lands on
-                      // the dashboard.
+                      // the dashboard. No reveal — CTAs sit still while the
+                      // content around them animates, same as everywhere.
                       h.Href(platformUrl),
                       h.Class(
                         'display mt-10 inline-block bg-ink px-8 py-4 text-xl tracking-[0.08em] text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
                       ),
-                      h.DataAttribute('reveal', 'up'),
-                      h.Style({ '--reveal-delay': '0.4s' }),
                     ],
                     ['Discover other records', displayArrow],
                   ),
@@ -2860,8 +2859,8 @@ const starView = (): Html =>
                       h.Class(
                         'display mt-12 inline-block bg-pink px-8 py-4 text-xl tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
                       ),
-                      h.DataAttribute('reveal', 'up'),
-                      h.Style({ '--reveal-delay': '0.5s' }),
+                      // No reveal — CTAs sit still while the content around
+                      // them animates, same as everywhere.
                     ],
                     ['Discover other stars', displayArrow],
                   ),
@@ -3810,7 +3809,9 @@ const clubsView = (model: Model): Html =>
                 ],
               ),
               h.div(
-                [h.Class('mt-14 flex justify-center md:mt-20'), h.DataAttribute('reveal', 'up')],
+                // No reveal — CTAs sit still while the content around them
+                // animates, same as everywhere.
+                [h.Class('mt-14 flex justify-center md:mt-20')],
                 [
                   h.a(
                     [
