@@ -2494,7 +2494,7 @@ const championsView = (): Html =>
                     ],
                   ),
                   h.figcaption(
-                    [h.Class('mt-3 text-center text-xs tracking-[0.2em] uppercase text-ink/60')],
+                    [h.Class('mt-3 text-center text-xs tracking-[0.2em] uppercase')],
                     ['Ellie Ospeck enjoying the trophies.'],
                   ),
                 ],
