@@ -15,6 +15,7 @@ import artisBrnoLogo from './assets/clubs/ArtisBrno.png';
 import austriaWienLogo from './assets/clubs/AustriaWien.png';
 import banikOstravaLogo from './assets/clubs/BanikOstrava.png';
 import dynamoBudejoviceLogo from './assets/clubs/DynamoCeskeBudejovice.png';
+import fcPrahaLogo from './assets/clubs/FcPraha.png';
 import ferencvarosLogo from './assets/clubs/Ferencvaros.svg';
 import hammarbyLogo from './assets/clubs/Hammarby.svg';
 import hradecKraloveLogo from './assets/clubs/HradecKralove.png';
@@ -1671,35 +1672,108 @@ const honors: ReadonlyArray<Honor> = [
 // run clinched entirely on the road, and the double. Fixtures, stages, and
 // results are real 2024/25 data supplied by the user.
 
+// Rows show the OPPONENT with their crest and the score read from
+// Sparta's side — the European table's language exactly. With no fixture
+// line there is no home-team-first convention left to respect, and an
+// opponent-first row with a flipped score would leave "whose 0?"
+// ambiguous; the AWAY chip alone carries the venue.
+// `phase` extends the competition-context line (Title group is a PHASE of
+// the league, like "Qualifiers — Finals" is a phase of UWEC); `stage` stays
+// a plain round so the round column reads structurally identical in every
+// row: Round 4 / 5 / 11 / 1.
 interface SeasonRout {
-  readonly fixture: string;
+  readonly opponent: string;
+  readonly logo: string;
+  readonly phase: string | null;
   readonly stage: string;
   readonly score: string;
   readonly away: boolean;
 }
 
 const seasonRouts: ReadonlyArray<SeasonRout> = [
-  { fixture: 'Sparta — FC Praha', stage: 'Round 4', score: '7:0', away: false },
-  { fixture: 'Brno H.H. — Sparta', stage: 'Round 5', score: '0:7', away: true },
-  { fixture: 'FC Praha — Sparta', stage: 'Round 11', score: '0:7', away: true },
-  { fixture: 'Sparta — Slovan Liberec', stage: 'Title group, round 1', score: '7:0', away: false },
+  {
+    opponent: 'FC Praha',
+    logo: fcPrahaLogo,
+    phase: null,
+    stage: 'Round 4',
+    score: '7:0',
+    away: false,
+  },
+  // "Brno H.H." is Lokomotiva Brno Horní Heršpice — same crest as the map pin.
+  {
+    opponent: 'Brno H.H.',
+    logo: lokomotivaBrnoLogo,
+    phase: null,
+    stage: 'Round 5',
+    score: '7:0',
+    away: true,
+  },
+  {
+    opponent: 'FC Praha',
+    logo: fcPrahaLogo,
+    phase: null,
+    stage: 'Round 11',
+    score: '7:0',
+    away: true,
+  },
+  {
+    opponent: 'Slovan Liberec',
+    logo: slovanLiberecLogo,
+    phase: 'Title group',
+    stage: 'Round 1',
+    score: '7:0',
+    away: false,
+  },
 ];
 
 // The Domestic Cup run — four wins to the trophy, the final settled on
-// penalties. Home team listed first, as played. (`CupTie`/`cupRun` names
-// belong to the club-profile mock further down.)
+// penalties. Same language as the other two tables: the opponent with
+// their crest, the score from Sparta's side, the venue as the label under
+// it. The penalties note extends the stage line — it is match context,
+// not a second score. (`CupTie`/`cupRun` names belong to the club-profile
+// mock further down.)
 interface SeasonCupTie {
   readonly stage: string;
-  readonly fixture: string;
+  readonly opponent: string;
+  readonly logo: string;
   readonly score: string;
+  readonly away: boolean;
   readonly note: string | null;
 }
 
 const seasonCupRun: ReadonlyArray<SeasonCupTie> = [
-  { stage: 'Round of 16', fixture: 'Pardubice — Sparta', score: '0:4', note: null },
-  { stage: 'Quarterfinal', fixture: 'Sparta — Slovan Liberec', score: '5:2', note: null },
-  { stage: 'Semifinal', fixture: 'Slovácko — Sparta', score: '1:3', note: null },
-  { stage: 'Final', fixture: 'Slavia — Sparta', score: '0:0', note: 'won 4:3 on penalties' },
+  {
+    stage: 'Round of 16',
+    opponent: 'Pardubice',
+    logo: pardubiceLogo,
+    score: '4:0',
+    away: true,
+    note: null,
+  },
+  {
+    stage: 'Quarters',
+    opponent: 'Slovan Liberec',
+    logo: slovanLiberecLogo,
+    score: '5:2',
+    away: false,
+    note: null,
+  },
+  {
+    stage: 'Semis',
+    opponent: 'Slovácko',
+    logo: slovackoLogo,
+    score: '3:1',
+    away: true,
+    note: null,
+  },
+  {
+    stage: 'Finals',
+    opponent: 'Slavia Praha',
+    logo: slaviaPrahaLogo,
+    score: '0:0',
+    away: true,
+    note: 'won 4:3 on penalties',
+  },
 ];
 
 // Both legs read from Sparta's side (their goals first) so the whole column
@@ -1723,7 +1797,9 @@ const euroTies: ReadonlyArray<EuroTie> = [
     through: true,
   },
   {
-    stage: 'Round of 32',
+    // UEFA's draw sheet says "1/8 finals" — in English that's the Round
+    // of 16.
+    stage: 'Round of 16',
     opponent: 'Young Boys',
     logo: youngBoysLogo,
     homeLeg: '0:3',
@@ -1747,6 +1823,111 @@ const euroTies: ReadonlyArray<EuroTie> = [
     through: false,
   },
 ];
+
+// Anton ships no tabular figures ("1" is a third narrower than "0", and
+// font-variant-numeric does nothing), so right-aligned score columns
+// wobble on any row ending in a 1. A poor man's tnum instead: every digit
+// sits centered in a 1ch box (1ch = the advance of "0"), which keeps all
+// score edges flush across rows.
+const tabularScore = (score: string): ReadonlyArray<Html | string> =>
+  score
+    .split('')
+    .map((character) =>
+      /[0-9]/.test(character)
+        ? h.span([h.Class('inline-block w-[1ch] text-center')], [character])
+        : character,
+    );
+
+// One row of a single-match table (the league routs and the cup run): the
+// European table's anatomy for ties that had only one leg — crest, the
+// opponent with the stage underneath, ONE score block whose label names
+// the venue (Home/Away) exactly where the euro rows label their legs, and
+// the arrow. Rows ride their grid's 'replay' reveal group.
+interface SingleMatch {
+  readonly opponent: string;
+  readonly logo: string;
+  readonly subLabel: string;
+  readonly score: string;
+  readonly away: boolean;
+}
+
+const singleMatchRow = (match: SingleMatch, index: number): Html =>
+  h.li(
+    [
+      h.Class('border-b border-ink/15'),
+      h.DataAttribute('reveal', 'up'),
+      h.Style({ '--reveal-delay': `${index * 0.08}s` }),
+    ],
+    [
+      // Every result clicks through to the platform — a plain transport
+      // until match pages exist there.
+      h.a(
+        [h.Href(platformUrl), h.Class('group match-row -mx-4 flex items-center gap-x-4 px-4 py-4')],
+        [
+          h.span(
+            [
+              h.Class(
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-paper p-1',
+              ),
+            ],
+            [
+              h.img([
+                h.Src(match.logo),
+                h.Alt(''),
+                h.Loading('lazy'),
+                h.Class('h-full w-full object-contain'),
+              ]),
+            ],
+          ),
+          h.div(
+            [h.Class('min-w-0 flex-1')],
+            [
+              h.p([h.Class('display text-xl md:text-2xl')], [match.opponent]),
+              h.p([h.Class('text-[10px] tracking-[0.2em] uppercase')], [match.subLabel]),
+            ],
+          ),
+          h.div(
+            [h.Class('flex items-center gap-3 text-right md:gap-4')],
+            [
+              h.div(
+                [h.Class('w-12 shrink-0 md:w-20')],
+                [
+                  // Pink = the winning scoreline (the euro table's away-leg
+                  // color). Both single-match tables list only wins, so
+                  // every score here carries it; if a defeat ever lands in
+                  // one of them, gate this like the euro away leg.
+                  h.p(
+                    [
+                      h.Class(
+                        'display text-fluid-2xl-4xl text-pink transition-colors duration-300 group-hover:text-ink',
+                      ),
+                    ],
+                    [...tabularScore(match.score)],
+                  ),
+                  h.p(
+                    [h.Class('text-[10px] tracking-[0.2em] uppercase md:text-[11px]')],
+                    [match.away ? 'Away' : 'Home'],
+                  ),
+                ],
+              ),
+              // The light "there's a detail behind this row" affordance.
+              h.span(
+                [
+                  h.Class(
+                    // Bare, no box — the map pin banner's arrow language:
+                    // the pink row fill is the click affordance now, the
+                    // arrow just nudges along on hover.
+                    'display hidden text-sm md:inline-block md:text-lg',
+                  ),
+                ],
+                [displayArrowSolo],
+              ),
+            ],
+          ),
+        ],
+      ),
+    ],
+  );
 
 const championsView = (): Html =>
   h.section(
@@ -1975,7 +2156,13 @@ const championsView = (): Html =>
             ],
           ),
           h.div(
-            [h.Class('mt-10 grid gap-12 md:mt-14 md:grid-cols-2 md:gap-16')],
+            [
+              h.Class('mt-10 grid gap-12 md:mt-14 md:grid-cols-2 md:gap-16'),
+              // One 'replay' beat for BOTH tables: every match row animates
+              // as soon as the grid shows up, instead of each row waiting
+              // for its own viewport entry (phones fall back to per-item).
+              h.DataAttribute('reveal-group', 'replay'),
+            ],
             [
               // Left: the 7:0 habit.
               h.div(
@@ -2007,68 +2194,20 @@ const championsView = (): Html =>
                   h.ul(
                     [h.Class('mt-8 border-t-2 border-ink')],
                     seasonRouts.map((rout, index) =>
-                      h.li(
-                        [
-                          h.Class('border-b border-ink/15'),
-                          h.DataAttribute('reveal', 'up'),
-                          h.Style({ '--reveal-delay': `${index * 0.08}s` }),
-                        ],
-                        [
-                          // Every result clicks through to the platform —
-                          // a plain transport until match pages exist there.
-                          // Fixed columns so the stage and score COLUMNS
-                          // align across rows like a table.
-                          h.a(
-                            [
-                              h.Href(platformUrl),
-                              h.Class(
-                                'group flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3.5 transition-colors duration-300 hover:text-pink active:text-pink md:grid md:grid-cols-[minmax(0,1fr)_11rem_4.5rem_auto]',
-                              ),
-                            ],
-                            [
-                              h.span(
-                                [h.Class('display text-lg md:text-xl')],
-                                [
-                                  rout.fixture,
-                                  ...(rout.away
-                                    ? [
-                                        h.span(
-                                          [
-                                            h.Class(
-                                              'ml-3 inline-block bg-pink px-2 py-0.5 align-middle text-[10px] tracking-[0.15em] text-ink md:px-2.5 md:py-1 md:text-xs',
-                                            ),
-                                          ],
-                                          ['AWAY'],
-                                        ),
-                                      ]
-                                    : []),
-                                ],
-                              ),
-                              h.span(
-                                [
-                                  h.Class(
-                                    'order-last w-full text-xs tracking-[0.2em] uppercase opacity-60 md:order-none md:w-auto md:text-sm',
-                                  ),
-                                ],
-                                [rout.stage],
-                              ),
-                              h.span(
-                                [h.Class('display text-lg md:text-2xl md:text-right')],
-                                [rout.score],
-                              ),
-                              // The light "there’s a detail behind this row"
-                              // affordance.
-                              h.span(
-                                [
-                                  h.Class(
-                                    'display hidden self-center border border-ink/25 px-2 py-0.5 text-sm transition-colors duration-300 group-hover:border-pink group-hover:bg-pink group-hover:text-ink md:inline-block',
-                                  ),
-                                ],
-                                [displayArrowSolo],
-                              ),
-                            ],
-                          ),
-                        ],
+                      singleMatchRow(
+                        {
+                          opponent: rout.opponent,
+                          logo: rout.logo,
+                          // The competition context reads like the European
+                          // rows' stage line; a phase extends it in place.
+                          subLabel:
+                            rout.phase === null
+                              ? `${FIRST_LEAGUE} — ${rout.stage}`
+                              : `${FIRST_LEAGUE} — ${rout.phase}, ${rout.stage.toLowerCase()}`,
+                          score: rout.score,
+                          away: rout.away,
+                        },
+                        index,
                       ),
                     ),
                   ),
@@ -2114,12 +2253,7 @@ const championsView = (): Html =>
                           // Ties click through to the platform too — same
                           // placeholder transport as the league routs.
                           h.a(
-                            [
-                              h.Href(platformUrl),
-                              h.Class(
-                                'group block py-4 transition-colors duration-300 hover:text-pink active:text-pink',
-                              ),
-                            ],
+                            [h.Href(platformUrl), h.Class('group match-row -mx-4 block px-4 py-4')],
                             [
                               h.div(
                                 [h.Class('flex flex-wrap items-center gap-x-4 gap-y-2')],
@@ -2152,35 +2286,58 @@ const championsView = (): Html =>
                                     [h.Class('min-w-0 flex-1')],
                                     [
                                       h.p([h.Class('display text-xl md:text-2xl')], [tie.opponent]),
+                                      // Full ink like the single-match rows'
+                                      // stage lines — no muting anywhere in
+                                      // the three tables.
                                       h.p(
-                                        [
-                                          h.Class(
-                                            'text-[10px] tracking-[0.2em] uppercase opacity-60',
-                                          ),
-                                        ],
+                                        [h.Class('text-[10px] tracking-[0.2em] uppercase')],
                                         [tie.stage],
                                       ),
                                     ],
                                   ),
                                   // Both legs from Sparta's side; the away leg —
                                   // where every tie was actually won — is the
-                                  // loud one. Fixed column widths + a centered
-                                  // stamp so scores and THROUGH/OUT line up as
-                                  // a table across all four rows.
+                                  // loud one. Fixed column widths so scores
+                                  // and THROUGH/OUT line up as a table across
+                                  // all four rows. Reading order: verdict
+                                  // (stamp) right after the club, results
+                                  // after it.
                                   h.div(
                                     [h.Class('flex items-center gap-3 text-right md:gap-4')],
                                     [
+                                      h.span(
+                                        [
+                                          h.Class(
+                                            // md:w-24, not 28: the full-size
+                                            // home leg column costs width, and
+                                            // the longest stage ("Qualifiers —
+                                            // finals") must keep ONE line. The
+                                            // pink stamp flips to ink on the
+                                            // row hover's pink fill.
+                                            `display w-20 shrink-0 py-1.5 text-center text-xs tracking-[0.15em] transition-colors duration-300 md:w-24 md:text-sm ${
+                                              tie.through
+                                                ? 'bg-pink text-ink group-hover:bg-ink group-hover:text-paper'
+                                                : 'bg-ink text-paper'
+                                            }`,
+                                          ),
+                                        ],
+                                        [tie.through ? 'THROUGH' : 'OUT'],
+                                      ),
+                                      // Both legs share one formation — same
+                                      // size, same column, same label; the
+                                      // pink alone marks the away leg as the
+                                      // loud one.
                                       h.div(
-                                        [h.Class('w-9 shrink-0 md:w-14')],
+                                        [h.Class('w-12 shrink-0 md:w-20')],
                                         [
                                           h.p(
-                                            [h.Class('display text-lg opacity-50 md:text-2xl')],
-                                            [tie.homeLeg],
+                                            [h.Class('display text-fluid-2xl-4xl')],
+                                            [...tabularScore(tie.homeLeg)],
                                           ),
                                           h.p(
                                             [
                                               h.Class(
-                                                'text-[9px] tracking-[0.2em] uppercase opacity-50 md:text-[11px]',
+                                                'text-[10px] tracking-[0.2em] uppercase md:text-[11px]',
                                               ),
                                             ],
                                             ['Home'],
@@ -2191,35 +2348,41 @@ const championsView = (): Html =>
                                         [h.Class('w-12 shrink-0 md:w-20')],
                                         [
                                           h.p(
-                                            [h.Class('display text-fluid-2xl-4xl text-pink')],
-                                            [tie.awayLeg],
+                                            [
+                                              h.Class(
+                                                // Pink strictly means "clinched
+                                                // on the road": the away legs
+                                                // of WON ties. Hammarby's away
+                                                // defeat stays ink — pink on
+                                                // the elimination would lie.
+                                                `display text-fluid-2xl-4xl${
+                                                  tie.through
+                                                    ? ' text-pink transition-colors duration-300 group-hover:text-ink'
+                                                    : ''
+                                                }`,
+                                              ),
+                                            ],
+                                            [...tabularScore(tie.awayLeg)],
                                           ),
                                           h.p(
                                             [
                                               h.Class(
-                                                'text-[9px] tracking-[0.2em] uppercase md:text-[11px]',
+                                                'text-[10px] tracking-[0.2em] uppercase md:text-[11px]',
                                               ),
                                             ],
                                             ['Away'],
                                           ),
                                         ],
                                       ),
-                                      h.span(
-                                        [
-                                          h.Class(
-                                            `display w-20 shrink-0 py-1.5 text-center text-xs tracking-wider md:w-28 md:text-sm ${
-                                              tie.through ? 'bg-pink text-ink' : 'bg-ink text-paper'
-                                            }`,
-                                          ),
-                                        ],
-                                        [tie.through ? 'THROUGH' : 'OUT'],
-                                      ),
                                       // The light "there's a detail behind
                                       // this row" affordance.
                                       h.span(
                                         [
                                           h.Class(
-                                            'display hidden border border-ink/25 px-2 py-0.5 text-sm transition-colors duration-300 group-hover:border-pink group-hover:bg-pink group-hover:text-ink md:inline-block',
+                                            // Bare, no box — the map pin banner's arrow language:
+                                            // the pink row fill is the click affordance now, the
+                                            // arrow just nudges along on hover.
+                                            'display hidden text-sm md:inline-block md:text-lg',
                                           ),
                                         ],
                                         [displayArrowSolo],
@@ -2241,9 +2404,15 @@ const championsView = (): Html =>
           // ---- The cup run --------------------------------------------
           // Lightly documented — a quiet vertical ladder of the four wins,
           // with the trophy photo sitting beside it (whole, uncropped) as
-          // the payoff. No stamps, no chips.
+          // the payoff. No stamps, no AWAY chips — but the arrow affordance
+          // stays: these rows click through to the platform exactly like
+          // their two louder siblings, so they advertise it the same way.
           h.div(
-            [h.Class('mt-14 grid gap-12 md:mt-20 md:grid-cols-2 md:items-center md:gap-16')],
+            [
+              h.Class('mt-14 grid gap-12 md:mt-20 md:grid-cols-2 md:items-center md:gap-16'),
+              // Same one-beat treatment as the receipts grid above.
+              h.DataAttribute('reveal-group', 'replay'),
+            ],
             [
               h.div(
                 [],
@@ -2258,47 +2427,17 @@ const championsView = (): Html =>
                   h.ul(
                     [h.Class('mt-5 border-t-2 border-ink')],
                     seasonCupRun.map((tie, index) =>
-                      h.li(
-                        [
-                          h.Class('border-b border-ink/15'),
-                          h.DataAttribute('reveal', 'up'),
-                          h.Style({ '--reveal-delay': `${index * 0.08}s` }),
-                        ],
-                        [
-                          h.a(
-                            [
-                              h.Href(platformUrl),
-                              h.Class(
-                                'group flex items-baseline justify-between gap-x-4 py-4 transition-colors duration-300 hover:text-pink active:text-pink',
-                              ),
-                            ],
-                            [
-                              h.div(
-                                [],
-                                [
-                                  h.p(
-                                    [h.Class('text-[10px] tracking-[0.2em] uppercase opacity-60')],
-                                    [tie.stage],
-                                  ),
-                                  h.p([h.Class('display mt-1 text-lg md:text-xl')], [tie.fixture]),
-                                  ...(tie.note === null
-                                    ? []
-                                    : [
-                                        h.p(
-                                          [
-                                            h.Class(
-                                              'mt-1 text-[10px] tracking-[0.2em] uppercase opacity-60',
-                                            ),
-                                          ],
-                                          [tie.note],
-                                        ),
-                                      ]),
-                                ],
-                              ),
-                              h.p([h.Class('display text-fluid-3xl-4xl text-pink')], [tie.score]),
-                            ],
-                          ),
-                        ],
+                      singleMatchRow(
+                        {
+                          opponent: tie.opponent,
+                          logo: tie.logo,
+                          // The penalties note extends the stage line —
+                          // match context, not a second score.
+                          subLabel: tie.note === null ? tie.stage : `${tie.stage} — ${tie.note}`,
+                          score: tie.score,
+                          away: tie.away,
+                        },
+                        index,
                       ),
                     ),
                   ),
