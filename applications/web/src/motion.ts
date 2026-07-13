@@ -694,9 +694,11 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
   // scroll-bound: no easing, no lag, reversible by scrolling back. The
   // lead factor compresses the window — at 1 the scrub would finish with
   // the parent's center on the viewport's center; higher finishes that
-  // much sooner, so a big stagger still assembles while the eye arrives.
+  // much sooner. Was 1.4; eased to 1.25 when the honors stagger shrank to
+  // 56px (alignment work, 2026-07-13) — the shorter travel deserves a
+  // slightly longer window (1.1 read as lagging; user-tuned).
 
-  const SCRUB_ALIGN_LEAD = 1.4;
+  const SCRUB_ALIGN_LEAD = 1.25;
 
   const scrubAlignLayers: ReadonlyArray<HTMLElement> = Array.from(
     root.querySelectorAll<HTMLElement>('[data-scrub-align]'),
