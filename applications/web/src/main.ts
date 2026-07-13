@@ -1665,10 +1665,10 @@ const honors: ReadonlyArray<Honor> = [
   { count: null, label: '1× UWEC semis — 1× UWCL quarters', first: false },
 ];
 
-// ---- Season 2024/25 highlights -------------------------------------------
+// ---- Season 2025/2026 highlights -------------------------------------------
 // The reigning champion's case, in receipts: four 7:0s, a European semifinal
 // run clinched entirely on the road, and the double. Fixtures, stages, and
-// results are real 2024/25 data supplied by the user.
+// results are real 2025/2026 data supplied by the user.
 
 // Rows show the OPPONENT with their crest and the score read from
 // Sparta's side — the European table's language exactly. With no fixture
