@@ -2457,8 +2457,11 @@ const championsView = (): Html =>
                 ],
               ),
               // The payoff frame — both trophies, no fanfare, uncropped.
+              // No hover tilt on any photo in this section — they sit next
+              // to interactive tables, and a photo that reacts to the
+              // pointer reads as another control.
               h.figure(
-                [h.DataAttribute('reveal', 'up'), h.DataAttribute('tilt', '')],
+                [h.DataAttribute('reveal', 'up')],
                 [
                   h.div(
                     [h.Class('overflow-hidden')],
@@ -2600,11 +2603,7 @@ const championsView = (): Html =>
                         [h.Class('collage-snap collage-snap-left')],
                         [
                           h.div(
-                            [
-                              h.Class('overflow-hidden'),
-                              h.DataAttribute('reveal', 'up'),
-                              h.DataAttribute('tilt', ''),
-                            ],
+                            [h.Class('overflow-hidden'), h.DataAttribute('reveal', 'up')],
                             [
                               h.div(
                                 [h.DataAttribute('reveal', 'zoom')],
@@ -2637,7 +2636,6 @@ const championsView = (): Html =>
                             [
                               h.Class('overflow-hidden'),
                               h.DataAttribute('reveal', 'up'),
-                              h.DataAttribute('tilt', ''),
                               h.Style({ '--reveal-delay': '0.15s' }),
                             ],
                             [
