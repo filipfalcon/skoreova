@@ -1650,10 +1650,12 @@ const competitionsView = (): Html =>
   );
 
 // One row of the champions honors board. `count` is the big pink multiplier
-// ('22×'); rows without one (the European runs) render as a full-width
-// label. `first` stamps a "#1" chip — the count is the national record.
+// ('22×'); `first` stamps a "#1" chip — the count is the national record.
+// Trophies only: the European runs (UWEC semis, UWCL quarters) are NOT
+// silverware and cheapened the board, so they live in the receipts story
+// above instead (user call, 2026-07-13).
 interface Honor {
-  readonly count: string | null;
+  readonly count: string;
   readonly label: string;
   readonly first: boolean;
 }
@@ -1662,7 +1664,6 @@ const honors: ReadonlyArray<Honor> = [
   { count: '22×', label: 'Champions', first: true },
   { count: '11×', label: 'Domestic Cup winners', first: true },
   { count: '9×', label: 'Domestic double', first: true },
-  { count: null, label: '1× UWEC semis — 1× UWCL quarters', first: false },
 ];
 
 // ---- Season 2025/2026 highlights -------------------------------------------
@@ -2526,9 +2527,8 @@ const championsView = (): Html =>
               h.div(
                 [],
                 [
-                  // A plain list, not a <dl>: definition lists demand strict
-                  // dt→dd pairs, and the count-less European-runs row has no
-                  // pair to offer (and count-as-term read backwards anyway).
+                  // A plain list, not a <dl>: count-as-term read backwards
+                  // there anyway.
                   h.ul(
                     [h.Class('border-t-4 border-ink')],
                     honors.map((honor, index) =>
@@ -2541,17 +2541,13 @@ const championsView = (): Html =>
                           h.Style({ '--reveal-delay': `${index * 0.12}s` }),
                         ],
                         [
-                          ...(honor.count === null
-                            ? []
-                            : [
-                                h.span(
-                                  [
-                                    h.Class('display text-fluid-5xl-7xl leading-none text-pink'),
-                                    h.DataAttribute('countup', ''),
-                                  ],
-                                  [honor.count],
-                                ),
-                              ]),
+                          h.span(
+                            [
+                              h.Class('display text-fluid-5xl-7xl leading-none text-pink'),
+                              h.DataAttribute('countup', ''),
+                            ],
+                            [honor.count],
+                          ),
                           h.span(
                             [h.Class('display text-fluid-2xl-4xl leading-none')],
                             [
