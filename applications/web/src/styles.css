@@ -910,16 +910,22 @@ body {
   transform: translateX(0.14em);
 }
 
+/* The knock assignments below gate themselves on :not(:hover):not(:active)
+   — without it they OUTRANK the .platform-beckon:hover pause above (the
+   menu/header scopes carry more specificity), the animation keeps running
+   through the hover, and its mostly-resting keyframes override the held
+   push. "Knock only while nobody is pointing at you" said in the selector. */
+
 /* The menu's arrow knocks only while the overlay is up; its delay waits
    out the item's stagger fade-in (0.25s delay + 0.5s fade), so the first
    knock lands right as the row finishes arriving. */
-.menu-overlay.is-open .menu-platform svg {
+.menu-overlay.is-open .menu-platform:not(:hover):not(:active) svg {
   animation: platform-beckon 2s ease-in-out 0.7s infinite;
 }
 
 /* The hero's arrow starts once its own fade-in has landed (--hero-delay
    1.3s + the fade). */
-.hero-cta svg {
+.hero-cta:not(:hover):not(:active) svg {
   animation: platform-beckon 2s ease-in-out 2.2s infinite;
 }
 
@@ -944,8 +950,29 @@ body {
   }
 }
 
-.header-cta.is-visible svg {
+.header-cta.is-visible:not(:hover):not(:active) svg {
   animation: platform-beckon-rested 4.4s ease-in-out 1s infinite;
+}
+
+/* The sitewide arrow contract: every drawn arrow inside a hovered link or
+   button nudges along its direction — the "go on" gesture. Platform-beckon
+   arrows are EXCLUDED: they own their hover (same push, plus pausing the
+   knock animation — see .platform-beckon above). `.arrow-back` is the text
+   "←" of the profile back links, nudging the other way. Hover-gated for
+   touch browsers. */
+.drawn-arrow:not(.platform-beckon .drawn-arrow),
+.arrow-back {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) {
+  :is(a, button):hover .drawn-arrow:not(.platform-beckon .drawn-arrow) {
+    transform: translateX(0.14em);
+  }
+
+  :is(a, button):hover .arrow-back {
+    transform: translateX(-0.14em);
+  }
 }
 
 /* Every menu anchor — Platform included — hovers with the social rows'
