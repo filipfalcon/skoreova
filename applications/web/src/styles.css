@@ -239,12 +239,14 @@ body {
    their crests into free space on small maps.
 
    The z-index transition is defined here rather than via utilities because
-   it needs to be asymmetric: raising must be instant, but on hover-out the
-   z DECAYS (z-index is an integer, so the transition steps it down over the
-   shrink). A plain delayed drop glitched: the old pin held full z and kept
-   painting over a freshly hovered neighbor for the whole delay. Decaying,
-   it still beats idle pins (z-10) until the shrink lands, yet any newly
-   hovered crest (z-30, instant) wins right away. */
+   it needs to be asymmetric: on hover-out the z DECAYS (z-index is an
+   integer, so the transition steps it down over the shrink), while a fresh
+   hover rises after a short 150ms hold — exactly the abandoned pill's
+   fast-yield retreat, so the old banner finishes its exit ABOVE the new
+   crest instead of the new crest popping through it (Slavia over Sparta's
+   closing pill). The hold is invisible on a cold hover: chips never
+   overlap at rest (collision-tested), and the pin's own banner leaves the
+   gate at the same 150ms mark, already elevated. */
 .club-pin {
   --fan-scale: 0.5;
   --chip-r: 1rem;
@@ -270,7 +272,7 @@ body {
    keep the instant z-index and stay raised over its neighbors. */
 @media (hover: hover) {
   .club-pin:hover {
-    transition: z-index 0s;
+    transition: z-index 0s 150ms;
   }
 }
 
@@ -361,10 +363,7 @@ body {
   transition: translate 0s 450ms;
 }
 
-.club-pin:not(:hover):not([data-selected='true']):not(:focus-within)
-  .club-pin-banner-bar
-  a
-  * {
+.club-pin:not(:hover):not([data-selected='true']):not(:focus-within) .club-pin-banner-bar a * {
   transition-duration: 0s;
   transition-delay: 450ms;
 }
@@ -389,11 +388,12 @@ body {
 @media (hover: hover) {
   .club-pin:hover .club-pin-banner-bar {
     transform: translateX(0);
-    /* A 100ms head start for the crest: it grows in 150ms, the banner
-       leaves the gate just after — so the taller bar is never out in
-       front of a still-small crest. Closing uses the base rule and stays
-       undelayed. */
-    transition-delay: 0.1s;
+    /* A 150ms head start for the crest: it grows in 150ms and the pin's
+       z-index rises at the same mark (see .club-pin:hover above), so the
+       bar leaves the gate fully grown AND already elevated — never out in
+       front of a small crest, never under a neighbor's closing pill.
+       Closing uses the base rule and stays undelayed. */
+    transition-delay: 0.15s;
   }
 
   /* When focus JUMPS to another pin, the abandoned pill YIELDS fast:
@@ -407,9 +407,7 @@ body {
     transition: transform 0.15s ease-in;
   }
 
-  .map-stage:has(.club-pin:hover)
-    .club-pin:not(:hover):not([data-selected='true'])
-    .club-pin-chip {
+  .map-stage:has(.club-pin:hover) .club-pin:not(:hover):not([data-selected='true']) .club-pin-chip {
     transition-delay: 120ms;
     transition-duration: 200ms;
   }
@@ -425,6 +423,17 @@ body {
   .club-pin:hover .club-pin-banner-bar {
     pointer-events: auto;
   }
+}
+
+/* The anchor dot and connector line sit BELOW the banner in the pin's own
+   stacking order (banner -10, these -20): an open pill covers its own
+   line and dot where it passes over them — Lokomotiva's used to run
+   straight across the label. Outside the pill they stay visible as
+   always, and against the rest of the map nothing changes (the pin root's
+   z-index layers the whole subtree). */
+.club-pin-line,
+.club-pin-dot {
+  z-index: -20;
 }
 
 /* On phones the map renders at roughly a third of its viewBox size — bump
@@ -527,7 +536,6 @@ body {
     animation: land-tint-in 0.35s ease-out backwards;
     animation-delay: var(--tint-delay, 0s);
   }
-
 }
 
 @keyframes land-tint-in {

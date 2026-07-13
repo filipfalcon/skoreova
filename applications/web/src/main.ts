@@ -2879,7 +2879,6 @@ const PIN_ANGLE_PHONE: Record<string, number> = {
   pardubice: 120,
 };
 
-
 // The map choreography: the outline pen runs its lap while each internal
 // land border wipes in top-down, timed to MEET the pen at the two points
 // where that border joins the outline; the whole figure is done when the
@@ -2904,7 +2903,6 @@ const LAND_BORDER_WIPES: Record<string, { delay: number; duration: number }> = {
   Bohemia: { delay: 0.18, duration: 0.335 },
   Silesia: { delay: 0.303, duration: 0.075 },
 };
-
 
 // The tint wave: the lands fade in one AFTER another in CZECH_REGIONS
 // order (Bohemia, Moravia, Silesia — already west to east), spread evenly
@@ -2961,17 +2959,17 @@ const clubPin = (model: Model, club: Club): Html => {
       // string must stay static or Foldkit's patch would wipe the
       // observer-stamped `.is-in` (see the pin wrapper comment below).
       h.DataAttribute('selected', model.mapClub === club.slug ? 'true' : 'false'),
-      // The z-index transition lives in styles.css (.club-pin): raising is
-      // instant, but the drop on hover-out DECAYS over the scale-back, so
-      // the shrinking crest keeps beating idle pins yet yields immediately
-      // to a freshly hovered one.
+      // The z-index transition lives in styles.css (.club-pin): a fresh
+      // hover rises after a 150ms hold, the drop on hover-out DECAYS over
+      // the scale-back. The REVEAL deliberately does NOT live on this
+      // root: the reveal rules own the `transition` shorthand, and on a
+      // shared element they silently erased the z-index transition (the
+      // decay never ran — Slavia popped over Sparta's closing pill). The
+      // inner wrapper below carries it instead.
       h.Class('club-pin group absolute z-10 hover:z-30'),
       // Pairs the pin with its land: hovering the pin keeps the land's
       // hover tint alive (see the data-land rules in styles.css).
       h.DataAttribute('land', clubLand(club)),
-      // Revealed as part of the map's replay group, but only after the
-      // draw-in finishes — land by land (see pinRevealDelaySeconds).
-      h.DataAttribute('reveal', 'up'),
       // All geometry rides CSS vars; the `-phone` variants (when present)
       // win below `md` via the fallback plumbing in styles.css. That's what
       // lets crowded cities collapse onto shared anchors and re-fan into
@@ -2998,132 +2996,153 @@ const clubPin = (model: Model, club: Club): Html => {
       }),
     ],
     [
-      // The connector, rotated around the dot (origin-bottom, bottom = dot).
-      h.div([h.Class('club-pin-line absolute bottom-0 left-0 w-px origin-bottom bg-paper')], []),
+      // The reveal wrapper: the reveal rules own the `transition`
+      // shorthand, so opacity/transform reveals must not share an element
+      // with the root's z-index transition (they silently erased it).
+      // Static (empty) class string, so Foldkit's patcher never wipes the
+      // observer-stamped `.is-in`; --reveal-delay inherits from the root.
+      // Revealed as part of the map's replay group, but only after the
+      // draw-in finishes — land by land (see pinRevealDelaySeconds).
       h.div(
-        [h.Class('absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper')],
-        [],
-      ),
-      // The chip: every crest sits inside an identical paper circle —
-      // normalization by construction (shields, circles, and star-topped
-      // crests all read as one calm system). A few crest images carry
-      // extra transparent padding and read smaller than their peers —
-      // CREST_SCALE nudges those up to the same optical size.
-      h.button(
+        [h.DataAttribute('reveal', 'up')],
         [
-          h.Type('button'),
-          h.OnClick(OpenedMapClub({ slug: model.mapClub === club.slug ? '' : club.slug })),
-          h.AriaLabel(`${club.name} — ${club.city}, ${club.league}`),
-          h.Class(
-            `club-pin-chip absolute flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-[scale,box-shadow] delay-[250ms] duration-300 group-hover:scale-110 group-hover:delay-0 group-hover:duration-150 sm:h-10 sm:w-10 sm:p-2 md:h-16 md:w-16 md:p-3${
-              selected ? ' scale-110 ring-2 ring-pink delay-0 md:ring-[3px]' : ''
-            }`,
+          // The connector, rotated around the dot (origin-bottom, bottom = dot).
+          h.div(
+            [h.Class('club-pin-line absolute bottom-0 left-0 w-px origin-bottom bg-paper')],
+            [],
           ),
-        ],
-        [
-          h.img([
-            h.Src(club.logo),
-            h.Alt(''),
-            h.Loading('lazy'),
-            h.Class('h-full w-full object-contain'),
-            ...(CREST_SCALE[club.slug]
-              ? [h.Style({ transform: `scale(${CREST_SCALE[club.slug]})` })]
-              : []),
-          ]),
-        ],
-      ),
-      // The hover banner — an "achievement toast": a paper bar slides out
-      // of the crest to the right. The outer span is a clipping WINDOW
-      // whose left boundary sits exactly at the crest's center, so the
-      // bar's background structurally cannot paint left of the circle in
-      // any animation phase — it retreats BEHIND the crest, never into
-      // the open. Rendered AFTER the crest button (tab order: crest →
-      // its own rows) and sunk below it with -z-10 so the crest still
-      // paints on top.
-      h.span(
-        [
-          h.Class(
-            'club-pin-banner pointer-events-none absolute -z-10 block w-max overflow-hidden py-5 pr-6 text-left whitespace-nowrap',
-          ),
-        ],
-        [
-          h.span(
+          h.div(
             [
-              // A columns grid (name / league / arrow), so the pink league
-              // labels align even when the A and B names differ in length.
-              // overflow-hidden clips the rows' hover fill to the pill's
-              // rounded cap.
               h.Class(
-                'club-pin-banner-bar grid w-max grid-cols-[max-content_max-content_max-content] items-center gap-x-3 overflow-hidden bg-paper shadow-[0_6px_18px_rgba(0,0,0,0.45)]',
+                'club-pin-dot absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper',
               ),
             ],
-            // One BUTTON-like link per team — the pill is the navigation:
-            // hover (or a tap on phones) opens it, the row click goes to
-            // the team's profile. The whole row is the hit area; its pink
-            // hover fill starts exactly at the crest's right edge (the
-            // ::before inset), so nothing peeks around the circle. One
-            // line per team keeps the bar SHORTER than the crest that
-            // hides its left edge; under the second-league filter a
-            // parent pin reads as its B side. Subgrid keeps the columns
-            // aligned across A and B.
-            bannerTeams.map((team, index) =>
-                h.a(
-                  [
-                    h.Href(clubRouter({ slug: team.slug })),
-                    // The hover fill SLIDES UP from below the row — the
-                    // same signature move as the menu anchors' underlay,
-                    // same curve. overflow-hidden keeps the slide inside
-                    // its own row; the fill runs edge to edge (the crest
-                    // hides its left reach, and the sliver of row peeking
-                    // around the circle's curve must flood too).
-                    h.Class(
-                      `group/row relative isolate col-span-3 grid grid-cols-subgrid items-center gap-x-3 overflow-hidden py-1.5 pr-5 pl-[calc(var(--chip-r)+0.8rem)] ${bannerTeams.length > 1 ? 'md:py-2' : 'md:py-3'} before:absolute before:inset-y-0 before:right-0 before:left-0 before:-z-10 before:translate-y-[101%] before:bg-pink before:transition-transform before:duration-[450ms] before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-0 ${
-                        index > 0 ? 'border-t border-ink/10' : ''
-                      }`,
-                    ),
-                  ],
-                  [
-                    h.span(
-                      [h.Class('display text-sm leading-none text-ink md:text-lg')],
-                      [team.name],
-                    ),
-                    // A split-flap cell: at rest it reads the league, on
-                    // hover the label rolls up and OPEN PROFILE rolls in
-                    // from below — the row announces its own click, in
-                    // sync with the pink flood (same duration and curve).
-                    h.span(
-                      [h.Class('block h-[1.2em] overflow-hidden text-[10px] tracking-[0.2em] uppercase md:text-[11px]')],
-                      [
-                        h.span(
-                          [
-                            h.Class(
-                              'flex flex-col transition-transform duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/row:-translate-y-1/2',
-                            ),
-                          ],
-                          [
-                            h.span([h.Class('block leading-[1.2] text-pink')], [team.league]),
-                            h.span(
-                              [h.Class('block leading-[1.2] text-ink'), h.AriaHidden(true)],
-                              ['Open profile'],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    h.span(
-                      [
-                        // Full-strength ink like every other CTA arrow;
-                        // the hover nudge is the same 0.14em press the
-                        // platform-beckon arrows use.
-                        h.Class(
-                          'flex text-sm text-ink transition-transform duration-300 group-hover/row:translate-x-[0.14em] md:text-lg',
-                        ),
-                      ],
-                      [displayArrowSolo],
-                    ),
-                  ],
+            [],
+          ),
+          // The chip: every crest sits inside an identical paper circle —
+          // normalization by construction (shields, circles, and star-topped
+          // crests all read as one calm system). A few crest images carry
+          // extra transparent padding and read smaller than their peers —
+          // CREST_SCALE nudges those up to the same optical size.
+          h.button(
+            [
+              h.Type('button'),
+              h.OnClick(OpenedMapClub({ slug: model.mapClub === club.slug ? '' : club.slug })),
+              h.AriaLabel(`${club.name} — ${club.city}, ${club.league}`),
+              h.Class(
+                `club-pin-chip absolute flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-[scale,box-shadow] delay-[250ms] duration-300 group-hover:scale-110 group-hover:delay-0 group-hover:duration-150 sm:h-10 sm:w-10 sm:p-2 md:h-16 md:w-16 md:p-3${
+                  selected ? ' scale-110 ring-2 ring-pink delay-0 md:ring-[3px]' : ''
+                }`,
+              ),
+            ],
+            [
+              h.img([
+                h.Src(club.logo),
+                h.Alt(''),
+                h.Loading('lazy'),
+                h.Class('h-full w-full object-contain'),
+                ...(CREST_SCALE[club.slug]
+                  ? [h.Style({ transform: `scale(${CREST_SCALE[club.slug]})` })]
+                  : []),
+              ]),
+            ],
+          ),
+          // The hover banner — an "achievement toast": a paper bar slides out
+          // of the crest to the right. The outer span is a clipping WINDOW
+          // whose left boundary sits exactly at the crest's center, so the
+          // bar's background structurally cannot paint left of the circle in
+          // any animation phase — it retreats BEHIND the crest, never into
+          // the open. Rendered AFTER the crest button (tab order: crest →
+          // its own rows) and sunk below it with -z-10 so the crest still
+          // paints on top.
+          h.span(
+            [
+              h.Class(
+                'club-pin-banner pointer-events-none absolute -z-10 block w-max overflow-hidden py-5 pr-6 text-left whitespace-nowrap',
+              ),
+            ],
+            [
+              h.span(
+                [
+                  // A columns grid (name / league / arrow), so the pink league
+                  // labels align even when the A and B names differ in length.
+                  // overflow-hidden clips the rows' hover fill to the pill's
+                  // rounded cap.
+                  h.Class(
+                    'club-pin-banner-bar grid w-max grid-cols-[max-content_max-content_max-content] items-center gap-x-3 overflow-hidden bg-paper shadow-[0_6px_18px_rgba(0,0,0,0.45)]',
+                  ),
+                ],
+                // One BUTTON-like link per team — the pill is the navigation:
+                // hover (or a tap on phones) opens it, the row click goes to
+                // the team's profile. The whole row is the hit area; its pink
+                // hover fill starts exactly at the crest's right edge (the
+                // ::before inset), so nothing peeks around the circle. One
+                // line per team keeps the bar SHORTER than the crest that
+                // hides its left edge; under the second-league filter a
+                // parent pin reads as its B side. Subgrid keeps the columns
+                // aligned across A and B.
+                bannerTeams.map((team, index) =>
+                  h.a(
+                    [
+                      h.Href(clubRouter({ slug: team.slug })),
+                      // The hover fill SLIDES UP from below the row — the
+                      // same signature move as the menu anchors' underlay,
+                      // same curve. overflow-hidden keeps the slide inside
+                      // its own row; the fill runs edge to edge (the crest
+                      // hides its left reach, and the sliver of row peeking
+                      // around the circle's curve must flood too).
+                      h.Class(
+                        `group/row relative isolate col-span-3 grid grid-cols-subgrid items-center gap-x-3 overflow-hidden py-1.5 pr-5 pl-[calc(var(--chip-r)+0.8rem)] ${bannerTeams.length > 1 ? 'md:py-2' : 'md:py-3'} before:absolute before:inset-y-0 before:right-0 before:left-0 before:-z-10 before:translate-y-[101%] before:bg-pink before:transition-transform before:duration-[450ms] before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-0 ${
+                          index > 0 ? 'border-t border-ink/10' : ''
+                        }`,
+                      ),
+                    ],
+                    [
+                      h.span(
+                        [h.Class('display text-sm leading-none text-ink md:text-lg')],
+                        [team.name],
+                      ),
+                      // A split-flap cell: at rest it reads the league, on
+                      // hover the label rolls up and OPEN PROFILE rolls in
+                      // from below — the row announces its own click, in
+                      // sync with the pink flood (same duration and curve).
+                      h.span(
+                        [
+                          h.Class(
+                            'block h-[1.2em] overflow-hidden text-[10px] tracking-[0.2em] uppercase md:text-[11px]',
+                          ),
+                        ],
+                        [
+                          h.span(
+                            [
+                              h.Class(
+                                'flex flex-col transition-transform duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/row:-translate-y-1/2',
+                              ),
+                            ],
+                            [
+                              h.span([h.Class('block leading-[1.2] text-pink')], [team.league]),
+                              h.span(
+                                [h.Class('block leading-[1.2] text-ink'), h.AriaHidden(true)],
+                                ['Open profile'],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      h.span(
+                        [
+                          // Full-strength ink like every other CTA arrow;
+                          // the hover nudge is the same 0.14em press the
+                          // platform-beckon arrows use.
+                          h.Class('flex text-sm text-ink md:text-lg'),
+                        ],
+                        [displayArrowSolo],
+                      ),
+                    ],
+                  ),
                 ),
               ),
+            ],
           ),
         ],
       ),
