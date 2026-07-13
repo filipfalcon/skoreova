@@ -398,10 +398,7 @@ export const update = (
       CompletedLoad: () => [model, []],
       CompletedScrollLock: () => [model, []],
       SelectedScorerScope: ({ scope }) => [{ ...model, scorerScope: scope }, []],
-      SelectedMapLeague: ({ league }) => [
-        { ...model, mapLeague: league, mapClub: '' },
-        [],
-      ],
+      SelectedMapLeague: ({ league }) => [{ ...model, mapLeague: league, mapClub: '' }, []],
       ToggledMapRegion: ({ region }) => [
         {
           ...model,
@@ -3230,15 +3227,11 @@ const clubsView = (model: Model): Html =>
               ' all have top-flight football.',
             ],
           ),
-          // One band above the map: counters first in the DOM so phones read
-          // stats → filter → map; `flex-row-reverse` + justify-between puts
-          // them back on the RIGHT on desktop with the filter on the left.
+          // The land counters close the section head — the league filter
+          // lives further down on the map's own beat, so the menu-jump
+          // landing frame is just headline → payoff → stats.
           h.div(
-            [
-              h.Class(
-                'mt-8 md:mt-10 md:flex md:flex-row-reverse md:items-start md:justify-between md:gap-12',
-              ),
-            ],
+            [h.Class('mt-8 md:mt-10')],
             [
               // The geography of the coverage, in the same count-up device
               // as the "On the rise" receipts — the lands' imbalance IS the
@@ -3324,19 +3317,6 @@ const clubsView = (model: Model): Html =>
                   );
                 }),
               ),
-              // League filter — 'all' keeps both flights lit, a league dims
-              // the other one's pins.
-              h.div(
-                [
-                  h.Class('mt-10 flex flex-wrap gap-1.5 md:mt-0 md:gap-2'),
-                  h.DataAttribute('reveal', 'up'),
-                ],
-                [
-                  mapLeagueChip(model, 'all', 'All clubs'),
-                  mapLeagueChip(model, 'first', 'First League'),
-                  mapLeagueChip(model, 'second', 'Second League'),
-                ],
-              ),
             ],
           ),
           // Map and the trailing CTA reveal as one beat (same device as the
@@ -3345,10 +3325,29 @@ const clubsView = (model: Model): Html =>
           h.div(
             [h.DataAttribute('reveal-group', 'replay')],
             [
+              // League filter — 'all' keeps both flights lit, a league dims
+              // the other one's pins. It sits ON the map's beat, right-aligned
+              // to the stage: it is a MAP control, and up in the headline band
+              // it floated orphaned in the section's landing frame (the menu
+              // jump shows the head of the section while the map it controls
+              // is still below the fold).
               h.div(
-                // Phones keep the roomier gap above the map; only desktop
-                // got the tightened one.
-                [h.Class('map-stage relative mx-auto mt-10 max-w-5xl')],
+                [
+                  h.Class(
+                    'mx-auto mt-10 flex max-w-5xl flex-wrap justify-end gap-1.5 md:mt-14 md:gap-2',
+                  ),
+                  h.DataAttribute('reveal', 'up'),
+                ],
+                [
+                  mapLeagueChip(model, 'all', 'All clubs'),
+                  mapLeagueChip(model, 'first', 'First League'),
+                  mapLeagueChip(model, 'second', 'Second League'),
+                ],
+              ),
+              h.div(
+                // The chips row above owns the band spacing; the stage keeps
+                // only a tight gap so the filter reads as part of the map.
+                [h.Class('map-stage relative mx-auto mt-4 max-w-5xl md:mt-5')],
                 [
                   // The draw-in reveal lives on the SVG ROOT: stroke-dasharray
                   // and stroke-dashoffset are inherited properties, so the
