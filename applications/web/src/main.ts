@@ -2219,10 +2219,13 @@ const championsView = (): Html =>
               h.div(
                 [],
                 [
-                  h.dl(
+                  // A plain list, not a <dl>: definition lists demand strict
+                  // dt→dd pairs, and the count-less European-runs row has no
+                  // pair to offer (and count-as-term read backwards anyway).
+                  h.ul(
                     [h.Class('border-t-4 border-ink')],
                     honors.map((honor, index) =>
-                      h.div(
+                      h.li(
                         [
                           h.Class(
                             'flex flex-wrap items-baseline gap-x-4 border-b border-ink/15 py-5 md:py-6',
@@ -2230,41 +2233,38 @@ const championsView = (): Html =>
                           h.DataAttribute('reveal', 'up'),
                           h.Style({ '--reveal-delay': `${index * 0.12}s` }),
                         ],
-                        honor.count === null
-                          ? [
-                              h.dd(
-                                [h.Class('display text-fluid-2xl-4xl leading-none')],
-                                [honor.label],
-                              ),
-                            ]
-                          : [
-                              h.dt(
-                                [
-                                  h.Class('display text-fluid-5xl-7xl leading-none text-pink'),
-                                  h.DataAttribute('countup', ''),
-                                ],
-                                [honor.count],
-                              ),
-                              h.dd(
-                                [h.Class('display text-fluid-2xl-4xl leading-none')],
-                                [
-                                  honor.label,
-                                  ...(honor.first
-                                    ? [
-                                        // The national record, stamped.
-                                        h.span(
-                                          [
-                                            h.Class(
-                                              'ml-3 inline-block bg-ink px-2 py-1 align-middle text-sm leading-none text-paper md:text-base',
-                                            ),
-                                          ],
-                                          ['#1'],
+                        [
+                          ...(honor.count === null
+                            ? []
+                            : [
+                                h.span(
+                                  [
+                                    h.Class('display text-fluid-5xl-7xl leading-none text-pink'),
+                                    h.DataAttribute('countup', ''),
+                                  ],
+                                  [honor.count],
+                                ),
+                              ]),
+                          h.span(
+                            [h.Class('display text-fluid-2xl-4xl leading-none')],
+                            [
+                              honor.label,
+                              ...(honor.first
+                                ? [
+                                    // The national record, stamped.
+                                    h.span(
+                                      [
+                                        h.Class(
+                                          'ml-3 inline-block bg-ink px-2 py-1 align-middle text-sm leading-none text-paper md:text-base',
                                         ),
-                                      ]
-                                    : []),
-                                ],
-                              ),
+                                      ],
+                                      ['#1'],
+                                    ),
+                                  ]
+                                : []),
                             ],
+                          ),
+                        ],
                       ),
                     ),
                   ),
