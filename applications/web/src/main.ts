@@ -1633,7 +1633,7 @@ const competitionsView = (): Html =>
                     [
                       h.Href(`${platformUrl}/competitions`),
                       h.Class(
-                        'display inline-block bg-pink px-8 py-4 text-xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
+                        'display inline-block bg-pink px-8 py-4 text-xl tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
                       ),
                     ],
                     ['Discover all competitions', displayArrow],
@@ -2274,7 +2274,7 @@ const championsView = (): Html =>
                       // the dashboard.
                       h.Href(platformUrl),
                       h.Class(
-                        'display mt-10 inline-block bg-ink px-8 py-4 text-xl text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
+                        'display mt-10 inline-block bg-ink px-8 py-4 text-xl tracking-[0.08em] text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
                       ),
                       h.DataAttribute('reveal', 'up'),
                       h.Style({ '--reveal-delay': '0.4s' }),
@@ -2560,7 +2560,7 @@ const starView = (): Html =>
                     [
                       h.Href(`${platformUrl}/players`),
                       h.Class(
-                        'display mt-12 inline-block bg-pink px-8 py-4 text-xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
+                        'display mt-12 inline-block bg-pink px-8 py-4 text-xl tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
                       ),
                       h.DataAttribute('reveal', 'up'),
                       h.Style({ '--reveal-delay': '0.5s' }),
@@ -3518,7 +3518,7 @@ const clubsView = (model: Model): Html =>
                     [
                       h.Href(`${platformUrl}/clubs`),
                       h.Class(
-                        'display inline-block bg-pink px-8 py-4 text-xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
+                        'display inline-block bg-pink px-8 py-4 text-xl tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
                       ),
                     ],
                     ['Discover all clubs', displayArrow],
@@ -4278,7 +4278,7 @@ const backToMapView = (): Html =>
             [
               h.Href('/#across-the-lands'),
               h.Class(
-                'display inline-block bg-ink px-8 py-4 text-xl text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
+                'display inline-block bg-ink px-8 py-4 text-xl tracking-[0.08em] text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
               ),
             ],
             ['← Back to the map'],
@@ -4458,7 +4458,7 @@ const backToCompetitionsView = (): Html =>
             [
               h.Href('/#battling-through'),
               h.Class(
-                'display inline-block bg-ink px-8 py-4 text-xl text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
+                'display inline-block bg-ink px-8 py-4 text-xl tracking-[0.08em] text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
               ),
             ],
             ['← Back to competitions'],
