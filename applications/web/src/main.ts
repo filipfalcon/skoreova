@@ -1752,64 +1752,203 @@ const championsView = (): Html =>
       h.div(
         [h.Class(`${container} relative z-10`)],
         [
-          kicker('04', 'Meet our champion', false, '/#champions'),
-          h.h2([h.Class('mt-10 md:mt-16')], [maskedLine('Sparta Praha.', 'text-fluid-6xl-9xl', 0)]),
-          // Makes "champion" unambiguous: this is the REIGNING one, and the
-          // season below is the case for it.
-          h.p(
-            [
-              h.Class('display mt-8 max-w-3xl text-fluid-xl-3xl leading-snug md:mt-12'),
-              h.DataAttribute('reveal', 'up'),
-            ],
-            [
-              'The reigning champion. The 2024/25 season left no doubt:',
-              // Desktop breaks hard after the colon — the receipts line
-              // reads as its own beat.
-              h.br([h.Class('hidden md:inline')]),
-              ' ',
-              h.span([h.Class('text-pink')], ['the domestic double']),
-              ' and ',
-              h.span([h.Class('text-pink')], ['a semifinal run']),
-              ' through UWEC.',
-            ],
-          ),
-          // The champion's crest — the knight-mascot treatment (slide in
-          // from the right + the shared idle float). Phones keep it IN the
-          // flow, centered between the headline and the honors board (an
-          // absolute corner anchor collided with the full-width headline
-          // there, and right-aligning left an accidental-looking empty
-          // half); from `md` up it floats big off the right rim, tucked
-          // behind its siblings (-z-10 stays inside the container's own
-          // stacking context). The -top offset rides above the container's
-          // start, level with the kicker.
+          // The head fills the viewport from md up so the menu-jump landing
+          // frame is self-contained — without this, the "Season 2025/2026."
+          // divider poked into the first screen as an orphaned headline
+          // (14rem = the 4rem header + the section's 6rem top padding +
+          // 4rem of air so the facts row doesn't hug the fold).
+          // Three zones share the frame via justify-between: the kicker on
+          // top, headline + strapline in the middle, and the club-card facts
+          // on the floor — extra viewport height widens the two gaps instead
+          // of pooling as empty paper at the bottom. `relative` lets the
+          // crest column pin itself to the head's full height.
+          // A 'replay' reveal group: on desktop every reveal inside the head
+          // keys off the HEAD's visibility as one cascade — crucially the
+          // facts row on the frame's floor, which sits in the per-item
+          // observer's bottom dead zone and would otherwise never fire on
+          // the menu-jump landing. Phones fall back to per-item observation
+          // (the head is a tall stacked column there).
           h.div(
             [
               h.Class(
-                'pointer-events-none mx-auto mt-8 w-36 select-none md:absolute md:-top-12 md:right-16 md:mt-0 md:-z-10 md:w-[22%] md:max-w-[310px] xl:right-20',
+                // `isolate`: the crest column's -z-10 must stack inside the
+                // HEAD's context — without it the crest escapes into the
+                // container's negative layer, the head's own box paints
+                // above it, and the Explore Sparta CTA becomes unclickable.
+                'relative isolate md:flex md:min-h-[calc(100svh-14rem)] md:flex-col md:justify-between',
               ),
-              h.DataAttribute('reveal', 'right'),
-              h.Style({ '--reveal-delay': '0.1s' }),
+              h.DataAttribute('reveal-group', 'replay'),
             ],
             [
-              h.img([
-                h.Src(spartaCrestImage),
-                h.Width('901'),
-                h.Height('1202'),
-                h.Alt('AC Sparta Praha crest'),
-                h.Loading('lazy'),
-                h.Class('idle-float block w-full'),
-              ]),
-              // The wrapper is pointer-events-none (decorative emblem) —
-              // the CTA below the crest opts back in. It stays still while
-              // the crest floats.
-              h.a(
+              kicker('04', 'Meet our champion', false, '/#meet-our-champion'),
+              h.div(
+                [],
                 [
-                  h.Href(clubRouter({ slug: 'sparta-praha' })),
-                  h.Class(
-                    'display pointer-events-auto mt-4 block bg-pink px-4 py-3 text-center text-sm text-ink transition-colors duration-300 hover:bg-ink hover:text-paper active:bg-ink active:text-paper md:mt-6 md:text-lg',
+                  // No brand full stop here — proper club names render bare
+                  // everywhere else (the club-profile h1 uses `club.name` as is).
+                  // No md top margin: in the three-zone head the gap above the
+                  // title is justify-between's job — a fixed margin would stack
+                  // on top of it and push the facts row past the fold on
+                  // shorter viewports.
+                  h.h2(
+                    [h.Class('mt-10 md:mt-0')],
+                    [maskedLine('Sparta Praha', 'text-fluid-6xl-9xl', 0)],
+                  ),
+                  // Makes "champion" unambiguous: this is the REIGNING one, and the
+                  // season below is the case for it.
+                  h.p(
+                    [
+                      h.Class('display mt-8 max-w-3xl text-fluid-xl-3xl leading-snug md:mt-12'),
+                      h.DataAttribute('reveal', 'up'),
+                    ],
+                    [
+                      // Europe leads because that's the real chronology (the
+                      // European run ended before the cup final sealed the double)
+                      // — and the double gets the last word. Each pink phrase ends
+                      // on an ink word ("first", "in hand") so sentence
+                      // punctuation never sits on a pink glyph. The season year
+                      // stays out: the receipts divider's "Season 2025/2026."
+                      // headline below already carries it.
+                      'The reigning champion. Stormed ',
+                      h.span([h.Class('text-pink')], ['the Europa Cup semifinals']),
+                      ' first,',
+                      // Desktop breaks hard after the European beat — the domestic
+                      // payoff reads as its own line.
+                      h.br([h.Class('hidden md:inline')]),
+                      ' then finished with ',
+                      h.span([h.Class('text-pink')], ['the domestic double']),
+                      // "in hand" claims nothing about HOW — the cup leg of the
+                      // double went to penalties, so "outright"/"swept" would lie;
+                      // the ladder below carries the shootout detail.
+                      ' in hand.',
+                    ],
                   ),
                 ],
-                ['Learn about Sparta', displayArrow],
+              ),
+              // The champion's crest — the knight-mascot treatment (slide in
+              // from the right + the shared idle float). Phones keep it IN the
+              // flow, centered between the headline and the honors board (an
+              // absolute corner anchor collided with the full-width headline
+              // there, and right-aligning left an accidental-looking empty
+              // half); from `md` up it floats big off the right rim, tucked
+              // behind its siblings (-z-10 stays inside the container's own
+              // stacking context). The -top offset rides above the container's
+              // start, level with the kicker.
+              h.div(
+                [
+                  h.Class(
+                    // The crest mirrors the knight mascot's anchor in
+                    // section 01: right edge on the container's rim
+                    // (right-0 of the head ≡ the knight's viewport-side
+                    // calc), top 48px under the section's edge (-top-12
+                    // from the head ≡ the knight's top-12 from the
+                    // section), and 31% of the head ≈ the knight's 28% of
+                    // the viewport, same 360px cap. bottom-0 + flex-col:
+                    // the column spans the head's full height, so the
+                    // CTA's mt-auto pins its bottom edge to the head's
+                    // floor — structurally level with the facts row.
+                    'pointer-events-none mx-auto mt-8 w-36 select-none md:absolute md:-top-12 md:right-0 md:bottom-0 md:mt-0 md:flex md:-z-10 md:w-[31%] md:max-w-[360px] md:flex-col',
+                  ),
+                  h.DataAttribute('reveal', 'right'),
+                  h.Style({ '--reveal-delay': '0.1s' }),
+                ],
+                [
+                  h.img([
+                    h.Src(spartaCrestImage),
+                    h.Width('901'),
+                    h.Height('1202'),
+                    h.Alt('AC Sparta Praha crest'),
+                    h.Loading('lazy'),
+                    h.Class('idle-float block w-full md:mb-6'),
+                  ]),
+                  // The wrapper is pointer-events-none (decorative emblem) —
+                  // the CTA below the crest opts back in. It stays still while
+                  // the crest floats.
+                  h.a(
+                    [
+                      h.Href(clubRouter({ slug: 'sparta-praha' })),
+                      h.Class(
+                        // w-max + min-w-full + the left-1/2 translate: the label must NOT
+                        // wrap inside the narrow crest column (169px at md), so the
+                        // button takes its content width when that's wider than the
+                        // column and stays centered under the crest; on wide
+                        // viewports min-w-full snaps it back to the column width.
+                        'display pointer-events-auto relative left-1/2 mt-4 block w-max min-w-full -translate-x-1/2 bg-pink px-4 py-3 text-center text-sm whitespace-nowrap tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-ink hover:text-paper active:bg-ink active:text-paper md:mt-auto md:text-lg',
+                      ),
+                    ],
+                    ['Explore Sparta', displayArrow],
+                  ),
+                ],
+              ),
+              // ---- Club card facts -----------------------------------
+              // The head's third zone: quick club facts pin the frame's
+              // floor, so the landing screen ends with substance instead of
+              // empty paper. The swatches are the crest ribbon's colors.
+              // The cells' reveals ride the head's 'replay' group (per-item
+              // observation never fires this close to the fold).
+              h.div(
+                [
+                  h.Class(
+                    // pointer-events-none: this full-width row overlaps the
+                    // crest column's box (which paints on -z-10), and as a
+                    // SIBLING it would swallow the CTA's clicks — nothing in
+                    // here is interactive, so let clicks fall through.
+                    'pointer-events-none mt-14 flex flex-wrap items-start gap-x-14 gap-y-8 md:mt-0 lg:gap-x-20',
+                  ),
+                ],
+                [
+                  // The cells follow the CANONICAL stat formation (tick →
+                  // pink value → label; see the "unstoppable" stats) — the
+                  // values just happen to be words, and the colors cell
+                  // swaps the value line for the swatches.
+                  ...(
+                    [
+                      ['City', 'Prague'],
+                      ['Home', 'SK Prosek Stadium'],
+                      ['Flight', 'First League'],
+                    ] as const
+                  ).map(([label, value], index) =>
+                    h.div(
+                      [
+                        h.DataAttribute('reveal', 'up'),
+                        h.Style({ '--reveal-delay': `${0.15 + index * 0.1}s` }),
+                      ],
+                      [
+                        h.div([h.Class('mb-4 h-1 w-12 bg-ink')], []),
+                        h.p([h.Class('display text-xl text-pink md:text-2xl')], [value]),
+                        h.p(
+                          [h.Class('mt-3 text-xs tracking-[0.2em] uppercase md:text-sm')],
+                          [label],
+                        ),
+                      ],
+                    ),
+                  ),
+                  h.div(
+                    [h.DataAttribute('reveal', 'up'), h.Style({ '--reveal-delay': '0.45s' })],
+                    [
+                      h.div([h.Class('mb-4 h-1 w-12 bg-ink')], []),
+                      h.div(
+                        [h.Class('flex h-7 items-center gap-1.5 md:h-8')],
+                        [
+                          ...['#1f58ad', '#faa713', '#c81313'].map((color) =>
+                            h.span(
+                              [
+                                h.Class('inline-block h-5 w-5 border border-ink/20 md:h-6 md:w-6'),
+                                h.Style({ 'background-color': color }),
+                              ],
+                              [],
+                            ),
+                          ),
+                          h.span([h.Class('sr-only')], ['Blue, yellow, and red']),
+                        ],
+                      ),
+                      h.p(
+                        [h.Class('mt-3 text-xs tracking-[0.2em] uppercase md:text-sm')],
+                        ['Colors'],
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
