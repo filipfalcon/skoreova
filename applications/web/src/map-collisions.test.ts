@@ -67,6 +67,33 @@ const segmentToSegment = (a: Point, b: Point, c: Point, d: Point): number => {
   );
 };
 
+// The pins REVEAL through an inner wrapper (the root keeps its z-index
+// transition; see clubPin in main.ts): until it intersects the viewport
+// the wrapper holds its entrance offset (translateY), so measuring at an
+// arbitrary scroll position compares settled pins against still-offset
+// ones and reports phantom overlaps. Center the map, wait for every pin's
+// reveal, then wait for the geometry itself to stop moving (`.is-in`
+// lands when the observer fires, while the transform is still in flight).
+const settleMap = async (): Promise<void> => {
+  const stage = document.querySelector('.map-stage');
+  if (!stage) throw new Error('map stage missing');
+  stage.scrollIntoView({ block: 'center', behavior: 'instant' });
+  const revealWrappers = (): ReadonlyArray<HTMLElement> =>
+    Array.from(document.querySelectorAll<HTMLElement>('.club-pin > [data-reveal]'));
+  await waitUntil(() => revealWrappers().every((wrapper) => wrapper.classList.contains('is-in')));
+  // A position-stability check is NOT enough: reveals carry per-land
+  // delays (up to ~2s), and a pin parked at its entrance offset waiting
+  // for its delay reads as "stable". The entrance offset lives only in
+  // the `:not(.is-in)` rule, so a truly settled wrapper computes BOTH
+  // transform and translate as `none` — mid-flight or parked ones don't.
+  await waitUntil(() =>
+    revealWrappers().every((wrapper) => {
+      const style = getComputedStyle(wrapper);
+      return style.transform === 'none' && style.translate === 'none';
+    }),
+  );
+};
+
 const collectPins = (): ReadonlyArray<PinGeometry> =>
   Array.from(document.querySelectorAll<HTMLButtonElement>('.club-pin')).map((button) => {
     const rect = button.getBoundingClientRect();
@@ -216,6 +243,7 @@ const collectViolations = (pins: ReadonlyArray<PinGeometry>): ReadonlyArray<stri
 
 test('no chips, dots, or lines touch each other on a phone viewport', async () => {
   await page.viewport(390, 844);
+  await settleMap();
   const pins = collectPins();
   expect(pins.length).toBeGreaterThan(10);
   expect(collectViolations(pins)).toEqual([]);
@@ -223,6 +251,7 @@ test('no chips, dots, or lines touch each other on a phone viewport', async () =
 
 test('no chips, dots, or lines touch each other on desktop', async () => {
   await page.viewport(1280, 800);
+  await settleMap();
   const pins = collectPins();
   expect(pins.length).toBeGreaterThan(10);
   expect(collectViolations(pins)).toEqual([]);
