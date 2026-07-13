@@ -2525,7 +2525,11 @@ const championsView = (): Html =>
             ],
           ),
           h.div(
-            [h.Class('mt-10 grid items-start gap-12 md:mt-14 md:grid-cols-2 md:gap-16')],
+            [
+              h.Class(
+                'mt-10 grid items-start gap-12 md:mt-14 md:grid-cols-2 md:items-center md:gap-16',
+              ),
+            ],
             [
               h.div(
                 [],
@@ -2601,11 +2605,23 @@ const championsView = (): Html =>
               // column gap (see styles.css). Scrub, snap, and reveal/tilt
               // each own a separate wrapper — three transform owners that
               // must not overwrite each other.
+              //
+              // From `md` the ASSEMBLED photo sits vertically CENTERED on
+              // the honors TABLE across the aisle (top rule → last row
+              // hairline). Anatomy of the centering, because the box lies:
+              // the halves' ±mt-14 stagger stays in LAYOUT (the scrub only
+              // cancels it visually), so the content box is 56px taller
+              // than the visible photo — pt-14 absorbs the raised print up
+              // top and that layout slack IS the matching bottom air (no
+              // pb!). With the box thus photo-symmetric, mb-26 hands back
+              // the CTA block's outer height (mt-10 40 + py-4 32 +
+              // text-2xl line 32 = 104px) and the md:items-center midpoint
+              // climbs onto the table alone.
               h.div(
-                [h.Class('grid grid-cols-2 gap-4 pt-20 md:gap-6 md:pt-32')],
+                [h.Class('grid grid-cols-2 gap-4 pt-20 md:mb-26 md:gap-6 md:pt-14')],
                 [
                   h.div(
-                    [h.Class('mt-20 md:mt-32'), h.DataAttribute('scrub-align', '')],
+                    [h.Class('mt-20 md:mt-14'), h.DataAttribute('scrub-align', '')],
                     [
                       h.div(
                         [h.Class('collage-snap collage-snap-left')],
@@ -2635,7 +2651,7 @@ const championsView = (): Html =>
                     ],
                   ),
                   h.div(
-                    [h.Class('-mt-20 md:-mt-32'), h.DataAttribute('scrub-align', '')],
+                    [h.Class('-mt-20 md:-mt-14'), h.DataAttribute('scrub-align', '')],
                     [
                       h.div(
                         [h.Class('collage-snap collage-snap-right')],
