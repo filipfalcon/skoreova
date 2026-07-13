@@ -986,14 +986,18 @@ body {
   }
 }
 
-/* Social rows: sliding pink underlay on hover. */
-.social-row {
+/* Social rows + match rows (the champion section's three tables): the
+   menu's sliding pink underlay on hover. Pink accents inside a match row
+   flip to ink via group-hover utilities on the elements themselves. */
+.social-row,
+.match-row {
   position: relative;
   isolation: isolate;
   overflow: hidden;
 }
 
-.social-row::before {
+.social-row::before,
+.match-row::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -1006,7 +1010,8 @@ body {
 /* Hover-only devices: touch browsers keep :hover applied after a tap,
    which would leave a row stuck pink after returning from the link. */
 @media (hover: hover) {
-  .social-row:hover::before {
+  .social-row:hover::before,
+  .match-row:hover::before {
     transform: translateY(0);
   }
 }
