@@ -515,9 +515,9 @@ const competitions: ReadonlyArray<Competition> = [
     standings: {
       kind: 'ties',
       rows: [
-        { primary: 'Semifinal — Sparta Praha vs Slovácko', secondary: 'Apr 12' },
-        { primary: 'Semifinal — Slavia Praha vs Baník Ostrava', secondary: 'Apr 13' },
-        { primary: 'Final — Prague, Letná', secondary: 'May 8' },
+        { primary: 'Semis — Sparta Praha vs Slovácko', secondary: 'Apr 12' },
+        { primary: 'Semis — Slavia Praha vs Baník Ostrava', secondary: 'Apr 13' },
+        { primary: 'Finals — Prague, Letná', secondary: 'May 8' },
       ],
     },
   },
@@ -567,9 +567,7 @@ const competitions: ReadonlyArray<Competition> = [
     ],
     standings: {
       kind: 'ties',
-      rows: [
-        { primary: 'Sparta Praha — Quarterfinal vs Young Boys', secondary: 'First leg Mar 18' },
-      ],
+      rows: [{ primary: 'Sparta Praha — Quarters vs Young Boys', secondary: 'First leg Mar 18' }],
     },
   },
   {
@@ -1807,7 +1805,7 @@ const euroTies: ReadonlyArray<EuroTie> = [
     through: true,
   },
   {
-    stage: 'Quarterfinal',
+    stage: 'Quarters',
     opponent: 'Austria Vienna',
     logo: austriaWienLogo,
     homeLeg: '0:0',
@@ -1815,7 +1813,7 @@ const euroTies: ReadonlyArray<EuroTie> = [
     through: true,
   },
   {
-    stage: 'Semifinal',
+    stage: 'Semis',
     opponent: 'Hammarby',
     logo: hammarbyLogo,
     homeLeg: '2:3',
@@ -4298,8 +4296,8 @@ interface CupTie {
 
 const cupRun: ReadonlyArray<CupTie> = [
   { round: 'Round of 16', result: 'Won 3:0', upcoming: false },
-  { round: 'Quarterfinal', result: 'Won 2:1', upcoming: false },
-  { round: 'Semifinal', result: 'Coming up', upcoming: true },
+  { round: 'Quarters', result: 'Won 2:1', upcoming: false },
+  { round: 'Semis', result: 'Coming up', upcoming: true },
 ];
 
 interface Scorer {
