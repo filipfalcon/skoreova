@@ -1725,18 +1725,18 @@ const seasonRouts: ReadonlyArray<SeasonRout> = [
 ];
 
 // The Domestic Cup run — four wins to the trophy, the final settled on
-// penalties. Same language as the other two tables: the opponent with
-// their crest, the score from Sparta's side, the venue as the label under
-// it. The penalties note extends the stage line — it is match context,
-// not a second score. (`CupTie`/`cupRun` names belong to the club-profile
-// mock further down.)
+// penalties (0:0, won 4:3 from the spot). Same language as the other two
+// tables: the opponent with their crest, the score from Sparta's side,
+// the venue as the label under it. Stage lines carry ONLY the round — the
+// 0:0 is explained by the payoff copy directly above the table, so the
+// row needs no note of its own. (`CupTie`/`cupRun` names belong to the
+// club-profile mock further down.)
 interface SeasonCupTie {
   readonly stage: string;
   readonly opponent: string;
   readonly logo: string;
   readonly score: string;
   readonly away: boolean;
-  readonly note: string | null;
 }
 
 const seasonCupRun: ReadonlyArray<SeasonCupTie> = [
@@ -1746,7 +1746,6 @@ const seasonCupRun: ReadonlyArray<SeasonCupTie> = [
     logo: pardubiceLogo,
     score: '4:0',
     away: true,
-    note: null,
   },
   {
     stage: 'Quarters',
@@ -1754,7 +1753,6 @@ const seasonCupRun: ReadonlyArray<SeasonCupTie> = [
     logo: slovanLiberecLogo,
     score: '5:2',
     away: false,
-    note: null,
   },
   {
     stage: 'Semis',
@@ -1762,7 +1760,6 @@ const seasonCupRun: ReadonlyArray<SeasonCupTie> = [
     logo: slovackoLogo,
     score: '3:1',
     away: true,
-    note: null,
   },
   {
     stage: 'Finals',
@@ -1770,7 +1767,6 @@ const seasonCupRun: ReadonlyArray<SeasonCupTie> = [
     logo: slaviaPrahaLogo,
     score: '0:0',
     away: true,
-    note: 'won 4:3 on penalties',
   },
 ];
 
@@ -2415,11 +2411,11 @@ const championsView = (): Html =>
             ],
           ),
           // ---- The cup run --------------------------------------------
-          // Lightly documented — a quiet vertical ladder of the four wins,
-          // with the trophy photo sitting beside it (whole, uncropped) as
-          // the payoff. No stamps, no AWAY chips — but the arrow affordance
-          // stays: these rows click through to the platform exactly like
-          // their two louder siblings, so they advertise it the same way.
+          // Same anatomy as its two siblings above (kicker → display
+          // headline → payoff → table), with the trophy photo beside it
+          // (whole, uncropped) as the closing image. No stamps — but the
+          // arrow affordance stays: these rows click through to the
+          // platform exactly like their two louder siblings.
           h.div(
             [
               h.Class('mt-14 grid gap-12 md:mt-20 md:grid-cols-2 md:items-center md:gap-16'),
@@ -2435,18 +2431,32 @@ const championsView = (): Html =>
                       h.Class('text-xs tracking-[0.2em] uppercase'),
                       h.DataAttribute('reveal', 'up'),
                     ],
-                    ['Domestic Cup — the road to the double'],
+                    ['Domestic Cup — road to the double'],
+                  ),
+                  h.p(
+                    [
+                      h.Class('display mt-3 text-fluid-5xl-7xl leading-none'),
+                      h.DataAttribute('reveal', 'up'),
+                    ],
+                    ['The quiet final.'],
+                  ),
+                  h.p(
+                    [
+                      h.Class('mt-4 max-w-md text-base leading-relaxed md:text-lg'),
+                      h.DataAttribute('reveal', 'up'),
+                    ],
+                    [
+                      'Twelve goals to get there, zero in the Finals itself — the double was sealed from the penalty spot, 4:3 over Slavia.',
+                    ],
                   ),
                   h.ul(
-                    [h.Class('mt-5 border-t-2 border-ink')],
+                    [h.Class('mt-8 border-t-2 border-ink')],
                     seasonCupRun.map((tie, index) =>
                       singleMatchRow(
                         {
                           opponent: tie.opponent,
                           logo: tie.logo,
-                          // The penalties note extends the stage line —
-                          // match context, not a second score.
-                          subLabel: tie.note === null ? tie.stage : `${tie.stage} — ${tie.note}`,
+                          subLabel: tie.stage,
                           score: tie.score,
                           away: tie.away,
                         },
