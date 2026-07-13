@@ -1738,6 +1738,7 @@ interface SeasonCupTie {
   readonly logo: string;
   readonly score: string;
   readonly away: boolean;
+  readonly pens: string | null;
 }
 
 const seasonCupRun: ReadonlyArray<SeasonCupTie> = [
@@ -1747,6 +1748,7 @@ const seasonCupRun: ReadonlyArray<SeasonCupTie> = [
     logo: pardubiceLogo,
     score: '4:0',
     away: true,
+    pens: null,
   },
   {
     stage: 'Quarters',
@@ -1754,6 +1756,7 @@ const seasonCupRun: ReadonlyArray<SeasonCupTie> = [
     logo: slovanLiberecLogo,
     score: '5:2',
     away: false,
+    pens: null,
   },
   {
     stage: 'Semis',
@@ -1761,13 +1764,18 @@ const seasonCupRun: ReadonlyArray<SeasonCupTie> = [
     logo: slovackoLogo,
     score: '3:1',
     away: true,
+    pens: null,
   },
   {
     stage: 'Finals',
     opponent: 'Slavia Praha',
     logo: slaviaPrahaLogo,
+    // The MATCH result stays honest (the payoff says "none in the
+    // finals" two lines up) — the trophy-deciding shootout gets its own
+    // labeled block, euro-style.
     score: '0:0',
     away: true,
+    pens: '4:3',
   },
 ];
 
@@ -1837,13 +1845,17 @@ const tabularScore = (score: string): ReadonlyArray<Html | string> =>
 // European table's anatomy for ties that had only one leg — crest, the
 // opponent with the stage underneath, ONE score block whose label names
 // the venue (Home/Away) exactly where the euro rows label their legs, and
-// the arrow. Rows ride their grid's 'replay' reveal group.
+// the arrow. A match decided from the spot grows a SECOND block (`pens`),
+// speaking the euro two-block language: the match result in ink, the
+// decisive shootout number in pink. Rows ride their grid's 'replay'
+// reveal group.
 interface SingleMatch {
   readonly opponent: string;
   readonly logo: string;
   readonly subLabel: string;
   readonly score: string;
   readonly away: boolean;
+  readonly pens: string | null;
 }
 
 const singleMatchRow = (match: SingleMatch, index: number): Html =>
@@ -1884,6 +1896,21 @@ const singleMatchRow = (match: SingleMatch, index: number): Html =>
           h.div(
             [h.Class('flex items-center gap-3 text-right md:gap-4')],
             [
+              // A shootout gets the euro table's stamp treatment — the
+              // same pink chip and hover flip as THROUGH, carrying the
+              // deciding number; the big score stays the honest 0:0.
+              ...(match.pens === null
+                ? []
+                : [
+                    h.span(
+                      [
+                        h.Class(
+                          'display shrink-0 bg-pink px-3 py-1.5 text-center text-xs tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper md:text-sm',
+                        ),
+                      ],
+                      [`Penalties ${match.pens}`],
+                    ),
+                  ]),
               h.div(
                 [h.Class('w-12 shrink-0 md:w-20')],
                 [
@@ -2215,6 +2242,7 @@ const championsView = (): Html =>
                               : `${FIRST_LEAGUE} — ${rout.phase}, ${rout.stage.toLowerCase()}`,
                           score: rout.score,
                           away: rout.away,
+                          pens: null,
                         },
                         index,
                       ),
@@ -2463,6 +2491,7 @@ const championsView = (): Html =>
                           subLabel: tie.stage,
                           score: tie.score,
                           away: tie.away,
+                          pens: tie.pens,
                         },
                         index,
                       ),
