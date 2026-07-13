@@ -230,10 +230,18 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
 
   const SCRAMBLE_MILLISECONDS = COUNT_UP_MILLISECONDS; // one shared tempo
   const SCRAMBLE_TICK_MS = 60;
-  // Pool per character position. Currency signs are limited to glyphs Anton
-  // actually carries — an exotic sign would fall back to Arial Narrow
-  // mid-roll and visibly jump in width.
-  const SCRAMBLE_POOLS: ReadonlyArray<string> = ['$£¥¢€', '123456789', 'KMBT'];
+  // Pool per character KIND, keyed off the character the roll locks onto:
+  // a digit rolls digits, a currency sign rolls currency signs (limited to
+  // glyphs Anton actually carries — an exotic sign would fall back to
+  // Arial Narrow mid-roll and visibly jump in width), a magnitude letter
+  // rolls magnitude letters — and punctuation (the ':' in a score) holds
+  // still, so "7:0" rolls like a score and "€1B" like a price tag.
+  const scramblePoolFor = (character: string): string => {
+    if (/[0-9]/.test(character)) return '123456789';
+    if ('$£¥¢€'.includes(character)) return '$£¥¢€';
+    if (/[A-Z]/i.test(character)) return 'KMBT';
+    return character;
+  };
 
   const scrambles = new Map<HTMLElement, Scramble>();
   for (const element of root.querySelectorAll<HTMLElement>('[data-scramble]')) {
@@ -280,7 +288,7 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
           if (progress >= (index + 1) / scramble.final.length) {
             text += scramble.final[index];
           } else {
-            const pool = SCRAMBLE_POOLS[Math.min(index, SCRAMBLE_POOLS.length - 1)]!;
+            const pool = scramblePoolFor(scramble.final[index]!);
             text += pool[Math.floor(Math.random() * pool.length)];
           }
         }
