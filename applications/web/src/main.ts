@@ -639,7 +639,7 @@ const menuEntries: ReadonlyArray<MenuEntry> = [
   { label: 'On the rise', target: '/#on-the-rise' },
   { label: 'Battling through', target: '/#battling-through' },
   { label: 'Across the lands', target: '/#across-the-lands' },
-  { label: 'Records', target: '/#champions' },
+  { label: 'Meet our champion', target: '/#meet-our-champion' },
   { label: 'Players', target: '/#star' },
   { label: 'National', target: '/#national-team' },
   { label: 'Follow', target: '/#follow' },
@@ -1747,7 +1747,7 @@ const euroTies: ReadonlyArray<EuroTie> = [
 
 const championsView = (): Html =>
   h.section(
-    [h.Id('champions'), h.Class('relative bg-paper py-16 text-ink md:py-24')],
+    [h.Id('meet-our-champion'), h.Class('relative bg-paper py-16 text-ink md:py-24')],
     [
       h.div(
         [h.Class(`${container} relative z-10`)],
