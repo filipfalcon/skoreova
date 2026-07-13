@@ -2450,7 +2450,7 @@ const championsView = (): Html =>
                       h.DataAttribute('reveal', 'up'),
                     ],
                     [
-                      'Twelve goals to get there, zero in the Finals itself — the double was sealed from the penalty spot, 4:3 over Slavia.',
+                      'Twelve goals to get there, none in the finals — Slavia wouldn’t crack, and it took penalties to seal the double.',
                     ],
                   ),
                   h.ul(
