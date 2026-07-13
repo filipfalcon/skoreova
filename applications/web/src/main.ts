@@ -2052,7 +2052,10 @@ const championsView = (): Html =>
                         // button takes its content width when that's wider than the
                         // column and stays centered under the crest; on wide
                         // viewports min-w-full snaps it back to the column width.
-                        'display pointer-events-auto relative left-1/2 mt-4 block w-max min-w-full -translate-x-1/2 bg-pink px-4 py-3 text-center text-sm whitespace-nowrap tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-ink hover:text-paper active:bg-ink active:text-paper md:mt-auto md:text-lg',
+                        // md:mb-4 lifts it off the head's floor so its CENTER sits
+                        // level with the facts cells' center (their tick→label stack
+                        // is 84px to the button's 52 — measured, (84-52)/2 = 16).
+                        'display pointer-events-auto relative left-1/2 mt-4 block w-max min-w-full -translate-x-1/2 bg-pink px-4 py-3 text-center text-sm whitespace-nowrap tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-ink hover:text-paper active:bg-ink active:text-paper md:mt-auto md:mb-4 md:text-lg',
                       ),
                     ],
                     ['Explore Sparta', displayArrow],
