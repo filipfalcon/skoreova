@@ -157,10 +157,14 @@ body {
   transform: translateX(3.5rem);
 }
 
-/* Masked line: the parent clips, the line slides up from below the fold. */
+/* Masked line: the parent clips, the line slides up from below the fold.
+   The extra 0.3em rides along with maskedLine's diacritic headroom
+   (pt-[0.25em] on the wrapper, and accented caps ink up to 0.175em ABOVE
+   their line box) — at a plain 110% the hidden line's accent tips peeked
+   through the window's bottom sliver. */
 [data-reveal='mask'] {
   opacity: 1;
-  transform: translateY(110%);
+  transform: translateY(calc(110% + 0.3em));
 }
 
 /* Pink label bars wipe open from the left. */
