@@ -2885,9 +2885,13 @@ const starView = (): Html =>
                   // backwards (the honors board's lesson).
                   h.ul(
                     [
-                      h.Class('mt-6 max-w-md text-base leading-relaxed text-paper/70 md:text-lg'),
-                      h.DataAttribute('reveal', 'up'),
-                      h.Style({ '--reveal-delay': '0.25s' }),
+                      // Content-sized tracks spread with space-between, NOT
+                      // three equal ones — the values differ in width and
+                      // equal tracks left the gutters visibly uneven (the
+                      // section 01 stats' lesson, same fix).
+                      h.Class(
+                        'mt-10 grid grid-cols-[auto_auto_auto] justify-between gap-x-6 gap-y-8 md:mt-14',
+                      ),
                     ],
                     starStats.map((stat, index) =>
                       h.li(
@@ -2899,17 +2903,13 @@ const starView = (): Html =>
                           h.div([h.Class('mb-4 h-1 w-12 bg-pink')], []),
                           h.dt(
                             [
-                              h.Class('display block text-fluid-5xl-7xl text-pink'),
+                              h.Class('display block text-fluid-5xl-7xl'),
                               h.DataAttribute('countup', ''),
                             ],
                             [stat.value],
                           ),
-                          h.dd(
-                            [
-                              h.Class(
-                                'mt-3 text-xs tracking-[0.2em] uppercase text-paper/60 md:text-sm',
-                              ),
-                            ],
+                          h.span(
+                            [h.Class('mt-3 block text-xs tracking-[0.2em] uppercase md:text-sm')],
                             [stat.label],
                           ),
                         ],
@@ -4802,7 +4802,7 @@ const competitionHistoryView = (competition: Competition): Html =>
                   h.span(
                     [
                       h.Class(
-                        'mt-3 max-w-60 text-xs leading-relaxed tracking-[0.2em] uppercase text-paper/60 md:text-sm',
+                        'mt-3 block max-w-60 text-xs leading-relaxed tracking-[0.2em] uppercase text-paper/60 md:text-sm',
                       ),
                     ],
                     [stat.label],
