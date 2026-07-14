@@ -1350,7 +1350,9 @@ const storyView = (): Html =>
           ),
           // Each stat carries its own short ink tick instead of one heavy
           // full-width rule — lighter, and the ticks column-align the grid.
-          h.dl(
+          // A plain list, not a <dl>: value-as-term read the pairs backwards
+          // (the honors board's lesson) — spans carry the same formation.
+          h.ul(
             [
               // Content-sized columns spread with space-between, NOT three
               // equal tracks: the values differ a lot in width ("€1B" vs
@@ -1361,16 +1363,16 @@ const storyView = (): Html =>
               ),
             ],
             unstoppableProof.map((stat, index) =>
-              h.div(
+              h.li(
                 [
                   h.DataAttribute('reveal', 'up'),
                   h.Style({ '--reveal-delay': `${index * 0.15}s` }),
                 ],
                 [
                   h.div([h.Class('mb-4 h-1 w-12 bg-ink')], []),
-                  h.dt(
+                  h.span(
                     [
-                      h.Class('display text-fluid-7xl-8xl text-pink'),
+                      h.Class('display block text-fluid-7xl-8xl text-pink'),
                       // Values a count-up can't serve get the slot-machine
                       // scramble instead (motion.ts) — same tempo, so the
                       // three stats still land together.
@@ -1380,12 +1382,12 @@ const storyView = (): Html =>
                     ],
                     [stat.value],
                   ),
-                  h.dd(
+                  h.span(
                     [
                       h.Class(
                         // max-w-64, not 52: the longest label ("World-record
                         // women's football crowd") must break at TWO lines.
-                        'mt-3 max-w-64 text-xs leading-relaxed tracking-[0.2em] uppercase md:text-sm',
+                        'mt-3 block max-w-64 text-xs leading-relaxed tracking-[0.2em] uppercase md:text-sm',
                       ),
                     ],
                     [
@@ -2879,16 +2881,16 @@ const starView = (): Html =>
                       ),
                     ],
                   ),
-                  // Why SHE holds the slot: the spotlight is a scoring
-                  // title, not an editorial pick.
-                  h.p(
+                  // A plain list, not a <dl>: value-as-term read the pairs
+                  // backwards (the honors board's lesson).
+                  h.ul(
                     [
                       h.Class('mt-6 max-w-md text-base leading-relaxed text-paper/70 md:text-lg'),
                       h.DataAttribute('reveal', 'up'),
                       h.Style({ '--reveal-delay': '0.25s' }),
                     ],
                     starStats.map((stat, index) =>
-                      h.div(
+                      h.li(
                         [
                           h.DataAttribute('reveal', 'up'),
                           h.Style({ '--reveal-delay': `${index * 0.12}s` }),
@@ -2897,7 +2899,7 @@ const starView = (): Html =>
                           h.div([h.Class('mb-4 h-1 w-12 bg-pink')], []),
                           h.dt(
                             [
-                              h.Class('display text-fluid-5xl-7xl text-pink'),
+                              h.Class('display block text-fluid-5xl-7xl text-pink'),
                               h.DataAttribute('countup', ''),
                             ],
                             [stat.value],
@@ -4106,24 +4108,29 @@ const nationalTeamView = (): Html =>
                   // Number-over-label stacks with ink ticks — the same
                   // formation as every other stat block on the page (the
                   // sideways label here read as a different component).
-                  h.dl(
+                  // A plain list, not a <dl>: value-as-term read the pairs
+                  // backwards (the honors board's lesson).
+                  h.ul(
                     [h.Class('mt-12 grid gap-8 border-t-4 border-ink pt-8 sm:grid-cols-2')],
                     nationalTeamStats.map((stat, index) =>
-                      h.div(
+                      h.li(
                         [
                           h.DataAttribute('reveal', 'up'),
                           h.Style({ '--reveal-delay': `${index * 0.15}s` }),
                         ],
                         [
                           h.div([h.Class('mb-4 h-1 w-12 bg-ink')], []),
-                          h.dt(
-                            [h.Class('display text-fluid-6xl-7xl'), h.DataAttribute('countup', '')],
+                          h.span(
+                            [
+                              h.Class('display block text-fluid-6xl-7xl'),
+                              h.DataAttribute('countup', ''),
+                            ],
                             [stat.value],
                           ),
-                          h.dd(
+                          h.span(
                             [
                               h.Class(
-                                'mt-3 max-w-52 text-xs leading-relaxed tracking-[0.2em] uppercase md:text-sm',
+                                'mt-3 block max-w-52 text-xs leading-relaxed tracking-[0.2em] uppercase md:text-sm',
                               ),
                             ],
                             [stat.label],
@@ -4774,23 +4781,25 @@ const competitionHistoryView = (competition: Competition): Html =>
         [h.Class(container)],
         [
           blockLabel('History in numbers', true),
-          h.dl(
+          // A plain list, not a <dl>: value-as-term read the pairs backwards
+          // (the honors board's lesson).
+          h.ul(
             [h.Class('mt-10 grid gap-10 md:mt-14 md:grid-cols-3')],
             competition.history.map((stat, index) =>
-              h.div(
+              h.li(
                 [
                   h.DataAttribute('reveal', 'up'),
                   h.Style({ '--reveal-delay': `${index * 0.15}s` }),
                 ],
                 [
-                  h.dt(
+                  h.span(
                     [
-                      h.Class('display text-fluid-7xl-8xl text-pink'),
+                      h.Class('display block text-fluid-7xl-8xl text-pink'),
                       h.DataAttribute('countup', ''),
                     ],
                     [stat.value],
                   ),
-                  h.dd(
+                  h.span(
                     [
                       h.Class(
                         'mt-3 max-w-60 text-xs leading-relaxed tracking-[0.2em] uppercase text-paper/60 md:text-sm',
