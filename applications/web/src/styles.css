@@ -43,9 +43,10 @@
   --text-fluid-7xl-9xl--line-height: 1;
   --text-fluid-8xl-9xl: clamp(6rem, 5.1429rem + 3.5714vw, 8rem);
   --text-fluid-8xl-9xl--line-height: 1;
-  /* The star section's giant jersey-number watermark — sized to loom
-     behind the whole cutout (384px → 1280px viewports map to 15rem → 32rem). */
-  --text-fluid-watermark: clamp(15rem, 7.7143rem + 30.3571vw, 32rem);
+  /* The star section's giant jersey-number watermark — extreme on purpose
+     (user call): it dwarfs the cutout it rides behind (384px → 1280px
+     viewports map to 18rem → 48rem; the section clips the spill). */
+  --text-fluid-watermark: clamp(18rem, 5.1429rem + 53.5714vw, 48rem);
 }
 
 @layer base {
