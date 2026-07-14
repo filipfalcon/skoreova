@@ -2821,23 +2821,38 @@ const starView = (): Html =>
                   ),
                 ],
                 [
-                  // Her real jersey number as a giant watermark — fills the
-                  // black void behind the cutout. (It reads as a squad
-                  // number, so it must BE her number, not a stat.)
-                  h.span(
-                    [
-                      h.Class(
-                        'display pointer-events-none absolute -top-4 right-0 leading-none text-paper/5 select-none text-fluid-watermark md:-top-8',
-                      ),
-                      h.AriaHidden(true),
-                    ],
-                    ['26'],
-                  ),
                   // The height constraints moved from the img to this
                   // shrink-wrapping box so the crown can anchor to the
-                  // PHOTO's coordinates, not the whole column's.
+                  // PHOTO's coordinates, not the whole column's. The box is
+                  // also the dock scrub's transform owner (motion.ts): it
+                  // rides 25rem high on the section's landing frame — her
+                  // face in the frame instead of a hairline — and sits
+                  // down on the 06 boundary as it scrolls in; the crown
+                  // rides along, the watermark stays put as backdrop.
                   h.div(
                     [
+                      h.Class('relative h-[24rem] sm:h-[30rem] md:h-full md:max-h-[46rem]'),
+                      h.DataAttribute('scrub-dock', ''),
+                      // Ceiling = header (4rem) + the crown's reach above
+                      // her hair (~9.5rem) — the crown stays in view for the
+                      // whole ride down.
+                      h.Style({ '--dock-lift': '18rem', '--dock-ceiling': '13.5rem' }),
+                    ],
+                    [
+                      // Her real jersey number, extreme-sized and INSIDE the
+                      // dock box: it rides the scroll with her (the crown
+                      // does too), painting under the cutout as her own
+                      // moving backdrop. (It reads as a squad number, so it
+                      // must BE her number, not a stat.)
+                      h.span(
+                        [
+                          h.Class(
+                            'display pointer-events-none absolute -top-[12%] left-1/2 -translate-x-1/2 leading-none text-paper/5 select-none text-fluid-watermark',
+                          ),
+                          h.AriaHidden(true),
+                        ],
+                        ['26'],
+                      ),
                       h.img([
                         h.Src(rancovaImage),
                         h.Width('973'),
