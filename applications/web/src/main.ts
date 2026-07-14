@@ -2768,7 +2768,7 @@ const starView = (): Html =>
           kicker('05', 'Hail to the queen', true, '/#hail-to-the-queen'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
-            [maskedLine('Our queen.', 'text-fluid-6xl-9xl text-pink', 0)],
+            [maskedLine('Denisa Rancová', 'text-fluid-6xl-9xl', 0)],
           ),
           // She's the section — so she shows up immediately: the portrait
           // is FIRST in the DOM (right under the headline on phones) and
@@ -2857,25 +2857,22 @@ const starView = (): Html =>
               h.div(
                 [h.Class('pt-8 pb-16 md:order-1 md:pt-4 md:pb-24')],
                 [
-                  h.h3(
-                    [
-                      h.Class('display text-fluid-4xl-6xl text-paper'),
-                      h.DataAttribute('reveal', 'up'),
-                    ],
-                    ['Denisa Rancová'],
-                  ),
                   h.div(
-                    [h.Class('mt-4 flex')],
+                    [h.Class('flex')],
                     [
+                      // THE claim of the section, a full size up. Pink
+                      // again since the inverted head (paper name, pink
+                      // crown) broke up the old pink column — the chip now
+                      // alternates: pink kicker, paper name, pink claim.
                       h.span(
                         [
                           h.Class(
-                            'display inline-block bg-pink px-3 py-1 text-sm tracking-[0.2em] text-ink md:text-base',
+                            'display inline-block bg-pink px-4 py-1.5 text-base tracking-[0.2em] text-ink md:px-5 md:py-2 md:text-xl',
                           ),
                           h.DataAttribute('reveal', 'wipe'),
                           h.Style({ '--reveal-delay': '0.15s' }),
                         ],
-                        ['First League TOP scorer'],
+                        ['First League top scorer'],
                       ),
                     ],
                   ),
@@ -2887,12 +2884,6 @@ const starView = (): Html =>
                       h.DataAttribute('reveal', 'up'),
                       h.Style({ '--reveal-delay': '0.25s' }),
                     ],
-                    [
-                      'Nobody picks the spotlight — it goes to the top scorer across the competitions we cover. This season she left no room for debate.',
-                    ],
-                  ),
-                  h.dl(
-                    [h.Class('mt-10 grid grid-cols-2 gap-x-8 gap-y-8 md:mt-14')],
                     starStats.map((stat, index) =>
                       h.div(
                         [
