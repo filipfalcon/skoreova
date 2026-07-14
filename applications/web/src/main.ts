@@ -2815,13 +2815,16 @@ const starView = (): Html =>
                       // Our queen gets a crown — an original hand-drawn
                       // scribble that pens itself in above her head (same
                       // draw mechanism as the map: reveal on the SVG ROOT,
-                      // unit-dash paths; see the map comment for why).
+                      // unit-dash paths; see the map comment for why). The
+                      // delay waits out the portrait's whole entrance
+                      // (0.2s delay + 0.9s ride) — crowning an empty void
+                      // read backwards; she arrives first, THEN the pen.
                       h.svg(
                         [
                           h.Xmlns('http://www.w3.org/2000/svg'),
                           h.ViewBox('0 0 140 104'),
                           h.Class(
-                            'star-crown pointer-events-none absolute bottom-[98%] left-[31%] w-[34%] -rotate-6 text-paper md:bottom-[102%] md:left-[23%] md:w-[48%]',
+                            'star-crown pointer-events-none absolute bottom-[92%] left-[31%] w-[34%] -rotate-6 text-pink md:bottom-[96%] md:left-[23%] md:w-[48%]',
                           ),
                           h.Fill('none'),
                           h.Stroke('currentColor'),
@@ -2830,7 +2833,7 @@ const starView = (): Html =>
                           h.StrokeLinejoin('round'),
                           h.DataAttribute('reveal', 'draw'),
                           h.AriaHidden(true),
-                          h.Style({ '--reveal-delay': '0.5s' }),
+                          h.Style({ '--reveal-delay': '1.1s' }),
                         ],
                         [
                           // Three wobbly spikes...

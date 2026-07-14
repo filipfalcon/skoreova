@@ -43,8 +43,9 @@
   --text-fluid-7xl-9xl--line-height: 1;
   --text-fluid-8xl-9xl: clamp(6rem, 5.1429rem + 3.5714vw, 8rem);
   --text-fluid-8xl-9xl--line-height: 1;
-  /* The star section's giant goals watermark (was 13rem/17rem/24rem). */
-  --text-fluid-watermark: clamp(13rem, 8.2857rem + 19.6429vw, 24rem);
+  /* The star section's giant jersey-number watermark — sized to loom
+     behind the whole cutout (384px → 1280px viewports map to 15rem → 32rem). */
+  --text-fluid-watermark: clamp(15rem, 7.7143rem + 30.3571vw, 32rem);
 }
 
 @layer base {
