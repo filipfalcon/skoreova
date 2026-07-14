@@ -2837,7 +2837,6 @@ const starView = (): Html =>
                   // shrink-wrapping box so the crown can anchor to the
                   // PHOTO's coordinates, not the whole column's.
                   h.div(
-                    [h.Class('relative h-[24rem] sm:h-[30rem] md:h-full md:max-h-[46rem]')],
                     [
                       h.img([
                         h.Src(rancovaImage),
