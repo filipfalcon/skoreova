@@ -639,7 +639,7 @@ const menuEntries: ReadonlyArray<MenuEntry> = [
   { label: 'Battling through', target: '/#battling-through' },
   { label: 'Across the lands', target: '/#across-the-lands' },
   { label: 'Meet our champion', target: '/#meet-our-champion' },
-  { label: 'Players', target: '/#star' },
+  { label: 'Hail to the queen', target: '/#hail-to-the-queen' },
   { label: 'National', target: '/#national-team' },
   { label: 'Follow', target: '/#follow' },
 ];
@@ -2757,12 +2757,15 @@ const starStats: ReadonlyArray<StarStat> = [
 
 const starView = (): Html =>
   h.section(
-    [h.Id('star'), h.Class('relative overflow-hidden bg-ink pt-16 text-paper md:pt-24')],
+    [
+      h.Id('hail-to-the-queen'),
+      h.Class('relative overflow-hidden bg-ink pt-16 text-paper md:pt-24'),
+    ],
     [
       h.div(
         [h.Class(container)],
         [
-          kicker('05', 'Stargirl in the making', true, '/#star'),
+          kicker('05', 'Hail to the queen', true, '/#hail-to-the-queen'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [maskedLine('Our queen.', 'text-fluid-6xl-9xl text-pink', 0)],
