@@ -2753,8 +2753,43 @@ interface StarStat {
 const starStats: ReadonlyArray<StarStat> = [
   { value: '17', label: 'Goals' },
   { value: '1015', label: 'Minutes' },
-  { value: '1.51', label: 'Goals per match' },
-  { value: '2', label: 'Hauls' },
+  // Computed from minutes, so it is a per-90 rate — label it honestly.
+  { value: '1.51', label: 'Goals@90' },
+];
+
+// Her hauls (3+ goals in a game), listed as the matches themselves — the
+// receipts tables' language instead of a bare "2×" (user call: the games
+// say more than the count). From the match records: 4 vs Lokomotiva Brno
+// H.H. (5:0, round 12) and 4 vs Slovácko (4:1, title group round 6) —
+// 8 of her 17. Her count rides the 04 stamp element (the row's ONLY
+// pink); the match score stays neutral context, and the raw minute list
+// died as anti-user noise.
+interface HaulMatch {
+  readonly opponent: string;
+  readonly logo: string;
+  readonly subLabel: string;
+  readonly goals: string;
+  readonly score: string;
+  readonly away: boolean;
+}
+
+const haulMatches: ReadonlyArray<HaulMatch> = [
+  {
+    opponent: 'Brno H.H.',
+    logo: lokomotivaBrnoLogo,
+    subLabel: `${FIRST_LEAGUE} — Round 12`,
+    goals: '4',
+    score: '5:0',
+    away: false,
+  },
+  {
+    opponent: 'Slovácko',
+    logo: slovackoLogo,
+    subLabel: `${FIRST_LEAGUE} — Title group, round 6`,
+    goals: '4',
+    score: '4:1',
+    away: false,
+  },
 ];
 
 const starView = (): Html =>
@@ -2900,8 +2935,14 @@ const starView = (): Html =>
                           h.Style({ '--reveal-delay': `${index * 0.12}s` }),
                         ],
                         [
-                          h.div([h.Class('mb-4 h-1 w-12 bg-pink')], []),
-                          h.dt(
+                          // Paper, NOT pink: a pink tick is the map
+                          // counters' "clickable + on" signal.
+                          h.div([h.Class('mb-4 h-1 w-12 bg-paper')], []),
+                          // Paper numbers, not pink: after the pink name
+                          // above, the section's pink budget belongs to the
+                          // haul stamps and the CTA. (Nations-league stats
+                          // set the base-color-numbers precedent.)
+                          h.span(
                             [
                               h.Class('display block text-fluid-5xl-7xl'),
                               h.DataAttribute('countup', ''),
@@ -2916,16 +2957,145 @@ const starView = (): Html =>
                       ),
                     ),
                   ),
-                  h.a(
+                  // The hauls, spelled out as matches — section 04's table
+                  // anatomy retinted for ink (paper borders, paper name,
+                  // the same match-row pink slide on hover).
+                  // Promoted to a display beat (the 04 tables' rank), no
+                  // explainer — the rows below define the word themselves.
+                  // The whole hauls block is ONE reveal beat ('replay'
+                  // group): both rows land together with the headline, no
+                  // per-row viewport waiting (the 04 receipts behavior).
+                  h.div(
+                    [h.DataAttribute('reveal-group', 'replay')],
                     [
-                      h.Href(`${platformUrl}/players`),
-                      h.Class(
-                        'display mt-12 inline-block bg-pink px-8 py-4 text-xl tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
+                      h.p(
+                        [
+                          h.Class('display mt-12 text-fluid-3xl-5xl md:mt-16'),
+                          h.DataAttribute('reveal', 'up'),
+                        ],
+                        ['The hauls.'],
                       ),
-                      // No reveal — CTAs sit still while the content around
-                      // them animates, same as everywhere.
+                      h.ul(
+                        [h.Class('mt-5 border-t-2 border-paper')],
+                        haulMatches.map((haul) =>
+                          h.li(
+                            [h.Class('border-b border-paper/15'), h.DataAttribute('reveal', 'up')],
+                            [
+                              h.a(
+                                [
+                                  h.Href(platformUrl),
+                                  h.Class(
+                                    'group match-row -mx-4 flex items-center gap-x-4 px-4 py-4',
+                                  ),
+                                ],
+                                [
+                                  h.span(
+                                    [
+                                      h.Class(
+                                        'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-paper bg-paper p-1',
+                                      ),
+                                    ],
+                                    [
+                                      h.img([
+                                        h.Src(haul.logo),
+                                        h.Alt(''),
+                                        h.Loading('lazy'),
+                                        h.Class('h-full w-full object-contain'),
+                                      ]),
+                                    ],
+                                  ),
+                                  h.div(
+                                    [h.Class('min-w-0 flex-1')],
+                                    [
+                                      h.p(
+                                        [
+                                          h.Class(
+                                            'display text-xl transition-colors duration-300 group-hover:text-ink md:text-2xl',
+                                          ),
+                                        ],
+                                        [haul.opponent],
+                                      ),
+                                      h.p(
+                                        [
+                                          h.Class(
+                                            'text-[10px] tracking-[0.2em] uppercase transition-colors duration-300 group-hover:text-ink',
+                                          ),
+                                        ],
+                                        [haul.subLabel],
+                                      ),
+                                    ],
+                                  ),
+                                  // Her count as the 04 stamp element — the
+                                  // row's only pink; the match score is neutral
+                                  // context in paper, venue labeled like every
+                                  // score block on the page.
+                                  h.span(
+                                    [
+                                      h.Class(
+                                        'display shrink-0 bg-pink px-3 py-1.5 text-center text-xs tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper md:text-sm',
+                                      ),
+                                    ],
+                                    [`${haul.goals} goals`],
+                                  ),
+                                  h.div(
+                                    [h.Class('flex items-center gap-3 text-right md:gap-4')],
+                                    [
+                                      h.div(
+                                        [h.Class('w-12 shrink-0 md:w-20')],
+                                        [
+                                          h.p(
+                                            [
+                                              h.Class(
+                                                'display text-fluid-2xl-4xl transition-colors duration-300 group-hover:text-ink',
+                                              ),
+                                            ],
+                                            [...tabularScore(haul.score)],
+                                          ),
+                                          h.p(
+                                            [
+                                              h.Class(
+                                                'text-[10px] tracking-[0.2em] uppercase transition-colors duration-300 group-hover:text-ink md:text-[11px]',
+                                              ),
+                                            ],
+                                            [haul.away ? 'Away' : 'Home'],
+                                          ),
+                                        ],
+                                      ),
+                                      h.span(
+                                        [
+                                          h.Class(
+                                            'display hidden text-sm transition-colors duration-300 group-hover:text-ink md:inline-block md:text-lg',
+                                          ),
+                                        ],
+                                        [displayArrowSolo],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Centered and pushed off the table — the CTA is the
+                      // section's exit, not the third row of the list.
+                      h.div(
+                        [h.Class('mt-16 flex justify-center md:mt-20')],
+                        [
+                          h.a(
+                            [
+                              h.Href(`${platformUrl}/players`),
+                              h.Class(
+                                'display inline-block bg-pink px-8 py-4 text-xl tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
+                              ),
+                              // No reveal — CTAs sit still while the content
+                              // around them animates, same as everywhere.
+                            ],
+                            ['Discover other stars', displayArrow],
+                          ),
+                        ],
+                      ),
                     ],
-                    ['Discover other stars', displayArrow],
                   ),
                 ],
               ),
