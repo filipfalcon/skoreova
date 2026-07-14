@@ -19,6 +19,10 @@ import { m } from 'foldkit/message';
 //                        viewport center, then sitting level (a negative
 //                        margin scrubs downward, so a ±margin pair
 //                        converges to the middle)
+// - [data-scrub-dock]    scroll-scrubbed lift: rides `--dock-lift` above its
+//                        layout spot while its section still has room below
+//                        the viewport, and settles (docks) exactly as the
+//                        section's bottom edge reaches the viewport's
 // - [data-marquee]       ticker whose speed/direction reacts to scroll velocity
 // - [data-tilt]          3D card tilt following the pointer while hovered
 //
@@ -704,6 +708,19 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
     root.querySelectorAll<HTMLElement>('[data-scrub-align]'),
   );
 
+  // ----- Scroll-scrubbed docking ---------------------------------------------
+  // The queen's portrait (section 05): on the section's landing frame it
+  // rides `--dock-lift` (rem) higher so she is IN the frame, then sinks
+  // with the scroll and sits on the section's bottom edge exactly when
+  // that edge reaches the viewport's bottom — offset = the room still
+  // below the viewport, capped at the lift. Desktop only: on phones the
+  // portrait is mid-flow and a lift would tear a hole under the headline.
+
+  const scrubDockLayers: ReadonlyArray<HTMLElement> = Array.from(
+    root.querySelectorAll<HTMLElement>('[data-scrub-dock]'),
+  );
+  const dockViewport = window.matchMedia('(min-width: 48rem)');
+
   // ----- Scroll-velocity-reactive marquees ---------------------------------
 
   const marquees: Array<MarqueeTrack> = Array.from(
@@ -863,6 +880,29 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       // can snap its .collage-snap children together (a transition, not a
       // scrub — it must run on its own element and its own clock).
       host.classList.toggle('is-assembled', progress >= 1);
+    }
+
+    for (const layer of scrubDockLayers) {
+      if (!dockViewport.matches) {
+        layer.style.transform = '';
+        continue;
+      }
+      const section = layer.closest('section');
+      if (!section) continue;
+      // Rem-based like the pin fan vars, so the lift scales with type.
+      const style = getComputedStyle(layer);
+      const lift = (Number.parseFloat(style.getPropertyValue('--dock-lift')) || 0) * 16;
+      // The ceiling keeps the lifted rider clear of the fixed header AND
+      // leaves air for whatever crowns it (the queen's scribble) — without
+      // it the mid-ride pin parked her hairline at the header's edge and
+      // the crown vanished underneath. rect.top is measured WITH the
+      // current translate; subtracting the matrix's Y gives the layout top.
+      const ceiling = (Number.parseFloat(style.getPropertyValue('--dock-ceiling')) || 0) * 16;
+      const matrix = new DOMMatrix(style.transform === 'none' ? undefined : style.transform);
+      const layoutTop = layer.getBoundingClientRect().top - matrix.m42;
+      const room = section.getBoundingClientRect().bottom - window.innerHeight;
+      const offset = Math.max(0, Math.min(lift, room, layoutTop - ceiling));
+      layer.style.transform = `translate3d(0, ${(-offset).toFixed(1)}px, 0)`;
     }
 
     for (const marquee of marquees) {
