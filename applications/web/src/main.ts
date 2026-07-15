@@ -4775,7 +4775,14 @@ const followView = (): Html =>
             [maskedLine('Follow the game.', 'text-fluid-5xl-9xl', 0)],
           ),
           h.ul(
-            [h.Class('mt-14 border-t border-paper/15 md:mt-20')],
+            // ONE reveal beat ('replay' group): on a menu-jump landing the
+            // third row sits in the observer's bottom dead zone and never
+            // fired on its own (1280×800 first frame ended mid-list) — the
+            // group keys every row off the list's own entry instead.
+            [
+              h.Class('mt-14 border-t border-paper/15 md:mt-20'),
+              h.DataAttribute('reveal-group', 'replay'),
+            ],
             socialChannels.map((channel, index) =>
               h.li(
                 [
