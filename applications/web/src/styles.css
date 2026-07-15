@@ -43,6 +43,11 @@
   --text-fluid-7xl-9xl--line-height: 1;
   --text-fluid-8xl-9xl: clamp(6rem, 5.1429rem + 3.5714vw, 8rem);
   --text-fluid-8xl-9xl--line-height: 1;
+  /* One step past the Tailwind scale (12rem cap) — for ONE-WORD name
+     headlines only (06's LVICE); a sentence at this size would never
+     fit a line. */
+  --text-fluid-7xl-12xl: clamp(4.5rem, 1.2857rem + 13.3929vw, 12rem);
+  --text-fluid-7xl-12xl--line-height: 1;
   /* The star section's giant jersey-number watermark — extreme on purpose
      (user call): it dwarfs the cutout it rides behind (384px → 1280px
      viewports map to 18rem → 48rem; the section clips the spill). */
@@ -751,6 +756,125 @@ body {
    emblem" treatment. */
 .idle-float {
   animation: idle-float 4.5s ease-in-out infinite;
+}
+
+/* The national-team photo tile cycles through the matchday set like a
+   pitchside AD BOARD: the incoming print ROLLS DOWN from the top and
+   pushes the previous one out of the bottom — one motor-driven motion,
+   not a crossfade (that reads as corporate carousel). The push is two
+   phases of one shared loop: an image's roll-IN segment (top → rest) runs
+   while its predecessor's roll-OUT segment (rest → bottom) runs, both on
+   the same near-linear curve and the same 0.45s window, so the two edges
+   travel glued together and the seam never opens. Pure CSS: every stacked
+   image shares the one loop (length = images × 2s slot; a 4.5s hold read
+   as a stuck image), offset via nth-child delay; the z-index keyframes
+   put the roller above the leaver at the handoff (z-index animates
+   discretely — the flips land mid-hold, where every other image is hidden
+   and the order is moot). The clipping lives on the tile's overflow
+   wrapper. The FIRST image sits in normal flow and sizes the tile; the
+   rest stack over it. Under reduced motion the loop never starts and the
+   tile simply shows that first print. */
+@keyframes photo-cycle {
+  0% {
+    animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+    opacity: 1;
+    transform: translateY(-100%);
+    z-index: 2;
+  }
+
+  /* Rolled into place — 0.45s of the 10s loop. */
+  4.5% {
+    transform: translateY(0);
+  }
+
+  /* Slot over: hand the top layer to the incoming roller and ride the
+     same curve out through the bottom edge. */
+  20% {
+    animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+    transform: translateY(0);
+    z-index: 1;
+  }
+
+  24.49% {
+    opacity: 1;
+    transform: translateY(100%);
+  }
+
+  24.5%,
+  100% {
+    opacity: 0;
+    transform: translateY(-100%);
+    z-index: 0;
+  }
+}
+
+/* The loop is gated on the tile's own reveal (`.is-in`, stamped by
+   motion.ts when the zoom entrance fires) — ungated it ran from page
+   load, so the spawn could land mid-roll or roll away right after
+   appearing. Starting AT the reveal resets the clock; the uniform
+   -0.45s delay shift parks the first print at its just-rolled-in rest
+   frame, so the spawn itself is motionless (relative phasing between
+   the five images is unchanged). */
+.photo-cycle > img {
+  opacity: 0;
+}
+
+.photo-cycle.is-in > img {
+  animation: photo-cycle 10s infinite;
+}
+
+.photo-cycle.is-in > img:nth-child(1) {
+  animation-delay: -0.45s;
+}
+
+.photo-cycle.is-in > img:nth-child(2) {
+  animation-delay: 1.55s;
+}
+
+.photo-cycle.is-in > img:nth-child(3) {
+  animation-delay: 3.55s;
+}
+
+.photo-cycle.is-in > img:nth-child(4) {
+  animation-delay: 5.55s;
+}
+
+.photo-cycle.is-in > img:nth-child(5) {
+  animation-delay: 7.55s;
+}
+
+/* Reduced motion: the reveal system never stamps `.is-in`, so the loop
+   never starts — the tile just shows the first print. The first-child
+   rule alone carries that static state. */
+@media (prefers-reduced-motion: reduce) {
+  .photo-cycle.is-in > img {
+    animation: none;
+  }
+
+  .photo-cycle > img:first-child {
+    opacity: 1;
+  }
+}
+
+/* The scroll-pinned bracket build (motion.ts stamps `.is-on` from the
+   [data-bracket-scrub] runway's progress). Hidden-until-on lives ONLY
+   inside this md + no-preference gate: phones never pin (the steps are
+   forced on but must never start hidden), and under reduced motion the
+   loop that stamps the classes is never installed — ungated, the whole
+   bracket would simply be invisible there. */
+@media (prefers-reduced-motion: no-preference) and (min-width: 48rem) {
+  [data-bracket-scrub] [data-bracket-step] {
+    opacity: 0;
+    transform: translateY(1.5rem);
+    transition:
+      opacity 0.4s ease-out,
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  [data-bracket-scrub] [data-bracket-step].is-on {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .hero-photo {
