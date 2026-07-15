@@ -4693,7 +4693,10 @@ const nationalTeamView = (): Html =>
                             // inside the card (risen, it collided with the dashed
                             // Round 2 outline one stage up); desktop has open pink
                             // above the card, so there it rises past the edge.
-                            'relative min-h-48 bg-paper p-5 md:col-start-5 md:row-span-2 md:row-start-1 md:min-h-0 md:self-center md:p-6',
+                            // md band (768–1279) squeezes this column to ~200–290px,
+                            // so the copy reserves the trophy's lane (pr-14) and the
+                            // trophy shrinks a notch; xl has room for both at full size.
+                            'relative min-h-48 bg-paper p-5 md:col-start-5 md:row-span-2 md:row-start-1 md:min-h-0 md:self-center md:p-6 md:pr-14 xl:pr-6',
                           ),
                           h.DataAttribute('bracket-step', '5'),
                         ],
@@ -4707,7 +4710,7 @@ const nationalTeamView = (): Html =>
                           h.div(
                             [
                               h.Class(
-                                'pointer-events-none absolute right-5 bottom-4 h-40 bg-ink md:right-8 md:h-56',
+                                'pointer-events-none absolute right-5 bottom-4 h-40 bg-ink md:-right-2 md:h-44 xl:right-8 xl:h-56',
                               ),
                               h.Style({
                                 aspectRatio: '348 / 1339',
