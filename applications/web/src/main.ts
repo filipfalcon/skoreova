@@ -2353,7 +2353,13 @@ const championsView = (): Html =>
                                         ],
                                   ),
                                   h.div(
-                                    [h.Class('min-w-0 flex-1')],
+                                    // A real minimum, not min-w-0: single-word names
+                                    // (Ferencváros, Hammarby) can't wrap, and with a
+                                    // squeezed box they painted under the verdict stamp
+                                    // (19px overlap at 375, 55px at 1024). The floor
+                                    // makes the verdict+scores block wrap below instead
+                                    // — the layout 768 always had.
+                                    [h.Class('min-w-[8rem] flex-1')],
                                     [
                                       h.p([h.Class('display text-xl md:text-2xl')], [tie.opponent]),
                                       // Full ink like the single-match rows'
