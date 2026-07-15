@@ -2128,7 +2128,10 @@ const championsView = (): Html =>
                     // crest column's box (which paints on -z-10), and as a
                     // SIBLING it would swallow the CTA's clicks — nothing in
                     // here is interactive, so let clicks fall through.
-                    'pointer-events-none mt-14 flex flex-wrap items-start gap-x-14 gap-y-8 md:mt-0 lg:gap-x-20',
+                    // md+ reserves the crest column's lane (31%, 360px cap, plus
+                    // a gutter) — without it the cells flow under the crest and
+                    // the Explore CTA paints through them (768–1024 collision).
+                    'pointer-events-none mt-14 flex flex-wrap items-start gap-x-14 gap-y-8 md:mt-0 md:pr-[calc(min(31%,360px)+1.5rem)] lg:gap-x-20',
                   ),
                 ],
                 [
