@@ -1915,12 +1915,15 @@ const singleMatchRow = (match: SingleMatch, index: number): Html =>
           h.div(
             [h.Class('min-w-0 flex-1')],
             [
-              h.p([h.Class('display text-xl md:text-2xl')], [match.opponent]),
+              // lg, not md: from md these tables sit in half-width grid
+              // columns (~330px at 768 — phone measure), so the row keeps
+              // its phone scale through the md band; lg has real room.
+              h.p([h.Class('display text-xl lg:text-2xl')], [match.opponent]),
               h.p([h.Class('text-[10px] tracking-[0.2em] uppercase')], [match.subLabel]),
             ],
           ),
           h.div(
-            [h.Class('flex items-center gap-3 text-right md:gap-4')],
+            [h.Class('flex items-center gap-3 text-right lg:gap-4')],
             [
               // A shootout gets the euro table's stamp treatment — the
               // same pink chip and hover flip as THROUGH, carrying the
@@ -1931,14 +1934,14 @@ const singleMatchRow = (match: SingleMatch, index: number): Html =>
                     h.span(
                       [
                         h.Class(
-                          'display shrink-0 bg-pink px-3 py-1.5 text-center text-xs tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper md:text-sm',
+                          'display shrink-0 bg-pink px-3 py-1.5 text-center text-xs tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper lg:text-sm',
                         ),
                       ],
                       [`Penalties ${match.pens}`],
                     ),
                   ]),
               h.div(
-                [h.Class('w-12 shrink-0 md:w-20')],
+                [h.Class('w-12 shrink-0 lg:w-20')],
                 [
                   // Pink = the winning scoreline (the euro table's away-leg
                   // color). Both single-match tables list only wins, so
@@ -2649,7 +2652,10 @@ const championsView = (): Html =>
                       // content around them animates, same as everywhere.
                       h.Href(platformUrl),
                       h.Class(
-                        'display mt-10 inline-block bg-ink px-8 py-4 text-xl tracking-[0.08em] text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
+                        // lg, not md: this CTA lives in the honors grid's half
+                        // column (~330px at 768), which stays phone-width
+                        // through the md band.
+                        'display mt-10 inline-block bg-ink px-8 py-4 text-xl tracking-[0.08em] text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink lg:text-2xl',
                       ),
                     ],
                     ['Discover other records', displayArrow],
@@ -2942,7 +2948,10 @@ const starView = (): Html =>
                       h.span(
                         [
                           h.Class(
-                            'display inline-block bg-pink px-4 py-1.5 text-base tracking-[0.2em] text-ink md:px-5 md:py-2 md:text-xl',
+                            // lg, not md: the copy column stays phone-width through
+                            // the md band (the photo column eats the rest), so the
+                            // upsizing waits for lg across this whole section.
+                            'display inline-block bg-pink px-4 py-1.5 text-base tracking-[0.2em] text-ink lg:px-5 lg:py-2 lg:text-xl',
                           ),
                           h.DataAttribute('reveal', 'wipe'),
                           h.Style({ '--reveal-delay': '0.15s' }),
@@ -3045,7 +3054,7 @@ const starView = (): Html =>
                                       h.p(
                                         [
                                           h.Class(
-                                            'display text-xl transition-colors duration-300 group-hover:text-ink md:text-2xl',
+                                            'display text-xl transition-colors duration-300 group-hover:text-ink lg:text-2xl',
                                           ),
                                         ],
                                         [haul.opponent],
@@ -3067,16 +3076,16 @@ const starView = (): Html =>
                                   h.span(
                                     [
                                       h.Class(
-                                        'display shrink-0 bg-pink px-3 py-1.5 text-center text-xs tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper md:text-sm',
+                                        'display shrink-0 bg-pink px-3 py-1.5 text-center text-xs tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper lg:text-sm',
                                       ),
                                     ],
                                     [`${haul.goals} goals`],
                                   ),
                                   h.div(
-                                    [h.Class('flex items-center gap-3 text-right md:gap-4')],
+                                    [h.Class('flex items-center gap-3 text-right lg:gap-4')],
                                     [
                                       h.div(
-                                        [h.Class('w-12 shrink-0 md:w-20')],
+                                        [h.Class('w-12 shrink-0 lg:w-20')],
                                         [
                                           h.p(
                                             [
@@ -3089,7 +3098,7 @@ const starView = (): Html =>
                                           h.p(
                                             [
                                               h.Class(
-                                                'text-[10px] tracking-[0.2em] uppercase transition-colors duration-300 group-hover:text-ink md:text-[11px]',
+                                                'text-[10px] tracking-[0.2em] uppercase transition-colors duration-300 group-hover:text-ink lg:text-[11px]',
                                               ),
                                             ],
                                             [haul.away ? 'Away' : 'Home'],
@@ -3121,7 +3130,7 @@ const starView = (): Html =>
                             [
                               h.Href(`${platformUrl}/players`),
                               h.Class(
-                                'display inline-block bg-pink px-8 py-4 text-xl tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
+                                'display inline-block bg-pink px-8 py-4 text-xl tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-paper active:bg-paper lg:text-2xl',
                               ),
                               // No reveal — CTAs sit still while the content
                               // around them animates, same as everywhere.
