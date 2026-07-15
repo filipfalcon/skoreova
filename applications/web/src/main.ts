@@ -4125,6 +4125,52 @@ const takeSegment = (text: string, maskDelaySeconds: number, strikeDelay: string
     ],
   );
 
+// One line of the analogy list — the pen crosses the EQUALS sign with the
+// same slash energy as the take's strike: an equal sign is exactly what
+// this section refuses. The visible line is aria-hidden (a screen reader
+// would read the struck '=' as plain equality — the opposite claim) and
+// the sr-only sibling carries the real sentence.
+const equationLine = (left: string, right: string, delaySeconds: number): Html =>
+  h.p(
+    [
+      h.Class('display text-fluid-2xl-4xl'),
+      h.DataAttribute('reveal', 'up'),
+      h.DataAttribute('reveal-late', ''),
+      h.Style({ '--reveal-delay': `${delaySeconds}s` }),
+    ],
+    [
+      h.span(
+        [h.AriaHidden(true)],
+        [
+          `${left} `,
+          h.span(
+            [h.Class('relative inline-block')],
+            [
+              '=',
+              h.span(
+                [
+                  h.Class(
+                    // Native translate/rotate compose with the strike
+                    // animation's transform (it only owns scaleX); origin
+                    // left = the pen draws along the slash's own axis.
+                    'pointer-events-none absolute top-1/2 left-1/2 h-1 w-[130%] -translate-x-1/2 -translate-y-1/2 -rotate-[58deg] bg-pink md:h-1.5',
+                  ),
+                  h.AriaHidden(true),
+                  h.DataAttribute('reveal', 'strike'),
+                  h.DataAttribute('reveal-late', ''),
+                  h.Style({ '--reveal-delay': `${delaySeconds + 0.35}s` }),
+                ],
+                [],
+              ),
+            ],
+          ),
+          ` ${right}`,
+        ],
+      ),
+      h.span([h.Class('sr-only')], [`${left} is not ${right}.`]),
+    ],
+  );
+
 // An unnumbered full-bleed interlude — the site's attitude in three beats:
 // the tired take, the stamp slammed over it, and the deadpan analogy.
 const statementView = (): Html =>
@@ -4193,17 +4239,17 @@ const statementView = (): Html =>
               ),
             ],
           ),
-          h.p(
+          // The analogy list ("Do not compare women to men." spelled out
+          // as arithmetic): different games, different rides, different
+          // sports — the pen refuses every equals sign. Also scroll-gated
+          // so the list can't beat the stamp to the screen.
+          h.div(
+            [h.Class('mt-14 space-y-3 md:mt-20')],
             [
-              h.Class('display mt-14 text-fluid-2xl-4xl text-pink md:mt-20'),
-              h.DataAttribute('reveal', 'up'),
-              // Also scroll-gated, so the punchlines can't beat the stamp
-              // to the screen — they sit lower, so they cross the trigger
-              // band after it.
-              h.DataAttribute('reveal-late', ''),
-              h.Style({ '--reveal-delay': '0.5s' }),
+              equationLine('Hockey', 'floorball', 0.5),
+              equationLine('Train', 'subway', 0.65),
+              equationLine('Men', 'women', 0.8),
             ],
-            ['Do not compare women to men.'],
           ),
           h.p(
             [
