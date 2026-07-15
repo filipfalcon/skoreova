@@ -1292,7 +1292,10 @@ const storyView = (): Html =>
             // the viewport's — on wide screens a viewport anchor left a dead
             // band between the copy's measure and her (80rem = the container's
             // max-w-7xl, 2.5rem = its px-10).
-            'pointer-events-none absolute top-8 right-4 z-0 w-28 select-none sm:w-40 md:top-12 md:right-10 md:w-[28%] md:max-w-[360px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
+            // 26% — trimmed a touch from the original 28% so all three
+            // mascot doodles land on one ~510px cap height at 1280
+            // (the scout grew to meet her; sizes unified, user call).
+            'pointer-events-none absolute top-8 right-4 z-0 w-28 select-none sm:w-40 md:top-12 md:right-10 md:w-[26%] md:max-w-[340px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
           ),
           h.DataAttribute('reveal', 'right'),
           h.Style({ '--reveal-delay': '0.1s' }),
@@ -3731,7 +3734,10 @@ const clubsView = (model: Model): Html =>
       h.div(
         [
           h.Class(
-            'pointer-events-none absolute top-8 right-4 z-0 w-20 select-none sm:w-28 md:top-12 md:right-10 md:w-[17%] md:max-w-[250px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
+            // 19% matches the knight's ~510px CAP HEIGHT at 1280, not her
+            // width — the figure is a tall 1:2 portrait, so width parity
+            // would still blow her up huge (sizes unified, user call).
+            'pointer-events-none absolute top-8 right-4 z-0 w-20 select-none sm:w-28 md:top-12 md:right-10 md:w-[19%] md:max-w-[260px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
           ),
           h.DataAttribute('reveal', 'right'),
           h.Style({ '--reveal-delay': '0.1s' }),
