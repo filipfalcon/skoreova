@@ -590,6 +590,16 @@ body {
   transition-delay: var(--reveal-delay, 0s);
 }
 
+/* Scrolling back UP, motion.ts stamps `.is-drawn` together with `.is-in`
+   (data-draw-replay="downward") — the crown must stand whole at once, but
+   the shared reveal delay above kept the opacity flip 1.1s late and the
+   crown "appeared later". On the normal downward draw `.is-drawn` only
+   arrives after the pen finishes, when the opacity has long settled — so
+   zeroing the delay here changes nothing on the way down. */
+.star-crown[data-reveal='draw'].is-in.is-drawn {
+  transition-delay: 0s;
+}
+
 /* Stamp: slams onto the element below it from the viewer's direction —
    starts huge and transparent, drops to size with a springy overshoot, and
    lands slightly tilted like a slapped-on sticker. The centering translate
