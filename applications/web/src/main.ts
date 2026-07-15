@@ -2886,6 +2886,10 @@ const starView = (): Html =>
                           h.StrokeLinecap('round'),
                           h.StrokeLinejoin('round'),
                           h.DataAttribute('reveal', 'draw'),
+                          // The pen only performs on the way DOWN — coming
+                          // back up the crown stands finished (motion.ts
+                          // stamps is-drawn with is-in when scrolling up).
+                          h.DataAttribute('draw-replay', 'downward'),
                           h.AriaHidden(true),
                           h.Style({ '--reveal-delay': '1.1s' }),
                         ],

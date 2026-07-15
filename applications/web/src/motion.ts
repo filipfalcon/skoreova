@@ -528,7 +528,21 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       });
     }
 
+    // Scroll direction at reveal time — some draw reveals only ANIMATE on
+    // the way down (see data-draw-replay below); coming back up they must
+    // stand complete, so the reader never watches the same pen twice.
+    // The direction is STICKY across callbacks at the same position:
+    // several observers share this handler, and the second callback of a
+    // scroll step would otherwise read "no movement" and lose the sign.
+    let lastRevealScrollY = window.scrollY;
+    let revealScrollWasUp = false;
+
     const onReveal = (entries: ReadonlyArray<IntersectionObserverEntry>): void => {
+      if (window.scrollY !== lastRevealScrollY) {
+        revealScrollWasUp = window.scrollY < lastRevealScrollY;
+        lastRevealScrollY = window.scrollY;
+      }
+      const scrollingUp = revealScrollWasUp;
       for (const entry of entries) {
         const revealOnce =
           entry.target instanceof HTMLElement && entry.target.dataset['revealGroup'] === 'once';
@@ -538,6 +552,16 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
           } else {
             target.classList.toggle('is-in', entry.isIntersecting);
             if (!entry.isIntersecting) target.classList.remove('is-drawn');
+            // Downward-only pens: re-entering from BELOW (scrolling up)
+            // stamps `.is-drawn` together with `.is-in`, so the dash never
+            // comes back and the figure is simply there, whole.
+            if (
+              entry.isIntersecting &&
+              scrollingUp &&
+              target.dataset['drawReplay'] === 'downward'
+            ) {
+              target.classList.add('is-drawn');
+            }
           }
           for (const element of target.querySelectorAll<HTMLElement>('[data-countup]')) {
             const countUp = countUps.get(element);
