@@ -23,6 +23,12 @@ import { m } from 'foldkit/message';
 //                        layout spot while its section still has room below
 //                        the viewport, and settles (docks) exactly as the
 //                        section's bottom edge reaches the viewport's
+// - [data-bracket-scrub] scroll-pinned build: the runway reserves the scroll,
+//                        a sticky stage holds the frame, and the runway's
+//                        progress stamps `.is-on` onto the numbered
+//                        [data-bracket-step] pieces inside — forward builds,
+//                        backward unwinds (desktop only; phones force all
+//                        steps on)
 // - [data-marquee]       ticker whose speed/direction reacts to scroll velocity
 // - [data-tilt]          3D card tilt following the pointer while hovered
 //
@@ -745,6 +751,29 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
   );
   const dockViewport = window.matchMedia('(min-width: 48rem)');
 
+  // ----- Scroll-pinned bracket build ----------------------------------------
+  // The runway's own height (minus one viewport) is the scrub track: progress
+  // 0 → 1 across it turns the numbered steps on one by one. The +1 head
+  // margin holds a beat of empty scroll after the pin engages before step 0
+  // fires (a wheel-lock "hard stop" was tried here and pulled — it kept
+  // snagging the ride; the pause is plain scroll distance now), with a +2
+  // denominator tail so the finished bracket parks before the stage unpins.
+
+  const bracketScrubs: ReadonlyArray<{
+    readonly runway: HTMLElement;
+    readonly steps: ReadonlyArray<{ readonly element: HTMLElement; readonly index: number }>;
+    readonly stepCount: number;
+  }> = Array.from(root.querySelectorAll<HTMLElement>('[data-bracket-scrub]')).map((runway) => {
+    const steps = Array.from(runway.querySelectorAll<HTMLElement>('[data-bracket-step]')).map(
+      (element) => ({ element, index: Number(element.dataset['bracketStep'] ?? '0') }),
+    );
+    return {
+      runway,
+      steps,
+      stepCount: steps.reduce((max, step) => Math.max(max, step.index + 1), 1),
+    };
+  });
+
   // ----- Scroll-velocity-reactive marquees ---------------------------------
 
   const marquees: Array<MarqueeTrack> = Array.from(
@@ -927,6 +956,32 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       const room = section.getBoundingClientRect().bottom - window.innerHeight;
       const offset = Math.max(0, Math.min(lift, room, layoutTop - ceiling));
       layer.style.transform = `translate3d(0, ${(-offset).toFixed(1)}px, 0)`;
+    }
+
+    for (const scrub of bracketScrubs) {
+      if (!dockViewport.matches) {
+        // Phones have no pin — the bracket is a plain stack, all steps on.
+        for (const step of scrub.steps) step.element.classList.add('is-on');
+        continue;
+      }
+      const rect = scrub.runway.getBoundingClientRect();
+      const track = rect.height - window.innerHeight;
+      const progress = track > 0 ? Math.min(1, Math.max(0, -rect.top / track)) : 1;
+      // The build only ever ADDS while the reader is on the runway: coming
+      // back up (from below, progress starts at 1 anyway) the bracket rides
+      // through standing complete instead of dismantling itself. Steps
+      // reset only once the whole runway sits BELOW the viewport — with
+      // the reader safely above, the teardown is invisible and the next
+      // descent builds from zero again. (Resetting at the unpin line was
+      // visible: the upward warp parks the stage in view just above it.)
+      const clearedAbove = rect.top > window.innerHeight;
+      for (const step of scrub.steps) {
+        if (progress >= (step.index + 1) / (scrub.stepCount + 2)) {
+          step.element.classList.add('is-on');
+        } else if (clearedAbove) {
+          step.element.classList.remove('is-on');
+        }
+      }
     }
 
     for (const marquee of marquees) {
