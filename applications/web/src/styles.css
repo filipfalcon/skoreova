@@ -1114,8 +1114,14 @@ body {
 }
 
 @media (hover: hover) {
-  :is(a, button):hover .drawn-arrow:not(.platform-beckon .drawn-arrow) {
+  :is(a, button):hover .drawn-arrow:not(.platform-beckon .drawn-arrow, .drawn-arrow-external) {
     transform: translateX(0.14em);
+  }
+
+  /* The external (diagonal) arrow nudges along ITS direction — up-right
+     (0.14em split across both axes). */
+  :is(a, button):hover .drawn-arrow-external {
+    transform: translate(0.1em, -0.1em);
   }
 
   :is(a, button):hover .arrow-back {
