@@ -795,24 +795,34 @@ const menuGlyph = (open: boolean): Html =>
   h.svg(
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
-      h.ViewBox('0 0 24 24'),
-      h.Class('h-6 w-6 md:h-7 md:w-7'),
+      // Tight viewBox — the strokes' ink fills it edge to edge, so the CSS
+      // height IS the visible height. Sized against the wordmark: Anton's
+      // caps sit at exactly 0.875em, and the toggle button carries the
+      // wordmark's text size, so the glyph stands as tall as the SKÓREOVÁ
+      // letters — accents excluded, the lockup's optical cap line.
+      h.ViewBox('0 0 24 20'),
+      h.Class('h-[0.875em] w-auto'),
       h.Fill('none'),
       h.Stroke('currentColor'),
-      h.StrokeWidth('2.5'),
+      // 3.43 in-box renders as a 3px bar (3.43 × 0.875) — up from the drawn
+      // arrow's 2.5px weight, closer to Anton's heft.
+      h.StrokeWidth('3.43'),
       // Flat butt caps — the site's whole graphic language is hard edges
       // (Anton, square chips, the drawn arrow); rounded line ends read soft.
       h.AriaHidden(true),
     ],
     open
       ? [
-          h.line([h.X1('5'), h.Y1('5'), h.X2('19'), h.Y2('19')], []),
-          h.line([h.X1('19'), h.Y1('5'), h.X2('5'), h.Y2('19')], []),
+          // Endpoints pulled in by the butt caps' perpendicular overhang
+          // (~1.2 in-box at this slope), so the X's ink spans the full 0–20
+          // height too — same cap line as the bars.
+          h.line([h.X1('4'), h.Y1('1.2'), h.X2('20'), h.Y2('18.8')], []),
+          h.line([h.X1('20'), h.Y1('1.2'), h.X2('4'), h.Y2('18.8')], []),
         ]
       : [
-          h.line([h.X1('3'), h.Y1('7'), h.X2('21'), h.Y2('7')], []),
-          h.line([h.X1('3'), h.Y1('12'), h.X2('21'), h.Y2('12')], []),
-          h.line([h.X1('3'), h.Y1('17'), h.X2('21'), h.Y2('17')], []),
+          h.line([h.X1('0'), h.Y1('1.715'), h.X2('24'), h.Y2('1.715')], []),
+          h.line([h.X1('0'), h.Y1('10'), h.X2('24'), h.Y2('10')], []),
+          h.line([h.X1('0'), h.Y1('18.285'), h.X2('24'), h.Y2('18.285')], []),
         ],
   );
 
@@ -888,8 +898,11 @@ const headerView = (model: Model): Html =>
                   h.OnClick(ToggledMenu()),
                   h.AriaLabel(model.menuOpen ? 'Close menu' : 'Open menu'),
                   h.AriaExpanded(model.menuOpen),
+                  // The text size exists for the glyph alone (the button has
+                  // no text): menuGlyph is 0.875em tall, so tracking the
+                  // wordmark's text-xl/2xl keeps the two the same height.
                   h.Class(
-                    'display flex cursor-pointer items-center text-paper transition-colors duration-300 hover:text-pink',
+                    'display flex cursor-pointer items-center text-xl text-paper transition-colors duration-300 hover:text-pink md:text-2xl',
                   ),
                 ],
                 // The hamburger/X glyph on every breakpoint — the aria-label
