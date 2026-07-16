@@ -1404,7 +1404,10 @@ const storyView = (): Html =>
           h.div(
             [h.Class('flex min-h-[calc(100svh-9rem)] flex-col md:block md:min-h-0')],
             [
-              kicker('01', 'On the rise', false, '/#on-the-rise'),
+              // `dark: true` on a paper section is deliberate (user call):
+              // 01 opens the page's numbered run and the pink chip + ink
+              // type reads stronger here than the ink chip variant.
+              kicker('01', 'On the rise', true, '/#on-the-rise'),
               // Slightly looser rhythm below md (mt-12/mt-10 vs the md
               // mt-16/mt-12 pattern's phone halves): the cover has vertical
               // room to give, and the extra air shrinks the dead band under
