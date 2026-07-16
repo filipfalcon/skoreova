@@ -789,21 +789,6 @@ const displayArrow: Html = drawnRightArrow('ml-[0.22em] inline-block h-[0.72em] 
 // …or stands alone (the row-affordance chips) — no gap to carry.
 const displayArrowSolo: Html = drawnRightArrow('inline-block h-[0.72em] w-auto');
 
-// The drawn arrow's downward sibling — the hero's scroll cue. Its own
-// viewBox (not a CSS rotation of the right arrow, which would keep the
-// sideways layout box); a touch taller than the cap-height convention so
-// the small caption still reads it as a mark, not a speck.
-const displayArrowDown: Html = h.svg(
-  [
-    h.Xmlns('http://www.w3.org/2000/svg'),
-    h.ViewBox('0 0 24 32'),
-    h.Class('inline-block h-[0.85em] w-auto'),
-    h.Fill('currentColor'),
-    h.AriaHidden(true),
-  ],
-  [h.path([h.D('M9.6 0 V18 H3 L12 31 L21 18 H14.4 V0 Z')], [])],
-);
-
 // The two-/three-line glyph shown inside the menu toggle — a hamburger when
 // closed, an X when open.
 const menuGlyph = (open: boolean): Html =>
@@ -1086,7 +1071,10 @@ const heroView = (): Html =>
       // headline, neon and CTA stay clean above it.
       h.div([h.Class('grain pointer-events-none absolute inset-0')], []),
       h.div(
-        [h.Class('relative flex h-full flex-col pb-8')],
+        // No bottom padding on phones — the scroll cue centers itself in the
+        // leftover space below the CTA (my-auto), and any padding here would
+        // skew that split toward the top.
+        [h.Class('relative flex h-full flex-col md:pb-8')],
         [
           // On phones the portrait crop leaves the players' faces in the top
           // ~40% — the headline starts right under their chins so the hook
@@ -1174,23 +1162,23 @@ const heroView = (): Html =>
               ),
             ],
           ),
-        ],
-      ),
-      // Corner captions — small typographic anchors that finish the frame's
-      // bottom edge, flanking the centered CTA. They fade in last, after the
-      // CTA has landed.
-      h.div(
-        [
-          h.Class(
-            'hero-fade pointer-events-none absolute inset-x-0 bottom-5 flex items-end justify-center px-5 text-[10px] tracking-[0.2em] uppercase text-paper/60 select-none md:bottom-7 md:justify-between md:px-8 md:text-xs',
-          ),
-          h.Style({ '--hero-delay': '1.6s' }),
-        ],
-        [
-          h.span([h.Class('hidden md:inline')], ['Independent media']),
-          h.span(
-            [],
-            ['Scroll for experience ', h.span([h.Class('scroll-bob')], [displayArrowDown])],
+          // Corner captions — small typographic anchors that finish the
+          // frame's bottom edge, flanking the centered CTA. They fade in
+          // last, after the CTA has landed. On phones they live in the flow:
+          // `my-auto` centers the cue in the leftover space, so the gap to
+          // the CTA equals the gap to the section's end at every viewport
+          // height. From `md` up it's the absolute corner strip again.
+          h.div(
+            [
+              h.Class(
+                'hero-fade pointer-events-none my-auto flex items-end justify-center px-5 text-[10px] tracking-[0.2em] uppercase text-paper/60 select-none md:absolute md:inset-x-0 md:bottom-7 md:my-0 md:justify-between md:px-8 md:text-xs',
+              ),
+              h.Style({ '--hero-delay': '1.6s' }),
+            ],
+            [
+              h.span([h.Class('hidden md:inline')], ['Independent media']),
+              h.span([], ['Scroll for experience']),
+            ],
           ),
         ],
       ),

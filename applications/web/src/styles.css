@@ -895,23 +895,6 @@ body {
   transform-origin: top center;
 }
 
-/* The corner scroll cue's arrow bobs gently downward — a small functional
-   nudge for viewers who linger on the hero. */
-@keyframes scroll-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(0.2rem);
-  }
-}
-
-.scroll-bob {
-  display: inline-block;
-  animation: scroll-bob 2.2s ease-in-out infinite;
-}
-
 /* Film grain for the hero photo: a tiled SVG fractal-noise texture (inline
    data URI, desaturated to mono) blended over the image. Static by design —
    it's a texture, not an effect: cheap to paint once, and animating it would
@@ -1284,7 +1267,6 @@ body {
   .hero-fade,
   .hero-photo,
   .idle-float,
-  .scroll-bob,
   .marquee-track {
     animation: none;
   }
