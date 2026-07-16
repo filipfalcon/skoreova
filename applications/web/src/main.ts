@@ -859,10 +859,24 @@ const headerView = (model: Model): Html =>
               h.span(
                 [
                   h.Class(
-                    'font-body ml-2.5 inline-block bg-pink px-1.5 py-0.5 text-[9px] tracking-[0.2em] text-ink uppercase select-none md:ml-3 md:text-[10px]',
+                    'font-body ml-2.5 text-[9px] leading-[1.9] tracking-[0.2em] text-ink uppercase select-none md:ml-3 md:text-[10px]',
                   ),
                 ],
-                ['Preview Build · Work in progress'],
+                [
+                  // The pink sits on an inner INLINE span with cloned decoration:
+                  // below sm the stamp breaks into two lines and each line's pink
+                  // must hug its own text — a blockified (flex-item) box would
+                  // paint one rectangle as wide as the longest line.
+                  h.span(
+                    [h.Class('box-decoration-clone bg-pink px-1.5 py-0.5')],
+                    [
+                      'Preview Build',
+                      h.span([h.Class('hidden sm:inline')], [' · ']),
+                      h.br([h.Class('sm:hidden')]),
+                      'Work in progress',
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
