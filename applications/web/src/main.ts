@@ -1323,17 +1323,16 @@ const storyView = (): Html =>
     // exhale before the ink-black competitions section slams in.
     [h.Id('on-the-rise'), h.Class('relative bg-paper pt-16 pb-20 text-ink md:pt-24 md:pb-32')],
     [
-      // The armored mascot — a decorative accent anchored to the section's
-      // right edge, sitting behind the copy (the container below is z-10) so
-      // it never blocks the headline. Small in the top corner on phones; on
-      // desktop it's anchored to the TOP band (by the headline), not the
-      // section's vertical center — the section is tall, so centering dragged
-      // the figure's legs down over the photo strip and the stats divider.
+      // The armored mascot, md+ only — the original "alive emblem"
+      // treatment: a decorative accent anchored to the section's TOP band
+      // (by the headline, not the tall section's center — centering dragged
+      // her legs over the photo strip), sliding in from the right on section
+      // entry and idle-floating. Phones show no mascot at all (user call) —
+      // their cover below is purely typographic.
       //
       // Two elements so the two animations don't fight over `transform`: the
-      // wrapper carries the position + a reveal (slides in from the right when
-      // the section enters view, replaying on re-entry), the inner image runs
-      // a slow idle float.
+      // wrapper carries the position + the reveal, the inner image runs the
+      // slow idle float.
       h.div(
         [
           h.Class(
@@ -1344,7 +1343,7 @@ const storyView = (): Html =>
             // 26% — trimmed a touch from the original 28% so all three
             // mascot doodles land on one ~510px cap height at 1280
             // (the scout grew to meet her; sizes unified, user call).
-            'pointer-events-none absolute top-8 right-4 z-0 w-28 select-none sm:w-40 md:top-12 md:right-10 md:w-[26%] md:max-w-[340px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
+            'pointer-events-none absolute z-0 hidden select-none md:top-12 md:right-10 md:block md:w-[26%] md:max-w-[340px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
           ),
           h.DataAttribute('reveal', 'right'),
           h.Style({ '--reveal-delay': '0.1s' }),
@@ -1363,40 +1362,100 @@ const storyView = (): Html =>
       h.div(
         [h.Class(`${container} relative z-10`)],
         [
-          kicker('01', 'On the rise', false, '/#on-the-rise'),
-          h.h2(
-            [h.Class('mt-10 md:mt-16')],
-            [
-              maskedLine('Officially', 'text-fluid-6xl-9xl', 0),
-              maskedLine('unstoppable.', 'text-fluid-6xl-9xl text-pink', 0.12),
-            ],
-          ),
-          // One display sentence instead of paragraphs — the count-up row
-          // below carries the detail, the source link carries the receipts.
-          // The sentence and its source button reveal as a single unit (the
-          // reveal sits on this wrapper, not the children) so the button lands
-          // at the same moment as the line it belongs to.
+          // The intro block (kicker → UEFA button) is the section's phone
+          // cover: min-height fills the first viewport (100svh minus the
+          // 3.5rem header, the section's 4rem pt-16, and 1.5rem of air), so
+          // the copy reads as one screen and the stat counters stay below
+          // the fold. The knight gets her own band between the lede and the
+          // button (a faded under-the-copy watermark read as noise — with
+          // her own stage she can run full color like the desktop emblem),
+          // and the button rides the cover's bottom edge. From `md` up it's
+          // a plain block again.
           h.div(
-            [h.Class('mt-8 md:mt-12'), h.DataAttribute('reveal', 'up')],
+            [h.Class('flex min-h-[calc(100svh-9rem)] flex-col md:block md:min-h-0')],
             [
-              h.p(
-                [h.Class('display max-w-4xl text-fluid-2xl-4xl leading-snug')],
+              kicker('01', 'On the rise', false, '/#on-the-rise'),
+              // Slightly looser rhythm below md (mt-12/mt-10 vs the md
+              // mt-16/mt-12 pattern's phone halves): the cover has vertical
+              // room to give, and the extra air shrinks the dead band under
+              // the button.
+              h.h2(
+                [h.Class('mt-12 md:mt-16')],
                 [
-                  // "For women and girls" is UEFA's own Unstoppable-strategy
-                  // vocabulary — it also dodges doubling "women's" in one line.
-                  'UEFA to make women’s football Europe’s most played and funded sport for women and girls by 2030.',
+                  maskedLine('Officially', 'text-fluid-6xl-9xl', 0),
+                  maskedLine('unstoppable.', 'text-fluid-6xl-9xl text-pink', 0.12),
                 ],
               ),
-              h.a(
+              // One display sentence instead of paragraphs — the count-up row
+              // below carries the detail, the source link carries the receipts.
+              // The sentence and its source button reveal as a single unit (the
+              // reveal sits on this wrapper, not the children) so the button lands
+              // at the same moment as the line it belongs to.
+              h.div(
+                // flex-1 (phone): the unit stretches to the cover's bottom —
+                // the knight's band absorbs the leftover space and the button
+                // lands on the fold line.
                 [
-                  h.Href('https://uefa.com/development/womens-football/'),
-                  h.Target('_blank'),
-                  h.Rel('noopener noreferrer'),
-                  h.Class(
-                    'mt-6 inline-block border-2 border-ink px-4 py-2 text-xs tracking-[0.2em] uppercase text-ink transition-colors duration-300 hover:bg-ink hover:text-paper',
+                  h.Class('mt-10 flex flex-1 flex-col md:mt-12 md:block'),
+                  h.DataAttribute('reveal', 'up'),
+                ],
+                [
+                  h.p(
+                    // Body face, not `display`: Anton carries headlines, but
+                    // a four-line factual sentence in it is real cognitive
+                    // load (user call). Same lede idiom as the other body
+                    // paragraphs; max-w-2xl keeps the measure readable now
+                    // that the glyphs are body-sized.
+                    [h.Class('max-w-2xl text-lg leading-relaxed md:text-xl')],
+                    [
+                      // "For women and girls" is UEFA's own Unstoppable-strategy
+                      // vocabulary — it also dodges doubling "women's" in one line.
+                      'UEFA to make women’s football Europe’s most played and funded sport for women and girls by 2030.',
+                    ],
+                  ),
+                  // The knight's phone stage: an in-flow band between the lede
+                  // and the button, at her natural height — the cover's first
+                  // screen shows her head and torso and scrolling walks down
+                  // her to the button and the stats (the user liked the flow
+                  // of that transition). w-4/5 + mx-auto: a notch smaller than
+                  // full width and centered, sharing one axis with the
+                  // centered button below.
+                  h.div(
+                    [h.Class('mt-4 md:hidden')],
+                    [
+                      h.img([
+                        h.Src(knightImage),
+                        h.Width('1100'),
+                        h.Height('1694'),
+                        h.Alt(
+                          'Illustrated footballer in pink armor and cape, resting one boot on a ball',
+                        ),
+                        h.Loading('lazy'),
+                        // translate-x nudges her OPTICAL axis (head–belt–
+                        // legs) onto the center line — the cape hangs off her
+                        // right, so a box-centered image reads shifted left.
+                        h.Class('mx-auto block h-auto w-4/5 translate-x-[6%]'),
+                      ]),
+                    ],
+                  ),
+                  h.a(
+                    [
+                      h.Href('https://uefa.com/development/womens-football/'),
+                      h.Target('_blank'),
+                      h.Rel('noopener noreferrer'),
+                      // Tighter tracking below md: at 0.2em the label runs
+                      // 352px against the 335px measure at 375 and wraps —
+                      // 0.12em brings it to 321px, one line with air to spare.
+                      // self-center: centered on the knight's axis on phones
+                      // (only the phone layout is flex; md's block layout
+                      // ignores align-self).
+                      h.Class(
+                        'mt-6 inline-block self-center border-2 border-ink px-4 py-2 text-xs tracking-[0.12em] uppercase text-ink transition-colors duration-300 hover:bg-ink hover:text-paper md:tracking-[0.2em]',
+                      ),
+                    ],
+                    ['UEFA Women’s Football Strategy', displayArrowExternal],
                   ),
                 ],
-                ['UEFA Women’s Football Strategy ↗︎'],
               ),
             ],
           ),

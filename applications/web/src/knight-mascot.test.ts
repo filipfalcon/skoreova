@@ -8,9 +8,11 @@ import './styles.css';
 // Guards the "cut-off knight" saga: the mascot in the on-the-rise section must
 // be fully painted. Two distinct failure modes are pinned down separately:
 // an ancestor clipping her box (overflow), and actual content painting over
-// her head (stacking). The content container legitimately sits at z-10 above
-// her, but on phones her head band lies above the container's box entirely —
-// so every hit-test there must land on the image itself.
+// her head (stacking). The hazardous arrangement — an absolutely positioned,
+// idle-floating figure under the z-10 copy container — exists on md+ ONLY
+// since the phone redesign (phones render a plain in-flow band between the
+// lede and the UEFA button, which can neither be clipped nor covered), so
+// the guard runs at an md viewport where that mascot is visible.
 
 const waitUntil = async (predicate: () => boolean, timeout = 3000): Promise<void> => {
   const start = performance.now();
@@ -29,8 +31,10 @@ const knight = (): HTMLImageElement => {
 
 beforeAll(async () => {
   // Hit tests are layout-sensitive — pin the viewport instead of inheriting
-  // whatever a previously run file left on the shared page.
-  await page.viewport(414, 896);
+  // whatever a previously run file left on the shared page. md-sized: below
+  // 768 the floating mascot is display:none (phones use the in-flow band)
+  // and its reveal would never fire.
+  await page.viewport(1024, 850);
   const root = document.createElement('div');
   root.id = 'root';
   document.body.appendChild(root);
