@@ -1535,23 +1535,38 @@ const storyView = (): Html =>
             [h.Class('mt-16 md:mt-24')],
             [
               maskedLine(
-                ['Let’s put ', h.span([h.Class('text-pink')], ['Czechia']), ' on top.'],
-                'text-fluid-5xl-8xl',
+                // Phones stack it in three lines with the pink word alone on
+                // the middle one — the hero's own lockup (DISCOVER / HER GAME
+                // / IN CZECHIA) replayed; the two-line balance-wrap read as
+                // an accident. One line again from md.
+                [
+                  'Let’s put ',
+                  h.br([h.Class('md:hidden')]),
+                  h.span([h.Class('text-pink')], ['Czechia']),
+                  h.br([h.Class('md:hidden')]),
+                  ' on top.',
+                ],
+                // The same tier as OFFICIALLY UNSTOPPABLE — the section's two
+                // shouts carry equal weight (was one step down at 5xl-8xl).
+                'text-fluid-6xl-9xl',
                 0,
               ),
             ],
           ),
-          // One display step below the UEFA sentence — the climax line above
-          // stays the loudest voice; the smaller size alone does the
-          // demoting, the ink stays solid. Claim first, then the imperative:
-          // "it" needs its antecedent before it lands.
+          // Body face under the climax line — the same lede idiom as the
+          // UEFA sentence (Anton is for headlines; sentences in it are
+          // cognitive load, the user's call there applies here too). Claim
+          // first, then the imperative: "it" needs its antecedent before it
+          // lands.
           h.p(
             [
-              h.Class('display mt-6 max-w-4xl text-fluid-xl-3xl leading-snug md:mt-8'),
+              h.Class('mt-6 max-w-2xl text-lg leading-relaxed md:mt-8 md:text-xl'),
               h.DataAttribute('reveal', 'up'),
               h.Style({ '--reveal-delay': '0.2s' }),
             ],
-            ['This generation is make-or-break. Don’t sleep on it.'],
+            // The imperative gets its own line — two beats, not one sentence
+            // that happens to wrap.
+            ['This generation is make-or-break.', h.br([]), 'Don’t sleep on it.'],
           ),
           // Phones: a swipeable scroll-snap strip — one big photo with the
           // next peeking in from the right edge (the peek IS the affordance),
@@ -1609,20 +1624,21 @@ const storyView = (): Html =>
                   h.figcaption(
                     [h.Class('mt-3 text-xs leading-relaxed')],
                     [
-                      // The pyramid-level kicker — the same micro-type tier
-                      // as the stat sources — quiet metadata, NOT a pink
-                      // chip: three filled chips at three different heights
-                      // fought the headline's pink and broke the block's
-                      // documentary calm.
+                      // The pyramid-level kicker — full ink, the caption
+                      // fades instead (swapped on the user's call: the LEVEL
+                      // is the label you scan, the sentence is the detail).
+                      // Still NOT a pink chip: three filled chips at three
+                      // different heights fought the headline's pink and
+                      // broke the block's documentary calm.
                       h.span(
                         [
                           h.Class(
-                            'mb-1 block text-[10px] tracking-[0.2em] text-ink/50 uppercase select-none',
+                            'mb-1 block text-[10px] tracking-[0.2em] text-ink uppercase select-none',
                           ),
                         ],
                         [photo.level],
                       ),
-                      h.span([h.Class('block')], [photo.caption]),
+                      h.span([h.Class('block text-ink/50')], [photo.caption]),
                     ],
                   ),
                 ],
