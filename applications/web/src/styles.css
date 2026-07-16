@@ -877,6 +877,31 @@ body {
   }
 }
 
+/* On phones the consent banner (index.html, outside the app root) drops in
+   full-width under the header and stamps `.has-cookie-banner` plus
+   `--cookie-banner-h` on <html>; the hero photo yields by exactly that
+   height instead of being covered. Insets, not transform — the layer's
+   transform belongs to the scroll parallax and the photo's to the
+   settle/drift — and both edges move together so the layer keeps its size
+   (top alone would shrink it and re-crop the photo). The section itself
+   (fixed lvh height, overflow-hidden) never grows; the photo just slides
+   down and crops at the bottom. Timing mirrors the banner's drop. */
+@media (max-width: 639px) {
+  #top [data-parallax] {
+    /* The symmetric S-curve (not the house 0.22,1 curve) matches the
+       banner's slide — front-loaded easing read as "all motion, then a
+       long crawl" over this duration. */
+    transition:
+      top 1.1s cubic-bezier(0.6, 0, 0.3, 1),
+      bottom 1.1s cubic-bezier(0.6, 0, 0.3, 1);
+  }
+
+  html.has-cookie-banner #top [data-parallax] {
+    top: var(--cookie-banner-h, 0px);
+    bottom: calc(-30% - var(--cookie-banner-h, 0px));
+  }
+}
+
 .hero-photo {
   /* The settle's easing matters for the neon sync: the original
      cubic-bezier(0.22, 1, 0.36, 1) spent its last ~700ms in an imperceptible
@@ -1269,6 +1294,12 @@ body {
   .idle-float,
   .marquee-track {
     animation: none;
+  }
+
+  /* The cookie banner appears instantly here (index.html), so the hero
+     photo's yield must snap with it. */
+  #top [data-parallax] {
+    transition: none;
   }
 
   /* Keep the neon glow, just hold it steady (no flicker). */
