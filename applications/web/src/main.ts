@@ -1496,9 +1496,12 @@ const storyView = (): Html =>
                   h.span(
                     [
                       h.Class(
-                        // max-w-64, not 52: the longest label ("World-record
-                        // women's football crowd") must break at TWO lines.
-                        'mt-3 block max-w-64 text-xs leading-relaxed tracking-[0.2em] uppercase md:text-sm',
+                        // The width cap is md-only (max-w-64, not 52: the
+                        // longest label, "World-record women's football
+                        // crowd", must break at TWO lines there). On phones
+                        // the full measure lets the shorter labels sit on ONE
+                        // line — the cap broke "…through 2030" for no reason.
+                        'mt-3 block text-xs leading-relaxed tracking-[0.2em] uppercase md:max-w-64 md:text-sm',
                       ),
                     ],
                     [
