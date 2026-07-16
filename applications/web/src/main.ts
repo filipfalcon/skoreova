@@ -5557,9 +5557,6 @@ const landingSections = (model: Model): ReadonlyArray<Html> => [
   heroView(),
   storyView(),
   competitionsView(),
-  // The competitions ticker closes its section — every competition name
-  // rolling past as the handoff into the map.
-  marqueeView(),
   // The map right after the competitions — first WHAT we cover, then WHERE
   // it all happens, before zooming into individual protagonists.
   clubsView(model),
@@ -5568,6 +5565,10 @@ const landingSections = (model: Model): ReadonlyArray<Html> => [
   starView(),
   nationalTeamView(),
   statementView(),
+  // The competitions ticker answers the statement's closing line — "Watch
+  // it rise to the top." and every competition name rolls past (user call;
+  // it used to close the competitions section instead).
+  marqueeView(),
   followView(),
 ];
 
