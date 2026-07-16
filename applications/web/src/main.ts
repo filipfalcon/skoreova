@@ -1766,7 +1766,10 @@ const competitionsView = (): Html =>
       // the card captions never fight it for legibility.
       h.div(
         [
-          h.Class('absolute inset-x-0 -top-[15%] -bottom-[15%] opacity-15'),
+          // Asymmetric overshoot (20/10, not 15/15): object-fit has no
+          // vertical slack here (cover fills the height exactly), so lifting
+          // the whole layer is the only way to ride the picture up a notch.
+          h.Class('absolute inset-x-0 -top-[20%] -bottom-[10%] opacity-15'),
           h.DataAttribute('parallax', '0.12'),
         ],
         [
@@ -1776,9 +1779,13 @@ const competitionsView = (): Html =>
             h.Height('2008'),
             h.Alt(''),
             h.Loading('lazy'),
-            // On phones the framed crop hides both players; nudge the focal
-            // point to the right so the right-hand player stays in view.
-            h.Class('h-full w-full object-cover object-[70%_center] md:object-center'),
+            // On phones the visible slice is a ~6% column of the photo (the
+            // cover scale rides the tall section), so the position must land
+            // ON a player — the gap between them (~40–60%) shows nothing.
+            // 60% = the right player's near edge (user pick after walking
+            // 55/65/70/80 — the 40–60% band is empty studio and shows
+            // nothing at this crop).
+            h.Class('h-full w-full object-cover object-[60%_center] md:object-center'),
           ]),
         ],
       ),
