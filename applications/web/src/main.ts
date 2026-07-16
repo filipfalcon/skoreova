@@ -789,6 +789,35 @@ const displayArrow: Html = drawnRightArrow('ml-[0.22em] inline-block h-[0.72em] 
 // …or stands alone (the row-affordance chips) — no gap to carry.
 const displayArrowSolo: Html = drawnRightArrow('inline-block h-[0.72em] w-auto');
 
+// The EXTERNAL-link mark (↗), for destinations outside our world (uefa.com,
+// social profiles) — the drawn right arrow stays reserved for our own
+// navigation. Deliberately NOT the display arrow's filled silhouette: this
+// mark only ever sits next to small body type (10–14px), so it's a line
+// drawing in the text glyph's register — a diagonal shaft and a simple
+// corner roof, stroked at the text's own weight (3.5 in-box ≈ 1–1.3px at
+// those sizes). Butt caps, like the menu glyph — hard edges everywhere.
+// `drawn-arrow-external`: the hover contract nudges it along its own
+// diagonal (styles.css).
+const drawnExternalArrow = (classes: string): Html =>
+  h.svg(
+    [
+      h.Xmlns('http://www.w3.org/2000/svg'),
+      h.ViewBox('0 0 24 24'),
+      h.Class(`drawn-arrow drawn-arrow-external ${classes}`),
+      h.Fill('none'),
+      h.Stroke('currentColor'),
+      // 3.1, not the computed 3.5 — a diagonal reads optically heavier than
+      // an upright stroke of the same width (checked against the type at 4×).
+      h.StrokeWidth('3.1'),
+      h.AriaHidden(true),
+    ],
+    [h.path([h.D('M2.5 21.5 L21.5 2.5 M10 2.5 H21.5 V14')], [])],
+  );
+// Same 0.72em as the right arrow — next to the small body type of receipts
+// and handles the shaft then matches the text's own stroke weight, which is
+// exactly the quiet register these micro-links want.
+const displayArrowExternal: Html = drawnExternalArrow('ml-[0.22em] inline-block h-[0.72em] w-auto');
+
 // The two-/three-line glyph shown inside the menu toggle — a hamburger when
 // closed, an X when open.
 const menuGlyph = (open: boolean): Html =>
@@ -1427,7 +1456,7 @@ const storyView = (): Html =>
                                   'mt-2 block w-fit text-[10px] tracking-[0.2em] text-ink/50 uppercase transition-colors duration-300 hover:text-pink',
                                 ),
                               ],
-                              ['uefa.com ↗︎'],
+                              ['uefa.com', displayArrowExternal],
                             ),
                           ]),
                     ],
@@ -4830,7 +4859,7 @@ const followView = (): Html =>
                             'text-sm tracking-[0.2em] text-paper/60 transition-colors duration-300 group-hover:text-ink md:text-base',
                           ),
                         ],
-                        [`${channel.handle} ↗︎`],
+                        [channel.handle, displayArrowExternal],
                       ),
                     ],
                   ),
