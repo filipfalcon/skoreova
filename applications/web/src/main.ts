@@ -1710,26 +1710,33 @@ const competitionCard = (competition: Competition): Html =>
               ),
             ],
           ),
-          // The competition's brand tile, straddling the photo's top-right
-          // corner — the same poking-into-space language as the label bar
-          // on the bottom edge.
+          // The competition's brand tile on the photo's top-right corner —
+          // the label bar's poking-into-space language mirrored exactly: it
+          // straddles VERTICALLY only (up, where there's air between cards)
+          // and stays inside horizontally, like the label's `-mt-6 ml-4`.
+          // The old two-axis overhang read as a clipped sticker on phones
+          // (the photo ends ~4px from the viewport rim there), and once the
+          // vertical-only cut existed, the desktop kept it too — one grammar
+          // for both card corners everywhere (user call).
           h.img([
             h.Src(competition.badge),
             h.Alt(''),
             h.Loading('lazy'),
             h.Class(
-              'pointer-events-none absolute -top-4 -right-4 h-12 w-12 md:-top-5 md:-right-5 md:h-14 md:w-14',
+              'pointer-events-none absolute -top-4 right-4 h-12 w-12 md:-top-5 md:right-5 md:h-14 md:w-14',
             ),
           ]),
         ],
       ),
       // `relative z-10` keeps the label painted above the photo — the
       // image's reveal transform creates a stacking context that would
-      // otherwise cover the overlapping bar. The label IS the card's button:
-      // same colorway as the CTAs (pink block, ink text, paper on hover),
-      // arrow included. Every card routes to its internal profile page —
-      // the national team's profile covers the Nations League, so even that
-      // card stays in-app now (the old external uefa.com escape is gone).
+      // otherwise cover the overlapping bar. The label IS the card's button.
+      // Paper text on the pink, not the usual ink (user call): every
+      // competition badge is a WHITE mark on a colored tile, and the label
+      // echoing that (white mark, pink tile) makes the card read as one
+      // clickable system. Paper-on-pink is 3.03:1 — AA for LARGE text only,
+      // which this display size is; don't copy this pairing to small type.
+      // Hover flips to paper bg + ink text, same as the other CTAs.
       h.h3(
         [h.Class('relative z-10 -mt-6 ml-4 inline-block')],
         [
@@ -1737,7 +1744,7 @@ const competitionCard = (competition: Competition): Html =>
             [
               h.Href(competitionRouter({ slug: competition.slug })),
               h.Class(
-                'display inline-block bg-pink px-4 py-2 text-fluid-3xl-4xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper',
+                'display inline-block bg-pink px-4 py-2 text-fluid-3xl-4xl text-paper transition-colors duration-300 hover:bg-paper hover:text-ink active:bg-paper active:text-ink',
               ),
             ],
             [competition.label, displayArrow],
@@ -1812,8 +1819,13 @@ const competitionsView = (): Html =>
                   h.a(
                     [
                       h.Href(`${platformUrl}/competitions`),
+                      // Tighter tracking below md: at 0.08em the label needs
+                      // 339px against the 335px measure at 375 and wraps by a
+                      // hair — 0.04em buys ~20px and keeps it on one line.
+                      // Paper text like the section's card labels (large
+                      // display type — the pairing is AA at this size only).
                       h.Class(
-                        'display inline-block bg-pink px-8 py-4 text-xl tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
+                        'display inline-block bg-pink px-8 py-4 text-xl tracking-[0.04em] text-paper transition-colors duration-300 hover:bg-paper hover:text-ink active:bg-paper active:text-ink md:text-2xl md:tracking-[0.08em]',
                       ),
                     ],
                     ['Discover all competitions', displayArrow],
