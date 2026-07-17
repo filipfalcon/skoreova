@@ -2240,7 +2240,7 @@ const championsView = (): Html =>
                     // the column spans the head's full height, so the
                     // CTA's mt-auto pins its bottom edge to the head's
                     // floor — structurally level with the facts row.
-                    'pointer-events-none mx-auto mt-8 w-36 select-none md:absolute md:-top-12 md:right-0 md:bottom-0 md:mt-0 md:flex md:-z-10 md:w-[31%] md:max-w-[360px] md:flex-col',
+                    'pointer-events-none mx-auto mt-5 w-48 select-none md:absolute md:-top-12 md:right-0 md:bottom-0 md:mt-0 md:flex md:-z-10 md:w-[31%] md:max-w-[360px] md:flex-col',
                   ),
                   h.DataAttribute('reveal', 'right'),
                   h.Style({ '--reveal-delay': '0.1s' }),
@@ -2256,20 +2256,26 @@ const championsView = (): Html =>
                   ]),
                   // The wrapper is pointer-events-none (decorative emblem) —
                   // the CTA below the crest opts back in. It stays still while
-                  // the crest floats.
+                  // the crest floats. md+ ONLY — on phones the CTA renders as
+                  // its own element after the facts grid (user call: crest →
+                  // facts → button reads better stacked), see below.
                   h.a(
                     [
                       h.Href(clubRouter({ slug: 'sparta-praha' })),
                       h.Class(
-                        // w-max + min-w-full + the left-1/2 translate: the label must NOT
-                        // wrap inside the narrow crest column (169px at md), so the
-                        // button takes its content width when that's wider than the
-                        // column and stays centered under the crest; on wide
-                        // viewports min-w-full snaps it back to the column width.
-                        // md:mb-4 lifts it off the head's floor so its CENTER sits
-                        // level with the facts cells' center (their tick→label stack
-                        // is 84px to the button's 52 — measured, (84-52)/2 = 16).
-                        'display pointer-events-auto relative left-1/2 mt-4 block w-max min-w-full -translate-x-1/2 bg-pink px-4 py-3 text-center text-sm whitespace-nowrap tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-ink hover:text-paper active:bg-ink active:text-paper md:mt-auto md:mb-4 md:text-lg',
+                        // Full CTA spec (px-8/py-4, text-2xl at md) — the same
+                        // size as the Discover buttons (user call; the old
+                        // compact cut read as a lesser action). w-max +
+                        // min-w-full + the left-1/2 translate: the label must
+                        // NOT wrap inside the narrow crest column (169px at
+                        // md), so the button takes its content width when
+                        // that's wider than the column and stays centered
+                        // under the crest; on wide viewports min-w-full snaps
+                        // it back to the column width. md:mb-2 keeps its
+                        // CENTER level with the facts cells' center (their
+                        // tick→label stack is 84px to the button's ~68 —
+                        // (84-68)/2 = 8).
+                        'display pointer-events-auto relative left-1/2 hidden w-max min-w-full -translate-x-1/2 bg-pink px-8 py-4 text-center whitespace-nowrap tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-ink hover:text-paper active:bg-ink active:text-paper md:mt-auto md:mb-2 md:block md:text-2xl',
                       ),
                     ],
                     ['Explore Sparta', displayArrow],
@@ -2289,10 +2295,12 @@ const championsView = (): Html =>
                     // crest column's box (which paints on -z-10), and as a
                     // SIBLING it would swallow the CTA's clicks — nothing in
                     // here is interactive, so let clicks fall through.
-                    // md+ reserves the crest column's lane (31%, 360px cap, plus
-                    // a gutter) — without it the cells flow under the crest and
-                    // the Explore CTA paints through them (768–1024 collision).
-                    'pointer-events-none mt-14 flex flex-wrap items-start gap-x-14 gap-y-8 md:mt-0 md:pr-[calc(min(31%,360px)+1.5rem)] lg:gap-x-20',
+                    // Phones: an ALIGNED 2×2 grid (the free-wrap flex left the
+                    // second column ragged); md+ back to the wrap row and the
+                    // reserved crest lane (31%, 360px cap, plus a gutter) —
+                    // without it the cells flow under the crest and the
+                    // Explore CTA paints through them (768–1024 collision).
+                    'pointer-events-none mt-14 grid grid-cols-2 gap-x-6 gap-y-8 md:mt-0 md:flex md:flex-wrap md:items-start md:gap-x-14 md:pr-[calc(min(31%,360px)+1.5rem)] lg:gap-x-20',
                   ),
                 ],
                 [
@@ -2349,13 +2357,36 @@ const championsView = (): Html =>
                   ),
                 ],
               ),
+              // The phone CTA — the head's closing beat: crest → facts →
+              // button (the md CTA lives pinned inside the crest column
+              // instead; this one is its below-md sibling). Full CTA spec,
+              // same as the Discover buttons — not the crest column's
+              // compact cut.
+              h.div(
+                [h.Class('mt-10 flex justify-center md:hidden')],
+                [
+                  h.a(
+                    [
+                      h.Href(clubRouter({ slug: 'sparta-praha' })),
+                      h.Class(
+                        'display inline-block bg-pink px-8 py-4 text-xl tracking-[0.08em] text-ink transition-colors duration-300 active:bg-ink active:text-paper',
+                      ),
+                    ],
+                    ['Explore Sparta', displayArrow],
+                  ),
+                ],
+              ),
             ],
           ),
           // ---- The season, in receipts --------------------------------
+          // Phones STACK the divider deliberately (headline, pink label
+          // under it) — with flex-wrap the short "All time." kept its label
+          // beside it while the long season headline wrapped, and the two
+          // dividers read differently. md+ returns the baseline row.
           h.div(
             [
               h.Class(
-                'mt-16 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t-4 border-ink pt-5 md:mt-24',
+                'mt-16 border-t-4 border-ink pt-5 md:mt-24 md:flex md:items-baseline md:justify-between md:gap-x-6',
               ),
               h.DataAttribute('reveal', 'up'),
             ],
