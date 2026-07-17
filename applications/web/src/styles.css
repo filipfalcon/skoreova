@@ -1243,14 +1243,25 @@ body {
    American English), hover previews metric in place. Gated to hover-CAPABLE
    devices — on touch, iOS's sticky hover would fight the tap toggle (which
    goes through the model instead). Unlayered, so it beats the Tailwind
-   `invisible` utility both ways. */
+   utilities both ways.
+
+   The swap is an odometer roll (the count-up/scramble family): the resting
+   imperial rolls down out of the clip, metric rolls in from above. The
+   figures carry the transition utilities themselves; these rules only
+   restate the two poses for the hover preview. */
 @media (hover: hover) {
+  /* `translate`, not `transform` — Tailwind v4's translate-y utilities live
+     on the individual property, and a transform here would ADD to them. */
   .area-swap:hover .area-imperial {
     visibility: hidden;
+    opacity: 0;
+    translate: 0 100%;
   }
 
   .area-swap:hover .area-metric {
     visibility: visible;
+    opacity: 1;
+    translate: 0 0;
   }
 }
 
@@ -1305,6 +1316,12 @@ body {
   /* The cookie banner appears instantly here (index.html), so the hero
      photo's yield must snap with it. */
   #top [data-parallax] {
+    transition: none;
+  }
+
+  /* The area unit odometer snaps instead of rolling. */
+  .area-metric,
+  .area-imperial {
     transition: none;
   }
 
