@@ -3124,7 +3124,10 @@ const starView = (): Html =>
           // spans the whole right column on desktop, standing on the
           // section's bottom edge next to everything, not just the stats.
           h.div(
-            [h.Class('mt-16 grid gap-x-16 gap-y-2 md:mt-8 md:grid-cols-2')],
+            // No row gap: the top-scorer bar sits FLUSH under the portrait
+            // cutout on phones (md runs two columns, so a row gap never
+            // applied there anyway).
+            [h.Class('mt-16 grid gap-x-16 md:mt-8 md:grid-cols-2')],
             [
               h.div(
                 [
@@ -3230,10 +3233,15 @@ const starView = (): Html =>
               // the photo column intentionally doesn't, so the cutout
               // stands on the section's bottom edge.
               h.div(
-                [h.Class('pt-8 pb-16 md:order-1 md:pt-4 md:pb-24')],
+                // No top padding below md — the top-scorer bar must sit
+                // flush under the portrait cutout (user call: the jersey
+                // ends ON the bar's edge).
+                [h.Class('pb-16 md:order-1 md:pt-4 md:pb-24')],
                 [
                   h.div(
-                    [h.Class('flex')],
+                    // Full-bleed below md: the bar runs viewport edge to
+                    // edge (-mx-5 cancels the container padding).
+                    [h.Class('-mx-5 flex md:mx-0')],
                     [
                       // THE claim of the section, a full size up. Pink
                       // again since the inverted head (paper name, pink
@@ -3242,10 +3250,13 @@ const starView = (): Html =>
                       h.span(
                         [
                           h.Class(
+                            // Below lg the claim runs the FULL width as the
+                            // portrait's plinth, label centered (user call).
+                            // lg+ keeps the content-sized chip.
                             // lg, not md: the copy column stays phone-width through
                             // the md band (the photo column eats the rest), so the
                             // upsizing waits for lg across this whole section.
-                            'display inline-block bg-pink px-4 py-1.5 text-base tracking-[0.2em] text-ink lg:px-5 lg:py-2 lg:text-xl',
+                            'display block w-full bg-paper px-4 py-1.5 text-center text-base tracking-[0.2em] text-ink lg:inline-block lg:w-auto lg:bg-pink lg:px-5 lg:py-2 lg:text-left lg:text-xl',
                           ),
                           h.DataAttribute('reveal', 'wipe'),
                           h.Style({ '--reveal-delay': '0.15s' }),
