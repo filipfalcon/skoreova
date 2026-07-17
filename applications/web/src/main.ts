@@ -93,10 +93,6 @@ export const Model = S.Struct({
   // Which top-scorer board the club profile shows.
   scorerScope: ScorerScope,
   mapLeague: MapLeague,
-  // The historical lands currently SELECTED on the map — checkbox
-  // semantics: all three start checked, toggling one off hides its clubs
-  // entirely. Toggled from the counters or by clicking the lands themselves.
-  mapRegions: S.Array(S.String),
   // Slug of the club whose card is open over the map ('' = none). Pins open
   // the card; navigation to the profile happens via the card's button.
   mapClub: S.String,
@@ -124,8 +120,6 @@ export const CompletedLoad = m('CompletedLoad');
 export const CompletedScrollLock = m('CompletedScrollLock');
 export const SelectedScorerScope = m('SelectedScorerScope', { scope: ScorerScope });
 export const SelectedMapLeague = m('SelectedMapLeague', { league: MapLeague });
-// Checks/unchecks one historical land on the map.
-export const ToggledMapRegion = m('ToggledMapRegion', { region: S.String });
 // '' closes the club card(s).
 export const OpenedMapClub = m('OpenedMapClub', { slug: S.String });
 // Dismisses ONE card of an open pair via its ✕; the sibling stays.
@@ -142,7 +136,6 @@ export const Message = S.Union([
   CompletedScrollLock,
   SelectedScorerScope,
   SelectedMapLeague,
-  ToggledMapRegion,
   OpenedMapClub,
   ToggledAreaUnit,
   CompletedMountMotion,
@@ -323,7 +316,6 @@ const initialModel: Model = {
   competitionSlug: '',
   scorerScope: 'current',
   mapLeague: 'all',
-  mapRegions: ['Bohemia', 'Moravia', 'Silesia'],
   mapClub: '',
   mapAreaImperial: true,
 };
@@ -406,17 +398,6 @@ export const update = (
       CompletedScrollLock: () => [model, []],
       SelectedScorerScope: ({ scope }) => [{ ...model, scorerScope: scope }, []],
       SelectedMapLeague: ({ league }) => [{ ...model, mapLeague: league, mapClub: '' }, []],
-      ToggledMapRegion: ({ region }) => [
-        {
-          ...model,
-          mapRegions: model.mapRegions.includes(region)
-            ? model.mapRegions.filter((candidate) => candidate !== region)
-            : [...model.mapRegions, region],
-          // Unchecking the land under an open pin would strand its pill.
-          mapClub: '',
-        },
-        [],
-      ],
       OpenedMapClub: ({ slug }) => [{ ...model, mapClub: slug }, []],
       ToggledAreaUnit: () => [{ ...model, mapAreaImperial: !model.mapAreaImperial }, []],
       CompletedMountMotion: () => [model, []],
@@ -4089,43 +4070,22 @@ const clubsView = (model: Model): Html =>
                   ).length;
                   const value = `${count}`;
                   const label = `${adjective} ${count === 1 ? 'Club' : 'Clubs'}`;
-                  const checked = model.mapRegions.includes(region);
-                  return h.button(
+                  return h.div(
                     [
-                      h.Type('button'),
-                      h.Class('group cursor-pointer text-left select-none'),
-                      h.OnClick(ToggledMapRegion({ region })),
-                      h.AriaLabel(`${checked ? 'Hide' : 'Show'} ${region} on the map`),
-                      h.AriaPressed(checked ? 'true' : 'false'),
+                      h.Class('select-none'),
                       h.DataAttribute('reveal', 'up'),
                       h.Style({ '--reveal-delay': `${index * 0.15}s` }),
                     ],
                     [
+                      h.div([h.Class('mb-4 h-1 w-12 bg-pink')], []),
                       h.div(
                         [
-                          h.Class(
-                            `mb-4 h-1 w-12 transition-colors duration-300 ${
-                              checked ? 'bg-pink' : 'bg-paper/25 group-hover:bg-paper/60'
-                            }`,
-                          ),
-                        ],
-                        [],
-                      ),
-                      h.div(
-                        [
-                          h.Class(
-                            `display text-fluid-6xl-7xl transition-colors duration-300 ${
-                              checked ? 'text-pink' : 'text-paper/25'
-                            }`,
-                          ),
+                          h.Class('display text-fluid-6xl-7xl text-pink'),
                           h.DataAttribute('countup', ''),
                           // EVERY league-filter interaction spins the
                           // counter, value change or not — motion.ts
                           // watches this attribute (league + target),
                           // never the text (see the recount loop there).
-                          // Land on/off toggles are deliberately NOT in
-                          // the stamp: once counted, checking a land in
-                          // and out must not re-calculate the numbers.
                           h.DataAttribute('recount', `${count}|${model.mapLeague}`),
                         ],
                         [value],
@@ -4133,9 +4093,7 @@ const clubsView = (model: Model): Html =>
                       h.div(
                         [
                           h.Class(
-                            `mt-3 text-xs leading-relaxed tracking-[0.2em] uppercase transition-colors duration-300 md:whitespace-nowrap ${
-                              checked ? '' : 'text-paper/40'
-                            }`,
+                            'mt-3 text-xs leading-relaxed tracking-[0.2em] uppercase md:whitespace-nowrap',
                           ),
                         ],
                         [label],

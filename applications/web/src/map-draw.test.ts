@@ -72,14 +72,21 @@ test('the draw survives a model re-render mid-flight', async () => {
   const svg = document.querySelector<SVGSVGElement>("svg[data-reveal='draw']");
   if (!svg) throw new Error('draw-reveal svg not rendered');
 
-  // Toggle a region off and on — this re-renders the map subtree while the
-  // reveal classes live imperatively on the svg. The borders must stay
-  // fully drawn afterwards.
-  const counter = document.querySelector<HTMLElement>("[aria-label='Hide Moravia on the map']");
-  if (!counter) throw new Error('Moravia counter not rendered');
-  counter.click();
-  await waitUntil(() => document.querySelector("[aria-label='Show Moravia on the map']") !== null);
-  document.querySelector<HTMLElement>("[aria-label='Show Moravia on the map']")?.click();
+  // Flip the league filter there and back — this re-renders the map subtree
+  // (pin wrappers toggle) while the reveal classes live imperatively on the
+  // svg. The borders must stay fully drawn afterwards. (This used to toggle
+  // a land checkbox; the region-toggle mechanism was removed.)
+  const chip = (label: string): HTMLElement => {
+    const found = [...document.querySelectorAll<HTMLElement>('#across-the-lands button')].find(
+      (candidate) => candidate.textContent?.trim() === label,
+    );
+    if (!found) throw new Error(`${label} chip not rendered`);
+    return found;
+  };
+  chip('First League').click();
+  await waitUntil(() => chip('First League').className.includes('bg-pink'));
+  chip('All clubs').click();
+  await waitUntil(() => chip('All clubs').className.includes('bg-pink'));
 
   await new Promise((resolve) => setTimeout(resolve, 400));
   expect(svg.classList.contains('is-in')).toBe(true);
