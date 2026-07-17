@@ -2185,10 +2185,13 @@ const championsView = (): Html =>
                     [maskedLine('Sparta Praha', 'text-fluid-6xl-9xl', 0)],
                   ),
                   // Makes "champion" unambiguous: this is the REIGNING one, and the
-                  // season below is the case for it.
+                  // season below is the case for it. Body face, not `display`
+                  // — the same call as 01's and 03's ledes: Anton is for
+                  // headlines, a multi-line factual sentence in it is
+                  // cognitive load.
                   h.p(
                     [
-                      h.Class('display mt-8 max-w-3xl text-fluid-xl-3xl leading-snug md:mt-12'),
+                      h.Class('mt-8 max-w-2xl text-lg leading-relaxed md:mt-12 md:text-xl'),
                       h.DataAttribute('reveal', 'up'),
                     ],
                     [
