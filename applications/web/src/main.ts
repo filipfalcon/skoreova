@@ -2398,7 +2398,11 @@ const championsView = (): Html =>
               // announces that last season's statistics follow.
               h.h3([h.Class('display text-fluid-4xl-6xl')], ['Season 2025/2026.']),
               h.span(
-                [h.Class('display text-xl tracking-wide text-pink uppercase md:text-2xl')],
+                [
+                  h.Class(
+                    'display mt-2 block text-xl tracking-wide text-pink uppercase md:mt-0 md:text-2xl',
+                  ),
+                ],
                 ['The receipts'],
               ),
             ],
@@ -2767,15 +2771,21 @@ const championsView = (): Html =>
           // the season divider's device for symmetry.
           h.div(
             [
+              // Stacked on phones like the season divider above — the two
+              // must mirror each other.
               h.Class(
-                'mt-16 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t-4 border-ink pt-5 md:mt-24',
+                'mt-16 border-t-4 border-ink pt-5 md:mt-24 md:flex md:items-baseline md:justify-between md:gap-x-6',
               ),
               h.DataAttribute('reveal', 'up'),
             ],
             [
               h.h3([h.Class('display text-fluid-4xl-6xl')], ['All time.']),
               h.span(
-                [h.Class('display text-xl tracking-wide text-pink uppercase md:text-2xl')],
+                [
+                  h.Class(
+                    'display mt-2 block text-xl tracking-wide text-pink uppercase md:mt-0 md:text-2xl',
+                  ),
+                ],
                 ['The honors board'],
               ),
             ],
