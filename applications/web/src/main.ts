@@ -2214,7 +2214,9 @@ const championsView = (): Html =>
               h.DataAttribute('reveal-group', 'replay'),
             ],
             [
-              kicker('04', 'Meet our champion', false, '/#meet-our-champion'),
+              // `dark: true` on a paper section is deliberate (user call,
+              // same as 01): the pink chip + ink type over paper.
+              kicker('04', 'Meet our champion', true, '/#meet-our-champion'),
               h.div(
                 [],
                 [
