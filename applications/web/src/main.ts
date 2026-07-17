@@ -4155,117 +4155,128 @@ const clubsView = (model: Model): Html =>
               h.div(
                 // The chips row above owns the band spacing; the stage keeps
                 // only a tight gap so the filter reads as part of the map.
-                [h.Class('map-stage relative mx-auto mt-4 max-w-5xl md:mt-5')],
+                // On phones the map is NOT squeezed into the viewport: the
+                // stage runs 180% of the screen inside this full-bleed
+                // horizontal pan (the 01 photo-strip mechanism, minus the
+                // snap) — crests keep their touch size and the country stays
+                // legible. overflow-y-hidden so the reveals' translateY can't
+                // make the pan vertically scrollable (the 01 lesson); the
+                // vertical padding keeps edge pins inside that clip. From md
+                // up the wrapper dissolves back into the plain centered stage.
                 [
-                  // The draw-in reveal lives on the SVG ROOT: stroke-dasharray
-                  // and stroke-dashoffset are inherited properties, so the
-                  // animated offset pen-draws the country outline. The root is
-                  // the only safe carrier: per-path reveals get their `.is-in`
-                  // wiped when the filter classes change, and WebKit's
-                  // IntersectionObserver doesn't reliably fire for inner SVG
-                  // elements like <g> (the map never drew on iPhones). Each
-                  // path carries pathLength=1 so the unit dash math works. The
-                  // labels AND the region paths opt back out of the dash
-                  // inheritance via `stroke-dasharray: none` (.region-label,
-                  // .region-path — the regions reveal behind clips instead).
-                  h.svg(
-                    [
-                      h.Xmlns('http://www.w3.org/2000/svg'),
-                      h.ViewBox(CZECHIA_VIEW_BOX),
-                      h.Class('h-auto w-full'),
-                      h.DataAttribute('reveal', 'draw'),
-                      h.AriaHidden(true),
-                    ],
-                    [
-                      // The three historical lands, each a hoverable tinted
-                      // fill with its label. Each land is a checkbox surface —
-                      // clicking it toggles the land on/off, mirroring the
-                      // counters above the map. Two states only: checked wears
-                      // the wine tint (pink over ink), unchecked is bare black —
-                      // no grey in-between. The internal borders don't pen-draw
-                      // like the outline: each land's stroke wipes in top-down
-                      // behind its own clip, timed to meet the outline pen at
-                      // the junctions (see LAND_BORDER_WIPES). Moravia's stroke
-                      // is `stroke-none` — its neighbours draw both its borders.
-                      ...CZECH_REGIONS.map((region, index) => {
-                        const wipe = LAND_BORDER_WIPES[region.name];
-                        return h.path(
-                          [
-                            h.D(region.d),
-                            h.DataAttribute('land', region.name),
-                            h.OnClick(ToggledMapRegion({ region: region.name })),
-                            h.Style({
-                              '--tint-delay': `${landTintDelaySeconds(index)}s`,
-                              // Inline on purpose: the unlayered .region-path
-                              // stroke in styles.css outweighs any utility.
-                              ...(wipe
-                                ? {
-                                    '--border-delay': `${wipe.delay}s`,
-                                    '--border-duration': `${wipe.duration}s`,
-                                  }
-                                : { stroke: 'none' }),
-                            }),
-                            h.Class(
-                              `region-path cursor-pointer transition-[fill] duration-300 ${
-                                model.mapRegions.includes(region.name)
-                                  ? 'fill-pink/25 hover:fill-pink/35'
-                                  : 'fill-transparent hover:fill-pink/[0.07]'
-                              }`,
-                            ),
-                          ],
-                          [],
-                        );
-                      }),
-                      h.path(
-                        [h.D(CZECHIA_PATH), h.Attribute('pathLength', '1'), h.Class('map-path')],
-                        [],
-                      ),
-                    ],
+                  h.Class(
+                    'no-scrollbar -mx-5 mt-4 overflow-x-auto overflow-y-hidden px-5 py-6 md:mx-auto md:mt-5 md:max-w-5xl md:overflow-visible md:p-0',
                   ),
-                  // Filters HIDE pins outright — no dimmed in-between state:
-                  // unchecked lands hide their clubs, and the league filter
-                  // hides every pin without a team in that league (a club whose
-                  // B side plays the selected league keeps its pin). B sides
-                  // never have a pin of their own — they live on their parent's.
-                  //
-                  // Hidden via display:none on a WRAPPER, never removed: the
-                  // reveal system (the west-to-east pin wave) collects its
-                  // targets once at mount, so a pin re-added after a filter
-                  // round-trip would never get `.is-in` again and stay
-                  // invisible forever. The wrapper also keeps the class churn
-                  // away from the pin button itself — a patched class string
-                  // would wipe the `is-in` the observer stamped on it.
-                  ...clubs
-                    .filter((club) => !club.parent)
-                    .map((club) =>
-                      h.div(
+                ],
+                [
+                  h.div(
+                    [h.Class('map-stage relative w-[180%] md:w-auto')],
+                    [
+                      // The draw-in reveal lives on the SVG ROOT: stroke-dasharray
+                      // and stroke-dashoffset are inherited properties, so the
+                      // animated offset pen-draws the country outline. The root is
+                      // the only safe carrier: per-path reveals get their `.is-in`
+                      // wiped when the filter classes change, and WebKit's
+                      // IntersectionObserver doesn't reliably fire for inner SVG
+                      // elements like <g> (the map never drew on iPhones). Each
+                      // path carries pathLength=1 so the unit dash math works. The
+                      // labels AND the region paths opt back out of the dash
+                      // inheritance via `stroke-dasharray: none` (.region-label,
+                      // .region-path — the regions reveal behind clips instead).
+                      h.svg(
                         [
-                          h.Class(
-                            model.mapRegions.includes(clubLand(club)) &&
-                              pinTeams(club).some((team) => teamMatchesLeague(model, team))
-                              ? 'contents'
-                              : 'hidden',
+                          h.Xmlns('http://www.w3.org/2000/svg'),
+                          h.ViewBox(CZECHIA_VIEW_BOX),
+                          h.Class('h-auto w-full'),
+                          h.DataAttribute('reveal', 'draw'),
+                          h.AriaHidden(true),
+                        ],
+                        [
+                          // The three historical lands, each a tinted fill with
+                          // its label — display only, the old checkbox toggling
+                          // is gone (user call): every land always wears the wine
+                          // tint (pink over ink). The internal borders don't pen-draw
+                          // like the outline: each land's stroke wipes in top-down
+                          // behind its own clip, timed to meet the outline pen at
+                          // the junctions (see LAND_BORDER_WIPES). Moravia's stroke
+                          // is `stroke-none` — its neighbours draw both its borders.
+                          ...CZECH_REGIONS.map((region, index) => {
+                            const wipe = LAND_BORDER_WIPES[region.name];
+                            return h.path(
+                              [
+                                h.D(region.d),
+                                h.DataAttribute('land', region.name),
+                                h.Style({
+                                  '--tint-delay': `${landTintDelaySeconds(index)}s`,
+                                  // Inline on purpose: the unlayered .region-path
+                                  // stroke in styles.css outweighs any utility.
+                                  ...(wipe
+                                    ? {
+                                        '--border-delay': `${wipe.delay}s`,
+                                        '--border-duration': `${wipe.duration}s`,
+                                      }
+                                    : { stroke: 'none' }),
+                                }),
+                                h.Class('region-path fill-pink/25 transition-[fill] duration-300'),
+                              ],
+                              [],
+                            );
+                          }),
+                          h.path(
+                            [
+                              h.D(CZECHIA_PATH),
+                              h.Attribute('pathLength', '1'),
+                              h.Class('map-path'),
+                            ],
+                            [],
                           ),
                         ],
-                        [clubPin(model, club)],
                       ),
-                    ),
-                  // While a card is open, an invisible backdrop over the map
-                  // closes it on any click outside. It sits BELOW the pins
-                  // (z-10), so clicking another pin still switches the card
-                  // instead of merely closing this one.
-                  ...(model.mapClub === ''
-                    ? []
-                    : [
-                        h.div(
-                          [
-                            h.Class('absolute inset-0 z-[5]'),
-                            h.OnClick(OpenedMapClub({ slug: '' })),
-                            h.AriaHidden(true),
-                          ],
-                          [],
+                      // The league filter HIDES pins outright — no dimmed
+                      // in-between state: every pin without a team in that league
+                      // goes (a club whose B side plays the selected league keeps
+                      // its pin). B sides never have a pin of their own — they
+                      // live on their parent's.
+                      //
+                      // Hidden via display:none on a WRAPPER, never removed: the
+                      // reveal system (the west-to-east pin wave) collects its
+                      // targets once at mount, so a pin re-added after a filter
+                      // round-trip would never get `.is-in` again and stay
+                      // invisible forever. The wrapper also keeps the class churn
+                      // away from the pin button itself — a patched class string
+                      // would wipe the `is-in` the observer stamped on it.
+                      ...clubs
+                        .filter((club) => !club.parent)
+                        .map((club) =>
+                          h.div(
+                            [
+                              h.Class(
+                                pinTeams(club).some((team) => teamMatchesLeague(model, team))
+                                  ? 'contents'
+                                  : 'hidden',
+                              ),
+                            ],
+                            [clubPin(model, club)],
+                          ),
                         ),
-                      ]),
+                      // While a card is open, an invisible backdrop over the map
+                      // closes it on any click outside. It sits BELOW the pins
+                      // (z-10), so clicking another pin still switches the card
+                      // instead of merely closing this one.
+                      ...(model.mapClub === ''
+                        ? []
+                        : [
+                            h.div(
+                              [
+                                h.Class('absolute inset-0 z-[5]'),
+                                h.OnClick(OpenedMapClub({ slug: '' })),
+                                h.AriaHidden(true),
+                              ],
+                              [],
+                            ),
+                          ]),
+                    ],
+                  ),
                 ],
               ),
               h.div(
