@@ -2033,7 +2033,13 @@ const tabularScore = (score: string): ReadonlyArray<Html | string> =>
 interface SingleMatch {
   readonly opponent: string;
   readonly logo: string;
-  readonly subLabel: string;
+  // The meta line, structured: `context` is the competition (plus phase),
+  // `stage` the round. Below lg they render as TWO lines (the row lives on
+  // a phone measure there — the md band included — and the joined string
+  // wrapped mid-phrase); from lg one line, em-dash joined. `stage: null`
+  // (the cup run's plain stage words) renders context alone.
+  readonly context: string;
+  readonly stage: string | null;
   readonly score: string;
   readonly away: boolean;
   readonly pens: string | null;
@@ -2042,7 +2048,7 @@ interface SingleMatch {
 const singleMatchRow = (match: SingleMatch, index: number): Html =>
   h.li(
     [
-      h.Class('border-b border-ink/15'),
+      h.Class('border-b border-ink/15 last:border-b-0'),
       h.DataAttribute('reveal', 'up'),
       h.Style({ '--reveal-delay': `${index * 0.08}s` }),
     ],
@@ -2050,7 +2056,16 @@ const singleMatchRow = (match: SingleMatch, index: number): Html =>
       // Every result clicks through to the platform — a plain transport
       // until match pages exist there.
       h.a(
-        [h.Href(platformUrl), h.Class('group match-row -mx-4 flex items-center gap-x-4 px-4 py-4')],
+        [
+          h.Href(platformUrl),
+          // flex-wrap + the name's min-width floor (below): a row carrying
+          // the penalties chip can't fit name + chip + score on a phone
+          // measure — the chip+score block wraps below the name instead
+          // (the euro table's formation), and the name NEVER breaks
+          // ("SLAVIA / PRAHA" read wrong). Rows without the chip still fit
+          // one line and never wrap.
+          h.Class('group match-row -mx-4 flex flex-wrap items-center gap-x-4 gap-y-4 px-4 py-4'),
+        ],
         [
           h.span(
             [
@@ -2068,35 +2083,49 @@ const singleMatchRow = (match: SingleMatch, index: number): Html =>
             ],
           ),
           h.div(
-            [h.Class('min-w-0 flex-1')],
+            // min-w floor, not min-w-0 — see the row comment above.
+            [h.Class('min-w-[8rem] flex-1')],
             [
               // lg, not md: from md these tables sit in half-width grid
               // columns (~330px at 768 — phone measure), so the row keeps
               // its phone scale through the md band; lg has real room.
               h.p([h.Class('display text-xl lg:text-2xl')], [match.opponent]),
-              h.p([h.Class('text-[10px] tracking-[0.2em] uppercase')], [match.subLabel]),
+              h.p(
+                [h.Class('text-[10px] tracking-[0.2em] uppercase')],
+                match.stage === null
+                  ? [match.context]
+                  : [
+                      match.context,
+                      h.br([h.Class('lg:hidden')]),
+                      h.span([h.Class('hidden lg:inline')], [' — ']),
+                      match.stage,
+                    ],
+              ),
             ],
           ),
           h.div(
-            [h.Class('flex items-center gap-3 text-right lg:gap-4')],
+            [h.Class('ml-auto flex items-center gap-3 text-right lg:gap-4')],
             [
               // A shootout gets the euro table's stamp treatment — the
               // same pink chip and hover flip as THROUGH, carrying the
               // deciding number; the big score stays the honest 0:0.
+              // lg+ ONLY — below lg it renders as a full-width second row
+              // (the euro verdicts' grammar: the element that doesn't fit
+              // inline on a phone measure gets promoted, not squeezed).
               ...(match.pens === null
                 ? []
                 : [
                     h.span(
                       [
                         h.Class(
-                          'display shrink-0 bg-pink px-3 py-1.5 text-center text-xs tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper lg:text-sm',
+                          'display hidden shrink-0 bg-pink px-3 py-1.5 text-center text-sm tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper lg:block',
                         ),
                       ],
                       [`Penalties ${match.pens}`],
                     ),
                   ]),
               h.div(
-                [h.Class('w-12 shrink-0 lg:w-20')],
+                [h.Class('w-12 shrink-0 text-center lg:w-20')],
                 [
                   // Pink = the winning scoreline (the euro table's away-leg
                   // color). Both single-match tables list only wins, so
@@ -2130,6 +2159,21 @@ const singleMatchRow = (match: SingleMatch, index: number): Html =>
               ),
             ],
           ),
+          // The shootout as its own full-width second row (below lg) — the
+          // euro verdicts' grammar; w-full forces the wrap inside the row's
+          // flex, the row's gap-y provides the air.
+          ...(match.pens === null
+            ? []
+            : [
+                h.span(
+                  [
+                    h.Class(
+                      'display w-full bg-pink py-1.5 text-center text-xs tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper lg:hidden',
+                    ),
+                  ],
+                  [`Penalties ${match.pens}`],
+                ),
+              ]),
         ],
       ),
     ],
@@ -2461,10 +2505,9 @@ const championsView = (): Html =>
                           logo: rout.logo,
                           // The competition context reads like the European
                           // rows' stage line; a phase extends it in place.
-                          subLabel:
-                            rout.phase === null
-                              ? `${FIRST_LEAGUE} — ${rout.stage}`
-                              : `${FIRST_LEAGUE} — ${rout.phase}, ${rout.stage.toLowerCase()}`,
+                          context:
+                            rout.phase === null ? FIRST_LEAGUE : `${FIRST_LEAGUE} — ${rout.phase}`,
+                          stage: rout.stage,
                           score: rout.score,
                           away: rout.away,
                           pens: null,
@@ -2511,7 +2554,7 @@ const championsView = (): Html =>
                     euroTies.map((tie, index) =>
                       h.li(
                         [
-                          h.Class('border-b border-ink/15'),
+                          h.Class('border-b border-ink/15 last:border-b-0'),
                           h.DataAttribute('reveal', 'up'),
                           h.Style({ '--reveal-delay': `${index * 0.08}s` }),
                         ],
@@ -2522,7 +2565,13 @@ const championsView = (): Html =>
                             [h.Href(platformUrl), h.Class('group match-row -mx-4 block px-4 py-4')],
                             [
                               h.div(
-                                [h.Class('flex flex-wrap items-center gap-x-4 gap-y-2')],
+                                // One line, no wrap: with the verdict stamp
+                                // moved OUT (below lg it renders as its own
+                                // full-width second row, see after this div),
+                                // the name and both legs fit side by side on
+                                // a phone measure — the same silhouette as
+                                // the league tables.
+                                [h.Class('flex items-center gap-x-4')],
                                 [
                                   // Opponent crest — or an initial while the
                                   // real logo is missing.
@@ -2549,12 +2598,10 @@ const championsView = (): Html =>
                                         ],
                                   ),
                                   h.div(
-                                    // A real minimum, not min-w-0: single-word names
-                                    // (Ferencváros, Hammarby) can't wrap, and with a
-                                    // squeezed box they painted under the verdict stamp
-                                    // (19px overlap at 375, 55px at 1024). The floor
-                                    // makes the verdict+scores block wrap below instead
-                                    // — the layout 768 always had.
+                                    // A real minimum, not min-w-0: single-word
+                                    // names (Ferencváros, Hammarby) can't wrap
+                                    // — the floor keeps them whole if space
+                                    // ever runs short.
                                     [h.Class('min-w-[8rem] flex-1')],
                                     [
                                       h.p([h.Class('display text-xl md:text-2xl')], [tie.opponent]),
@@ -2575,18 +2622,26 @@ const championsView = (): Html =>
                                   // (stamp) right after the club, results
                                   // after it.
                                   h.div(
-                                    [h.Class('flex items-center gap-3 text-right md:gap-4')],
+                                    [
+                                      h.Class(
+                                        'ml-auto flex items-center gap-3 text-right md:gap-4',
+                                      ),
+                                    ],
                                     [
                                       h.span(
                                         [
                                           h.Class(
-                                            // md:w-24, not 28: the full-size
-                                            // home leg column costs width, and
-                                            // the longest stage ("Qualifiers —
+                                            // lg+ ONLY — below lg the stamp is
+                                            // the full-width second row after
+                                            // this line (phone measure has no
+                                            // room for name + stamp + legs).
+                                            // w-24, not 28: the full-size home
+                                            // leg column costs width, and the
+                                            // longest stage ("Qualifiers —
                                             // finals") must keep ONE line. The
                                             // pink stamp flips to ink on the
                                             // row hover's pink fill.
-                                            `display w-20 shrink-0 py-1.5 text-center text-xs tracking-[0.15em] transition-colors duration-300 md:w-24 md:text-sm ${
+                                            `display hidden w-24 shrink-0 py-1.5 text-center text-sm tracking-[0.15em] transition-colors duration-300 lg:block ${
                                               tie.through
                                                 ? 'bg-pink text-ink group-hover:bg-ink group-hover:text-paper'
                                                 : 'bg-ink text-paper'
@@ -2600,7 +2655,7 @@ const championsView = (): Html =>
                                       // pink alone marks the away leg as the
                                       // loud one.
                                       h.div(
-                                        [h.Class('w-12 shrink-0 md:w-20')],
+                                        [h.Class('w-12 shrink-0 text-center md:w-20')],
                                         [
                                           h.p(
                                             [h.Class('display text-fluid-2xl-4xl')],
@@ -2617,7 +2672,7 @@ const championsView = (): Html =>
                                         ],
                                       ),
                                       h.div(
-                                        [h.Class('w-12 shrink-0 md:w-20')],
+                                        [h.Class('w-12 shrink-0 text-center md:w-20')],
                                         [
                                           h.p(
                                             [
@@ -2662,6 +2717,23 @@ const championsView = (): Html =>
                                     ],
                                   ),
                                 ],
+                              ),
+                              // The verdict as its own full-width second row
+                              // (below lg): the stamp stretches edge to edge
+                              // under the name+legs line — the one element
+                              // that didn't fit inline on a phone measure,
+                              // promoted instead of squeezed.
+                              h.span(
+                                [
+                                  h.Class(
+                                    `display mt-3 block py-1.5 text-center text-xs tracking-[0.15em] transition-colors duration-300 lg:hidden ${
+                                      tie.through
+                                        ? 'bg-pink text-ink group-hover:bg-ink group-hover:text-paper'
+                                        : 'bg-ink text-paper'
+                                    }`,
+                                  ),
+                                ],
+                                [tie.through ? 'THROUGH' : 'OUT'],
                               ),
                             ],
                           ),
@@ -2719,7 +2791,8 @@ const championsView = (): Html =>
                         {
                           opponent: tie.opponent,
                           logo: tie.logo,
-                          subLabel: tie.stage,
+                          context: tie.stage,
+                          stage: null,
                           score: tie.score,
                           away: tie.away,
                           pens: tie.pens,
@@ -3284,7 +3357,7 @@ const starView = (): Html =>
                                     [h.Class('flex items-center gap-3 text-right lg:gap-4')],
                                     [
                                       h.div(
-                                        [h.Class('w-12 shrink-0 lg:w-20')],
+                                        [h.Class('w-12 shrink-0 text-center lg:w-20')],
                                         [
                                           h.p(
                                             [
