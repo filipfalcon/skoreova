@@ -78,19 +78,25 @@ const settleMap = async (): Promise<void> => {
   const stage = document.querySelector('.map-stage');
   if (!stage) throw new Error('map stage missing');
   stage.scrollIntoView({ block: 'center', behavior: 'instant' });
-  const revealWrappers = (): ReadonlyArray<HTMLElement> =>
-    Array.from(document.querySelectorAll<HTMLElement>('.club-pin > [data-reveal]'));
-  await waitUntil(() => revealWrappers().every((wrapper) => wrapper.classList.contains('is-in')));
-  // A position-stability check is NOT enough: reveals carry per-land
-  // delays (up to ~2s), and a pin parked at its entrance offset waiting
-  // for its delay reads as "stable". The entrance offset lives only in
-  // the `:not(.is-in)` rule, so a truly settled wrapper computes BOTH
-  // transform and translate as `none` — mid-flight or parked ones don't.
+  // The phone stage PANS horizontally (180% of the screen) — pins scrolled
+  // beyond the right edge never intersect the observer, so "every pin
+  // revealed" is no longer a reachable state to wait for. This audit is
+  // about RESTING geometry, not the reveal choreography: park every pin
+  // reveal at its resting pose outright and measure that.
+  if (!document.getElementById('collision-reveal-off')) {
+    const kill = document.createElement('style');
+    kill.id = 'collision-reveal-off';
+    kill.textContent =
+      '.club-pin [data-reveal] { opacity: 1 !important; visibility: visible !important; transform: none !important; translate: none !important; transition: none !important; animation: none !important; }';
+    document.head.appendChild(kill);
+  }
   await waitUntil(() =>
-    revealWrappers().every((wrapper) => {
-      const style = getComputedStyle(wrapper);
-      return style.transform === 'none' && style.translate === 'none';
-    }),
+    Array.from(document.querySelectorAll<HTMLElement>('.club-pin > [data-reveal]')).every(
+      (wrapper) => {
+        const style = getComputedStyle(wrapper);
+        return style.transform === 'none' && style.translate === 'none';
+      },
+    ),
   );
 };
 
@@ -154,19 +160,23 @@ test('draw-in animates progressively on a phone viewport', async () => {
   const path = document.querySelector('.map-path');
   if (!path) throw new Error('map path missing');
 
-  const section = document.querySelector<HTMLElement>('#across-the-lands');
-  if (!section) throw new Error('clubs section missing');
+  // The map STAGE, not the section top: on phone widths the section head
+  // (counters column + the scout) is taller than a viewport, so the svg
+  // never intersects from the section's own top.
+  const stage = document.querySelector<HTMLElement>('.map-stage');
+  if (!stage) throw new Error('map stage missing');
+  const stageTop = (): number => stage.getBoundingClientRect().top + window.scrollY;
 
   // WARM-UP lap first: on a cold WebKit the first reveal lands while the
   // page is still compiling — one long freeze swallows the whole 0.7s
   // transition between two samples and the test sees only 1 → 0. The map
   // is a replay reveal group, so scroll it in (spending the cold jank),
   // away (resetting the dash), and back in to measure on a warm page.
-  window.scrollTo({ top: section.offsetTop - 80, behavior: 'instant' });
+  window.scrollTo({ top: stageTop() - 80, behavior: 'instant' });
   await waitUntil(() => svg.classList.contains('is-in'));
   window.scrollTo({ top: 0, behavior: 'instant' });
   await waitUntil(() => !svg.classList.contains('is-in'));
-  window.scrollTo({ top: section.offsetTop - 80, behavior: 'instant' });
+  window.scrollTo({ top: stageTop() - 80, behavior: 'instant' });
   await waitUntil(() => svg.classList.contains('is-in'));
 
   // Sample the offset for a second — a progressive draw must show

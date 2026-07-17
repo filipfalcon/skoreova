@@ -43,9 +43,15 @@ beforeAll(async () => {
 
   await waitUntil(() => document.querySelector('.map-path') !== null);
 
-  const section = document.querySelector<HTMLElement>('#across-the-lands');
-  if (!section) throw new Error('clubs section not rendered');
-  window.scrollTo({ top: section.offsetTop - 100, behavior: 'instant' });
+  // Scroll to the map STAGE, not the section top: on phone widths the
+  // section head (counters column + the scout) is taller than a viewport,
+  // so the svg would never intersect from up there.
+  const stage = document.querySelector<HTMLElement>('.map-stage');
+  if (!stage) throw new Error('map stage not rendered');
+  window.scrollTo({
+    top: stage.getBoundingClientRect().top + window.scrollY - 100,
+    behavior: 'instant',
+  });
 });
 
 test('the outline and land borders draw in fully', async () => {
