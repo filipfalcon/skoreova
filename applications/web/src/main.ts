@@ -3187,7 +3187,12 @@ const starView = (): Html =>
                           h.Xmlns('http://www.w3.org/2000/svg'),
                           h.ViewBox('0 0 140 104'),
                           h.Class(
-                            'star-crown pointer-events-none absolute bottom-[92%] left-[31%] w-[34%] -rotate-6 text-pink md:bottom-[96%] md:left-[23%] md:w-[48%]',
+                            // Phone seat measured against the rendered head:
+                            // 96/32 hovers the crown a touch above her hair,
+                            // centered on the head's axis (user pick from a
+                            // 96/100/104 ladder — 87 sat ON the hairline and
+                            // read glued).
+                            'star-crown pointer-events-none absolute bottom-[96%] left-[32%] w-[34%] -rotate-6 text-pink md:bottom-[96%] md:left-[23%] md:w-[48%]',
                           ),
                           h.Fill('none'),
                           h.Stroke('currentColor'),
