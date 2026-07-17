@@ -2972,10 +2972,15 @@ const championsView = (): Html =>
               // text-2xl line 32 = 104px) and the md:items-center midpoint
               // climbs onto the table alone.
               h.div(
-                [h.Class('grid grid-cols-2 gap-4 pt-20 md:mb-26 md:gap-6 md:pt-14')],
+                // Phone stagger halved (±mt-10, pt-10): the full ±80px kept
+                // ~130px of empty paper between the records CTA and the
+                // assembled photo (user call — "too much space"); the scrub
+                // cancels whatever margin it finds, so the mechanism is
+                // untouched, the travel is just shorter.
+                [h.Class('grid grid-cols-2 gap-4 pt-10 md:mb-26 md:gap-6 md:pt-14')],
                 [
                   h.div(
-                    [h.Class('mt-20 md:mt-14'), h.DataAttribute('scrub-align', '')],
+                    [h.Class('mt-10 md:mt-14'), h.DataAttribute('scrub-align', '')],
                     [
                       h.div(
                         [h.Class('collage-snap collage-snap-left')],
@@ -3005,7 +3010,7 @@ const championsView = (): Html =>
                     ],
                   ),
                   h.div(
-                    [h.Class('-mt-20 md:-mt-14'), h.DataAttribute('scrub-align', '')],
+                    [h.Class('-mt-10 md:-mt-14'), h.DataAttribute('scrub-align', '')],
                     [
                       h.div(
                         [h.Class('collage-snap collage-snap-right')],
