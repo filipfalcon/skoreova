@@ -2874,9 +2874,11 @@ const championsView = (): Html =>
                 [],
                 [
                   // A plain list, not a <dl>: count-as-term read backwards
-                  // there anyway.
+                  // there anyway. No top rule of its own — the divider above
+                  // already draws the section's line, and doubled rules under
+                  // THE HONORS BOARD read as a mistake (user call).
                   h.ul(
-                    [h.Class('border-t-4 border-ink')],
+                    [],
                     honors.map((honor, index) =>
                       h.li(
                         [
@@ -2894,17 +2896,27 @@ const championsView = (): Html =>
                             ],
                             [honor.count],
                           ),
-                          h.span(
-                            [h.Class('display text-fluid-2xl-4xl leading-none')],
+                          // Label + stamp share one sub-row: the flex
+                          // container's baseline is the label's (so the
+                          // count still baseline-aligns), and items-center
+                          // seats the #1 chip on the LABEL line's vertical
+                          // center — riding ml-auto to the row's end, so the
+                          // chips column-align down the board (user calls;
+                          // inline after the label they zigzagged, and
+                          // row-baseline seating hung them low).
+                          h.div(
+                            [h.Class('flex min-w-0 flex-1 items-center gap-x-4')],
                             [
-                              honor.label,
+                              h.span(
+                                [h.Class('display text-fluid-2xl-4xl leading-none')],
+                                [honor.label],
+                              ),
                               ...(honor.first
                                 ? [
-                                    // The national record, stamped.
                                     h.span(
                                       [
                                         h.Class(
-                                          'ml-3 inline-block bg-ink px-2 py-1 align-middle text-sm leading-none text-paper md:text-base',
+                                          'ml-auto inline-block bg-ink px-2 py-1 text-sm leading-none text-paper md:text-base',
                                         ),
                                       ],
                                       ['#1'],
