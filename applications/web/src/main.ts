@@ -3909,7 +3909,7 @@ const mapLeagueChip = (model: Model, league: MapLeague, label: string): Html =>
       // chips match the outlined-button spec (border-2 + text-xs — the
       // UEFA strategy link is the reference).
       h.Class(
-        `cursor-pointer border px-2.5 py-1.5 text-[10px] tracking-[0.15em] uppercase transition-colors duration-300 md:border-2 md:px-4 md:py-2 md:text-xs md:tracking-[0.2em] ${
+        `cursor-pointer border px-2 py-1.5 text-[10px] tracking-[0.15em] uppercase transition-colors duration-300 md:border-2 md:px-4 md:py-2 md:text-xs md:tracking-[0.2em] ${
           model.mapLeague === league
             ? 'border-pink bg-pink text-ink'
             : 'border-paper text-paper hover:border-pink'
@@ -3926,19 +3926,22 @@ const clubsView = (model: Model): Html =>
     // photo-textured ink, champions after it is paper).
     [h.Id('across-the-lands'), h.Class('relative bg-ink py-16 text-paper md:py-24')],
     [
-      // The lands scout — the knight-mascot treatment (section 01): a
-      // decorative accent anchored to the section's right edge, behind the
-      // copy (the container below is z-10), sliding in from the right and
-      // idle-floating. She surveys the headline and the counters through
-      // her spyglass. Narrower caps than the knight — the figure is a tall
-      // 1:2 portrait, so the knight's widths would blow her up huge.
+      // The lands scout, md+ only — the knight-mascot treatment (section
+      // 01): a decorative accent anchored to the section's right edge,
+      // behind the copy (the container below is z-10), sliding in from the
+      // right and idle-floating. She surveys the headline and the counters
+      // through her spyglass. Narrower caps than the knight — the figure is
+      // a tall 1:2 portrait, so the knight's widths would blow her up huge.
+      // Phones give her an in-flow stage inside the container instead (the
+      // 01 grammar): the absolute corner seat has no room there and she sat
+      // on the kicker.
       h.div(
         [
           h.Class(
             // 19% matches the knight's ~510px CAP HEIGHT at 1280, not her
             // width — the figure is a tall 1:2 portrait, so width parity
             // would still blow her up huge (sizes unified, user call).
-            'pointer-events-none absolute top-8 right-4 z-0 w-20 select-none sm:w-28 md:top-12 md:right-10 md:w-[19%] md:max-w-[260px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
+            'pointer-events-none absolute z-0 hidden select-none md:top-12 md:right-10 md:block md:w-[19%] md:max-w-[260px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
           ),
           h.DataAttribute('reveal', 'right'),
           h.Style({ '--reveal-delay': '0.1s' }),
@@ -3976,12 +3979,12 @@ const clubsView = (model: Model): Html =>
           ),
           // The framing line — about the country, not the map (the map
           // speaks for itself). The area carries a dotted underline and
-          // reveals the imperial conversion on hover/tap. (A single-line
-          // xl variant was tried and rejected: one line forces text-2xl,
-          // which reads too small under the display headline.)
+          // reveals the imperial conversion on hover/tap. Body face, not
+          // `display` — the same call as 01's ledes: Anton is for headlines,
+          // a three-line factual sentence in it is cognitive load.
           h.p(
             [
-              h.Class('display mt-8 max-w-3xl text-fluid-xl-3xl leading-snug md:mt-12'),
+              h.Class('mt-8 max-w-2xl text-lg leading-relaxed md:mt-12 md:text-xl'),
               h.DataAttribute('reveal', 'up'),
             ],
             [
@@ -4000,7 +4003,15 @@ const clubsView = (model: Model): Html =>
                 [
                   h.Type('button'),
                   h.Class(
-                    'area-swap inline-grid cursor-help justify-items-center whitespace-nowrap underline decoration-pink decoration-dotted decoration-2 underline-offset-4 select-none',
+                    // justify-items-start + underline ON THE VARIANTS, not
+                    // the button: the cell is as wide as the wider variant,
+                    // and a centered short variant with a full-width
+                    // underline floated mid-sentence instead of reading as
+                    // plain text. clip-path, NOT overflow-hidden, hides the
+                    // rolling figure — a non-visible overflow moves an
+                    // inline box's baseline to its bottom edge and the
+                    // number would sink out of the sentence's line.
+                    'area-swap inline-grid cursor-help justify-items-start whitespace-nowrap select-none [clip-path:inset(0)]',
                   ),
                   h.OnClick(ToggledAreaUnit()),
                   h.AriaLabel('Toggle between metric and imperial area'),
@@ -4009,46 +4020,60 @@ const clubsView = (model: Model): Html =>
                   h.span(
                     [
                       h.Class(
-                        `area-metric col-start-1 row-start-1 ${model.mapAreaImperial ? 'invisible' : ''}`,
+                        // The odometer poses: metric parks ABOVE the clip,
+                        // imperial BELOW — toggling rolls one out and the
+                        // other through in the same direction.
+                        `area-metric col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.mapAreaImperial ? 'invisible -translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`,
                       ),
                     ],
-                    ['78,871 KM².'],
+                    ['78,871 km².'],
                   ),
                   h.span(
                     [
                       h.Class(
-                        `area-imperial col-start-1 row-start-1 ${model.mapAreaImperial ? '' : 'invisible'}`,
+                        `area-imperial col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.mapAreaImperial ? 'translate-y-0 opacity-100' : 'invisible translate-y-full opacity-0'}`,
                       ),
                     ],
-                    ['30,452 SQ MI.'],
+                    ['30,452 sq mi.'],
                   ),
                 ],
               ),
-              ' The country’s ',
+              // The second sentence opens its own line — two beats, the same
+              // device as 01's ledes.
+              h.br([]),
+              'The country’s ',
               h.span([h.Class('text-pink')], ['three biggest cities']),
               ' all have top-flight football.',
             ],
           ),
           // The land counters close the section head — the league filter
           // lives further down on the map's own beat, so the menu-jump
-          // landing frame is just headline → payoff → stats.
+          // landing frame is just headline → payoff → stats. On phones this
+          // row is a two-column composition: the counters stack vertically
+          // on the left and the scout stands at the knight's scale on the
+          // right (the 01 grammar — in-flow, full color, no animations);
+          // md+ returns the three-column grid and its floating corner emblem.
           h.div(
-            [h.Class('mt-8 md:mt-10')],
+            // justify-center + fixed column widths: the pair sits centered
+            // with the SAME air to both container edges, and only a small
+            // gutter between them.
+            [h.Class('mt-8 flex items-center justify-center gap-3 md:mt-10 md:block')],
             [
               // The geography of the coverage, in the same count-up device
               // as the "On the rise" receipts — the lands' imbalance IS the
-              // story. Each counter is a CHECKBOX: all three lands start
-              // checked, unchecking one hides its clubs from the map
-              // entirely. Clicking the land in the map toggles it too.
-              // The numbers REACT to the league filter: with only the
-              // second league selected they count that land's second-league
-              // sides (B teams count via their parent's pin).
-              // Real buttons (not a styled dl): keyboard toggling and the
-              // global pink focus ring come for free, and `aria-pressed`
-              // tells AT what the tap does. Text left-aligned to override
-              // the UA's centered button text.
+              // story. Plain display, deliberately NOT interactive: the old
+              // land-checkbox toggling (counters + clicking the lands) read
+              // as a glitch, not a feature (user call — removed with the
+              // whole region-toggle mechanism). The numbers still REACT to
+              // the league filter: with only the second league selected
+              // they count that land's second-league sides (B teams count
+              // via their parent's pin).
               h.div(
-                [h.Class('grid grid-cols-3 gap-8 md:gap-12')],
+                [
+                  h.Class(
+                    'grid w-1/3 shrink-0 grid-cols-1 gap-8 md:w-auto md:grid-cols-3 md:gap-12',
+                  ),
+                ],
                 (
                   [
                     ['Bohemian', 'Bohemia'],
@@ -4119,6 +4144,26 @@ const clubsView = (model: Model): Html =>
                   );
                 }),
               ),
+              // The scout's phone stage — w-[60%] puts her at the knight's
+              // rendered height (~470px against 01's 467).
+              h.div(
+                [h.Class('w-[60%] shrink-0 md:hidden')],
+                [
+                  h.img([
+                    h.Src(landsScoutImage),
+                    h.Width('383'),
+                    h.Height('800'),
+                    h.Alt('Illustrated footballer in a pink kit scouting through a spyglass'),
+                    h.Loading('lazy'),
+                    h.Class('block h-auto w-full'),
+                    // The same sticker outline as the md emblem.
+                    h.Style({
+                      filter:
+                        'drop-shadow(1.5px 0 0 var(--color-paper)) drop-shadow(-1.5px 0 0 var(--color-paper)) drop-shadow(0 1.5px 0 var(--color-paper)) drop-shadow(0 -1.5px 0 var(--color-paper))',
+                    }),
+                  ]),
+                ],
+              ),
             ],
           ),
           // Map and the trailing CTA reveal as one beat (same device as the
@@ -4136,7 +4181,10 @@ const clubsView = (model: Model): Html =>
               h.div(
                 [
                   h.Class(
-                    'mx-auto mt-10 flex max-w-5xl flex-wrap justify-end gap-1.5 md:mt-14 md:gap-2',
+                    // Centered on phones (one row, all three side by side);
+                    // right-aligned to the stage from md, where it reads as
+                    // a map control.
+                    'mx-auto mt-10 flex max-w-5xl flex-wrap justify-center gap-1.5 md:mt-14 md:justify-end md:gap-2',
                   ),
                   h.DataAttribute('reveal', 'up'),
                 ],
