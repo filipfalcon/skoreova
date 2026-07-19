@@ -41,8 +41,13 @@ body {
   outline-offset: 2px;
 }
 
-::placeholder {
-  color: color-mix(in srgb, var(--color-paper) 35%, transparent);
+/* Default placeholder tone is tuned for the DARK header inputs; layered
+   as base so light-surface inputs can override it with a placeholder:*
+   utility (unlayered rules would always win over Tailwind's utilities). */
+@layer base {
+  ::placeholder {
+    color: color-mix(in srgb, var(--color-paper) 35%, transparent);
+  }
 }
 
 /* Same display voice as the landing page — Anton, tight, uppercase. */
