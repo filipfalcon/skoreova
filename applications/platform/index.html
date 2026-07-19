@@ -83,7 +83,11 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./src/entry.ts"></script>
+    <!-- ABSOLUTE path: with a relative one, deep links (/clubs/<slug>)
+         make the dev server resolve /clubs/src/entry.ts, the SPA fallback
+         answers with HTML, and strict module MIME checking kills the app.
+         The production build rewrites this either way. -->
+    <script type="module" src="/src/entry.ts"></script>
     <!-- Cookie consent banner — same device as the landing site's (see the
          comment there): outside the app root, brand-styled inline, choice
          persisted per origin. The panel tone matches the dashboard cards. -->
