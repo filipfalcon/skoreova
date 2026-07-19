@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Skóreová Platform — the data hub of Czech women's football. Build your own charts and follow every club, player, competition, and referee."
+    />
+    <link rel="canonical" href="https://beta.platform.skoreova.com/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#0d0c0c" />
+
+    <!-- Icons + manifest — the same set as the landing site. -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Social cards. SPA — one landing-level card for every route. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Skóreová" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://beta.platform.skoreova.com/" />
+    <meta property="og:title" content="Skóreová Platform — Her Game. Her Numbers." />
+    <meta
+      property="og:description"
+      content="The data hub of Czech women's football. Follow every club, player, competition, and referee."
+    />
+    <meta property="og:image" content="https://beta.platform.skoreova.com/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@skoreova" />
+    <meta name="twitter:title" content="Skóreová Platform — Her Game. Her Numbers." />
+    <meta
+      name="twitter:description"
+      content="The data hub of Czech women's football. Follow every club, player, competition, and referee."
+    />
+    <meta name="twitter:image" content="https://beta.platform.skoreova.com/og.png" />
+    <!-- Consent Mode v2 + GA4. The SAME stream as the landing site
+         (G-PJ131P52RX): web → platform is one user journey, and a shared
+         measurement ID keeps sessions continuous across the subdomains.
+         ORDER IS VITAL: the consent DEFAULT must run before the loader and
+         any config. Ad parameters stay denied forever — no ads here. -->
+    <script>
+      // Measurement runs ONLY on the production hostname — everything else
+      // (localhost, LAN phone testing, preview deploys, tunnels) hits
+      // Google's official kill switch: gtag.js loads but records nothing.
+      window.skoreovaAnalyticsOff = ![
+        'beta.platform.skoreova.com',
+        'beta.platform.skoreova.cz',
+      ].includes(location.hostname);
+      if (window.skoreovaAnalyticsOff) {
+        window['ga-disable-G-PJ131P52RX'] = true;
+      }
+
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+      });
+      gtag('set', 'ads_data_redaction', true);
+      try {
+        if (localStorage.getItem('skoreova-consent') === 'granted') {
+          gtag('consent', 'update', { analytics_storage: 'granted' });
+        }
+      } catch (ignored) {}
+    </script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PJ131P52RX"></script>
+    <script>
+      gtag('js', new Date());
+      gtag('config', 'G-PJ131P52RX');
+    </script>
+    <link href="/src/styles.css" rel="stylesheet" />
+    <title>Skóreová Platform</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./src/entry.ts"></script>
+    <!-- Cookie consent banner — same device as the landing site's (see the
+         comment there): outside the app root, brand-styled inline, choice
+         persisted per origin. The panel tone matches the dashboard cards. -->
+    <aside id="cookie-consent" aria-label="Cookie consent" hidden>
+      <p class="cookie-consent-title">One cookie<span>.</span></p>
+      <p class="cookie-consent-copy">
+        Analytics only — we count visits so we know what to build better.
+      </p>
+      <div class="cookie-consent-actions">
+        <button type="button" id="cookie-consent-accept">Allow analytics</button>
+        <button type="button" id="cookie-consent-decline">Decline</button>
+      </div>
+    </aside>
+    <style>
+      #cookie-consent {
+        position: fixed;
+        z-index: 80;
+        right: 0.75rem;
+        bottom: 0.25rem;
+        left: 0.75rem;
+        max-width: 26rem;
+        padding: 1rem;
+        border: 1px solid rgba(243, 239, 232, 0.25);
+        background: #151313;
+        color: #f3efe8;
+        font-family: 'Archivo Variable', 'Helvetica Neue', Arial, sans-serif;
+        animation: cookie-consent-in 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      @media (min-width: 640px) {
+        #cookie-consent {
+          right: auto;
+          bottom: 1.5rem;
+          left: 1.5rem;
+          padding: 1.5rem;
+        }
+      }
+
+      @keyframes cookie-consent-in {
+        from {
+          opacity: 0;
+          transform: translateY(1.5rem);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #cookie-consent {
+          animation: none;
+        }
+      }
+
+      .cookie-consent-title {
+        margin: 0;
+        font-family: 'Anton', 'Arial Narrow', sans-serif;
+        font-size: 1.25rem;
+        line-height: 0.92;
+        letter-spacing: -0.01em;
+        text-transform: uppercase;
+      }
+
+      @media (min-width: 640px) {
+        .cookie-consent-title {
+          font-size: 1.75rem;
+        }
+      }
+
+      .cookie-consent-title span {
+        color: #ff2f8e;
+      }
+
+      .cookie-consent-copy {
+        margin: 0.5rem 0 0;
+        font-size: 0.8125rem;
+        line-height: 1.5;
+        color: rgba(243, 239, 232, 0.75);
+      }
+
+      .cookie-consent-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.875rem;
+      }
+
+      .cookie-consent-actions button {
+        cursor: pointer;
+        padding: 0.5rem 1rem;
+        border: 1px solid transparent;
+        font-family: 'Anton', 'Arial Narrow', sans-serif;
+        font-size: 0.875rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        transition:
+          background-color 0.3s,
+          color 0.3s;
+      }
+
+      @media (min-width: 640px) {
+        .cookie-consent-copy {
+          margin-top: 0.75rem;
+          font-size: 0.875rem;
+          line-height: 1.6;
+        }
+
+        .cookie-consent-actions {
+          margin-top: 1.25rem;
+        }
+
+        .cookie-consent-actions button {
+          padding: 0.75rem 1.25rem;
+          font-size: 1rem;
+        }
+      }
+
+      #cookie-consent-accept {
+        background: #ff2f8e;
+        color: #0d0c0c;
+      }
+
+      #cookie-consent-accept:hover,
+      #cookie-consent-accept:active {
+        background: #f3efe8;
+      }
+
+      #cookie-consent-decline {
+        border-color: rgba(243, 239, 232, 0.4);
+        background: transparent;
+        color: #f3efe8;
+      }
+
+      #cookie-consent-decline:hover,
+      #cookie-consent-decline:active {
+        border-color: #f3efe8;
+        background: #f3efe8;
+        color: #0d0c0c;
+      }
+    </style>
+    <script>
+      (function () {
+        var KEY = 'skoreova-consent';
+        var banner = document.getElementById('cookie-consent');
+        var stored = null;
+        try {
+          stored = localStorage.getItem(KEY);
+        } catch (ignored) {}
+
+        var close = function (choice) {
+          banner.hidden = true;
+          try {
+            localStorage.setItem(KEY, choice);
+          } catch (ignored) {}
+        };
+
+        document.getElementById('cookie-consent-accept').addEventListener('click', function () {
+          gtag('consent', 'update', { analytics_storage: 'granted' });
+          close('granted');
+        });
+
+        document.getElementById('cookie-consent-decline').addEventListener('click', function () {
+          gtag('consent', 'update', { analytics_storage: 'denied' });
+          close('denied');
+        });
+
+        if (stored !== 'granted' && stored !== 'denied') {
+          banner.hidden = false;
+        }
+
+        // The app's footer renders a plain "#cookie-settings" link — catch
+        // it here and reopen the banner so a choice can be changed anytime.
+        document.addEventListener('click', function (event) {
+          var target =
+            event.target instanceof Element
+              ? event.target.closest("a[href='#cookie-settings']")
+              : null;
+          if (!target) return;
+          event.preventDefault();
+          banner.hidden = false;
+        });
+      })();
+    </script>
+  </body>
+</html>
