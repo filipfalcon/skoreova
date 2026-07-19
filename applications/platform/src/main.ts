@@ -31,6 +31,8 @@ import uwclBadge from './assets/competitions/uwcl.png';
 import uwecBadge from './assets/competitions/uwec.png';
 import pardubicePhoto from './assets/trending/pardubice.jpg';
 import firstLeagueAttendancePhoto from './assets/attendance/first-league.jpg';
+import spartaHeroPhoto from './assets/clubs-hero/sparta-praha.webp';
+import commentaryAvatar from './assets/commentary-avatar.png';
 import secondLeagueAttendancePhoto from './assets/attendance/second-league.jpg';
 import firstLeagueGoalsPhoto from './assets/goals/first-league.jpg';
 import secondLeagueGoalsPhoto from './assets/goals/second-league.jpg';
@@ -64,7 +66,9 @@ export const Metric = S.Literals(['goals', 'attendance', 'conversion']);
 export type Metric = typeof Metric.Type;
 
 // Which top-scorer board a club profile shows.
-export const ScorerScope = S.Literals(['current', 'allTime']);
+// Which competition the club profile's TOP SCORERS board shows — one
+// component, scoped by chips (user call).
+export const ScorerScope = S.Literals(['all', 'league', 'cup']);
 export type ScorerScope = typeof ScorerScope.Type;
 
 export const Model = S.Struct({
@@ -81,6 +85,13 @@ export const Model = S.Struct({
   // Which matchday the competition profile's matches panel shows (0 = the
   // current one).
   competitionRound: S.Number,
+  // The clubs directory's search box ('' = show everything).
+  clubQuery: S.String,
+  // Which of the featured EUROPEAN CONTENDERS the clubs carousel shows.
+  featuredClub: S.Number,
+  // Slugs of the clubs the visitor follows (mock — session only; feeds
+  // HER GAME once the real accounts land).
+  followed: S.Array(S.String),
   scorerScope: ScorerScope,
   metric: Metric,
 });
@@ -96,6 +107,9 @@ export const SelectedMetric = m('SelectedMetric', { metric: Metric });
 export const SelectedScorerScope = m('SelectedScorerScope', { scope: ScorerScope });
 export const SelectedCompetitionEdition = m('SelectedCompetitionEdition', { label: S.String });
 export const SelectedCompetitionRound = m('SelectedCompetitionRound', { round: S.Number });
+export const ChangedClubQuery = m('ChangedClubQuery', { query: S.String });
+export const SelectedFeaturedClub = m('SelectedFeaturedClub', { index: S.Number });
+export const ToggledFollow = m('ToggledFollow', { slug: S.String });
 
 export const Message = S.Union([
   ClickedLink,
@@ -106,6 +120,9 @@ export const Message = S.Union([
   SelectedScorerScope,
   SelectedCompetitionEdition,
   SelectedCompetitionRound,
+  ChangedClubQuery,
+  SelectedFeaturedClub,
+  ToggledFollow,
 ]);
 export type Message = typeof Message.Type;
 
@@ -136,7 +153,10 @@ const initialModel: Model = {
   competitionSlug: '',
   competitionEdition: '',
   competitionRound: 0,
-  scorerScope: 'current',
+  clubQuery: '',
+  featuredClub: 0,
+  followed: [],
+  scorerScope: 'all',
   metric: 'goals',
 };
 
@@ -150,6 +170,8 @@ const applyRoute = (model: Model, route: AppRoute): Model => {
     competitionSlug: '',
     competitionEdition: '',
     competitionRound: 0,
+    clubQuery: '',
+    featuredClub: 0,
   };
   return M.value(route).pipe(
     M.withReturnType<Model>(),
@@ -161,7 +183,7 @@ const applyRoute = (model: Model, route: AppRoute): Model => {
         ...base,
         screen: 'clubs',
         clubSlug: slug,
-        scorerScope: 'current',
+        scorerScope: 'all',
       }),
       PlayersRoute: () => ({ ...base, screen: 'players' }),
       MatchesRoute: () => ({ ...base, screen: 'matches' }),
@@ -203,6 +225,17 @@ export const update = (
       SelectedScorerScope: ({ scope }) => [{ ...model, scorerScope: scope }, []],
       SelectedCompetitionEdition: ({ label }) => [{ ...model, competitionEdition: label }, []],
       SelectedCompetitionRound: ({ round }) => [{ ...model, competitionRound: round }, []],
+      ChangedClubQuery: ({ query }) => [{ ...model, clubQuery: query }, []],
+      SelectedFeaturedClub: ({ index }) => [{ ...model, featuredClub: index }, []],
+      ToggledFollow: ({ slug }) => [
+        {
+          ...model,
+          followed: model.followed.includes(slug)
+            ? model.followed.filter((entry) => entry !== slug)
+            : [...model.followed, slug],
+        },
+        [],
+      ],
     }),
   );
 
@@ -341,8 +374,10 @@ const club = (
 ): Club => ({ slug, name, city, logo, league, won, drawn, lost, leagueTitles, cupTitles });
 
 const clubs: ReadonlyArray<Club> = [
-  club('sparta-praha', 'Sparta Praha', 'Prague', spartaPrahaLogo, 'First League', 10, 1, 1, 14, 5),
-  club('slavia-praha', 'Slavia Praha', 'Prague', slaviaPrahaLogo, 'First League', 9, 2, 1, 9, 11),
+  // Honors track the ALL-TIME BESTS canon: Sparta holds both records
+  // (22× league, 11× cup).
+  club('sparta-praha', 'Sparta Praha', 'Prague', spartaPrahaLogo, 'First League', 10, 1, 1, 22, 11),
+  club('slavia-praha', 'Slavia Praha', 'Prague', slaviaPrahaLogo, 'First League', 9, 2, 1, 9, 9),
   club('slovacko', 'Slovácko', 'Uherské Hradiště', slovackoLogo, 'First League', 7, 3, 2, 0, 2),
   club(
     'sparta-praha-b',
@@ -872,15 +907,19 @@ const hashSlug = (slug: string): number => {
   return Math.abs(hash);
 };
 
-const scorerFor = (target: Club, scope: ScorerScope): Scorer => {
-  if (target.slug === 'sparta-praha' && scope === 'current') {
-    return { name: 'Denisa Rancová', goals: 17 };
+// Top three per scope, goals strictly descending; Sparta's all-comps
+// leader is the canonical Rancová.
+const scorersFor = (target: Club, scope: ScorerScope): ReadonlyArray<Scorer> => {
+  const seed = hashSlug(`${scope}:${target.slug}`);
+  const ceiling = scope === 'cup' ? 6 : scope === 'league' ? 13 : 17;
+  const generated = [0, 1, 2].map((rank) => ({
+    name: scorerPool[(seed + rank * 5) % scorerPool.length] ?? '—',
+    goals: Math.max(1, ceiling - (seed % 3) - rank * (2 + (seed % 2))),
+  }));
+  if (target.slug === 'sparta-praha' && scope === 'all') {
+    return [{ name: 'Denisa Rancová', goals: 17 }, ...generated.slice(1)];
   }
-  const seed = hashSlug(scope === 'current' ? target.slug : `all:${target.slug}`);
-  return {
-    name: scorerPool[seed % scorerPool.length] ?? '—',
-    goals: scope === 'current' ? 6 + (seed % 10) : 38 + (seed % 55),
-  };
+  return generated;
 };
 
 interface SavedChart {
@@ -2268,14 +2307,310 @@ const matchesScreen = (model: Model): Html =>
     ],
   );
 
-const clubsScreen = (model: Model): Html =>
-  h.div(
+// EUROPEAN CONTENDERS — a Universe-style featured carousel (user call):
+// a full-bleed ink band, the active club's artwork center stage with its
+// dimmed neighbors peeking at the edges, arrows to page, and a plaque
+// with the club's epithet riding over the artwork's bottom edge. The
+// neighbors' names ghost left and right of the plaque on wide screens.
+interface FeaturedClub {
+  readonly slug: string;
+  // The Universe-style kicker line above the name.
+  readonly epithet: string;
+  // '' until the user supplies the artwork — the crest carries the slot.
+  readonly photo: string;
+  readonly focus: string;
+}
+
+const featuredClubs: ReadonlyArray<FeaturedClub> = [
+  { slug: 'sparta-praha', epithet: 'The record champions', photo: spartaPhoto, focus: '50% 30%' },
+  { slug: 'slavia-praha', epithet: 'The eternal rivals', photo: '', focus: '50% 30%' },
+  { slug: 'slovan-liberec', epithet: 'The pride of the north', photo: '', focus: '50% 30%' },
+];
+
+const featuredArtwork = (entry: FeaturedClub, club: Club | undefined): Html =>
+  entry.photo === ''
+    ? h.div(
+        [h.Class('flex h-full w-full items-center justify-center bg-panel')],
+        [
+          h.img([
+            h.Src(club?.logo ?? ''),
+            h.Alt(''),
+            h.Loading('lazy'),
+            h.Class('h-28 w-28 object-contain md:h-40 md:w-40'),
+          ]),
+        ],
+      )
+    : h.img([
+        h.Src(entry.photo),
+        h.Alt(''),
+        h.Loading('lazy'),
+        h.Class('h-full w-full object-cover'),
+        h.Style({ 'object-position': entry.focus }),
+      ]);
+
+const carouselArrow = (target: number, glyph: string, label: string): Html =>
+  h.button(
+    [
+      h.Type('button'),
+      h.AriaLabel(label),
+      h.OnClick(SelectedFeaturedClub({ index: target })),
+      h.Class(
+        'display flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-paper/30 bg-ink/60 text-lg text-paper backdrop-blur-[2px] transition-colors hover:border-pink hover:text-pink',
+      ),
+    ],
+    [glyph],
+  );
+
+const europeanContenders = (model: Model): Html => {
+  const count = featuredClubs.length;
+  const active = ((model.featuredClub % count) + count) % count;
+  const previous = (active + count - 1) % count;
+  const next = (active + 1) % count;
+  const entryAt = (index: number): FeaturedClub =>
+    featuredClubs[index] ?? { slug: '', epithet: '', photo: '', focus: '50% 50%' };
+  const clubAt = (index: number): Club | undefined =>
+    clubs.find((candidate) => candidate.slug === entryAt(index).slug);
+  const ghost = (index: number, alignment: string): Html =>
+    h.div(
+      [h.Class(`hidden min-w-0 flex-1 flex-col gap-2 lg:flex ${alignment}`)],
+      [
+        h.p(
+          [h.Class('text-[10px] leading-none tracking-[0.3em] text-paper/25 uppercase')],
+          [entryAt(index).epithet],
+        ),
+        h.p(
+          [h.Class('display text-3xl leading-none tracking-[0.02em] text-paper/20 uppercase')],
+          [clubAt(index)?.name ?? ''],
+        ),
+      ],
+    );
+  // The marquee run — the hero's bottom edge is a tilted PINK TAPE
+  // looping the contenders' names, the landing marquee's louder cousin.
+  const marqueePhrases = [
+    'European contenders',
+    'Sparta Praha',
+    'Slavia Praha',
+    'Slovan Liberec',
+    'UWCL 2025/26',
+  ];
+  const marqueeRun = (hidden: boolean): Html =>
+    h.div(
+      [h.Class('flex items-center gap-6 pr-6'), ...(hidden ? [h.AriaHidden(true)] : [])],
+      marqueePhrases.flatMap((phrase) => [
+        h.span(
+          [
+            h.Class(
+              'display text-lg leading-none tracking-[0.12em] whitespace-nowrap uppercase text-ink',
+            ),
+          ],
+          [phrase],
+        ),
+        h.span([h.Class('text-sm leading-none text-ink'), h.AriaHidden(true)], ['✦']),
+      ]),
+    );
+  return h.section(
+    // IMMERSIVE hero (user call — the boxed chip+band read as "just put
+    // in", then "GET CRAZY"): full-bleed ink that swallows the main
+    // container's top padding (-mt) so the stage flows straight out of
+    // the black header chrome; a giant outline club name roars behind the
+    // stage, the artwork rides a pink offset frame, film grain sits over
+    // everything, and a tilted pink tape closes the band.
+    [h.Class('relative -mt-10 mx-[calc(50%-50vw)] overflow-hidden bg-ink pb-8 md:-mt-14')],
+    [
+      h.div(
+        [h.Class('relative mx-auto max-w-7xl px-5 md:px-10')],
+        [
+          h.p(
+            [
+              h.Class(
+                'flex items-center justify-center gap-3 pt-8 pb-6 text-[11px] leading-none tracking-[0.35em] text-paper/60 uppercase md:pt-10 md:text-xs',
+              ),
+            ],
+            [tickerSpark, 'European contenders', tickerSpark],
+          ),
+          // STAGE — the neighbors peek dimmed from the edges, the active
+          // artwork holds the center. Keyed so each switch replays the
+          // screen slide-in.
+          h.div(
+            [h.Class('relative h-80 md:h-[28rem]')],
+            [
+              // The active club's name SCREAMS as a giant outline rising
+              // from behind the artwork's top edge, through the kicker.
+              h.div(
+                [
+                  h.Key(`shout-${entryAt(active).slug}`),
+                  h.Class(
+                    'screen pointer-events-none absolute inset-x-0 -top-16 flex justify-center select-none md:-top-28',
+                  ),
+                  h.AriaHidden(true),
+                ],
+                [
+                  h.span(
+                    [
+                      h.Class(
+                        'display text-[7rem] leading-none whitespace-nowrap text-transparent uppercase [-webkit-text-stroke:2px_rgba(243,239,232,0.16)] md:text-[15rem]',
+                      ),
+                    ],
+                    [(clubAt(active)?.name ?? '').split(' ')[0] ?? ''],
+                  ),
+                ],
+              ),
+              h.div(
+                [
+                  h.Class(
+                    'absolute inset-y-10 left-[-8%] w-[16%] opacity-30 brightness-50 grayscale md:inset-y-6 md:left-[-14%] md:w-[22%]',
+                  ),
+                  h.AriaHidden(true),
+                ],
+                [featuredArtwork(entryAt(previous), clubAt(previous))],
+              ),
+              h.div(
+                [
+                  h.Class(
+                    'absolute inset-y-10 right-[-8%] w-[16%] opacity-30 brightness-50 grayscale md:inset-y-6 md:right-[-14%] md:w-[22%]',
+                  ),
+                  h.AriaHidden(true),
+                ],
+                [featuredArtwork(entryAt(next), clubAt(next))],
+              ),
+              // The artwork rides a pink OFFSET FRAME — the brutalist
+              // double-exposure edge.
+              h.div(
+                [h.Class('relative mx-auto h-full w-[84%] md:w-[72%]')],
+                [
+                  h.div(
+                    [
+                      h.Class(
+                        'absolute inset-0 translate-x-2.5 translate-y-2.5 border-2 border-pink md:translate-x-4 md:translate-y-4',
+                      ),
+                      h.AriaHidden(true),
+                    ],
+                    [],
+                  ),
+                  h.a(
+                    [
+                      h.Key(entryAt(active).slug),
+                      h.Href(`/clubs/${entryAt(active).slug}`),
+                      h.Class('screen relative block h-full w-full'),
+                    ],
+                    [featuredArtwork(entryAt(active), clubAt(active))],
+                  ),
+                ],
+              ),
+              h.div(
+                [h.Class('absolute inset-y-0 left-0 flex items-center md:left-[2%] lg:left-[6%]')],
+                [carouselArrow(active - 1, '←', 'Previous club')],
+              ),
+              h.div(
+                [
+                  h.Class(
+                    'absolute inset-y-0 right-0 flex items-center md:right-[2%] lg:right-[6%]',
+                  ),
+                ],
+                [carouselArrow(active + 1, '→', 'Next club')],
+              ),
+            ],
+          ),
+          // PLAQUE ROW — the nameplate overlaps the artwork; neighbors
+          // ghost at the far sides.
+          h.div(
+            [h.Class('relative z-10 -mt-14 flex items-end gap-8 md:-mt-16')],
+            [
+              ghost(previous, 'items-start text-left'),
+              h.div(
+                [
+                  h.Key(`plaque-${entryAt(active).slug}`),
+                  h.Class(
+                    'screen mx-auto w-[min(100%,24rem)] shrink-0 border border-paper/15 bg-ink px-8 pt-8 pb-7 text-center',
+                  ),
+                ],
+                [
+                  h.div(
+                    [h.Class('flex justify-center text-pink')],
+                    [h.span([h.Class('display text-2xl leading-none')], [tickerSpark])],
+                  ),
+                  h.p(
+                    [
+                      h.Class(
+                        'mt-4 text-[11px] leading-none tracking-[0.3em] text-paper/70 uppercase',
+                      ),
+                    ],
+                    [entryAt(active).epithet],
+                  ),
+                  h.h2(
+                    [h.Class('display mt-3 text-3xl leading-none text-paper md:text-4xl')],
+                    [clubAt(active)?.name ?? ''],
+                  ),
+                  h.div([h.Class('mx-auto mt-5 h-[3px] w-10 bg-pink')], []),
+                ],
+              ),
+              ghost(next, 'items-end text-right'),
+            ],
+          ),
+        ],
+      ),
+      // The tilted pink tape — full-bleed, slightly rotated, looping the
+      // contenders. Oversized width hides the rotation's corner gaps.
+      h.div(
+        [h.Class('ticker mt-10 -mx-[2%] w-[104%] -rotate-1 bg-pink py-2.5')],
+        [
+          h.div(
+            [h.Class('ticker-row'), h.Style({ 'animation-duration': '26s' })],
+            [marqueeRun(false), marqueeRun(true)],
+          ),
+        ],
+      ),
+      // Film grain over the whole band — the landing hero's skin.
+      h.div([h.Class('grain pointer-events-none absolute inset-0'), h.AriaHidden(true)], []),
+    ],
+  );
+};
+
+// Diacritics-insensitive match, so "slovacko" finds Slovácko.
+const normalizeQuery = (value: string): string =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '');
+
+const clubsScreen = (model: Model): Html => {
+  const query = normalizeQuery(model.clubQuery.trim());
+  const filtered =
+    query === ''
+      ? clubs
+      : clubs.filter((entry) =>
+          normalizeQuery(`${entry.name} ${entry.city} ${entry.league}`).includes(query),
+        );
+  return h.div(
     [],
     [
-      screenHeader(model, 'Every club in both leagues. Profiles open up as the data comes online.'),
+      // No canonical intro here (user call): the page OPENS on the
+      // immersive contenders hero, flowing straight from the header. The
+      // h1 stays for screen readers only; the active nav tab carries the
+      // visual "you are here".
+      h.h1([h.Class('sr-only')], ['Clubs']),
+      europeanContenders(model),
+      h.input([
+        h.Type('search'),
+        h.Placeholder('Search clubs…'),
+        h.AriaLabel('Search clubs'),
+        h.Value(model.clubQuery),
+        h.OnInput((value: string) => ChangedClubQuery({ query: value })),
+        h.Class(
+          'mt-10 w-full border-2 border-ink/15 bg-transparent px-5 py-3.5 text-base text-ink transition-colors placeholder:text-ink/35 focus:border-pink focus:outline-none',
+        ),
+      ]),
+      ...(filtered.length === 0
+        ? [
+            h.p(
+              [h.Class('mt-10 text-sm text-ink/50')],
+              [`No club matches “${model.clubQuery.trim()}”.`],
+            ),
+          ]
+        : []),
       h.div(
-        [h.Class('mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4')],
-        clubs.map((entry) => {
+        [h.Class('mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4')],
+        filtered.map((entry) => {
           const played = entry.won + entry.drawn + entry.lost;
           return h.a(
             [
@@ -2329,6 +2664,7 @@ const clubsScreen = (model: Model): Html =>
       ),
     ],
   );
+};
 
 const playersScreen = (model: Model): Html =>
   h.div(
@@ -2610,40 +2946,124 @@ const standingsPanel = (label: string, league: string, highlightTeam: string | n
   );
 };
 
-const cupRunPanel = (): Html =>
-  h.section(
-    [h.Class(`${panel} p-6 md:p-8`)],
+// ——— CLUB PROFILE — the immersive dark page (user call: Universe-style,
+// "full club immersive page"). One black world from the header down:
+// hero (crest + name), the club's own statement, standings, cup run, top
+// scorers, history, all-time stats (WIP), and the follow CTA. ———
+
+// The per-club statement block — hand-written for the marquee clubs, a
+// season-record fallback for everyone else.
+const clubHighlights: Record<string, { readonly kicker: string; readonly statement: string }> = {
+  'sparta-praha': {
+    kicker: 'Reigning champions',
+    statement:
+      'Our most successful club and reigning champion. Stormed the Europa Cup semifinals first, then finished with the domestic double in hand.',
+  },
+  'slavia-praha': {
+    kicker: 'The eternal rivals',
+    statement: 'Every derby is a final — and finals are ours to take.',
+  },
+  'slovan-liberec': {
+    kicker: 'The pride of the north',
+    statement: 'Europe looks different from under Ještěd.',
+  },
+};
+
+// Per-club hero artwork (the Universe-style full-bleed header photo);
+// clubs without one fall back to the plain crest-on-ink hero.
+const clubHeroPhotos: Record<string, { readonly photo: string; readonly focus: string }> = {
+  'sparta-praha': { photo: spartaHeroPhoto, focus: '50% 42%' },
+};
+
+const clubChip = (text: string): Html =>
+  h.span(
     [
-      sectionLabel('Domestic Cup run'),
-      h.ol(
-        [h.Class('mt-6 flex flex-col')],
-        cupRun.map((tie) =>
-          h.li(
-            [
-              h.Class(
-                `flex items-baseline justify-between gap-4 border-t px-2 py-3.5 first:border-t-0 ${
-                  tie.upcoming ? 'border-pink bg-pink text-ink' : 'border-ink/10'
-                }`,
-              ),
-            ],
-            [
-              h.span([h.Class('display text-xl')], [tie.round]),
-              h.span(
-                [
-                  h.Class(
-                    `text-[10px] tracking-[0.2em] uppercase ${
-                      tie.upcoming ? 'text-ink/70' : 'text-ink/50'
-                    }`,
-                  ),
-                ],
-                [tie.result],
-              ),
-            ],
-          ),
-        ),
+      h.Class(
+        'display inline-block bg-pink px-4 py-2 text-xl tracking-[0.2em] text-ink md:px-5 md:text-2xl',
       ),
     ],
+    [text],
   );
+
+const clubSection = (title: string, children: ReadonlyArray<Html>): Html =>
+  h.section(
+    [h.Class('mt-16 md:mt-20')],
+    [h.div([h.Class('flex')], [clubChip(title)]), ...children],
+  );
+
+const clubStandingsSection = (target: Club): Html => {
+  const rows = target.league === 'First League' ? firstLeagueStandings : secondLeagueStandings;
+  return clubSection('Standings', [
+    h.p([h.Class('mt-4 text-[10px] tracking-[0.2em] text-paper/50 uppercase')], [target.league]),
+    h.ol(
+      [h.Class('mt-4 flex flex-col')],
+      rows.map((row, index) => {
+        const highlighted = row.team === target.name;
+        return h.li(
+          [
+            h.Class(
+              `flex items-baseline gap-4 border-t px-2 py-3.5 first:border-t-0 ${
+                highlighted ? 'border-pink bg-pink text-ink' : 'border-paper/10 text-paper'
+              }`,
+            ),
+          ],
+          [
+            h.span(
+              [h.Class(`display w-8 text-lg ${highlighted ? 'text-ink/60' : 'text-paper/30'}`)],
+              [`${index + 1}`],
+            ),
+            h.span([h.Class('display flex-1 truncate text-xl')], [row.team]),
+            h.span(
+              [
+                h.Class(
+                  `hidden text-[10px] tracking-[0.2em] uppercase sm:block ${
+                    highlighted ? 'text-ink/60' : 'text-paper/40'
+                  }`,
+                ),
+              ],
+              [`${row.played} played`],
+            ),
+            h.span(
+              [h.Class(`display w-12 text-right text-xl ${highlighted ? '' : 'text-pink'}`)],
+              [`${row.points}`],
+            ),
+          ],
+        );
+      }),
+    ),
+  ]);
+};
+
+const clubCupSection = (): Html =>
+  clubSection('Domestic Cup', [
+    h.ol(
+      [h.Class('mt-6 flex flex-col')],
+      cupRun.map((tie) =>
+        h.li(
+          [
+            h.Class(
+              `flex items-baseline justify-between gap-4 border-t px-2 py-3.5 first:border-t-0 ${
+                tie.upcoming ? 'border-pink bg-pink text-ink' : 'border-paper/10 text-paper'
+              }`,
+            ),
+          ],
+          [
+            h.span([h.Class('display text-xl')], [tie.round]),
+            h.span(
+              [
+                h.Class(
+                  `text-[10px] tracking-[0.2em] uppercase ${
+                    tie.upcoming ? 'text-ink/70' : 'text-paper/50'
+                  }`,
+                ),
+              ],
+              [tie.result],
+            ),
+          ],
+        ),
+      ),
+    ),
+  ]);
 
 const scopeChip = (model: Model, scope: ScorerScope, label: string): Html =>
   h.button(
@@ -2652,77 +3072,356 @@ const scopeChip = (model: Model, scope: ScorerScope, label: string): Html =>
       h.OnClick(SelectedScorerScope({ scope })),
       h.AriaPressed(model.scorerScope === scope ? 'true' : 'false'),
       h.Class(
-        `border px-4 py-2 text-[10px] tracking-[0.2em] uppercase transition-colors ${
+        `cursor-pointer border px-4 py-2 text-[10px] tracking-[0.2em] uppercase transition-colors ${
           model.scorerScope === scope
             ? 'border-pink bg-pink text-ink'
-            : 'border-ink/15 text-ink/60 hover:border-pink hover:text-ink'
+            : 'border-paper/20 text-paper/60 hover:border-pink hover:text-paper'
         }`,
       ),
     ],
     [label],
   );
 
-const topScorerPanel = (target: Club, model: Model): Html => {
-  const scorer = scorerFor(target, model.scorerScope);
-  return h.section(
-    [h.Class(`${panel} p-6 md:p-8`)],
-    [
-      h.div(
-        [h.Class('flex flex-wrap items-center justify-between gap-4')],
-        [
-          sectionLabel('Top scorer'),
-          h.div(
-            [h.Class('flex gap-2')],
-            [scopeChip(model, 'current', 'Current'), scopeChip(model, 'allTime', 'All time')],
-          ),
-        ],
+// ONE top-scorers component, scoped by chips: all competitions, the
+// club's league, or the cup (user call).
+const clubScorersSection = (target: Club, model: Model): Html => {
+  const scorers = scorersFor(target, model.scorerScope);
+  return clubSection('Top scorers', [
+    h.div(
+      [h.Class('mt-6 flex flex-wrap gap-2')],
+      [
+        scopeChip(model, 'all', 'All'),
+        scopeChip(model, 'league', target.league),
+        scopeChip(model, 'cup', 'Domestic Cup'),
+      ],
+    ),
+    h.ol(
+      [h.Key(`scorers-${model.scorerScope}`), h.Class('screen mt-6 flex flex-col')],
+      scorers.map((scorer, index) =>
+        h.li(
+          [
+            h.Class(
+              'flex items-baseline gap-5 border-t border-paper/10 px-2 py-4 first:border-t-0',
+            ),
+          ],
+          [
+            h.span([h.Class('display w-8 text-lg text-paper/30')], [`${index + 1}`]),
+            h.span([h.Class('display flex-1 truncate text-2xl text-paper')], [scorer.name]),
+            h.span([h.Class('display text-4xl text-pink')], [`${scorer.goals}`]),
+          ],
+        ),
       ),
-      h.div(
-        [h.Class('mt-8 flex flex-wrap items-baseline gap-x-6 gap-y-2')],
+    ),
+    h.p(
+      [h.Class('mt-3 px-2 text-[10px] tracking-[0.2em] text-paper/40 uppercase')],
+      ['Goals — season 2025/26'],
+    ),
+  ]);
+};
+
+const clubHistorySection = (target: Club): Html => {
+  const entries = [
+    ...(target.leagueTitles > 0
+      ? [
+          {
+            value: `${target.leagueTitles}×`,
+            label: 'League champions',
+            detail: 'Most recently 2024/25',
+          },
+        ]
+      : []),
+    ...(target.cupTitles > 0
+      ? [{ value: `${target.cupTitles}×`, label: 'Cup winners', detail: 'Most recently 2024/25' }]
+      : []),
+    { value: '30', label: 'Seasons in the data', detail: 'Back to 1995/96' },
+  ];
+  return clubSection('History', [
+    h.div(
+      [h.Class('mt-8 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3')],
+      entries.map((entry) =>
+        h.div(
+          [],
+          [
+            h.div([h.Class('h-1 w-10 bg-pink')], []),
+            h.p([h.Class('display mt-3 text-4xl text-paper md:text-5xl')], [entry.value]),
+            h.p([h.Class('display mt-2 text-xl text-pink md:text-2xl')], [entry.label]),
+            h.p(
+              [h.Class('mt-1.5 text-[10px] tracking-[0.25em] text-paper/50 uppercase')],
+              [entry.detail],
+            ),
+          ],
+        ),
+      ),
+    ),
+    h.p(
+      [h.Class('mt-8 text-xs leading-relaxed text-paper/40')],
+      ['The season-by-season archive arrives with the real data.'],
+    ),
+  ]);
+};
+
+const clubAllTimeStatsSection = (): Html =>
+  clubSection('All-time stats', [
+    h.p(
+      [
+        h.Class(
+          'mt-4 inline-block border border-paper/25 px-3 py-1.5 text-[10px] tracking-[0.25em] text-paper/60 uppercase',
+        ),
+      ],
+      ['Work in progress'],
+    ),
+    h.div(
+      [h.Class('mt-8 grid gap-x-8 gap-y-10 grid-cols-2 lg:grid-cols-4')],
+      ['Matches played', 'Goals scored', 'Clean sheets', 'Biggest win'].map((label) =>
+        h.div(
+          [],
+          [
+            h.div([h.Class('h-9 w-24 bg-paper/10')], []),
+            h.p([h.Class('mt-3 text-[10px] tracking-[0.25em] text-paper/50 uppercase')], [label]),
+          ],
+        ),
+      ),
+    ),
+  ]);
+
+const clubFollowSection = (target: Club, model: Model): Html => {
+  const following = model.followed.includes(target.slug);
+  return h.section(
+    [h.Class('mt-20 border-t border-paper/10 pt-14 pb-4 text-center md:mt-24')],
+    [
+      h.p(
+        [h.Class('display text-3xl leading-[1.05] text-paper md:text-5xl')],
+        [`Take ${target.name} with you.`],
+      ),
+      h.p(
+        [h.Class('mx-auto mt-4 max-w-md text-sm leading-relaxed text-paper/50')],
+        ['Follow the club and Her Game builds your feed around it — matches, movers, and records.'],
+      ),
+      h.button(
         [
-          h.span([h.Class('display text-7xl text-pink')], [`${scorer.goals}`]),
-          h.div(
-            [],
-            [
-              h.span([h.Class('display block text-3xl text-ink')], [scorer.name]),
-              h.span(
-                [h.Class('mt-1 block text-[10px] tracking-[0.2em] uppercase text-ink/50')],
-                [model.scorerScope === 'current' ? 'Goals this season' : 'Goals all time'],
-              ),
-            ],
+          h.Type('button'),
+          h.OnClick(ToggledFollow({ slug: target.slug })),
+          h.AriaPressed(following ? 'true' : 'false'),
+          h.Class(
+            `display mt-8 inline-block cursor-pointer px-10 py-4 text-xl tracking-[0.12em] text-ink transition-colors md:text-2xl ${
+              following ? 'bg-paper' : 'bg-pink hover:bg-paper'
+            }`,
           ),
         ],
+        [following ? 'Following ✓' : `Follow ${target.name}`],
       ),
     ],
   );
 };
 
 const clubProfileScreen = (target: Club, model: Model): Html => {
-  const honors: ReadonlyArray<Html> = [
-    ...(target.leagueTitles > 0 ? [honorChip(`${target.leagueTitles}× League winner`)] : []),
-    ...(target.cupTitles > 0 ? [honorChip(`${target.cupTitles}× Cup winner`)] : []),
-  ];
+  const heroArt = clubHeroPhotos[target.slug];
+  const highlight = clubHighlights[target.slug] ?? {
+    kicker: 'This season',
+    statement: `${target.won} wins in ${target.won + target.drawn + target.lost} games — the numbers tell it straight.`,
+  };
   return h.div(
-    [],
+    // The whole profile runs DARK, flowing straight out of the header
+    // chrome — the same full-bleed swallow as the contenders hero.
     [
-      profileHeader(
-        '/clubs',
-        'All clubs',
-        h.img([
-          h.Src(target.logo),
-          h.Alt(`${target.name} crest`),
-          h.Class('h-24 w-24 object-contain md:h-32 md:w-32'),
-        ]),
-        target.name,
-        [...honors, mutedChip(`${target.city} — ${target.league}`)],
+      h.Class(
+        'relative -mt-10 -mb-10 mx-[calc(50%-50vw)] overflow-hidden bg-ink px-5 pt-8 pb-16 md:-mt-14 md:px-10',
       ),
+    ],
+    [
+      // The Universe-style header ARTWORK (user-supplied photo, per club):
+      // full-bleed, fading into the ink so the crest + name ride the fade.
+      ...(heroArt
+        ? [
+            h.div(
+              [
+                h.Class(
+                  'club-hero-art relative -mx-5 -mt-8 h-[22rem] overflow-hidden will-change-transform md:-mx-10 md:h-[34rem]',
+                ),
+              ],
+              [
+                // Phones ZOOM the artwork in (user call — the wide frame
+                // shrank the players to specks); md+ shows the full crop.
+                h.img([
+                  h.Src(heroArt.photo),
+                  h.Alt(''),
+                  h.Class('absolute inset-0 h-full w-full scale-[1.45] object-cover md:scale-100'),
+                  h.Style({ 'object-position': heroArt.focus, 'transform-origin': heroArt.focus }),
+                ]),
+                h.div(
+                  [
+                    h.Class(
+                      'absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-ink via-ink/60 to-transparent',
+                    ),
+                  ],
+                  [],
+                ),
+                h.a(
+                  [
+                    h.Href('/clubs'),
+                    h.Class(
+                      'absolute top-5 left-5 z-10 text-[10px] tracking-[0.2em] text-paper/70 uppercase transition-colors hover:text-pink md:left-10',
+                    ),
+                  ],
+                  ['← All clubs'],
+                ),
+              ],
+            ),
+          ]
+        : []),
       h.div(
-        [h.Class('mt-12 grid gap-8 lg:grid-cols-2')],
+        [h.Class('relative z-10 mx-auto w-full max-w-5xl')],
         [
-          standingsPanel(`Current standings — ${target.league}`, target.league, target.name),
-          h.div([h.Class('flex flex-col gap-8')], [topScorerPanel(target, model), cupRunPanel()]),
+          ...(heroArt
+            ? []
+            : [
+                h.div(
+                  [h.Class('flex')],
+                  [
+                    h.a(
+                      [
+                        h.Href('/clubs'),
+                        h.Class(
+                          'text-[10px] tracking-[0.2em] text-paper/50 uppercase transition-colors hover:text-pink',
+                        ),
+                      ],
+                      ['← All clubs'],
+                    ),
+                  ],
+                ),
+              ]),
+          // HERO — crest and name are THE BANG (user call): both huge,
+          // riding the artwork's fade. With artwork the page runs a
+          // LAYERED parallax near the top: photo slowest (.club-hero-art),
+          // then title (.club-par-1), commentary (.club-par-2), and
+          // everything from the standings down (.club-par-3) — each layer
+          // slides gently over the one before.
+          h.div(
+            [
+              h.Class(
+                heroArt
+                  ? 'club-par-1 relative -mt-32 text-center will-change-transform md:-mt-44'
+                  : 'mt-10 text-center md:mt-14',
+              ),
+            ],
+            [
+              h.img([
+                h.Src(target.logo),
+                h.Alt(`${target.name} crest`),
+                h.Class('mx-auto h-32 w-32 object-contain drop-shadow-2xl md:h-52 md:w-52'),
+              ]),
+              h.h1(
+                [
+                  h.Class(
+                    'display mt-6 text-[clamp(3.75rem,17vw,9rem)] leading-[0.95] text-paper md:mt-8',
+                  ),
+                ],
+                [target.name],
+              ),
+              h.p(
+                [
+                  h.Class(
+                    'mt-5 text-[11px] leading-none tracking-[0.35em] text-paper/60 uppercase',
+                  ),
+                ],
+                [`${target.city} — ${target.league}`],
+              ),
+            ],
+          ),
+          // SKÓREOVÁ COMMENTARY — an editorial PULL-QUOTE: a giant Anton
+          // quotation mark anchors the block, the text hangs off a pink
+          // rule, and the sign-off closes the row on a hairline that runs
+          // from the quote to the reporter's portrait. The portrait is a
+          // placeholder glyph until her photo lands — swap it for an
+          // <img> in the circle then.
+          h.figure(
+            [
+              h.Class(
+                // With artwork the block joins the layered stack: it climbs
+                // faster than the title and carries its own ink fill, so on
+                // scroll it rides OVER the title's tail and covers it —
+                // card over card, not gap-tightening (will-change-transform
+                // guarantees the stacking context the fill needs to paint
+                // above the earlier sibling's text). The flat mt-20 is
+                // deliberate: the rem-based drift consumes the same px at
+                // every width, so the headroom is width-independent too.
+                `mx-auto max-w-2xl ${
+                  heroArt ? 'club-par-2 mt-20 bg-ink will-change-transform' : 'mt-16 md:mt-24'
+                }`,
+              ),
+            ],
+            [
+              h.span(
+                [
+                  h.Class(
+                    'display -mb-3 block text-8xl leading-[0.3] text-pink select-none md:-mb-4 md:text-9xl',
+                  ),
+                  h.AriaHidden(true),
+                ],
+                ['“'],
+              ),
+              // Body voice, not Anton (user call) — a long quotation in
+              // the display face was unreadable. Text rags left;
+              // text-pretty keeps the last line from stranding a widow.
+              h.blockquote(
+                [
+                  h.Class(
+                    'mt-0 border-l-2 border-pink pl-5 text-left text-xl leading-relaxed font-medium text-pretty text-paper/90 md:pl-7 md:text-2xl',
+                  ),
+                ],
+                [highlight.statement],
+              ),
+              // Sign-off: a hairline runs out of the quote into the
+              // byline + portrait closing the right edge.
+              h.figcaption(
+                [h.Class('mt-3 flex items-center gap-4 md:gap-5')],
+                [
+                  h.div([h.Class('h-px flex-1 bg-paper/15'), h.AriaHidden(true)], []),
+                  h.span(
+                    [
+                      h.Class(
+                        'text-right text-sm leading-[1.7] tracking-[0.25em] text-paper/60 uppercase md:text-base',
+                      ),
+                    ],
+                    [h.span([h.Class('block text-pink')], ['Skóreová']), 'Commentary'],
+                  ),
+                  h.span(
+                    [
+                      h.Class(
+                        'flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-pink bg-panel md:h-20 md:w-20',
+                      ),
+                    ],
+                    [
+                      h.img([
+                        h.Src(commentaryAvatar),
+                        h.Alt('Skóreová reporter'),
+                        h.Loading('lazy'),
+                        h.Class('h-full w-full object-cover'),
+                      ]),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // One shared layer from the standings down — below-the-fold
+          // gaps never change, only this whole block slides over the
+          // commentary near the top.
+          h.div(
+            [h.Class(heroArt ? 'club-par-3 mt-6 bg-ink will-change-transform' : '')],
+            [
+              clubStandingsSection(target),
+              clubCupSection(),
+              clubScorersSection(target, model),
+              clubHistorySection(target),
+              clubAllTimeStatsSection(),
+              clubFollowSection(target, model),
+            ],
+          ),
         ],
       ),
+      // Film grain over the whole dark world.
+      h.div([h.Class('grain pointer-events-none absolute inset-0'), h.AriaHidden(true)], []),
     ],
   );
 };
