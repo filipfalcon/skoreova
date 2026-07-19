@@ -175,6 +175,141 @@ body {
   }
 }
 
+/* Club profile hero PARALLAX — scroll-driven, no JS (motion stays outside
+   the model). The artwork drifts DOWN at a fraction of scroll speed while
+   the crest + name drift slightly UP, so the title slides over the photo.
+   Progressive enhancement: browsers without scroll timelines (and
+   reduced-motion users) simply get the static hero. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* scroll(root), NOT scroll(): the bare form binds to the NEAREST
+       scroll container, and the profile's own overflow-hidden wrapper is
+       one — it never scrolls, so the timeline sat inactive. The page
+       scroller is the document root. */
+    .club-hero-art {
+      animation: club-hero-art-drift linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 40rem;
+    }
+
+    /* LAYERED counter-drift — each block climbs faster than the one
+       before it AND carries its own opaque ink fill in the view, so a
+       lower layer doesn't just approach its neighbor: it slides OVER it
+       and covers it, card over card. Every section from the standings
+       DOWN shares one layer, so below-the-fold gaps never change.
+       Range must reach past where these blocks actually sit (commentary
+       ~58rem down, standings ~75rem down at typical content length) — an
+       8rem range finished the drift before either scrolled into view, so
+       the two sat frozen at a fixed offset with no visible relative motion
+       exactly where it mattered. 60rem carries the drift through the whole
+       first screenful of content, then holds for the long tail below
+       (scorers/history/stats/follow) where continued motion would just be
+       noise. The range is also the RATE dial: drift ÷ range is how many px
+       a layer climbs per px of scroll, and the SPREAD between two layers'
+       rates is what the eye actually reads as parallax — shortening the
+       range makes the same drift bite harder. */
+    .club-par-1,
+    .club-par-2,
+    .club-par-3 {
+      animation-timeline: scroll(root);
+      animation-range: 0 60rem;
+    }
+
+    .club-par-1 {
+      animation-name: club-par-1-drift;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+    }
+
+    .club-par-2 {
+      animation-name: club-par-2-drift;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+    }
+
+    /* The standings share the quote's range — a delayed range-start was
+       tried and rejected: holding them still while the quote kept
+       climbing OPENED a gap (80px → 144px) before any coverage began.
+       The lateness lives in the KEYFRAME instead (see below): they close
+       on the quote the entire way and only ride over it at the end. */
+    .club-par-3 {
+      animation-name: club-par-3-drift;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+    }
+  }
+}
+
+@keyframes club-hero-art-drift {
+  to {
+    transform: translateY(10rem);
+  }
+}
+
+/* Drifts are deliberately LARGE relative to the range and the junctions
+   are ALLOWED to go negative — overlap is the effect (user call: it has
+   to feel like riding layer over layer; an earlier compensating-margin
+   pass that kept gaps positive read as nothing). The lower layer of each
+   pair paints later in the DOM and carries `bg-ink`, so as its junction
+   goes negative it genuinely COVERS the tail of the block above — the
+   quote swallows the title's kicker, the standings swallow the quote's
+   sign-off. overlap(progress) = (lower drift − upper drift) × progress −
+   baseline gap; quote→standings peaks around ~96px of real coverage
+   while both are on screen (more on phones, where the baseline gap is
+   smaller). Holding the end state (fill-mode both) is safe: past the
+   range end every junction sits above the viewport, so the frozen
+   overlap is never seen. If a drift changes, re-check that each covered
+   block still reads as a complete thought at max overlap — cover
+   whitespace and trailing furniture, not the quote's text itself. */
+@keyframes club-par-1-drift {
+  to {
+    transform: translateY(-4rem);
+  }
+}
+
+@keyframes club-par-2-drift {
+  to {
+    transform: translateY(-12rem);
+  }
+}
+
+/* ACCELERATING CLOSE: what matters is this curve's distance from par-2's
+   linear -12rem, i.e. the DIFFERENTIAL, which is the gap being eaten.
+   Stops are chosen so that differential grows every step but slowly at
+   first and steeply at the end:
+       progress   0     .25    .5     .75    .85    1
+       par-2      0     -3     -6     -9     -10.2  -12
+       par-3      0     -3.8   -7.8   -12.2  -15.2  -22
+       eaten      0     0.8    1.8    3.2    5.0    10.0  (rem)
+   So the standings approach the quote continuously the whole way (80px
+   gap → 67 → 51 → 29 → 0 on desktop), touch only at ~85% of the range,
+   and the real coverage lands in the final stretch as the pair exits the
+   top. Neither a constant-rate phase (pair looks glued, then snaps) nor a
+   single linear ramp (touches halfway, far too early) gives this — the
+   acceleration is the whole point. The gap it must eat is a fixed px
+   figure per breakpoint, so re-derive the tail stops if par-2's end value
+   or the layout margins change. */
+@keyframes club-par-3-drift {
+  0% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-3.8rem);
+  }
+  50% {
+    transform: translateY(-7.8rem);
+  }
+  75% {
+    transform: translateY(-12.2rem);
+  }
+  85% {
+    transform: translateY(-15.2rem);
+  }
+  100% {
+    transform: translateY(-22rem);
+  }
+}
+
 /* Trending rows cascade in after the screen lands. */
 .trend-row {
   animation: trend-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
