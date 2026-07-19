@@ -19,7 +19,7 @@ import ferencvarosLogo from './assets/clubs/Ferencvaros.svg';
 import hammarbyLogo from './assets/clubs/Hammarby.svg';
 import hradecKraloveLogo from './assets/clubs/HradecKralove.png';
 import lokomotivaBrnoLogo from './assets/clubs/LokomotivaBrno.png';
-import pardubiceLogo from './assets/clubs/Pardubice.png';
+import pardubiceLogo from './assets/clubs/Pardubice.svg';
 import pragueRaptorsLogo from './assets/clubs/PragueRaptors.png';
 import sigmaOlomoucLogo from './assets/clubs/SigmaOlomouc.png';
 import slaviaPrahaLogo from './assets/clubs/SlaviaPraha.png';
@@ -62,17 +62,15 @@ import youthWalkoutImage from './assets/youth-walkout.jpg';
 import { CZECHIA_PATH, CZECHIA_VIEW_BOX, CZECH_REGIONS } from './czechia';
 import { CompletedMountMotion, FailedMountMotion, MountMotion } from './motion';
 import type { AppRoute } from './route';
-import { clubRouter, competitionRouter, urlToAppRoute } from './route';
+import { urlToAppRoute } from './route';
 
 // MODEL
 //
-// Two pages share this model: the landing page ('' club slug) and a club
-// profile (the club's slug). Scroll reveals and parallax live outside the
-// model on purpose: they fire dozens of times per second, and routing them
-// through update would re-render the page on every frame. See motion.ts.
-
-export const ScorerScope = S.Literals(['current', 'allTime']);
-export type ScorerScope = typeof ScorerScope.Type;
+// One page: the landing. Club and competition profiles live on the
+// platform — every profile link here is a plain cross-app URL. Scroll
+// reveals and parallax live outside the model on purpose: they fire dozens
+// of times per second, and routing them through update would re-render the
+// page on every frame. See motion.ts.
 
 // The map's league filter. 'all' shows both flights; picking a league dims
 // the other one's pins.
@@ -82,16 +80,10 @@ export type MapLeague = typeof MapLeague.Type;
 export const Model = S.Struct({
   menuOpen: S.Boolean,
   // Id of the landing section the viewport sat in when the menu was last
-  // opened ('' = none, e.g. the hero or a profile page). Resolved once per
-  // open by DetectActiveSection — scroll is locked while the overlay is up,
+  // opened ('' = none, e.g. the hero). Resolved once per open by
+  // DetectActiveSection — scroll is locked while the overlay is up,
   // so it cannot go stale.
   activeSection: S.String,
-  // '' = not on a club profile; otherwise the slug of the open club.
-  clubSlug: S.String,
-  // '' = not on a competition profile; otherwise the competition's slug.
-  competitionSlug: S.String,
-  // Which top-scorer board the club profile shows.
-  scorerScope: ScorerScope,
   mapLeague: MapLeague,
   // Slug of the club whose card is open over the map ('' = none). Pins open
   // the card; navigation to the profile happens via the card's button.
@@ -118,7 +110,6 @@ export const ChangedUrl = m('ChangedUrl', { url: Url });
 export const CompletedNavigate = m('CompletedNavigate');
 export const CompletedLoad = m('CompletedLoad');
 export const CompletedScrollLock = m('CompletedScrollLock');
-export const SelectedScorerScope = m('SelectedScorerScope', { scope: ScorerScope });
 export const SelectedMapLeague = m('SelectedMapLeague', { league: MapLeague });
 // '' closes the club card(s).
 export const OpenedMapClub = m('OpenedMapClub', { slug: S.String });
@@ -134,7 +125,6 @@ export const Message = S.Union([
   CompletedNavigate,
   CompletedLoad,
   CompletedScrollLock,
-  SelectedScorerScope,
   SelectedMapLeague,
   OpenedMapClub,
   ToggledAreaUnit,
@@ -312,40 +302,24 @@ export const DetectActiveSection = Command.define(
 const initialModel: Model = {
   menuOpen: false,
   activeSection: '',
-  clubSlug: '',
-  competitionSlug: '',
-  scorerScope: 'current',
   mapLeague: 'all',
   mapClub: '',
   mapAreaImperial: true,
 };
 
 // Applies a parsed URL to the model — used for the initial load, our own
-// navigation, and browser back/forward. Unknown paths and unknown slugs
-// both fall back to the landing page.
+// navigation, and browser back/forward. Unknown paths fall back to the
+// landing page.
 const applyRoute = (model: Model, route: AppRoute): Model => {
   const next = M.value(route).pipe(
     M.withReturnType<Model>(),
     M.tagsExhaustive({
-      HomeRoute: () => ({ ...model, clubSlug: '', competitionSlug: '', menuOpen: false }),
-      ClubRoute: ({ slug }) => ({
-        ...model,
-        clubSlug: slug,
-        competitionSlug: '',
-        menuOpen: false,
-        scorerScope: 'current',
-      }),
-      CompetitionRoute: ({ slug }) => ({
-        ...model,
-        clubSlug: '',
-        competitionSlug: slug,
-        menuOpen: false,
-      }),
-      NotFoundRoute: () => ({ ...model, clubSlug: '', competitionSlug: '', menuOpen: false }),
+      HomeRoute: () => ({ ...model, menuOpen: false }),
+      NotFoundRoute: () => ({ ...model, menuOpen: false }),
     }),
   );
-  // Any navigation closes the map's club card — coming back to the landing
-  // page with a stale card open would be odd.
+  // Any navigation closes the map's club card — landing back on the page
+  // with a stale card open would be odd.
   return { ...next, mapClub: '' };
 };
 
@@ -396,7 +370,6 @@ export const update = (
       CompletedNavigate: () => [model, []],
       CompletedLoad: () => [model, []],
       CompletedScrollLock: () => [model, []],
-      SelectedScorerScope: ({ scope }) => [{ ...model, scorerScope: scope }, []],
       SelectedMapLeague: ({ league }) => [{ ...model, mapLeague: league, mapClub: '' }, []],
       OpenedMapClub: ({ slug }) => [{ ...model, mapClub: slug }, []],
       ToggledAreaUnit: () => [{ ...model, mapAreaImperial: !model.mapAreaImperial }, []],
@@ -412,17 +385,8 @@ export const update = (
 const FIRST_LEAGUE = 'First League';
 const SECOND_LEAGUE = 'Second League';
 
-// Current state of a competition, shown on its profile page: either a
-// league table or a list of ties/participations (cups and Europe).
-interface CompetitionTie {
-  readonly primary: string;
-  readonly secondary: string;
-}
-
-type CompetitionStandings =
-  | { readonly kind: 'table'; readonly league: string }
-  | { readonly kind: 'ties'; readonly rows: ReadonlyArray<CompetitionTie> };
-
+// One competition card in 02. The full profile (standings, format, history)
+// lives on the platform — the card's slug builds the cross-app link.
 interface Competition {
   readonly slug: string;
   readonly label: string;
@@ -430,13 +394,6 @@ interface Competition {
   readonly badge: string;
   readonly alt: string;
   readonly copy: string;
-  readonly tagline: string;
-  // The format explainer, one rule per line. Placeholder — verify against
-  // the real regulations before publishing.
-  readonly format: ReadonlyArray<string>;
-  // History stats for the profile page (count-up values). Placeholder.
-  readonly history: ReadonlyArray<{ readonly value: string; readonly label: string }>;
-  readonly standings: CompetitionStandings;
 }
 
 const competitions: ReadonlyArray<Competition> = [
@@ -447,18 +404,6 @@ const competitions: ReadonlyArray<Competition> = [
     badge: firstLeagueBadge,
     alt: 'Sparta and Slavia players challenging for the ball in the Prague derby',
     copy: 'The best of the best. Prague’s two “S” clubs have owned it for years — but the chasing pack has other plans.',
-    tagline: 'The top flight of Czech women’s football',
-    format: [
-      'Eight clubs, everyone plays everyone home and away — 14 rounds.',
-      'The champion enters UWCL qualifying; the runner-up gets the Europa Cup path.',
-      'The bottom club faces a relegation playoff against the Second League winner.',
-    ],
-    history: [
-      { value: '14', label: 'Titles for Sparta Praha, the record' },
-      { value: '30', label: 'Seasons played since the league formed' },
-      { value: '412', label: 'Goals scored last season' },
-    ],
-    standings: { kind: 'table', league: FIRST_LEAGUE },
   },
   {
     slug: 'second-league',
@@ -467,18 +412,6 @@ const competitions: ReadonlyArray<Competition> = [
     badge: secondLeagueBadge,
     alt: 'Two second-league players dueling for the ball on an autumn pitch',
     copy: 'A world away from the top flight, and Sparta’s B side’s stomping ground — yet it keeps sending players up who stick.',
-    tagline: 'The second tier — the road up',
-    format: [
-      'Eight clubs, home and away — 14 rounds of promotion fights.',
-      'The winner meets the First League’s bottom club in a playoff for the top flight.',
-      'No relegation pressure — the league is the country’s proving ground.',
-    ],
-    history: [
-      { value: '12', label: 'Clubs promoted since the format began' },
-      { value: '18', label: 'Average age of last season’s champions' },
-      { value: '368', label: 'Goals scored last season' },
-    ],
-    standings: { kind: 'table', league: SECOND_LEAGUE },
   },
   {
     slug: 'domestic-cup',
@@ -487,25 +420,6 @@ const competitions: ReadonlyArray<Competition> = [
     badge: domesticCupBadge,
     alt: 'A cup tie duel in front of an LED advertising board',
     copy: 'The nation’s favorite knockout. One game at a time — switch off for a minute and you’re gone, waiting a whole year for another shot. Cruel game.',
-    tagline: 'Knockout football — anyone can win it',
-    format: [
-      'Straight knockout, single-leg ties — no second chances.',
-      'Clubs from both leagues enter; lower-league sides host when drawn together.',
-      'The winner books a Europa Cup spot regardless of league position.',
-    ],
-    history: [
-      { value: '11', label: 'Different winners in the cup’s history' },
-      { value: '5', label: 'Titles for Sparta Praha, the record' },
-      { value: '3', label: 'Finals decided on penalties' },
-    ],
-    standings: {
-      kind: 'ties',
-      rows: [
-        { primary: 'Semis — Sparta Praha vs Slovácko', secondary: 'Apr 12' },
-        { primary: 'Semis — Slavia Praha vs Baník Ostrava', secondary: 'Apr 13' },
-        { primary: 'Finals — Prague, Letná', secondary: 'May 8' },
-      ],
-    },
   },
   {
     slug: 'uwcl',
@@ -514,24 +428,6 @@ const competitions: ReadonlyArray<Competition> = [
     badge: uwclBadge,
     alt: 'A Slavia Praha player driving past a Galatasaray captain on a European night',
     copy: 'Every footballer’s dream — the most prestigious club competition on the planet. Who’ll be the first Czech side to take down OL Lyonnes?',
-    tagline: 'UEFA Women’s Champions League',
-    format: [
-      'Champions and top clubs from across Europe enter through qualifying rounds.',
-      'An 18-team league phase replaced the groups — six matches, one table.',
-      'The top eight go to the knockouts; the final is a single match at a neutral venue.',
-    ],
-    history: [
-      { value: '2', label: 'UWCL semifinals reached by Czech clubs' },
-      { value: '9', label: 'Czech UWCL campaigns so far' },
-      { value: '23', label: 'European nights played in Prague' },
-    ],
-    standings: {
-      kind: 'ties',
-      rows: [
-        { primary: 'Slavia Praha — League phase', secondary: 'Matchday 3 of 6' },
-        { primary: 'Sparta Praha — Round 2', secondary: 'Eliminated' },
-      ],
-    },
   },
   {
     slug: 'uwec',
@@ -540,21 +436,6 @@ const competitions: ReadonlyArray<Competition> = [
     badge: uwecBadge,
     alt: 'A Sparta Praha player in the black away kit striking the ball in the rain',
     copy: 'Europe’s newest club competition — and Sparta Praha ran all the way to the semifinals in its very first season.',
-    tagline: 'UEFA Women’s Europa Cup',
-    format: [
-      'Europe’s second competition — runners-up and cup winners enter here.',
-      'Two-leg knockout rounds from the first draw to the semifinals.',
-      'UWCL qualifying losers drop in, keeping every round dangerous.',
-    ],
-    history: [
-      { value: '1', label: 'Semifinal reached by a Czech club' },
-      { value: '4', label: 'Czech campaigns in the competition' },
-      { value: '12', label: 'Wins on European away trips' },
-    ],
-    standings: {
-      kind: 'ties',
-      rows: [{ primary: 'Sparta Praha — Quarters vs Young Boys', secondary: 'First leg Mar 18' }],
-    },
   },
   {
     slug: 'national-team',
@@ -563,24 +444,6 @@ const competitions: ReadonlyArray<Competition> = [
     badge: nationalTeamBadge,
     alt: 'Two Czech national team players celebrating in the red home shirt',
     copy: 'Playing for your country — there’s no bigger honor. A first major tournament appearance is still out there, and our time is coming.',
-    tagline: 'UEFA Women’s Nations League',
-    format: [
-      'Europe’s national teams split into tiered leagues — League A down to League C.',
-      'Home-and-away group games, with promotion and relegation between the tiers.',
-      'Results feed into EURO and World Cup qualifying — every night counts.',
-    ],
-    history: [
-      { value: '25', label: 'Lvice called up for the last camp' },
-      { value: '9', label: 'International matches a year we cover' },
-      { value: '4', label: 'Qualifying campaigns on our feeds' },
-    ],
-    standings: {
-      kind: 'ties',
-      rows: [
-        { primary: 'League B — Group stage', secondary: 'Matchday 4 of 6' },
-        { primary: 'Promotion playoff', secondary: 'To be confirmed' },
-      ],
-    },
   },
 ];
 
@@ -838,7 +701,10 @@ const menuGlyph = (open: boolean): Html =>
 
 const headerView = (model: Model): Html =>
   h.header(
-    [h.Class('fixed inset-x-0 top-0 z-50 bg-ink text-paper')],
+    // Translucent ink + blur — the platform header's device, mirrored here
+    // so the two apps read as one page (their headers are deliberate
+    // duplicates of each other).
+    [h.Class('fixed inset-x-0 top-0 z-50 bg-ink/90 text-paper backdrop-blur')],
     [
       h.div(
         [h.Class(`${container} flex h-14 items-center justify-between md:h-16`)],
@@ -864,22 +730,18 @@ const headerView = (model: Model): Html =>
               h.span(
                 [
                   h.Class(
-                    'font-body ml-2.5 text-[9px] leading-[1.9] tracking-[0.2em] text-ink uppercase select-none md:ml-3 md:text-[10px]',
+                    'font-body ml-2.5 text-[9px] leading-[1.9] tracking-[0.2em] whitespace-nowrap text-ink uppercase select-none md:ml-3 md:text-[10px]',
                   ),
                 ],
                 [
                   // The pink sits on an inner INLINE span with cloned decoration:
-                  // below sm the stamp breaks into two lines and each line's pink
-                  // must hug its own text — a blockified (flex-item) box would
-                  // paint one rectangle as wide as the longest line.
+                  // the stamp is ALWAYS two lines (matching the platform header's
+                  // copy of it) and each line's pink must hug its own text — a
+                  // blockified (flex-item) box would paint one rectangle as wide
+                  // as the longest line.
                   h.span(
                     [h.Class('box-decoration-clone bg-pink px-1.5 py-0.5')],
-                    [
-                      'Preview Build',
-                      h.span([h.Class('hidden sm:inline')], [' · ']),
-                      h.br([h.Class('sm:hidden')]),
-                      'Work in progress',
-                    ],
+                    ['Preview Build', h.br([]), 'Work in progress'],
                   ),
                 ],
               ),
@@ -1726,7 +1588,7 @@ const competitionCard = (competition: Competition): Html =>
         [
           h.a(
             [
-              h.Href(competitionRouter({ slug: competition.slug })),
+              h.Href(`${platformUrl}/competitions/${competition.slug}`),
               h.Class(
                 'display inline-block bg-pink px-4 py-2 text-fluid-3xl-4xl text-paper transition-colors duration-300 hover:bg-paper hover:text-ink active:bg-paper active:text-ink',
               ),
@@ -2307,7 +2169,7 @@ const championsView = (): Html =>
                   // facts → button reads better stacked), see below.
                   h.a(
                     [
-                      h.Href(clubRouter({ slug: 'sparta-praha' })),
+                      h.Href(`${platformUrl}/clubs/sparta-praha`),
                       h.Class(
                         // Full CTA spec (px-8/py-4, text-2xl at md) — the same
                         // size as the Discover buttons (user call; the old
@@ -2413,7 +2275,7 @@ const championsView = (): Html =>
                 [
                   h.a(
                     [
-                      h.Href(clubRouter({ slug: 'sparta-praha' })),
+                      h.Href(`${platformUrl}/clubs/sparta-praha`),
                       h.Class(
                         'display inline-block bg-pink px-8 py-4 text-xl tracking-[0.08em] text-ink transition-colors duration-300 active:bg-ink active:text-paper',
                       ),
@@ -3965,7 +3827,7 @@ const clubPin = (model: Model, club: Club): Html => {
                 bannerTeams.map((team, index) =>
                   h.a(
                     [
-                      h.Href(clubRouter({ slug: team.slug })),
+                      h.Href(`${platformUrl}/clubs/${team.slug}`),
                       // The hover fill SLIDES UP from below the row — the
                       // same signature move as the menu anchors' underlay,
                       // same curve. overflow-hidden keeps the slide inside
@@ -5208,520 +5070,6 @@ const footerView = (menuOpen: boolean): Html =>
     ],
   );
 
-// CLUB PROFILE
-//
-// Everything below is mock data shaped like the draft: standings for the
-// club's league, the current Domestic Cup run, and a top-scorer board with
-// a current/all-time toggle. Replace with API data when it exists.
-
-interface StandingsRow {
-  readonly team: string;
-  readonly played: number;
-  readonly points: number;
-}
-
-const firstLeagueStandings: ReadonlyArray<StandingsRow> = [
-  { team: 'Sparta Praha', played: 14, points: 36 },
-  { team: 'Slavia Praha', played: 14, points: 33 },
-  { team: 'Baník Ostrava', played: 14, points: 27 },
-  { team: 'Slovácko', played: 14, points: 23 },
-  { team: 'Viktoria Plzeň', played: 14, points: 19 },
-  { team: 'Lokomotiva Brno', played: 14, points: 15 },
-  { team: 'Slovan Liberec', played: 14, points: 11 },
-  { team: 'Prague Raptors', played: 14, points: 6 },
-];
-
-const secondLeagueStandings: ReadonlyArray<StandingsRow> = [
-  { team: 'Sparta Praha B', played: 14, points: 34 },
-  { team: 'Sigma Olomouc', played: 14, points: 30 },
-  { team: 'Hradec Králové', played: 14, points: 27 },
-  { team: 'Viktoria Plzeň B', played: 14, points: 24 },
-  { team: 'Pardubice', played: 14, points: 22 },
-  { team: 'Vysočina Jihlava', played: 14, points: 19 },
-  { team: 'Artis Brno', played: 14, points: 17 },
-  { team: 'Slovan Liberec B', played: 14, points: 13 },
-  { team: 'Teplice', played: 14, points: 10 },
-  { team: 'Dynamo České Budějovice', played: 14, points: 8 },
-  { team: 'Braník', played: 14, points: 4 },
-];
-
-interface CupTie {
-  readonly round: string;
-  readonly result: string;
-  readonly upcoming: boolean;
-}
-
-const cupRun: ReadonlyArray<CupTie> = [
-  { round: 'Round of 16', result: 'Won 3:0', upcoming: false },
-  { round: 'Quarters', result: 'Won 2:1', upcoming: false },
-  { round: 'Semis', result: 'Coming up', upcoming: true },
-];
-
-interface Scorer {
-  readonly name: string;
-  readonly goals: number;
-}
-
-// Deterministic per-club placeholder scorers, so every profile shows stable
-// but obviously replaceable content. Sparta's current scorer ties into the
-// player-spotlight section.
-const scorerPool: ReadonlyArray<string> = [
-  'Adéla Novotná',
-  'Karolína Dvořáková',
-  'Tereza Svobodová',
-  'Lucie Králová',
-  'Eliška Procházková',
-  'Veronika Marešová',
-  'Barbora Šimková',
-  'Natálie Horáková',
-];
-
-const hashSlug = (slug: string): number => {
-  let hash = 0;
-  for (let i = 0; i < slug.length; i++) {
-    hash = (hash * 31 + slug.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash);
-};
-
-const scorerFor = (club: Club, scope: ScorerScope): Scorer => {
-  if (club.slug === 'sparta-praha' && scope === 'current') {
-    return { name: 'Denisa Rancová', goals: 17 };
-  }
-  const seed = hashSlug(scope === 'current' ? club.slug : `all:${club.slug}`);
-  return {
-    name: scorerPool[seed % scorerPool.length] ?? '—',
-    goals: scope === 'current' ? 6 + (seed % 10) : 38 + (seed % 55),
-  };
-};
-
-// A profile block header: pink label bar on ink, mirroring the landing
-// kickers (same size, no numbering).
-const blockLabel = (label: string, dark: boolean): Html =>
-  h.div(
-    [h.Class('flex')],
-    [
-      h.span(
-        [
-          h.Class(
-            `display inline-block px-4 py-2 text-fluid-xl-3xl tracking-[0.2em] md:px-5 md:py-3 ${
-              dark ? 'bg-pink text-ink' : 'bg-ink text-pink'
-            }`,
-          ),
-          h.DataAttribute('reveal', 'wipe'),
-        ],
-        [label],
-      ),
-    ],
-  );
-
-const clubHeroView = (club: Club): Html => {
-  const honors: ReadonlyArray<string> = [
-    ...(club.leagueTitles > 0 ? [`${club.leagueTitles}× League winner`] : []),
-    ...(club.cupTitles > 0 ? [`${club.cupTitles}× Cup winner`] : []),
-  ];
-  return h.section(
-    [h.Class('bg-paper pt-32 pb-16 text-ink md:pt-44 md:pb-24')],
-    [
-      h.div(
-        [h.Class(`${container} text-center`)],
-        [
-          h.img([
-            h.Src(club.logo),
-            h.Alt(`${club.name} crest`),
-            h.Class('mx-auto h-28 w-auto md:h-40'),
-            h.DataAttribute('reveal', 'zoom'),
-          ]),
-          h.h1([h.Class('mt-8')], [maskedLine(club.name, 'text-fluid-5xl-8xl', 0.1)]),
-          h.div(
-            [h.Class('mt-6 flex flex-wrap justify-center gap-3')],
-            honors.length > 0
-              ? honors.map((honor, index) =>
-                  h.span(
-                    [
-                      h.Class(
-                        'display inline-block bg-ink px-3 py-2 text-sm tracking-[0.15em] text-pink md:text-lg',
-                      ),
-                      h.DataAttribute('reveal', 'wipe'),
-                      h.Style({ '--reveal-delay': `${0.3 + index * 0.15}s` }),
-                    ],
-                    [honor],
-                  ),
-                )
-              : [
-                  h.span(
-                    [
-                      h.Class('text-sm tracking-[0.2em] uppercase text-ink/50'),
-                      h.DataAttribute('reveal', 'up'),
-                    ],
-                    [`${club.city} — ${club.league}`],
-                  ),
-                ],
-          ),
-        ],
-      ),
-    ],
-  );
-};
-
-const standingsView = (club: Club): Html => {
-  const rows = club.league === FIRST_LEAGUE ? firstLeagueStandings : secondLeagueStandings;
-  return h.section(
-    [h.Class('bg-ink py-20 text-paper md:py-28')],
-    [
-      h.div(
-        [h.Class(container)],
-        [blockLabel(`Current standings — ${club.league}`, true), leagueTable(rows, club.name)],
-      ),
-    ],
-  );
-};
-
-// A league table on an ink section, with an optional pink-highlighted team.
-const leagueTable = (rows: ReadonlyArray<StandingsRow>, highlightTeam: string | null): Html =>
-  h.ol(
-    [h.Class('mt-10 border-t-4 border-paper md:mt-14')],
-    rows.map((row, index) =>
-      h.li(
-        [
-          h.Class(
-            `flex items-baseline gap-4 border-b px-2 py-3 md:gap-8 md:py-4 ${
-              row.team === highlightTeam ? 'border-pink bg-pink text-ink' : 'border-paper/15'
-            }`,
-          ),
-          h.DataAttribute('reveal', 'up'),
-          h.Style({ '--reveal-delay': `${index * 0.06}s` }),
-        ],
-        [
-          h.span([h.Class('display w-8 text-fluid-2xl-3xl')], [`${index + 1}`]),
-          h.span([h.Class('display flex-1 text-fluid-2xl-4xl')], [row.team]),
-          h.span(
-            [
-              h.Class(
-                `hidden text-xs tracking-[0.2em] uppercase sm:block ${
-                  row.team === highlightTeam ? 'text-ink/70' : 'text-paper/50'
-                }`,
-              ),
-            ],
-            [`${row.played} played`],
-          ),
-          h.span([h.Class('display w-14 text-right text-fluid-2xl-4xl')], [`${row.points}`]),
-        ],
-      ),
-    ),
-  );
-
-const cupRunView = (): Html =>
-  h.section(
-    [h.Class('bg-paper py-20 text-ink md:py-28')],
-    [
-      h.div(
-        [h.Class(container)],
-        [
-          blockLabel('Current standings — Domestic Cup', false),
-          h.ol(
-            [h.Class('mt-10 border-t-4 border-ink md:mt-14')],
-            cupRun.map((tie, index) =>
-              h.li(
-                [
-                  h.Class(
-                    `flex items-baseline justify-between gap-4 border-b px-2 py-4 md:py-5 ${
-                      tie.upcoming ? 'border-pink bg-pink' : 'border-ink/15'
-                    }`,
-                  ),
-                  h.DataAttribute('reveal', 'up'),
-                  h.Style({ '--reveal-delay': `${index * 0.1}s` }),
-                ],
-                [
-                  h.span([h.Class('display text-fluid-2xl-4xl')], [tie.round]),
-                  h.span(
-                    [
-                      h.Class(
-                        `text-sm tracking-[0.2em] uppercase ${
-                          tie.upcoming ? 'text-ink' : 'text-ink/60'
-                        }`,
-                      ),
-                    ],
-                    [tie.result],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    ],
-  );
-
-const scopeButton = (model: Model, scope: ScorerScope, label: string): Html =>
-  h.button(
-    [
-      h.OnClick(SelectedScorerScope({ scope })),
-      h.AriaPressed(model.scorerScope === scope ? 'true' : 'false'),
-      h.Class(
-        `display cursor-pointer px-2 text-sm tracking-[0.2em] transition-colors md:text-base ${
-          model.scorerScope === scope ? 'text-pink' : 'text-paper/50 hover:text-paper'
-        }`,
-      ),
-    ],
-    [label],
-  );
-
-const topScorerView = (club: Club, model: Model): Html => {
-  const scorer = scorerFor(club, model.scorerScope);
-  return h.section(
-    [h.Class('bg-ink py-20 text-paper md:py-28')],
-    [
-      h.div(
-        [h.Class(container)],
-        [
-          h.div(
-            [h.Class('flex flex-wrap items-center justify-between gap-4')],
-            [
-              blockLabel('Top scorer', true),
-              h.div(
-                [h.Class('flex items-center gap-1')],
-                [
-                  scopeButton(model, 'current', 'Current'),
-                  h.span([h.Class('text-paper/30')], ['|']),
-                  scopeButton(model, 'allTime', 'All time'),
-                ],
-              ),
-            ],
-          ),
-          h.div(
-            [h.Class('mt-10 flex flex-wrap items-baseline gap-x-8 gap-y-4 md:mt-14')],
-            [
-              h.span([h.Class('display text-fluid-7xl-9xl text-pink')], [`${scorer.goals}`]),
-              h.div(
-                [],
-                [
-                  h.span([h.Class('display block text-fluid-3xl-5xl')], [scorer.name]),
-                  h.span(
-                    [h.Class('mt-1 block text-xs tracking-[0.2em] uppercase text-paper/60')],
-                    [model.scorerScope === 'current' ? 'Goals this season' : 'Goals all time'],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    ],
-  );
-};
-
-const backToMapView = (): Html =>
-  h.section(
-    [h.Class('bg-paper py-16 text-ink md:py-20')],
-    [
-      h.div(
-        [h.Class(`${container} flex justify-center`)],
-        [
-          h.a(
-            [
-              h.Href('/#across-the-lands'),
-              h.Class(
-                'display inline-block bg-ink px-8 py-4 text-xl tracking-[0.08em] text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
-              ),
-            ],
-            [h.span([h.Class('arrow-back inline-block')], ['←']), ' Back to the map'],
-          ),
-        ],
-      ),
-    ],
-  );
-
-const clubProfileSections = (club: Club, model: Model): ReadonlyArray<Html> => [
-  clubHeroView(club),
-  standingsView(club),
-  cupRunView(),
-  topScorerView(club, model),
-  backToMapView(),
-];
-
-// COMPETITION PROFILE
-//
-// Same skeleton as the club profile: hero, current standings, then the two
-// blocks from the draft — a format explainer and history statistics. All
-// content comes from the (placeholder) fields on `Competition`.
-
-const competitionHeroView = (competition: Competition): Html =>
-  h.section(
-    [h.Class('bg-paper pt-32 pb-16 text-ink md:pt-44 md:pb-24')],
-    [
-      h.div(
-        [h.Class(`${container} text-center`)],
-        [
-          h.img([
-            h.Src(competition.badge),
-            h.Alt(`${competition.label} brand tile`),
-            h.Class('mx-auto h-28 w-auto md:h-40'),
-            h.DataAttribute('reveal', 'zoom'),
-          ]),
-          h.h1([h.Class('mt-8')], [maskedLine(competition.label, 'text-fluid-5xl-8xl', 0.1)]),
-          h.div(
-            [h.Class('mt-6 flex justify-center')],
-            [
-              h.span(
-                [
-                  h.Class(
-                    'display inline-block bg-ink px-3 py-2 text-sm tracking-[0.15em] text-pink md:text-lg',
-                  ),
-                  h.DataAttribute('reveal', 'wipe'),
-                  h.Style({ '--reveal-delay': '0.3s' }),
-                ],
-                [competition.tagline],
-              ),
-            ],
-          ),
-        ],
-      ),
-    ],
-  );
-
-const competitionStandingsView = (competition: Competition): Html =>
-  h.section(
-    [h.Class('bg-ink py-20 text-paper md:py-28')],
-    [
-      h.div(
-        [h.Class(container)],
-        [
-          blockLabel('Current standings', true),
-          competition.standings.kind === 'table'
-            ? leagueTable(
-                competition.standings.league === FIRST_LEAGUE
-                  ? firstLeagueStandings
-                  : secondLeagueStandings,
-                null,
-              )
-            : h.ol(
-                [h.Class('mt-10 border-t-4 border-paper md:mt-14')],
-                competition.standings.rows.map((tie, index) =>
-                  h.li(
-                    [
-                      h.Class(
-                        'flex flex-wrap items-baseline justify-between gap-x-4 border-b border-paper/15 px-2 py-4 md:py-5',
-                      ),
-                      h.DataAttribute('reveal', 'up'),
-                      h.Style({ '--reveal-delay': `${index * 0.1}s` }),
-                    ],
-                    [
-                      h.span([h.Class('display text-fluid-2xl-4xl')], [tie.primary]),
-                      h.span(
-                        [h.Class('text-xs tracking-[0.2em] uppercase text-pink md:text-sm')],
-                        [tie.secondary],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-        ],
-      ),
-    ],
-  );
-
-const competitionFormatView = (competition: Competition): Html =>
-  h.section(
-    [h.Class('bg-paper py-20 text-ink md:py-28')],
-    [
-      h.div(
-        [h.Class(container)],
-        [
-          blockLabel('How it works', false),
-          h.ol(
-            [h.Class('mt-10 border-t-4 border-ink md:mt-14')],
-            competition.format.map((rule, index) =>
-              h.li(
-                [
-                  h.Class('flex items-baseline gap-6 border-b border-ink/15 px-2 py-5 md:py-6'),
-                  h.DataAttribute('reveal', 'up'),
-                  h.Style({ '--reveal-delay': `${index * 0.12}s` }),
-                ],
-                [
-                  h.span([h.Class('display text-fluid-4xl-6xl text-pink')], [`0${index + 1}`]),
-                  h.p([h.Class('text-lg leading-relaxed md:text-2xl')], [rule]),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    ],
-  );
-
-const competitionHistoryView = (competition: Competition): Html =>
-  h.section(
-    [h.Class('bg-ink py-20 text-paper md:py-28')],
-    [
-      h.div(
-        [h.Class(container)],
-        [
-          blockLabel('History in numbers', true),
-          // A plain list, not a <dl>: value-as-term read the pairs backwards
-          // (the honors board's lesson).
-          h.ul(
-            [h.Class('mt-10 grid gap-10 md:mt-14 md:grid-cols-3')],
-            competition.history.map((stat, index) =>
-              h.li(
-                [
-                  h.DataAttribute('reveal', 'up'),
-                  h.Style({ '--reveal-delay': `${index * 0.15}s` }),
-                ],
-                [
-                  h.span(
-                    [
-                      h.Class('display block text-fluid-7xl-8xl text-pink'),
-                      h.DataAttribute('countup', ''),
-                    ],
-                    [stat.value],
-                  ),
-                  h.span(
-                    [
-                      h.Class(
-                        'mt-3 block max-w-60 text-xs leading-relaxed tracking-[0.2em] uppercase text-paper/60 md:text-sm',
-                      ),
-                    ],
-                    [stat.label],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    ],
-  );
-
-const backToCompetitionsView = (): Html =>
-  h.section(
-    [h.Class('bg-paper py-16 text-ink md:py-20')],
-    [
-      h.div(
-        [h.Class(`${container} flex justify-center`)],
-        [
-          h.a(
-            [
-              h.Href('/#battling-through'),
-              h.Class(
-                'display inline-block bg-ink px-8 py-4 text-xl tracking-[0.08em] text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink md:text-2xl',
-              ),
-            ],
-            [h.span([h.Class('arrow-back inline-block')], ['←']), ' Back to competitions'],
-          ),
-        ],
-      ),
-    ],
-  );
-
-const competitionProfileSections = (competition: Competition): ReadonlyArray<Html> => [
-  competitionHeroView(competition),
-  competitionStandingsView(competition),
-  competitionFormatView(competition),
-  competitionHistoryView(competition),
-  backToCompetitionsView(),
-];
-
 const landingSections = (model: Model): ReadonlyArray<Html> => [
   heroView(),
   storyView(),
@@ -5741,47 +5089,23 @@ const landingSections = (model: Model): ReadonlyArray<Html> => [
   followView(),
 ];
 
-export const view = (model: Model): Document => {
-  const openClub = clubs.find((candidate) => candidate.slug === model.clubSlug);
-  const openCompetition = competitions.find(
-    (candidate) => candidate.slug === model.competitionSlug,
-  );
-
-  const pageKey = openClub
-    ? `club-${openClub.slug}`
-    : openCompetition
-      ? `competition-${openCompetition.slug}`
-      : 'landing';
-  const sections = openClub
-    ? clubProfileSections(openClub, model)
-    : openCompetition
-      ? competitionProfileSections(openCompetition)
-      : landingSections(model);
-
-  return {
-    title: openClub
-      ? `${openClub.name} — Skóreová`
-      : openCompetition
-        ? `${openCompetition.label} — Skóreová`
-        : 'Skóreová — Czech Women’s Football',
-    body: h.div(
-      [h.Class('bg-ink font-body text-paper antialiased')],
-      [
-        headerView(model),
-        menuOverlayView(model),
-        // Keyed per page: switching routes recreates <main>, which re-runs
-        // MountMotion so reveals/parallax/count-ups attach to the new DOM.
-        // While the menu overlay is open, the page content behind it goes
-        // `inert` — unfocusable and invisible to assistive tech, so Tab
-        // cycles through the overlay (and header) only. The attribute is
-        // added conditionally rather than set to `false` because `inert`
-        // is a boolean attribute: its mere presence would disable the page.
-        h.main(
-          [h.Key(pageKey), h.OnMount(MountMotion()), ...(model.menuOpen ? [h.Inert(true)] : [])],
-          sections,
-        ),
-        footerView(model.menuOpen),
-      ],
-    ),
-  };
-};
+export const view = (model: Model): Document => ({
+  title: 'Skóreová — Czech Women’s Football',
+  body: h.div(
+    [h.Class('bg-ink font-body text-paper antialiased')],
+    [
+      headerView(model),
+      menuOverlayView(model),
+      // While the menu overlay is open, the page content behind it goes
+      // `inert` — unfocusable and invisible to assistive tech, so Tab
+      // cycles through the overlay (and header) only. The attribute is
+      // added conditionally rather than set to `false` because `inert`
+      // is a boolean attribute: its mere presence would disable the page.
+      h.main(
+        [h.OnMount(MountMotion()), ...(model.menuOpen ? [h.Inert(true)] : [])],
+        landingSections(model),
+      ),
+      footerView(model.menuOpen),
+    ],
+  ),
+});
