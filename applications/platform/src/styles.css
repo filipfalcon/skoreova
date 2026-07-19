@@ -1,0 +1,196 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ink: #0d0c0c;
+  --color-panel: #151313;
+  --color-paper: #f3efe8;
+  --color-pink: #ff2f8e;
+  /* Market movement colors — the ticker's up/down states. Deliberately a
+     RED red (not magenta) so a fall can never be mistaken for brand pink. */
+  --color-rise: #16c784;
+  --color-fall: #ea3943;
+  --font-display: 'Anton', 'Arial Narrow', sans-serif;
+  --font-body: 'Archivo Variable', 'Helvetica Neue', Arial, sans-serif;
+}
+
+html {
+  /* The platform runs LIGHT (user call — the all-dark build read as sad
+     next to the landing's confident paper): paper surface, ink type, the
+     dark chrome (header, tab bar, market tape) pops on top. */
+  /* Split overscroll: rubber-banding above the header reveals BLACK (the
+     header's own world), below the page it stays paper. */
+  background: linear-gradient(to bottom, #000 0%, #000 50%, var(--color-paper) 50%);
+  /* Also keeps the welcome ticker's 100vw margin trick from spawning a
+     horizontal scrollbar (vw includes the scrollbar gutter). */
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+body {
+  font-family: var(--font-body);
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--color-pink);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-pink);
+  outline-offset: 2px;
+}
+
+::placeholder {
+  color: color-mix(in srgb, var(--color-paper) 35%, transparent);
+}
+
+/* Same display voice as the landing page — Anton, tight, uppercase. */
+@layer components {
+  .display {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    line-height: 0.92;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Film grain — same tiled SVG noise as the landing hero; the login screen
+   uses it so the two front doors share a skin. */
+.grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 240px 240px;
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+}
+
+/* Each screen slides up a touch as it mounts — keyed per route in the view,
+   so switching sections replays it. */
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.screen {
+  animation: screen-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Chart bars grow from the baseline, staggered via --bar-delay. */
+@keyframes bar-in {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.bar {
+  transform-origin: bottom;
+  transform-box: fill-box;
+  animation: bar-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--bar-delay, 0s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen,
+  .bar {
+    animation: none;
+  }
+}
+
+/* Overflow strips (the header's section rail in the md band) scroll
+   without showing a scrollbar. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* The welcome ticker — a seamless right-to-left loop. The row holds TWO
+   copies of the run and slides by exactly half its own width, so the
+   second copy lands where the first began. */
+.ticker {
+  overflow: hidden;
+}
+
+.ticker-row {
+  display: flex;
+  width: max-content;
+  animation: ticker-slide 40s linear infinite;
+}
+
+@keyframes ticker-slide {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* The HER GAME nav chip — paper at rest, breathing pink every few seconds
+   (the PS5-reveal treatment): a WIDE soft wash of pink light glides
+   through the chip while a pink glow swells around it and fades out —
+   one slow pulse, then rest. The wash lives in an oversized background
+   image; sliding background-position walks it through the chip once per
+   cycle, the rest of the cycle both (transparent) edges of the image are
+   in view. The glow is box-shadow keyed to peak mid-flight. The ACTIVE
+   chip drops this class and goes solid pink instead. */
+.hergame-chip {
+  background-image: linear-gradient(
+    115deg,
+    transparent 35%,
+    color-mix(in srgb, var(--color-pink) 65%, transparent) 50%,
+    transparent 65%
+  );
+  background-size: 400% 100%;
+  background-repeat: no-repeat;
+  animation: hergame-sweep 4.5s ease-in-out infinite;
+}
+
+@keyframes hergame-sweep {
+  0%,
+  45% {
+    background-position: 100% 0;
+    box-shadow: 0 0 0 0 rgba(255, 47, 142, 0);
+  }
+  62% {
+    box-shadow: 0 0 22px 2px rgba(255, 47, 142, 0.55);
+  }
+  80%,
+  100% {
+    background-position: 0% 0;
+    box-shadow: 0 0 0 0 rgba(255, 47, 142, 0);
+  }
+}
+
+/* Trending rows cascade in after the screen lands. */
+.trend-row {
+  animation: trend-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--row-delay, 0s);
+}
+
+@keyframes trend-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-row,
+  .trend-row,
+  .hergame-chip {
+    animation: none;
+  }
+}
