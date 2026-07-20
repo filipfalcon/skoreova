@@ -83,6 +83,56 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- SAME-PAGE ANCHORS (#section, e.g. the club profile's section chips).
+         The app runtime intercepts EVERY same-origin link click and
+         preventDefaults it, so a bare hash link would be handled as a route
+         change: the route resolves to the page you are already on, the view
+         re-renders at the top, and the jump never happens. The runtime skips
+         any click whose default is already prevented, so this listener —
+         registered first, because a classic script runs while the deferred
+         module is still queued — claims hash links before it sees them.
+
+         Deliberately NOT in the app: this is a DOM side effect with no model
+         to hold, the same reason the consent banner below lives out here. -->
+    <script>
+      (function () {
+        var jumpTo = function (hash) {
+          var element = hash.length > 1 ? document.getElementById(hash.slice(1)) : null;
+          if (!element) return false;
+          // scroll-margin-top on the target clears the fixed header.
+          element.scrollIntoView({
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+              ? 'auto'
+              : 'smooth',
+            block: 'start',
+          });
+          return true;
+        };
+
+        document.addEventListener('click', function (event) {
+          var link = event.target instanceof Element ? event.target.closest('a') : null;
+          if (!link) return;
+          var href = link.getAttribute('href') || '';
+          // Leave everything else — including "#cookie-settings", which has
+          // no element of its own and is handled by the banner script below.
+          if (href.charAt(0) !== '#' || !jumpTo(href)) return;
+          event.preventDefault();
+          history.replaceState(null, '', location.pathname + location.search + href);
+        });
+
+        // A deep link arrives before the app has rendered, so the browser's
+        // own jump finds nothing. Retry until the target exists, then stop —
+        // capped so a hash that never resolves cannot spin forever.
+        if (location.hash.length > 1) {
+          var tries = 0;
+          var settle = function () {
+            if (jumpTo(location.hash) || (tries += 1) > 120) return;
+            requestAnimationFrame(settle);
+          };
+          requestAnimationFrame(settle);
+        }
+      })();
+    </script>
     <!-- ABSOLUTE path: with a relative one, deep links (/clubs/<slug>)
          make the dev server resolve /clubs/src/entry.ts, the SPA fallback
          answers with HTML, and strict module MIME checking kills the app.
