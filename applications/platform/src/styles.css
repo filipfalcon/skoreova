@@ -9,6 +9,25 @@
      RED red (not magenta) so a fall can never be mistaken for brand pink. */
   --color-rise: #16c784;
   --color-fall: #ea3943;
+  /* Standings qualification zones (user-picked). Brand pink is already the
+     highlight row, the points column and every chip, so a pink band reads
+     as "brand", not as a prize. Same licence as rise/fall: data-only hues.
+     These now sit on PAPER (the club profile's data half went light).
+     Navy and purple survived the move untouched — 8.9:1 and 7.2:1 against
+     paper — but the lime did not, so it has an -ink variant used for BOTH
+     its bar and its label. */
+  --color-ucl: #1b3c8a;
+  --color-uec: #d5fe00;
+  --color-drop: #6d17c0;
+  /* MEASURED at 1.02:1 against paper — the ribbon was not dim, it was
+     gone. #d5fe00 is a colour for black backgrounds. Darkened along the
+     same hue until the bar reads as a bar and the 10px label reads as
+     type; --color-uec keeps the original for any dark surface. */
+  --color-uec-ink: #6b7a00;
+  /* Same story, less extreme, for the promotion green and the calendar's
+     W letter (1.9:1). The ticker's --color-rise stays untouched — it
+     still runs on black. */
+  --color-rise-ink: #0b8f5c;
   --font-display: 'Anton', 'Arial Narrow', sans-serif;
   --font-body: 'Archivo Variable', 'Helvetica Neue', Arial, sans-serif;
 }
@@ -176,10 +195,13 @@ body {
 }
 
 /* Club profile hero PARALLAX — scroll-driven, no JS (motion stays outside
-   the model). The artwork drifts DOWN at a fraction of scroll speed while
-   the crest + name drift slightly UP, so the title slides over the photo.
-   Progressive enhancement: browsers without scroll timelines (and
-   reduced-motion users) simply get the static hero. */
+   the model). ONE layer only (user call): the artwork sinks as the page
+   scrolls and everything over it holds still. An earlier build had the
+   title, the commentary and the sections below each counter-drifting at
+   their own rate so they slid over one another; it was removed — the
+   single moving photo says the same thing without the page shifting under
+   the reader. Progressive enhancement: browsers without scroll timelines
+   (and reduced-motion users) simply get the static hero. */
 @supports (animation-timeline: scroll()) {
   @media (prefers-reduced-motion: no-preference) {
     /* scroll(root), NOT scroll(): the bare form binds to the NEAREST
@@ -191,52 +213,6 @@ body {
       animation-timeline: scroll(root);
       animation-range: 0 40rem;
     }
-
-    /* LAYERED counter-drift — each block climbs faster than the one
-       before it AND carries its own opaque ink fill in the view, so a
-       lower layer doesn't just approach its neighbor: it slides OVER it
-       and covers it, card over card. Every section from the standings
-       DOWN shares one layer, so below-the-fold gaps never change.
-       Range must reach past where these blocks actually sit (commentary
-       ~58rem down, standings ~75rem down at typical content length) — an
-       8rem range finished the drift before either scrolled into view, so
-       the two sat frozen at a fixed offset with no visible relative motion
-       exactly where it mattered. 60rem carries the drift through the whole
-       first screenful of content, then holds for the long tail below
-       (scorers/history/stats/follow) where continued motion would just be
-       noise. The range is also the RATE dial: drift ÷ range is how many px
-       a layer climbs per px of scroll, and the SPREAD between two layers'
-       rates is what the eye actually reads as parallax — shortening the
-       range makes the same drift bite harder. */
-    .club-par-1,
-    .club-par-2,
-    .club-par-3 {
-      animation-timeline: scroll(root);
-      animation-range: 0 60rem;
-    }
-
-    .club-par-1 {
-      animation-name: club-par-1-drift;
-      animation-timing-function: linear;
-      animation-fill-mode: both;
-    }
-
-    .club-par-2 {
-      animation-name: club-par-2-drift;
-      animation-timing-function: linear;
-      animation-fill-mode: both;
-    }
-
-    /* The standings share the quote's range — a delayed range-start was
-       tried and rejected: holding them still while the quote kept
-       climbing OPENED a gap (80px → 144px) before any coverage began.
-       The lateness lives in the KEYFRAME instead (see below): they close
-       on the quote the entire way and only ride over it at the end. */
-    .club-par-3 {
-      animation-name: club-par-3-drift;
-      animation-timing-function: linear;
-      animation-fill-mode: both;
-    }
   }
 }
 
@@ -246,67 +222,132 @@ body {
   }
 }
 
-/* Drifts are deliberately LARGE relative to the range and the junctions
-   are ALLOWED to go negative — overlap is the effect (user call: it has
-   to feel like riding layer over layer; an earlier compensating-margin
-   pass that kept gaps positive read as nothing). The lower layer of each
-   pair paints later in the DOM and carries `bg-ink`, so as its junction
-   goes negative it genuinely COVERS the tail of the block above — the
-   quote swallows the title's kicker, the standings swallow the quote's
-   sign-off. overlap(progress) = (lower drift − upper drift) × progress −
-   baseline gap; quote→standings peaks around ~96px of real coverage
-   while both are on screen (more on phones, where the baseline gap is
-   smaller). Holding the end state (fill-mode both) is safe: past the
-   range end every junction sits above the viewport, so the frozen
-   overlap is never seen. If a drift changes, re-check that each covered
-   block still reads as a complete thought at max overlap — cover
-   whitespace and trailing furniture, not the quote's text itself. */
-@keyframes club-par-1-drift {
-  to {
-    transform: translateY(-4rem);
-  }
-}
-
-@keyframes club-par-2-drift {
-  to {
-    transform: translateY(-12rem);
-  }
-}
-
-/* ACCELERATING CLOSE: what matters is this curve's distance from par-2's
-   linear -12rem, i.e. the DIFFERENTIAL, which is the gap being eaten.
-   Stops are chosen so that differential grows every step but slowly at
-   first and steeply at the end:
-       progress   0     .25    .5     .75    .85    1
-       par-2      0     -3     -6     -9     -10.2  -12
-       par-3      0     -3.8   -7.8   -12.2  -15.2  -22
-       eaten      0     0.8    1.8    3.2    5.0    10.0  (rem)
-   So the standings approach the quote continuously the whole way (80px
-   gap → 67 → 51 → 29 → 0 on desktop), touch only at ~85% of the range,
-   and the real coverage lands in the final stretch as the pair exits the
-   top. Neither a constant-rate phase (pair looks glued, then snaps) nor a
-   single linear ramp (touches halfway, far too early) gives this — the
-   acceleration is the whole point. The gap it must eat is a fixed px
-   figure per breakpoint, so re-derive the tail stops if par-2's end value
-   or the layout margins change. */
-@keyframes club-par-3-drift {
-  0% {
+/* The commentary's opening quote LEVITATES — the landing page's "alive
+   emblem" treatment (its knight mascot and champion's crest), ported with
+   the same curve and period so the two sites bob at one rhythm. A slow
+   drift UP only: the mark sits above a fixed block of text, and dipping
+   down would close the gap to the first line and read as a wobble rather
+   than a float. */
+@keyframes quote-float {
+  0%,
+  100% {
     transform: translateY(0);
   }
-  25% {
-    transform: translateY(-3.8rem);
-  }
   50% {
-    transform: translateY(-7.8rem);
+    transform: translateY(-0.2rem);
   }
-  75% {
-    transform: translateY(-12.2rem);
+}
+
+.quote-float {
+  animation: quote-float 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quote-float {
+    animation: none;
   }
-  85% {
-    transform: translateY(-15.2rem);
+}
+
+/* The honours chip cycles its line like the landing page's pitchside AD
+   BOARD, and borrows that grammar exactly: the incoming line ROLLS DOWN
+   from the top and pushes the previous one out of the bottom — one
+   motor-driven motion, not a crossfade (which reads as corporate
+   carousel). Every line stacks in the same grid cell, so the chip is as
+   wide as the LONGEST honour and its width never jumps mid-rotation; the
+   chip's own overflow does the clipping. Loop = honours × 2s slot, offset
+   per line by --honour-index; the -0.45s shift parks the first line at
+   its rolled-in rest frame so the page doesn't load mid-roll.
+   Tuned for THREE honours (the curated count): the slot percentages below
+   are 1/3 of the loop. A club with a different number still reads fine —
+   it just holds each line for a different share — but re-derive these if
+   a club ever ships two or four. */
+@keyframes honour-roll {
+  0% {
+    animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+    opacity: 1;
+    transform: translateY(-100%);
   }
+
+  /* Rolled into place — 0.45s of the 6s loop. */
+  7.5% {
+    transform: translateY(0);
+  }
+
+  /* Slot over: ride the same curve out through the bottom edge. */
+  33.33% {
+    animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+    transform: translateY(0);
+  }
+
+  40.83% {
+    opacity: 1;
+    transform: translateY(100%);
+  }
+
+  /* HOLDS at the bottom for the rest of the loop — it does NOT rewind to
+     the top here. Rewinding mid-loop meant transform interpolating from
+     +100% to -100% across a 0.6ms gap, and that path runs straight through
+     translateY(0): land a frame inside it and the outgoing line flashes
+     half-faded across the middle of the chip. It only took one frame in
+     ~28, which is exactly the "glitches a bit on change" symptom. Parking
+     it at the bottom instead moves the rewind onto the ITERATION boundary
+     (100% → 0%), where the values snap and nothing is interpolated. */
+  40.84%,
   100% {
-    transform: translateY(-22rem);
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+/* Without the loop (no support, or reduced motion) the first line shows
+   and the chip is simply static. */
+.honour-roll > li {
+  opacity: 0;
+}
+
+.honour-roll > li:first-child {
+  opacity: 1;
+}
+
+.honour-static {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .honour-roll > li {
+    animation: honour-roll 6s infinite;
+    animation-delay: calc(var(--honour-index) * 2s - 0.45s);
+  }
+}
+
+/* A rotator that cannot rotate would hide two thirds of the honours, so
+   reduced motion swaps in the full row of chips instead. */
+@media (prefers-reduced-motion: reduce) {
+  .honour-roll {
+    display: none;
+  }
+
+  .honour-static {
+    display: flex;
+  }
+}
+
+/* The arrow contract, carried over from the landing page: every drawn
+   arrow inside a hovered link or button nudges along its direction — the
+   "go on" gesture. Hover-gated so touch browsers never stick it. */
+.drawn-arrow {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) {
+  :is(a, button):hover .drawn-arrow {
+    transform: translateX(0.14em);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawn-arrow {
+    transition: none;
   }
 }
 

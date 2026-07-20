@@ -7,6 +7,9 @@ import { m } from 'foldkit/message';
 import { UrlRequest, load, pushUrl } from 'foldkit/navigation';
 import { Url, toString as urlToString } from 'foldkit/url';
 
+import firstLeagueAttendancePhoto from './assets/attendance/first-league.jpg';
+import secondLeagueAttendancePhoto from './assets/attendance/second-league.jpg';
+import spartaHeroPhoto from './assets/clubs-hero/sparta-praha.webp';
 import abcBranikLogo from './assets/clubs/AbcBranik.png';
 import artisBrnoLogo from './assets/clubs/ArtisBrno.png';
 import banikOstravaLogo from './assets/clubs/BanikOstrava.png';
@@ -23,19 +26,16 @@ import spartaPrahaLogo from './assets/clubs/SpartaPraha.png';
 import tepliceLogo from './assets/clubs/Teplice.png';
 import viktoriaPlzenLogo from './assets/clubs/ViktoriaPlzen.png';
 import vysocinaJihlavaLogo from './assets/clubs/VysocinaJihlava.png';
+import commentaryAvatar from './assets/commentary-avatar.png';
 import domesticCupBadge from './assets/competitions/domestic-cup.png';
 import firstLeagueBadge from './assets/competitions/first-league.png';
 import nationalTeamBadge from './assets/competitions/national-team.png';
 import secondLeagueBadge from './assets/competitions/second-league.png';
 import uwclBadge from './assets/competitions/uwcl.png';
 import uwecBadge from './assets/competitions/uwec.png';
-import pardubicePhoto from './assets/trending/pardubice.jpg';
-import firstLeagueAttendancePhoto from './assets/attendance/first-league.jpg';
-import spartaHeroPhoto from './assets/clubs-hero/sparta-praha.webp';
-import commentaryAvatar from './assets/commentary-avatar.png';
-import secondLeagueAttendancePhoto from './assets/attendance/second-league.jpg';
 import firstLeagueGoalsPhoto from './assets/goals/first-league.jpg';
 import secondLeagueGoalsPhoto from './assets/goals/second-league.jpg';
+import pardubicePhoto from './assets/trending/pardubice.jpg';
 import sierraPhoto from './assets/trending/sierra.jpg';
 import spartaPhoto from './assets/trending/sparta.jpg';
 import type { AppRoute } from './route';
@@ -772,8 +772,8 @@ const competitions: ReadonlyArray<Competition> = [
     standings: {
       kind: 'ties',
       rows: [
-        { primary: 'Slavia Praha — League phase', secondary: 'Matchday 3 of 6' },
-        { primary: 'Sparta Praha — Round 2', secondary: 'Eliminated' },
+        { primary: 'Slavia Praha — League phase', secondary: '9th — Matchday 3 of 6' },
+        { primary: 'Sparta Praha — League phase', secondary: '12th — Matchday 3 of 6' },
       ],
     },
   },
@@ -790,7 +790,7 @@ const competitions: ReadonlyArray<Competition> = [
     tagline: 'UEFA Women’s Europa Cup',
     format: [
       'Europe’s second competition — runners-up and cup winners enter here.',
-      'Two-leg knockout rounds from the first draw to the semifinals.',
+      'A twelve-team league phase feeds two-leg knockout rounds from the quarters.',
       'UWCL qualifying losers drop in, keeping every round dangerous.',
     ],
     history: [
@@ -841,32 +841,38 @@ const competitions: ReadonlyArray<Competition> = [
 interface StandingsRow {
   readonly team: string;
   readonly played: number;
+  readonly scored: number;
+  readonly conceded: number;
   readonly points: number;
 }
 
+// Goal records are mock, but they add up: within a league the scored and
+// conceded columns sum to the same total (every goal is someone else's
+// concession) and goal difference falls monotonically with the table, so
+// nothing reads as impossible next to the points.
 const firstLeagueStandings: ReadonlyArray<StandingsRow> = [
-  { team: 'Sparta Praha', played: 14, points: 36 },
-  { team: 'Slavia Praha', played: 14, points: 33 },
-  { team: 'Baník Ostrava', played: 14, points: 27 },
-  { team: 'Slovácko', played: 14, points: 23 },
-  { team: 'Viktoria Plzeň', played: 14, points: 19 },
-  { team: 'Lokomotiva Brno', played: 14, points: 15 },
-  { team: 'Slovan Liberec', played: 14, points: 11 },
-  { team: 'Prague Raptors', played: 14, points: 6 },
+  { team: 'Sparta Praha', played: 14, scored: 42, conceded: 9, points: 36 },
+  { team: 'Slavia Praha', played: 14, scored: 38, conceded: 12, points: 33 },
+  { team: 'Baník Ostrava', played: 14, scored: 29, conceded: 17, points: 27 },
+  { team: 'Slovácko', played: 14, scored: 24, conceded: 20, points: 23 },
+  { team: 'Viktoria Plzeň', played: 14, scored: 21, conceded: 24, points: 19 },
+  { team: 'Lokomotiva Brno', played: 14, scored: 17, conceded: 30, points: 15 },
+  { team: 'Slovan Liberec', played: 14, scored: 13, conceded: 36, points: 11 },
+  { team: 'Prague Raptors', played: 14, scored: 8, conceded: 44, points: 6 },
 ];
 
 const secondLeagueStandings: ReadonlyArray<StandingsRow> = [
-  { team: 'Sparta Praha B', played: 14, points: 34 },
-  { team: 'Sigma Olomouc', played: 14, points: 30 },
-  { team: 'Hradec Králové', played: 14, points: 27 },
-  { team: 'Viktoria Plzeň B', played: 14, points: 24 },
-  { team: 'Pardubice', played: 14, points: 22 },
-  { team: 'Vysočina Jihlava', played: 14, points: 19 },
-  { team: 'Artis Brno', played: 14, points: 17 },
-  { team: 'Slovan Liberec B', played: 14, points: 13 },
-  { team: 'Teplice', played: 14, points: 10 },
-  { team: 'Dynamo České Budějovice', played: 14, points: 8 },
-  { team: 'Braník', played: 14, points: 4 },
+  { team: 'Sparta Praha B', played: 14, scored: 42, conceded: 13, points: 34 },
+  { team: 'Sigma Olomouc', played: 14, scored: 37, conceded: 15, points: 30 },
+  { team: 'Hradec Králové', played: 14, scored: 33, conceded: 17, points: 27 },
+  { team: 'Viktoria Plzeň B', played: 14, scored: 30, conceded: 19, points: 24 },
+  { team: 'Pardubice', played: 14, scored: 27, conceded: 21, points: 22 },
+  { team: 'Vysočina Jihlava', played: 14, scored: 24, conceded: 23, points: 19 },
+  { team: 'Artis Brno', played: 14, scored: 21, conceded: 26, points: 17 },
+  { team: 'Slovan Liberec B', played: 14, scored: 17, conceded: 29, points: 13 },
+  { team: 'Teplice', played: 14, scored: 14, conceded: 31, points: 10 },
+  { team: 'Dynamo Č. Budějovice', played: 14, scored: 12, conceded: 34, points: 8 },
+  { team: 'ABC Braník', played: 14, scored: 8, conceded: 37, points: 4 },
 ];
 
 interface CupTie {
@@ -1140,7 +1146,17 @@ const desktopNavLink = (model: Model, entry: NavEntry): Html => {
 // CTA + menu there). The section rail below the bar is platform-only.
 const headerView = (model: Model): Html =>
   h.header(
-    [h.Class('fixed inset-x-0 top-0 z-50 bg-black/90 text-paper backdrop-blur')],
+    // The hairline TERMINATES the backdrop blur. backdrop-filter samples
+    // beyond the element's own box, so over a bright backdrop — the club
+    // profile's header photo starts exactly where this bar ends — the blur
+    // smears the picture a few pixels UP into the bar and the boundary
+    // reads as a soft halo instead of an edge. A 1px rule gives the eye a
+    // hard line to stop at; the glass stays.
+    [
+      h.Class(
+        'fixed inset-x-0 top-0 z-50 border-b border-paper/10 bg-black/90 text-paper backdrop-blur',
+      ),
+    ],
     [
       h.div(
         [
@@ -2957,7 +2973,7 @@ const clubHighlights: Record<string, { readonly kicker: string; readonly stateme
   'sparta-praha': {
     kicker: 'Reigning champions',
     statement:
-      'Our most successful club and reigning champion. Stormed the Europa Cup semifinals first, then finished with the domestic double in hand.',
+      'Our most successful club and reigning champion stormed into the Europa Cup semifinals first, then closed out the season with the domestic double in hand.',
   },
   'slavia-praha': {
     kicker: 'The eternal rivals',
@@ -2969,101 +2985,736 @@ const clubHighlights: Record<string, { readonly kicker: string; readonly stateme
   },
 };
 
+// The one line of honours that sits under the club's name — hand-picked
+// per club, NOT derived. A club's case for itself is editorial: the
+// numbers that matter to Sparta are not the ones that matter to a side
+// that has never won the league. Clubs without an entry show nothing
+// rather than a padded-out list.
+interface ClubHonour {
+  readonly count?: string;
+  readonly label: string;
+}
+
+const clubHonours: Record<string, ReadonlyArray<ClubHonour>> = {
+  'sparta-praha': [
+    { count: '22×', label: 'League champions' },
+    { count: '9×', label: 'Domestic double' },
+    { label: 'Europa Cup semis' },
+  ],
+};
+
 // Per-club hero artwork (the Universe-style full-bleed header photo);
 // clubs without one fall back to the plain crest-on-ink hero.
 const clubHeroPhotos: Record<string, { readonly photo: string; readonly focus: string }> = {
   'sparta-praha': { photo: spartaHeroPhoto, focus: '50% 42%' },
 };
 
-const clubChip = (text: string): Html =>
-  h.span(
-    [
-      h.Class(
-        'display inline-block bg-pink px-4 py-2 text-xl tracking-[0.2em] text-ink md:px-5 md:text-2xl',
-      ),
-    ],
+// Section headings are a PINK RULE beside display type, not a filled chip
+// (user call). The rule is the brand mark here; the pink block is now
+// reserved for things you can act on — the honour badges, the highlighted
+// rows — so a heading no longer competes with them for attention.
+// Back to the LANDING PAGE's grammar (user call): a filled pink block,
+// not a ruled headline — the platform and the landing site should name a
+// section the same way. Reverting also settles the disagreement the ruled
+// version had opened up with the home screen's own chips.
+const CLUB_CHIP =
+  'display inline-flex items-center gap-2.5 bg-pink px-4 py-2 text-xl tracking-[0.2em] text-ink md:px-5 md:text-2xl';
+
+// A chip anchors its OWN section (user call) — it does not leave the
+// profile. Clicking one jumps to that block and puts #<anchor> in the
+// address bar, so any part of a club page is linkable. No drawn arrow:
+// the arrow is the landing page's "go somewhere else" gesture, and these
+// go nowhere else. The hover carries the affordance instead — pink to ink,
+// rather than the landing's pink to paper, which on this paper surface
+// would have dissolved the chip into the page.
+const clubChip = (text: string, anchor: string): Html =>
+  h.a(
+    [h.Href(`#${anchor}`), h.Class(`${CLUB_CHIP} transition-colors hover:bg-ink hover:text-paper`)],
     [text],
   );
 
-const clubSection = (title: string, children: ReadonlyArray<Html>): Html =>
+// scroll-mt clears the FIXED header (104–108px) plus a little air —
+// without it an anchored section lands with its own chip hidden behind
+// the chrome, which reads as having jumped to the wrong place.
+const clubSection = (title: string, children: ReadonlyArray<Html>, anchor: string): Html =>
   h.section(
-    [h.Class('mt-16 md:mt-20')],
-    [h.div([h.Class('flex')], [clubChip(title)]), ...children],
+    [h.Id(anchor), h.Class('mt-16 scroll-mt-28 md:mt-20 md:scroll-mt-32')],
+    [h.div([h.Class('flex')], [clubChip(title, anchor)]), ...children],
   );
+
+// What a finishing position BUYS you. The First League sends its top two
+// to the UWCL and the third to the UWEC, and drops the last club into the
+// Second League; the Second League's winner comes straight back up.
+interface StandingsZone {
+  readonly label: string;
+  readonly bar: string;
+  readonly text: string;
+}
+
+// NOT brand pink (user call): pink is the highlight row, the points and
+// every chip, so it reads as brand rather than as a prize — and it
+// disappears completely against the club's own pink row.
+// `bar` carries the picked hue; `text` is what that hue becomes as 10px
+// uppercase type on PAPER — see the -ink tokens in styles.css.
+const UWCL_ZONE: StandingsZone = { label: 'UWCL', bar: 'bg-ucl', text: 'text-ucl' };
+const UWEC_ZONE: StandingsZone = { label: 'UWEC', bar: 'bg-uec-ink', text: 'text-uec-ink' };
+const UP_ZONE: StandingsZone = { label: 'Promotion', bar: 'bg-rise-ink', text: 'text-rise-ink' };
+const DOWN_ZONE: StandingsZone = { label: 'Relegation', bar: 'bg-drop', text: 'text-drop' };
+
+const zoneFor = (league: string, position: number, total: number): StandingsZone | null => {
+  if (league !== 'First League') return position === 1 ? UP_ZONE : null;
+  if (position <= 2) return UWCL_ZONE;
+  if (position === 3) return UWEC_ZONE;
+  if (position === total) return DOWN_ZONE;
+  return null;
+};
+
+// Season length per league — both are honest round-robins for the squad
+// counts we carry: eight First League clubs meet three times (21 rounds),
+// eleven Second League clubs twice (20).
+const leagueRounds: Record<string, number> = {
+  'First League': 21,
+  'Second League': 20,
+};
+
+// ——— EUROPE. Both tables follow the formats the competition pages already
+// state: the UWCL is an 18-team league phase over six matchdays (currently
+// MD 3), the UWEC a 12-team one that has finished, sending its top four to
+// the quarters — which is the stage the UWEC page reports. Rows come from a
+// simulated schedule, so goals for and against balance exactly across each
+// table and every points total is reachable from real wins and draws. ———
+interface EuroCampaign {
+  readonly competition: string;
+  // The competition page its section chip links through to.
+  readonly slug: string;
+  readonly stage: string;
+  readonly rounds: number;
+  readonly rows: ReadonlyArray<StandingsRow>;
+  readonly zoneAt: (position: number) => StandingsZone | null;
+}
+
+const KO_UCL_ZONE: StandingsZone = { label: 'Quarterfinals', bar: 'bg-ucl', text: 'text-ucl' };
+const KO_UEC_ZONE: StandingsZone = {
+  label: 'Quarterfinals',
+  bar: 'bg-uec-ink',
+  text: 'text-uec-ink',
+};
+const PLAYOFF_ZONE: StandingsZone = { label: 'Playoff', bar: 'bg-uec-ink', text: 'text-uec-ink' };
+const PLAYOFF_ALT_ZONE: StandingsZone = {
+  label: 'Playoff',
+  bar: 'bg-ink/50',
+  text: 'text-ink/60',
+};
+
+const uwclLeaguePhase: ReadonlyArray<StandingsRow> = [
+  { team: 'AS Roma', played: 3, scored: 8, conceded: 3, points: 7 },
+  { team: 'Chelsea', played: 3, scored: 7, conceded: 3, points: 6 },
+  { team: 'FC Barcelona', played: 3, scored: 9, conceded: 6, points: 6 },
+  { team: 'Wolfsburg', played: 3, scored: 7, conceded: 6, points: 6 },
+  { team: 'Ajax', played: 3, scored: 6, conceded: 6, points: 6 },
+  { team: 'Olympique Lyonnais', played: 3, scored: 9, conceded: 7, points: 5 },
+  { team: 'Paris Saint-Germain', played: 3, scored: 6, conceded: 5, points: 5 },
+  { team: 'FC Twente', played: 3, scored: 3, conceded: 3, points: 4 },
+  { team: 'Slavia Praha', played: 3, scored: 3, conceded: 3, points: 4 },
+  { team: 'Bayern München', played: 3, scored: 7, conceded: 8, points: 4 },
+  { team: 'St. Pölten', played: 3, scored: 3, conceded: 4, points: 4 },
+  { team: 'Sparta Praha', played: 3, scored: 2, conceded: 3, points: 4 },
+  { team: 'SK Brann', played: 3, scored: 4, conceded: 4, points: 3 },
+  { team: 'Rosengård', played: 3, scored: 3, conceded: 5, points: 3 },
+  { team: 'Benfica', played: 3, scored: 5, conceded: 8, points: 3 },
+  { team: 'Real Madrid', played: 3, scored: 6, conceded: 9, points: 2 },
+  { team: 'Juventus', played: 3, scored: 4, conceded: 6, points: 1 },
+  { team: 'Arsenal', played: 3, scored: 6, conceded: 9, points: 1 },
+];
+
+const uwecLeaguePhase: ReadonlyArray<StandingsRow> = [
+  { team: 'Levante', played: 6, scored: 12, conceded: 5, points: 14 },
+  { team: 'Servette', played: 6, scored: 6, conceded: 7, points: 10 },
+  { team: 'Slovan Liberec', played: 6, scored: 16, conceded: 12, points: 9 },
+  { team: 'Vålerenga', played: 6, scored: 12, conceded: 10, points: 9 },
+  { team: 'Fiorentina', played: 6, scored: 11, conceded: 10, points: 8 },
+  { team: 'Ferencváros', played: 6, scored: 10, conceded: 9, points: 8 },
+  { team: 'RSC Anderlecht', played: 6, scored: 9, conceded: 11, points: 8 },
+  { team: 'PAOK', played: 6, scored: 8, conceded: 11, points: 7 },
+  { team: 'BK Häcken', played: 6, scored: 11, conceded: 11, points: 6 },
+  { team: 'Sturm Graz', played: 6, scored: 9, conceded: 11, points: 6 },
+  { team: 'Glasgow City', played: 6, scored: 10, conceded: 13, points: 6 },
+  { team: 'Rangers', played: 6, scored: 7, conceded: 11, points: 4 },
+];
+
+const UWCL_CAMPAIGN: EuroCampaign = {
+  competition: 'Champions League',
+  slug: 'uwcl',
+  stage: 'League phase',
+  rounds: 6,
+  rows: uwclLeaguePhase,
+  // Top four go straight to the quarters, the next eight into the playoff.
+  zoneAt: (position) => (position <= 4 ? KO_UCL_ZONE : position <= 12 ? PLAYOFF_ZONE : null),
+};
+
+const UWEC_CAMPAIGN: EuroCampaign = {
+  competition: 'Europa Cup',
+  slug: 'uwec',
+  stage: 'League phase',
+  rounds: 6,
+  rows: uwecLeaguePhase,
+  zoneAt: (position) => (position <= 4 ? KO_UEC_ZONE : position <= 8 ? PLAYOFF_ALT_ZONE : null),
+};
+
+const clubEurope: Record<string, EuroCampaign> = {
+  'sparta-praha': UWCL_CAMPAIGN,
+  'slavia-praha': UWCL_CAMPAIGN,
+  'slovan-liberec': UWEC_CAMPAIGN,
+};
+
+// Segmented season progress — the same bar vocabulary as the stat-board
+// sparklines rather than a solid meter, so it reads as ROUNDS, not a
+// percentage of some abstract whole.
+const seasonProgress = (played: number, total: number): Html =>
+  h.div(
+    [h.Class('mt-6')],
+    [
+      h.div(
+        [h.Class('flex items-baseline justify-between text-[10px] tracking-[0.2em] uppercase')],
+        [
+          h.span([h.Class('text-ink/50')], [`Round ${played} of ${total}`]),
+          h.span([h.Class('text-pink')], [`${Math.round((played / total) * 100)}% played`]),
+        ],
+      ),
+      h.div(
+        [h.Class('mt-2 flex gap-[3px]')],
+        Array.from({ length: total }, (_unused, index) =>
+          h.div([h.Class(`h-2 flex-1 ${index < played ? 'bg-pink' : 'bg-ink/15'}`)], []),
+        ),
+      ),
+    ],
+  );
+
+// The table itself — shared by the domestic league and the European
+// campaigns, which differ only in their rows and what a position wins.
+// A table can render a WINDOW of its rows rather than all of them, so the
+// entries carry their true position — a compact view still has to say the
+// club sits 12th — and a gap entry stands in for what is hidden.
+interface StandingsEntry {
+  readonly row: StandingsRow;
+  readonly position: number;
+}
+
+const allEntries = (rows: ReadonlyArray<StandingsRow>): ReadonlyArray<StandingsEntry> =>
+  rows.map((row, index) => ({ row, position: index + 1 }));
+
+// The legend describes the COMPETITION, not the window — deriving it
+// from the visible rows alone made it change as the table expanded.
+const zonesFor = (
+  zoneAt: (position: number) => StandingsZone | null,
+  totalRows: number,
+): ReadonlyArray<StandingsZone> =>
+  Array.from({ length: totalRows }, (_unused, index) => zoneAt(index + 1))
+    .filter((zone): zone is StandingsZone => zone !== null)
+    .filter((zone, index, all) => all.findIndex((other) => other.label === zone.label) === index);
+
+// Column key — without it the two numeric columns are a guess.
+// Fixed columns stay NARROW below md: the score column eats the room
+// the club name used to have, and a truncated club name reads as a
+// bug (checked at 320, where the longest name only just clears).
+const standingsColumnKey = (): Html =>
+  h.div(
+    [
+      h.Class(
+        // 19px = 6px band + 1px hairline + 12px row padding, so the CLUB
+        // key sits exactly over the club names.
+        'mt-8 flex items-baseline gap-2 pr-2 pl-[19px] text-[10px] tracking-[0.2em] text-ink/45 uppercase sm:gap-3 md:gap-4',
+      ),
+    ],
+    [
+      h.span([h.Class('w-6 md:w-8')], []),
+      h.span([h.Class('flex-1')], ['Club']),
+      h.span([h.Class('hidden w-28 md:block')], ['Qualification']),
+      h.span([h.Class('w-12 text-right md:w-20')], ['Score']),
+      h.span([h.Class('w-10 text-right md:w-12')], ['Pts']),
+    ],
+  );
+
+// One run of table rows. `flushFirst` drops the first row's top border —
+// wanted only when the run opens the table directly under the column key.
+const standingsRows = (
+  entries: ReadonlyArray<StandingsEntry>,
+  highlightName: string,
+  zoneAt: (position: number) => StandingsZone | null,
+  flushFirst: boolean,
+): Html =>
+  h.ol(
+    [h.Class('flex flex-col')],
+    entries.map((entry, index) => {
+      const { row, position } = entry;
+      const highlighted = row.team === highlightName;
+      const zone = zoneAt(position);
+      return h.li(
+        // The band lives in a GUTTER outside the row's own background:
+        // inside it, the club's pink highlight row would swallow a pink
+        // UWCL band and the indicator would read as broken (rows 1 and 2
+        // sit in the same zone and must look it). Out here it keeps its
+        // colour on every row, and because no border crosses the gutter,
+        // consecutive rows in one zone form a single unbroken ribbon.
+        // gap-px leaves a paper hairline between band and row: against the
+        // club's own pink fill the blue band matches almost exactly in
+        // LUMINANCE (1.02:1) and differs only in hue, so without it the
+        // edge vanishes in greyscale or for total colour blindness.
+        [h.Class('flex items-stretch gap-px')],
+        [
+          h.span(
+            [h.Class(`w-1.5 shrink-0 ${zone ? zone.bar : 'bg-transparent'}`), h.AriaHidden(true)],
+            [],
+          ),
+          h.div(
+            [
+              h.Class(
+                `flex flex-1 items-baseline gap-2 py-3.5 pr-2 pl-3 transition-colors sm:gap-3 md:gap-4 ${
+                  index === 0 && flushFirst ? '' : 'border-t'
+                } ${
+                  highlighted
+                    ? 'border-pink bg-pink text-ink'
+                    : 'border-ink/10 text-ink hover:bg-ink/5'
+                }`,
+              ),
+            ],
+            [
+              h.span(
+                [
+                  h.Class(
+                    `display w-6 text-lg md:w-8 ${highlighted ? 'text-ink/60' : 'text-ink/35'}`,
+                  ),
+                ],
+                [`${position}`],
+              ),
+              h.span([h.Class('display flex-1 truncate text-lg sm:text-xl')], [row.team]),
+              // The zone spelled out where there is room — desktop has it
+              // to spare, and a named prize beats decoding a colour.
+              h.span(
+                [
+                  h.Class(
+                    `hidden w-28 text-[10px] tracking-[0.2em] uppercase md:block ${
+                      highlighted ? 'text-ink/60' : (zone?.text ?? 'text-transparent')
+                    }`,
+                  ),
+                ],
+                [zone?.label ?? ''],
+              ),
+              // Goal record — "skóre" in the Czech sense: scored:conceded,
+              // tabular-nums so the colons line up down the column.
+              h.span(
+                [
+                  h.Class(
+                    `display w-12 text-right text-base tabular-nums md:w-20 md:text-xl ${
+                      highlighted ? 'text-ink/70' : 'text-ink/60'
+                    }`,
+                  ),
+                ],
+                [`${row.scored}:${row.conceded}`],
+              ),
+              h.span(
+                [
+                  h.Class(
+                    `display w-10 text-right text-xl tabular-nums md:w-12 ${
+                      highlighted ? '' : 'text-pink'
+                    }`,
+                  ),
+                ],
+                [`${row.points}`],
+              ),
+            ],
+          ),
+        ],
+      );
+    }),
+  );
+
+// Legend — carries the zone colours below md, where the named column
+// is hidden. Swatches are BARS of the same width as the ribbon, not
+// squares, so the mapping back to the table is immediate.
+const standingsLegend = (zones: ReadonlyArray<StandingsZone>): Html =>
+  h.ul(
+    [h.Class('mt-5 flex flex-wrap gap-x-6 gap-y-2')],
+    zones.map((zone) =>
+      h.li(
+        [h.Class('flex items-center gap-2')],
+        [
+          h.span([h.Class(`h-4 w-1.5 shrink-0 ${zone.bar}`), h.AriaHidden(true)], []),
+          h.span(
+            [h.Class('text-[10px] tracking-[0.2em] text-ink/50 uppercase')],
+            [zone.label === 'Relegation' ? 'Relegation — Second League' : zone.label],
+          ),
+        ],
+      ),
+    ),
+  );
+
+// The full table in one piece — the domestic league's shape.
+const standingsTable = (
+  rows: ReadonlyArray<StandingsRow>,
+  highlightName: string,
+  zoneAt: (position: number) => StandingsZone | null,
+): ReadonlyArray<Html> => [
+  standingsColumnKey(),
+  h.div([h.Class('mt-2')], [standingsRows(allEntries(rows), highlightName, zoneAt, true)]),
+  standingsLegend(zonesFor(zoneAt, rows.length)),
+];
+
+// The section heading a table sits under: the competition is the SUBJECT,
+// so it gets display type at heading scale with a pink rule tying it to
+// the chip above.
+// Sits under the section chip. No rule and no indent — the chip is a
+// filled block again, so there is no text edge to line up with.
+const standingsHeadline = (text: string): Html =>
+  h.p([h.Class('display mt-5 text-xl text-ink/70 md:text-2xl')], [text]);
+
+// ——— RESULTS & FIXTURES — two tiles, each paging THIS CLUB'S matches
+// with arrows. The arrows step through the club's own games rather than
+// the league's rounds, so a matchday it sits out can never land the tile
+// on an empty card. The schedule and scores come from the same generators
+// the competition screen uses, so nothing here can contradict the table
+// below. ———
+
+// Rounds are a week apart from a fixed season opening, so every club's
+// dates line up and nothing depends on today's date.
+const SEASON_OPENING = Date.UTC(2025, 7, 16); // 16 Aug 2025, a Saturday
+const DAY_MS = 86400000;
+
+// The landing page's drawn arrow, ported with its hover contract intact
+// (`drawn-arrow` nudges right inside any hovered link or button — see
+// styles.css). Filled silhouette, not a text glyph: it sits next to
+// display type here, the same register it does over there.
+const drawnRightArrow = (classes: string): Html =>
+  h.svg(
+    [
+      h.Xmlns('http://www.w3.org/2000/svg'),
+      h.ViewBox('0 0 32 24'),
+      h.Class(`drawn-arrow ${classes}`),
+      h.Fill('currentColor'),
+      h.AriaHidden(true),
+    ],
+    [h.path([h.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')], [])],
+  );
+
+const KICKOFFS = ['14:00', '16:00', '17:30', '19:00'] as const;
+
+const kickoffFor = (seed: string): string => KICKOFFS[hashSlug(seed) % KICKOFFS.length] ?? '17:00';
+
+interface ClubMatch {
+  readonly round: number;
+  readonly home: string;
+  readonly away: string;
+}
+
+// Every round this club actually plays, in order.
+const clubMatches = (target: Club): ReadonlyArray<ClubMatch> => {
+  const rows = target.league === 'First League' ? firstLeagueStandings : secondLeagueStandings;
+  const totalRounds = leagueRounds[target.league] ?? rows.length;
+  return leagueSchedule(
+    rows.map((row) => row.team),
+    totalRounds,
+  ).flatMap((matches, index) => {
+    const match = matches.find(([home, away]) => home === target.name || away === target.name);
+    return match === undefined ? [] : [{ round: index + 1, home: match[0], away: match[1] }];
+  });
+};
+
+// The date is SECONDARY here (user call), so it is one quiet line rather
+// than the big stacked numeral the strip used to lead with.
+const roundDate = (round: number): string =>
+  new Date(SEASON_OPENING + (round - 1) * 7 * DAY_MS).toLocaleDateString('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
+
+interface PlayedMatch {
+  readonly match: ClubMatch;
+  readonly index: number;
+  readonly played: boolean;
+  readonly forGoals: number;
+  readonly againstGoals: number;
+  readonly home: boolean;
+}
+
+// Everything the calendar needs about one game, from the CLUB'S side —
+// the strip has to answer "did we win" without the reader doing the
+// home/away arithmetic themselves.
+const describeMatch = (
+  target: Club,
+  match: ClubMatch,
+  index: number,
+  played: boolean,
+): PlayedMatch => {
+  const [homeGoals, awayGoals] = mockScore(
+    `${target.league}-${match.round}-${match.home}-${match.away}`,
+  );
+  const home = match.home === target.name;
+  return {
+    match,
+    index,
+    played,
+    home,
+    forGoals: home ? homeGoals : awayGoals,
+    againstGoals: home ? awayGoals : homeGoals,
+  };
+};
+
+// Crest for a team NAME. The B sides don't carry their own badge, so
+// they fall back to the parent club's — and anything still unmatched
+// falls back to its name rather than an empty square.
+const crestFor = (team: string): string | undefined =>
+  (
+    clubs.find((entry) => entry.name === team) ??
+    clubs.find((entry) => entry.name === team.replace(/ B$/, ''))
+  )?.logo;
+
+// One side of the scoreline.
+const clubMatchCrest = (team: string): Html => {
+  const crest = crestFor(team);
+  return h.div(
+    [h.Class('flex min-w-0 flex-1 justify-center')],
+    [
+      crest === undefined
+        ? h.span([h.Class('display truncate text-center text-sm text-ink md:text-base')], [team])
+        : h.img([
+            h.Src(crest),
+            h.Alt(team),
+            h.Loading('lazy'),
+            h.Class('h-20 w-20 object-contain md:h-24 md:w-24'),
+          ]),
+    ],
+  );
+};
+
+// The outcome as a WORD, not a letter (user call: the strip took too much
+// decoding). "Won 2–1" answers what happened in one read; a W in a grid of
+// dates asks the reader to work out which date, which competition, and
+// what the letter refers to before they get the same fact.
+const matchOutcome = (entry: PlayedMatch): { readonly label: string; readonly tone: string } =>
+  entry.forGoals > entry.againstGoals
+    ? { label: 'Won', tone: 'text-rise-ink' }
+    : entry.forGoals === entry.againstGoals
+      ? { label: 'Drew', tone: 'text-ink/60' }
+      : { label: 'Lost', tone: 'text-fall' };
+
+// ONE match, with the CRESTS as the whole point (user call). The badges
+// are what a supporter recognises before they read anything — they say
+// "us against them" instantly, in a way no line of type does — so they get
+// the top of the card at full size, and every word sits underneath them.
+// The card carries no label: it is the only thing in its section, and the
+// section's chip has already named it.
+const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
+  const outcome = entry.played ? matchOutcome(entry) : null;
+  const homeGoals = entry.home ? entry.forGoals : entry.againstGoals;
+  const awayGoals = entry.home ? entry.againstGoals : entry.forGoals;
+  const kickoff = kickoffFor(`${entry.match.round}-${entry.match.home}-${entry.match.away}`);
+  return h.div(
+    [h.Class('flex flex-col border border-ink/15')],
+    [
+      // THE FIXTURE — crests at hero scale with the scoreline between
+      // them. Generous padding so the badges own the space rather than
+      // sharing it; crest order carries home and away.
+      // Capped and centred: on a full-width card the two crests would
+      // otherwise sit at opposite edges with the score marooned between
+      // them, and they stop reading as one fixture.
+      h.div(
+        [
+          h.Class(
+            'mx-auto flex w-full max-w-md items-center gap-3 px-5 py-8 md:gap-5 md:px-6 md:py-10',
+          ),
+        ],
+        [
+          clubMatchCrest(entry.match.home),
+          h.span(
+            [
+              h.Class(
+                `display shrink-0 tabular-nums ${
+                  entry.played
+                    ? 'text-5xl text-ink md:text-6xl'
+                    : 'text-3xl text-ink/35 md:text-4xl'
+                }`,
+              ),
+            ],
+            [entry.played ? `${homeGoals}:${awayGoals}` : 'vs'],
+          ),
+          clubMatchCrest(entry.match.away),
+        ],
+      ),
+      // Everything else, below the badges and behind a hairline so the
+      // crest block reads as the card's subject and this as its caption.
+      h.div(
+        [h.Class('mt-auto border-t border-ink/10 px-5 py-5 md:px-6')],
+        [
+          // COMPETITION AND STAGE, stated outright (user call) — it is
+          // what tells you whether this is a league game, a cup tie or a
+          // European night, and the old calendar mixed all three without
+          // ever saying so. The outcome closes the same line: the card no
+          // longer carries a label of its own, because its section chip
+          // above already says which match this is.
+          h.div(
+            [h.Class('flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1')],
+            [
+              h.p([h.Class('display text-2xl text-ink md:text-3xl')], [target.league]),
+              ...(outcome === null
+                ? []
+                : [
+                    h.p(
+                      [h.Class(`display text-xl tracking-[0.08em] ${outcome.tone} md:text-2xl`)],
+                      [outcome.label],
+                    ),
+                  ]),
+            ],
+          ),
+          h.p(
+            [h.Class('mt-1.5 text-[10px] tracking-[0.2em] text-ink/50 uppercase')],
+            [
+              // Date is SECONDARY (user call), so it rides the same quiet
+              // line as the stage rather than getting one of its own.
+              entry.played
+                ? `Round ${entry.match.round} · ${roundDate(entry.match.round)}`
+                : `Round ${entry.match.round} · ${roundDate(entry.match.round)} · ${kickoff}`,
+            ],
+          ),
+          // Through to the match itself. No per-match route exists yet, so
+          // it points at the matches section rather than a dead href.
+          h.a(
+            [
+              h.Href('/matches'),
+              h.Class(
+                'display mt-4 inline-flex items-center gap-2 text-sm tracking-[0.12em] text-pink transition-colors hover:text-ink md:text-base',
+              ),
+            ],
+            ['Match info', drawnRightArrow('inline-block h-[0.72em] w-auto')],
+          ),
+        ],
+      ),
+    ],
+  );
+};
+
+// ——— MATCHES — the LAST result, then the UPCOMING fixture beneath it
+// (user call: the calendar was "too chaotic", it took enormous cognitive
+// load to read). The strip of five dates is gone, and with it the
+// selection state, the paging arrows and the W/D/L letters. Both questions
+// a supporter actually arrives with — how did we do, who's next — are now
+// answered without a single interaction, and each card names its
+// competition and stage outright instead of leaving the reader to infer it
+// from a date. STACKED rather than side by side (user call): reading down
+// the page puts them in the order they happen, and each card gets the full
+// column, so the crests stay the biggest thing on it. Browsing the whole
+// season belongs in the matches section, not here. ———
+// TWO sections, not one holding two cards (user call): one component per
+// chip. LAST MATCH and UPCOMING MATCH each get their own heading, their
+// own anchor and their own card — which also means the chip does the
+// labelling the cards used to do for themselves. Side by side from md
+// (user call), stacked below it.
+const clubMatchesSections = (target: Club): Html => {
+  const rows = target.league === 'First League' ? firstLeagueStandings : secondLeagueStandings;
+  const playedRounds = rows[0]?.played ?? 0;
+  const entries = clubMatches(target).map((match, index) =>
+    describeMatch(target, match, index, match.round <= playedRounds),
+  );
+  const played = entries.filter((entry) => entry.played);
+  const last = played[played.length - 1];
+  const next = entries.find((entry) => !entry.played);
+  // Start of the season has no result yet, the end has no fixture left —
+  // each section simply drops out on its own, and the survivor takes the
+  // full width.
+  const sections = [
+    ...(last === undefined
+      ? []
+      : [
+          clubSection(
+            'Last match',
+            [h.div([h.Class('mt-6')], [clubMatchCard(target, last)])],
+            'last-match',
+          ),
+        ]),
+    ...(next === undefined
+      ? []
+      : [
+          clubSection(
+            'Upcoming match',
+            [h.div([h.Class('mt-6')], [clubMatchCard(target, next)])],
+            'upcoming-match',
+          ),
+        ]),
+  ];
+  // gap-x only: stacked, the sections' own mt keeps the page's section
+  // rhythm, and a row gap on top of it would open a hole between two
+  // blocks that belong together. Side by side, both sit in row one and
+  // that same mt aligns their chips.
+  return h.div([h.Class('grid gap-x-4 md:grid-cols-2 md:gap-x-5')], sections);
+};
 
 const clubStandingsSection = (target: Club): Html => {
   const rows = target.league === 'First League' ? firstLeagueStandings : secondLeagueStandings;
-  return clubSection('Standings', [
-    h.p([h.Class('mt-4 text-[10px] tracking-[0.2em] text-paper/50 uppercase')], [target.league]),
-    h.ol(
-      [h.Class('mt-4 flex flex-col')],
-      rows.map((row, index) => {
-        const highlighted = row.team === target.name;
-        return h.li(
-          [
-            h.Class(
-              `flex items-baseline gap-4 border-t px-2 py-3.5 first:border-t-0 ${
-                highlighted ? 'border-pink bg-pink text-ink' : 'border-paper/10 text-paper'
-              }`,
-            ),
-          ],
-          [
-            h.span(
-              [h.Class(`display w-8 text-lg ${highlighted ? 'text-ink/60' : 'text-paper/30'}`)],
-              [`${index + 1}`],
-            ),
-            h.span([h.Class('display flex-1 truncate text-xl')], [row.team]),
-            h.span(
-              [
-                h.Class(
-                  `hidden text-[10px] tracking-[0.2em] uppercase sm:block ${
-                    highlighted ? 'text-ink/60' : 'text-paper/40'
-                  }`,
-                ),
-              ],
-              [`${row.played} played`],
-            ),
-            h.span(
-              [h.Class(`display w-12 text-right text-xl ${highlighted ? '' : 'text-pink'}`)],
-              [`${row.points}`],
-            ),
-          ],
-        );
-      }),
-    ),
-  ]);
+  const totalRounds = leagueRounds[target.league] ?? rows[0]?.played ?? 0;
+  return clubSection(
+    'Standings',
+    [
+      standingsHeadline(target.league),
+      seasonProgress(rows[0]?.played ?? 0, totalRounds),
+      ...standingsTable(rows, target.name, (position) =>
+        zoneFor(target.league, position, rows.length),
+      ),
+    ],
+    'standings',
+  );
 };
 
+// ——— EUROPE — the continental campaign, for the clubs that have one.
+// Sparta and Slavia are in the UWCL league phase, Slovan Liberec came
+// through the UWEC one. Tables are simulated rather than hand-typed, so
+// goals for and against balance across each table and the points match
+// the wins and draws behind them. ———
+const clubEuropeSection = (target: Club, campaign: EuroCampaign): Html =>
+  clubSection(
+    campaign.competition,
+    [
+      standingsHeadline(campaign.stage),
+      seasonProgress(campaign.rows[0]?.played ?? 0, campaign.rounds),
+      ...standingsTable(campaign.rows, target.name, campaign.zoneAt),
+    ],
+    campaign.slug,
+  );
+
 const clubCupSection = (): Html =>
-  clubSection('Domestic Cup', [
-    h.ol(
-      [h.Class('mt-6 flex flex-col')],
-      cupRun.map((tie) =>
-        h.li(
-          [
-            h.Class(
-              `flex items-baseline justify-between gap-4 border-t px-2 py-3.5 first:border-t-0 ${
-                tie.upcoming ? 'border-pink bg-pink text-ink' : 'border-paper/10 text-paper'
-              }`,
-            ),
-          ],
-          [
-            h.span([h.Class('display text-xl')], [tie.round]),
-            h.span(
-              [
-                h.Class(
-                  `text-[10px] tracking-[0.2em] uppercase ${
-                    tie.upcoming ? 'text-ink/70' : 'text-paper/50'
-                  }`,
-                ),
-              ],
-              [tie.result],
-            ),
-          ],
+  clubSection(
+    'Domestic Cup',
+    [
+      h.ol(
+        [h.Class('mt-6 flex flex-col')],
+        cupRun.map((tie) =>
+          h.li(
+            [
+              h.Class(
+                `flex items-baseline justify-between gap-4 border-t px-2 py-3.5 first:border-t-0 ${
+                  tie.upcoming ? 'border-pink bg-pink text-ink' : 'border-ink/10 text-ink'
+                }`,
+              ),
+            ],
+            [
+              h.span([h.Class('display text-xl')], [tie.round]),
+              h.span(
+                [
+                  h.Class(
+                    `text-[10px] tracking-[0.2em] uppercase ${
+                      tie.upcoming ? 'text-ink/70' : 'text-ink/50'
+                    }`,
+                  ),
+                ],
+                [tie.result],
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  ]);
+    ],
+    'domestic-cup',
+  );
 
 const scopeChip = (model: Model, scope: ScorerScope, label: string): Html =>
   h.button(
@@ -3075,7 +3726,7 @@ const scopeChip = (model: Model, scope: ScorerScope, label: string): Html =>
         `cursor-pointer border px-4 py-2 text-[10px] tracking-[0.2em] uppercase transition-colors ${
           model.scorerScope === scope
             ? 'border-pink bg-pink text-ink'
-            : 'border-paper/20 text-paper/60 hover:border-pink hover:text-paper'
+            : 'border-ink/20 text-ink/60 hover:border-pink hover:text-ink'
         }`,
       ),
     ],
@@ -3086,37 +3737,41 @@ const scopeChip = (model: Model, scope: ScorerScope, label: string): Html =>
 // club's league, or the cup (user call).
 const clubScorersSection = (target: Club, model: Model): Html => {
   const scorers = scorersFor(target, model.scorerScope);
-  return clubSection('Top scorers', [
-    h.div(
-      [h.Class('mt-6 flex flex-wrap gap-2')],
-      [
-        scopeChip(model, 'all', 'All'),
-        scopeChip(model, 'league', target.league),
-        scopeChip(model, 'cup', 'Domestic Cup'),
-      ],
-    ),
-    h.ol(
-      [h.Key(`scorers-${model.scorerScope}`), h.Class('screen mt-6 flex flex-col')],
-      scorers.map((scorer, index) =>
-        h.li(
-          [
-            h.Class(
-              'flex items-baseline gap-5 border-t border-paper/10 px-2 py-4 first:border-t-0',
-            ),
-          ],
-          [
-            h.span([h.Class('display w-8 text-lg text-paper/30')], [`${index + 1}`]),
-            h.span([h.Class('display flex-1 truncate text-2xl text-paper')], [scorer.name]),
-            h.span([h.Class('display text-4xl text-pink')], [`${scorer.goals}`]),
-          ],
+  return clubSection(
+    'Top scorers',
+    [
+      h.div(
+        [h.Class('mt-6 flex flex-wrap gap-2')],
+        [
+          scopeChip(model, 'all', 'All'),
+          scopeChip(model, 'league', target.league),
+          scopeChip(model, 'cup', 'Domestic Cup'),
+        ],
+      ),
+      h.ol(
+        [h.Key(`scorers-${model.scorerScope}`), h.Class('screen mt-6 flex flex-col')],
+        scorers.map((scorer, index) =>
+          h.li(
+            [
+              h.Class(
+                'flex items-baseline gap-5 border-t border-ink/10 px-2 py-4 first:border-t-0',
+              ),
+            ],
+            [
+              h.span([h.Class('display w-8 text-lg text-ink/35')], [`${index + 1}`]),
+              h.span([h.Class('display flex-1 truncate text-2xl text-ink')], [scorer.name]),
+              h.span([h.Class('display text-4xl text-pink')], [`${scorer.goals}`]),
+            ],
+          ),
         ),
       ),
-    ),
-    h.p(
-      [h.Class('mt-3 px-2 text-[10px] tracking-[0.2em] text-paper/40 uppercase')],
-      ['Goals — season 2025/26'],
-    ),
-  ]);
+      h.p(
+        [h.Class('mt-3 px-2 text-[10px] tracking-[0.2em] text-ink/45 uppercase')],
+        ['Goals — season 2025/26'],
+      ),
+    ],
+    'top-scorers',
+  );
 };
 
 const clubHistorySection = (target: Club): Html => {
@@ -3135,66 +3790,74 @@ const clubHistorySection = (target: Club): Html => {
       : []),
     { value: '30', label: 'Seasons in the data', detail: 'Back to 1995/96' },
   ];
-  return clubSection('History', [
-    h.div(
-      [h.Class('mt-8 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3')],
-      entries.map((entry) =>
-        h.div(
-          [],
-          [
-            h.div([h.Class('h-1 w-10 bg-pink')], []),
-            h.p([h.Class('display mt-3 text-4xl text-paper md:text-5xl')], [entry.value]),
-            h.p([h.Class('display mt-2 text-xl text-pink md:text-2xl')], [entry.label]),
-            h.p(
-              [h.Class('mt-1.5 text-[10px] tracking-[0.25em] text-paper/50 uppercase')],
-              [entry.detail],
-            ),
-          ],
+  return clubSection(
+    'History',
+    [
+      h.div(
+        [h.Class('mt-8 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3')],
+        entries.map((entry) =>
+          h.div(
+            [],
+            [
+              h.div([h.Class('h-1 w-10 bg-pink')], []),
+              h.p([h.Class('display mt-3 text-4xl text-ink md:text-5xl')], [entry.value]),
+              h.p([h.Class('display mt-2 text-xl text-pink md:text-2xl')], [entry.label]),
+              h.p(
+                [h.Class('mt-1.5 text-[10px] tracking-[0.25em] text-ink/50 uppercase')],
+                [entry.detail],
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-    h.p(
-      [h.Class('mt-8 text-xs leading-relaxed text-paper/40')],
-      ['The season-by-season archive arrives with the real data.'],
-    ),
-  ]);
+      h.p(
+        [h.Class('mt-8 text-xs leading-relaxed text-ink/45')],
+        ['The season-by-season archive arrives with the real data.'],
+      ),
+    ],
+    'history',
+  );
 };
 
 const clubAllTimeStatsSection = (): Html =>
-  clubSection('All-time stats', [
-    h.p(
-      [
-        h.Class(
-          'mt-4 inline-block border border-paper/25 px-3 py-1.5 text-[10px] tracking-[0.25em] text-paper/60 uppercase',
-        ),
-      ],
-      ['Work in progress'],
-    ),
-    h.div(
-      [h.Class('mt-8 grid gap-x-8 gap-y-10 grid-cols-2 lg:grid-cols-4')],
-      ['Matches played', 'Goals scored', 'Clean sheets', 'Biggest win'].map((label) =>
-        h.div(
-          [],
-          [
-            h.div([h.Class('h-9 w-24 bg-paper/10')], []),
-            h.p([h.Class('mt-3 text-[10px] tracking-[0.25em] text-paper/50 uppercase')], [label]),
-          ],
+  clubSection(
+    'All-time stats',
+    [
+      h.p(
+        [
+          h.Class(
+            'mt-4 inline-block border border-ink/25 px-3 py-1.5 text-[10px] tracking-[0.25em] text-ink/60 uppercase',
+          ),
+        ],
+        ['Work in progress'],
+      ),
+      h.div(
+        [h.Class('mt-8 grid gap-x-8 gap-y-10 grid-cols-2 lg:grid-cols-4')],
+        ['Matches played', 'Goals scored', 'Clean sheets', 'Biggest win'].map((label) =>
+          h.div(
+            [],
+            [
+              h.div([h.Class('h-9 w-24 bg-ink/10')], []),
+              h.p([h.Class('mt-3 text-[10px] tracking-[0.25em] text-ink/50 uppercase')], [label]),
+            ],
+          ),
         ),
       ),
-    ),
-  ]);
+    ],
+    'all-time-stats',
+  );
 
 const clubFollowSection = (target: Club, model: Model): Html => {
   const following = model.followed.includes(target.slug);
   return h.section(
-    [h.Class('mt-20 border-t border-paper/10 pt-14 pb-4 text-center md:mt-24')],
+    [h.Class('mt-20 border-t border-ink/10 pt-14 pb-4 text-center md:mt-24')],
     [
       h.p(
-        [h.Class('display text-3xl leading-[1.05] text-paper md:text-5xl')],
+        [h.Class('display text-3xl leading-[1.05] text-ink md:text-5xl')],
         [`Take ${target.name} with you.`],
       ),
       h.p(
-        [h.Class('mx-auto mt-4 max-w-md text-sm leading-relaxed text-paper/50')],
+        [h.Class('mx-auto mt-4 max-w-md text-sm leading-relaxed text-ink/50')],
         ['Follow the club and Her Game builds your feed around it — matches, movers, and records.'],
       ),
       h.button(
@@ -3203,8 +3866,12 @@ const clubFollowSection = (target: Club, model: Model): Html => {
           h.OnClick(ToggledFollow({ slug: target.slug })),
           h.AriaPressed(following ? 'true' : 'false'),
           h.Class(
-            `display mt-8 inline-block cursor-pointer px-10 py-4 text-xl tracking-[0.12em] text-ink transition-colors md:text-2xl ${
-              following ? 'bg-paper' : 'bg-pink hover:bg-paper'
+            // On PAPER the states invert from the dark build: the call to
+            // action is the pink fill, and the settled "following" state
+            // goes solid ink — on a light surface a paper fill would have
+            // been the button disappearing, not receding.
+            `display mt-8 inline-block cursor-pointer px-10 py-4 text-xl tracking-[0.12em] transition-colors md:text-2xl ${
+              following ? 'bg-ink text-paper' : 'bg-pink text-ink hover:bg-ink hover:text-paper'
             }`,
           ),
         ],
@@ -3216,16 +3883,26 @@ const clubFollowSection = (target: Club, model: Model): Html => {
 
 const clubProfileScreen = (target: Club, model: Model): Html => {
   const heroArt = clubHeroPhotos[target.slug];
+  const honours = clubHonours[target.slug] ?? [];
+  const europe = clubEurope[target.slug];
   const highlight = clubHighlights[target.slug] ?? {
     kicker: 'This season',
     statement: `${target.won} wins in ${target.won + target.drawn + target.lost} games — the numbers tell it straight.`,
   };
-  return h.div(
-    // The whole profile runs DARK, flowing straight out of the header
-    // chrome — the same full-bleed swallow as the contenders hero.
+  // TWO BANDS, the landing page's rhythm (user call): the profile opens on
+  // a full-bleed DARK act — artwork, crest, name, honours, commentary — and
+  // the black ENDS there. Everything from the calendar down is the data
+  // act, and it runs on the platform's own paper. The switch does real
+  // work: the editorial half is a magazine spread you look at, the data
+  // half is a reference table you read, and the surface change tells you
+  // which mode you are in before you read a word. It also stops the club
+  // profile being the one dark island in an otherwise light platform.
+  const darkBand = h.div(
+    // Flows straight out of the header chrome — the same full-bleed
+    // swallow as the contenders hero.
     [
       h.Class(
-        'relative -mt-10 -mb-10 mx-[calc(50%-50vw)] overflow-hidden bg-ink px-5 pt-8 pb-16 md:-mt-14 md:px-10',
+        'relative -mt-10 mx-[calc(50%-50vw)] overflow-hidden bg-ink px-5 pt-8 pb-16 md:-mt-14 md:px-10 md:pb-20',
       ),
     ],
     [
@@ -3291,17 +3968,15 @@ const clubProfileScreen = (target: Club, model: Model): Html => {
                 ),
               ]),
           // HERO — crest and name are THE BANG (user call): both huge,
-          // riding the artwork's fade. With artwork the page runs a
-          // LAYERED parallax near the top: photo slowest (.club-hero-art),
-          // then title (.club-par-1), commentary (.club-par-2), and
-          // everything from the standings down (.club-par-3) — each layer
-          // slides gently over the one before.
+          // riding the artwork's fade. ONE parallax only (user call): the
+          // artwork itself drifts (.club-hero-art) and everything over it
+          // sits still — the layered stack of counter-drifting blocks was
+          // removed, along with the ink fills that only existed so those
+          // layers could cover one another.
           h.div(
             [
               h.Class(
-                heroArt
-                  ? 'club-par-1 relative -mt-32 text-center will-change-transform md:-mt-44'
-                  : 'mt-10 text-center md:mt-14',
+                heroArt ? 'relative -mt-32 text-center md:-mt-44' : 'mt-10 text-center md:mt-14',
               ),
             ],
             [
@@ -3318,14 +3993,60 @@ const clubProfileScreen = (target: Club, model: Model): Html => {
                 ],
                 [target.name],
               ),
-              h.p(
-                [
-                  h.Class(
-                    'mt-5 text-[11px] leading-none tracking-[0.35em] text-paper/60 uppercase',
-                  ),
-                ],
-                [`${target.city} — ${target.league}`],
-              ),
+              // Honours ride UNDER the name and above the commentary. ONE
+              // chip whose line ROLLS over to the next honour (user call —
+              // like the landing page's pitchside ad board), borrowing that
+              // exact grammar: a push, not a crossfade. All the lines stack
+              // in a single grid cell, so the chip's width is the WIDEST of
+              // them and never jumps as the text changes.
+              ...(honours.length === 0
+                ? []
+                : [
+                    h.ul(
+                      [
+                        h.Class(
+                          'honour-roll display mx-auto mt-6 grid w-fit overflow-hidden bg-paper px-3 py-1.5 text-lg tracking-[0.12em] text-ink md:mt-7 md:px-3.5 md:py-2 md:text-xl',
+                        ),
+                      ],
+                      honours.map((honour, index) =>
+                        h.li(
+                          [
+                            h.Class('col-start-1 row-start-1 text-center whitespace-nowrap'),
+                            h.Style({ '--honour-index': `${index}` }),
+                          ],
+                          [
+                            honour.count === undefined
+                              ? honour.label
+                              : `${honour.count} ${honour.label}`,
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Reduced motion gets them all at once instead — a
+                    // rotator that cannot rotate would hide two thirds of
+                    // the honours.
+                    h.ul(
+                      [
+                        h.Class(
+                          'honour-static mt-6 flex-wrap items-center justify-center gap-2 md:mt-7 md:gap-3',
+                        ),
+                      ],
+                      honours.map((honour) =>
+                        h.li(
+                          [
+                            h.Class(
+                              'display bg-paper px-3 py-1.5 text-lg tracking-[0.12em] text-ink md:px-3.5 md:py-2 md:text-xl',
+                            ),
+                          ],
+                          [
+                            honour.count === undefined
+                              ? honour.label
+                              : `${honour.count} ${honour.label}`,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ]),
             ],
           ),
           // SKÓREOVÁ COMMENTARY — an editorial PULL-QUOTE: a giant Anton
@@ -3335,95 +4056,136 @@ const clubProfileScreen = (target: Club, model: Model): Html => {
           // placeholder glyph until her photo lands — swap it for an
           // <img> in the circle then.
           h.figure(
+            [h.Class(`mx-auto max-w-2xl ${heroArt ? 'mt-10' : 'mt-16 md:mt-24'}`)],
             [
-              h.Class(
-                // With artwork the block joins the layered stack: it climbs
-                // faster than the title and carries its own ink fill, so on
-                // scroll it rides OVER the title's tail and covers it —
-                // card over card, not gap-tightening (will-change-transform
-                // guarantees the stacking context the fill needs to paint
-                // above the earlier sibling's text). The flat mt-20 is
-                // deliberate: the rem-based drift consumes the same px at
-                // every width, so the headroom is width-independent too.
-                `mx-auto max-w-2xl ${
-                  heroArt ? 'club-par-2 mt-20 bg-ink will-change-transform' : 'mt-16 md:mt-24'
-                }`,
-              ),
-            ],
-            [
-              h.span(
+              // The TEXT is the anchor of this block (user call): it gets a
+              // measure of its own and is centred inside the figure, and
+              // every decoration — the quote mark, the pink rule, the
+              // hairline, the portrait — hangs off that column rather than
+              // shifting it. Without this the mark and rule sat left of the
+              // text and pushed its optical centre to the right.
+              h.div(
+                [h.Class('mx-auto w-full max-w-[30rem] md:max-w-[34rem]')],
                 [
-                  h.Class(
-                    'display -mb-3 block text-8xl leading-[0.3] text-pink select-none md:-mb-4 md:text-9xl',
-                  ),
-                  h.AriaHidden(true),
-                ],
-                ['“'],
-              ),
-              // Body voice, not Anton (user call) — a long quotation in
-              // the display face was unreadable. Text rags left;
-              // text-pretty keeps the last line from stranding a widow.
-              h.blockquote(
-                [
-                  h.Class(
-                    'mt-0 border-l-2 border-pink pl-5 text-left text-xl leading-relaxed font-medium text-pretty text-paper/90 md:pl-7 md:text-2xl',
-                  ),
-                ],
-                [highlight.statement],
-              ),
-              // Sign-off: a hairline runs out of the quote into the
-              // byline + portrait closing the right edge.
-              h.figcaption(
-                [h.Class('mt-3 flex items-center gap-4 md:gap-5')],
-                [
-                  h.div([h.Class('h-px flex-1 bg-paper/15'), h.AriaHidden(true)], []),
-                  h.span(
+                  // Body voice, not Anton (user call) — a long quotation in
+                  // the display face was unreadable. Text rags left;
+                  // text-pretty keeps the last line from stranding a widow.
+                  // The quotation MARK sits inside the ruled block, indented
+                  // to the same left edge as the text: the pink rule then
+                  // runs as one unbroken line past both, instead of the mark
+                  // hanging off the side and interrupting it.
+                  h.blockquote(
                     [
                       h.Class(
-                        'text-right text-sm leading-[1.7] tracking-[0.25em] text-paper/60 uppercase md:text-base',
-                      ),
-                    ],
-                    [h.span([h.Class('block text-pink')], ['Skóreová']), 'Commentary'],
-                  ),
-                  h.span(
-                    [
-                      h.Class(
-                        'flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-pink bg-panel md:h-20 md:w-20',
+                        // pt clears the MARK'S INK, not its box: leading-[0.3]
+                        // collapses the line box to ~29px while the glyph
+                        // still paints ~25px above it, so without this the
+                        // quote mark bleeds up into the honour chips.
+                        'mt-0 border-l-2 border-pink pt-6 pl-5 text-left text-xl leading-relaxed font-medium text-pretty text-paper/90 md:pt-8 md:pl-7 md:text-2xl',
                       ),
                     ],
                     [
-                      h.img([
-                        h.Src(commentaryAvatar),
-                        h.Alt('Skóreová reporter'),
-                        h.Loading('lazy'),
-                        h.Class('h-full w-full object-cover'),
-                      ]),
+                      h.span(
+                        [
+                          h.Class(
+                            // -ml compensates the glyph's own side bearing:
+                            // aligning the BOXES leaves the ink looking
+                            // indented, so nudge it back to sit optically
+                            // flush with the first letter of the quote.
+                            'quote-float display -mb-3 -ml-1 block text-8xl leading-[0.3] text-pink select-none md:-mb-4 md:-ml-1.5 md:text-9xl',
+                          ),
+                          h.AriaHidden(true),
+                        ],
+                        ['“'],
+                      ),
+                      highlight.statement,
+                    ],
+                  ),
+                  // Sign-off: a hairline runs out of the quote into the
+                  // byline + portrait closing the right edge. It TUCKS UP into
+                  // the quote's last line (negative margin) so the portrait
+                  // sits right against the text rather than floating away
+                  // below it.
+                  h.figcaption(
+                    [h.Class('-mt-2 flex items-center gap-4 md:-mt-3 md:gap-5')],
+                    [
+                      h.div([h.Class('h-px flex-1 bg-paper'), h.AriaHidden(true)], []),
+                      // A signature LOCKUP: the masthead in the display face
+                      // over a small tracked label. Setting both as one
+                      // letterspaced body-font block read cheap — wide
+                      // tracking on a light weight at small size has no
+                      // weight to carry it.
+                      h.span(
+                        [h.Class('text-right')],
+                        [
+                          h.span(
+                            [
+                              h.Class(
+                                'display block text-xl leading-none tracking-[0.12em] text-pink md:text-2xl',
+                              ),
+                            ],
+                            ['Skóreová'],
+                          ),
+                          h.span(
+                            [
+                              h.Class(
+                                'mt-1.5 block text-sm tracking-[0.25em] text-paper uppercase md:text-base',
+                              ),
+                            ],
+                            ['Commentary'],
+                          ),
+                        ],
+                      ),
+                      h.span(
+                        [
+                          h.Class(
+                            'flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-pink bg-panel md:h-36 md:w-36',
+                          ),
+                        ],
+                        [
+                          h.img([
+                            h.Src(commentaryAvatar),
+                            h.Alt('Skóreová reporter'),
+                            h.Loading('lazy'),
+                            h.Class('h-full w-full object-cover'),
+                          ]),
+                        ],
+                      ),
                     ],
                   ),
                 ],
               ),
-            ],
-          ),
-          // One shared layer from the standings down — below-the-fold
-          // gaps never change, only this whole block slides over the
-          // commentary near the top.
-          h.div(
-            [h.Class(heroArt ? 'club-par-3 mt-6 bg-ink will-change-transform' : '')],
-            [
-              clubStandingsSection(target),
-              clubCupSection(),
-              clubScorersSection(target, model),
-              clubHistorySection(target),
-              clubAllTimeStatsSection(),
-              clubFollowSection(target, model),
             ],
           ),
         ],
       ),
-      // Film grain over the whole dark world.
+      // Film grain over the dark world only — `overlay` against paper just
+      // dirties it, and the grain is the dark act's texture anyway.
       h.div([h.Class('grain pointer-events-none absolute inset-0'), h.AriaHidden(true)], []),
     ],
   );
+
+  // The DATA act, on the page's own paper. No full-bleed wrapper and no
+  // background of its own: the document is already paper, so this is
+  // simply the dark band ending. Column width matches the band above it so
+  // the section headings line up straight through the seam.
+  const dataBand = h.div(
+    [h.Class('mx-auto w-full max-w-5xl')],
+    [
+      clubMatchesSections(target),
+      clubStandingsSection(target),
+      // Europe sits between the league and the cup — only for the clubs
+      // actually in a continental campaign.
+      ...(europe ? [clubEuropeSection(target, europe)] : []),
+      clubCupSection(),
+      clubScorersSection(target, model),
+      clubHistorySection(target),
+      clubAllTimeStatsSection(),
+      clubFollowSection(target, model),
+    ],
+  );
+
+  return h.g([], [darkBand, dataBand]);
 };
 
 const competitionStandingsPanel = (competition: Competition): Html =>
@@ -3507,14 +4269,15 @@ const competitionHistoryPanel = (competition: Competition): Html =>
     ],
   );
 
-// MATCHES, round by round — a double round-robin generated straight from
-// the league's standings teams (circle method), so the schedule can never
+// MATCHES, round by round — a round-robin generated straight from the
+// league's standings teams (circle method), so the schedule can never
 // drift from the table. Scores are deterministic mock (seeded by
 // competition + round + match); rounds past the current matchday show as
 // upcoming. The arrows page through the rounds.
 const MATCHDAYS_PLAYED = 12;
 
-const roundRobinRounds = (
+// One full cycle: every team meets every other once.
+const singleRoundRobin = (
   teams: ReadonlyArray<string>,
 ): ReadonlyArray<ReadonlyArray<readonly [string, string]>> => {
   // Odd team counts get a BYE slot; its pairings are dropped per round.
@@ -3537,14 +4300,55 @@ const roundRobinRounds = (
     const moved = rotating.pop();
     if (moved !== undefined) rotating.unshift(moved);
   }
+  return singles;
+};
+
+const swapVenues = (
+  rounds: ReadonlyArray<ReadonlyArray<readonly [string, string]>>,
+): ReadonlyArray<ReadonlyArray<readonly [string, string]>> =>
+  rounds.map((round) => round.map(([home, away]) => [away, home] as const));
+
+const roundRobinRounds = (
+  teams: ReadonlyArray<string>,
+): ReadonlyArray<ReadonlyArray<readonly [string, string]>> => {
+  const singles = singleRoundRobin(teams);
   // Second half of the season mirrors the first with venues swapped.
-  return [
-    ...singles,
-    ...singles.map((round) => round.map(([home, away]) => [away, home] as const)),
-  ];
+  return [...singles, ...swapVenues(singles)];
+};
+
+// A season of a GIVEN length, cycling the round-robin and swapping venues
+// each time round — so the eight First League clubs meeting three times
+// (21 rounds) and the eleven Second League clubs meeting twice (20) both
+// come out of the same generator, matching `leagueRounds`.
+const leagueSchedule = (
+  teams: ReadonlyArray<string>,
+  totalRounds: number,
+): ReadonlyArray<ReadonlyArray<readonly [string, string]>> => {
+  const singles = singleRoundRobin(teams);
+  if (singles.length === 0) return [];
+  const season: Array<ReadonlyArray<readonly [string, string]>> = [];
+  for (let cycle = 0; season.length < totalRounds; cycle += 1) {
+    const rounds = cycle % 2 === 0 ? singles : swapVenues(singles);
+    for (const round of rounds) {
+      if (season.length === totalRounds) break;
+      season.push(round);
+    }
+  }
+  return season;
+};
+
+// Hand-set results, keyed by the same seed the generator uses. The seeded
+// mock is fine as filler, but a specific scoreline someone asked for has
+// to survive any change to the hash — hence an explicit override rather
+// than fishing for a seed that happens to produce it.
+const SCORE_OVERRIDES: Record<string, readonly [number, number]> = {
+  // Sparta win the derby at Slavia.
+  'First League-14-Slavia Praha-Sparta Praha': [0, 1],
 };
 
 const mockScore = (seed: string): readonly [number, number] => {
+  const override = SCORE_OVERRIDES[seed];
+  if (override !== undefined) return override;
   const hash = hashSlug(seed);
   return [hash % 5, (hash >> 3) % 4];
 };
