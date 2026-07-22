@@ -92,6 +92,11 @@ export const Model = S.Struct({
   // Slugs of the clubs the visitor follows (mock — session only; feeds
   // HER GAME once the real accounts land).
   followed: S.Array(S.String),
+  // Ids of the boards and charts pinned to HER GAME. Unlike `followed`
+  // this DOES survive a reload — it is mirrored to storage through the
+  // pins port (see `pinsStore`). Seeded from storage by the ReadPins
+  // command fired in `init`.
+  pinned: S.Array(S.String),
   scorerScope: ScorerScope,
   metric: Metric,
 });
@@ -110,6 +115,12 @@ export const SelectedCompetitionRound = m('SelectedCompetitionRound', { round: S
 export const ChangedClubQuery = m('ChangedClubQuery', { query: S.String });
 export const SelectedFeaturedClub = m('SelectedFeaturedClub', { index: S.Number });
 export const ToggledFollow = m('ToggledFollow', { slug: S.String });
+// Pins: ReadPins hands the stored ids back through PinsLoaded; a pin toggle
+// updates the model and mirrors it out through WritePins, whose completion
+// is PinsSynced (nothing to fold back in — the write is fire-and-forget).
+export const PinsLoaded = m('PinsLoaded', { ids: S.Array(S.String) });
+export const ToggledPin = m('ToggledPin', { id: S.String });
+export const PinsSynced = m('PinsSynced');
 
 export const Message = S.Union([
   ClickedLink,
@@ -123,6 +134,9 @@ export const Message = S.Union([
   ChangedClubQuery,
   SelectedFeaturedClub,
   ToggledFollow,
+  PinsLoaded,
+  ToggledPin,
+  PinsSynced,
 ]);
 export type Message = typeof Message.Type;
 
@@ -145,6 +159,61 @@ export const Load = Command.define(
   CompletedLoad,
 )(({ href }) => load(href).pipe(Effect.as(CompletedLoad())));
 
+// ——— THE PINS PORT. Every read and write of a visitor's pins goes through
+// this ONE object, so the whole app is blind to where pins actually live.
+// Today that is localStorage, which needs no account — a guest keeps their
+// pins on their own device.
+//
+// When accounts arrive, ONLY this object changes: `load`/`save` become
+// calls to the pins API (a signed-in visitor's list belongs on the server,
+// keyed by their id). For that, KV is the fit — one small JSON value per
+// user, read far more than written; D1 only earns its place if pins ever
+// need cross-user queries ("who else pinned this"), and R2 never, it is for
+// blobs. On first sign-in the guest's local list merges up into the
+// account, then this device defers to the server. None of the view or the
+// update code below has to know any of that happened.
+const PINS_KEY = 'skoreova-pins';
+
+const pinsStore = {
+  load: (): ReadonlyArray<string> => {
+    try {
+      const raw = localStorage.getItem(PINS_KEY);
+      const parsed: unknown = raw === null ? [] : JSON.parse(raw);
+      // Trust nothing off the wire/disk: keep only strings, so a hand-edited
+      // or half-written value can never crash the feed that renders them.
+      return Array.isArray(parsed)
+        ? parsed.filter((id): id is string => typeof id === 'string')
+        : [];
+    } catch {
+      return [];
+    }
+  },
+  save: (ids: ReadonlyArray<string>): void => {
+    try {
+      localStorage.setItem(PINS_KEY, JSON.stringify(ids));
+    } catch {
+      // Private-mode / quota / disabled storage: the pin still shows this
+      // session (it is in the model), it just will not outlive the tab.
+    }
+  },
+};
+
+export const ReadPins = Command.define(
+  'ReadPins',
+  PinsLoaded,
+)(Effect.sync(() => PinsLoaded({ ids: [...pinsStore.load()] })));
+
+export const WritePins = Command.define(
+  'WritePins',
+  { ids: S.Array(S.String) },
+  PinsSynced,
+)(({ ids }) =>
+  Effect.sync(() => {
+    pinsStore.save(ids);
+    return PinsSynced();
+  }),
+);
+
 // UPDATE
 
 const initialModel: Model = {
@@ -156,6 +225,8 @@ const initialModel: Model = {
   clubQuery: '',
   featuredClub: 0,
   followed: [],
+  // Real value arrives from storage via ReadPins (init) — empty until then.
+  pinned: [],
   scorerScope: 'all',
   metric: 'goals',
 };
@@ -197,7 +268,11 @@ const applyRoute = (model: Model, route: AppRoute): Model => {
 
 export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
   applyRoute(initialModel, urlToAppRoute(url)),
-  [],
+  // Hydrate pins from storage on boot. Any pin toggle before this resolves
+  // is fine — ReadPins only seeds the initial list, it never clobbers a
+  // later one (localStorage is synchronous, so this lands on the first tick
+  // anyway).
+  [ReadPins()],
 ];
 
 export const update = (
@@ -236,6 +311,16 @@ export const update = (
         },
         [],
       ],
+      PinsLoaded: ({ ids }) => [{ ...model, pinned: [...ids] }, []],
+      ToggledPin: ({ id }) => {
+        const pinned = model.pinned.includes(id)
+          ? model.pinned.filter((entry) => entry !== id)
+          : [...model.pinned, id];
+        // Update the model AND mirror it out in one step — the write is a
+        // command so the reducer stays pure and testable.
+        return [{ ...model, pinned }, [WritePins({ ids: pinned })]];
+      },
+      PinsSynced: () => [model, []],
     }),
   );
 
@@ -929,6 +1014,8 @@ const scorersFor = (target: Club, scope: ScorerScope): ReadonlyArray<Scorer> => 
 };
 
 interface SavedChart {
+  // Stable pin id (`chart:<slug>`), so a pin survives a title edit.
+  readonly id: string;
   readonly title: string;
   readonly updated: string;
   readonly spark: ReadonlyArray<number>;
@@ -936,21 +1023,25 @@ interface SavedChart {
 
 const savedCharts: ReadonlyArray<SavedChart> = [
   {
+    id: 'chart:goals-vs-xg-sparta',
     title: 'Goals vs xG — Sparta Praha',
     updated: 'Updated 2 days ago',
     spark: [3, 5, 4, 7, 6, 9, 8, 11],
   },
   {
+    id: 'chart:attendance-first-league',
     title: 'Attendance growth — First League',
     updated: 'Updated 5 days ago',
     spark: [2, 3, 5, 4, 6, 8, 9, 12],
   },
   {
+    id: 'chart:rancova-shots-per-90',
     title: 'Rančová — shots per 90',
     updated: 'Updated 1 week ago',
     spark: [6, 4, 7, 8, 5, 9, 10, 9],
   },
   {
+    id: 'chart:cards-per-referee',
     title: 'Cards per referee — season',
     updated: 'Updated 2 weeks ago',
     spark: [8, 7, 9, 6, 7, 5, 6, 4],
@@ -965,6 +1056,72 @@ const sectionLabel = (text: string): Html =>
   h.p([h.Class('text-[10px] tracking-[0.25em] uppercase text-ink/50')], [text]);
 
 const pinkTick = (): Html => h.div([h.Class('h-1 w-10 bg-pink')], []);
+
+// The push-pin, drawn to sit at the corner of anything pinnable. Filled
+// silhouette on currentColor, same register as the drawn arrow and ×.
+const pinGlyph = (classes: string): Html =>
+  h.svg(
+    [
+      h.Xmlns('http://www.w3.org/2000/svg'),
+      h.ViewBox('0 0 24 24'),
+      h.Class(classes),
+      h.Fill('currentColor'),
+      h.AriaHidden(true),
+    ],
+    [
+      h.path(
+        [
+          h.D(
+            'M15.5 2.5 21.5 8.5 18.4 9.6 16.3 15 13.4 12.1 8.4 18.5 7 17.1 12.9 11 10 8.1 15.4 6 Z',
+          ),
+        ],
+        [],
+      ),
+    ],
+  );
+
+// The PIN control — one button, on every board heading and chart card.
+// Pinned reads as a filled pink chip (the site's "this is mine / act on
+// it" colour, the same as a highlighted row or an honour badge); unpinned
+// is a quiet outline that fills on hover so the affordance is obvious. The
+// label names the target so a screen reader hears "Pin Goals to Her Game",
+// not a bare "pin".
+const pinToggle = (model: Model, id: string, label: string): Html => {
+  const pinned = model.pinned.includes(id);
+  return h.button(
+    [
+      h.Type('button'),
+      h.OnClick(ToggledPin({ id })),
+      h.AriaPressed(pinned ? 'true' : 'false'),
+      h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
+      h.Class(
+        `group/pin flex shrink-0 cursor-pointer items-center gap-1.5 border px-2.5 py-1.5 text-[10px] tracking-[0.2em] uppercase transition-colors ${
+          pinned
+            ? 'border-pink bg-pink text-ink'
+            : 'border-ink/20 text-ink/50 hover:border-pink hover:text-ink'
+        }`,
+      ),
+    ],
+    [pinGlyph('h-3.5 w-3.5'), pinned ? 'Pinned' : 'Pin'],
+  );
+};
+
+// A section chip that carries its pin control on the same row. The chip is
+// the shared heading grammar (filled pink block); justify-between parks the
+// pin at the far end so the two never crowd.
+const CHIP_CLASS =
+  'display inline-block bg-pink px-4 py-2 text-xl tracking-[0.2em] text-ink md:px-5 md:text-2xl';
+
+// A plain section chip. Used where the pin lives on the cards below rather
+// than the heading (the stat boards, since their leagues pin separately).
+const chipHeading = (title: string): Html =>
+  h.div([h.Class('flex')], [h.span([h.Class(CHIP_CLASS)], [title])]);
+
+const pinnableHeading = (title: string, model: Model, pinId: string): Html =>
+  h.div(
+    [h.Class('flex items-center justify-between gap-4')],
+    [h.span([h.Class(CHIP_CLASS)], [title]), pinToggle(model, pinId, title)],
+  );
 
 // A tiny pink polyline preview — the saved-charts cards and anywhere a
 // dataset needs a face without a full chart.
@@ -1512,100 +1669,99 @@ const newContentPanel = (): Html =>
 // section kickers. Every tile is a LINK into the data: just the photo
 // with the name riding the bottom edge — no ranks, no crests (user call:
 // the photo carries the tile alone).
-const trendingTiles = (): Html =>
-  h.section(
-    [h.Class('mt-12')],
+// One trending tile — its own pinnable unit (user call: split the boards).
+// The pin rides over it as an overlay sibling of the card link, like the
+// stat cards. `id` is `trending:<name>`.
+const trendingTile = (model: Model, entry: TrendingEntry, index: number): Html => {
+  const featured = entry.photo !== '';
+  return h.div(
+    [h.Class(`relative ${index === 0 ? 'col-span-2 sm:col-span-1' : ''}`)],
     [
-      h.div(
-        [h.Class('flex')],
+      pinOverlay(model, `trending:${slugify(entry.name)}`, entry.name),
+      h.a(
         [
-          h.span(
+          h.Href(entry.href),
+          // Photo tiles are FRAMELESS (user call — the ink border read
+          // as clutter around a dark image): the photo IS the card
+          // edge. Only the photoless fallback keeps the panel frame.
+          // Without the rank row the content no longer props the tile
+          // open — justify-end pins the name to the bottom edge and
+          // the min-heights carry the photo's presence.
+          // Phone: EVERY tile runs full-width landscape (paired
+          // portrait tiles forced two-line names — the display type
+          // only sings as a one-liner); the leader stays the tallest.
+          // The grid takes over from `sm`.
+          h.Class(
+            `trend-row group relative isolate flex h-full flex-col justify-end overflow-hidden p-5 md:min-h-44 lg:min-h-56 ${
+              featured ? 'bg-ink' : `${panel} transition-colors hover:border-pink`
+            } ${index === 0 ? 'min-h-64' : 'min-h-44 sm:min-h-60'}`,
+          ),
+          h.Style({ '--row-delay': `${0.3 + index * 0.08}s` }),
+        ],
+        [
+          // Featured tiles run DARK: the photo covers the card and an
+          // ink gradient rises from the bottom so the paper type stays
+          // readable over any crop.
+          ...(featured
+            ? [
+                h.img([
+                  h.Src(entry.photo),
+                  h.Alt(''),
+                  h.Loading('lazy'),
+                  h.Class('absolute inset-0 -z-20 h-full w-full object-cover'),
+                  h.Style({ 'object-position': entry.focus }),
+                ]),
+                h.div(
+                  [
+                    h.Class(
+                      'absolute inset-0 -z-10 bg-gradient-to-t from-ink/90 via-ink/40 to-ink/20',
+                    ),
+                  ],
+                  [],
+                ),
+              ]
+            : []),
+          // Names WRAP instead of truncating — the long ones (KATEŘINA
+          // SVITKOVÁ) don't fit a half-width phone tile at this size,
+          // and an ellipsis on a person's name reads as a bug. No
+          // overflow clip also means Anton's accented caps need no
+          // headroom hack here.
+          h.p(
             [
               h.Class(
-                'display inline-block bg-pink px-4 py-2 text-xl tracking-[0.2em] text-ink md:px-5 md:text-2xl',
+                `display leading-[1.05] transition-colors group-hover:text-pink sm:text-2xl ${
+                  index === 0 ? 'text-4xl' : 'text-3xl'
+                } ${featured ? 'text-paper' : 'text-ink'}`,
               ),
             ],
-            ['Trending'],
+            [entry.name],
+          ),
+          h.p(
+            [
+              h.Class(
+                `mt-2 text-[11px] leading-none tracking-[0.2em] uppercase sm:text-[10px] ${
+                  featured ? 'text-paper/70' : 'text-ink/40'
+                }`,
+              ),
+            ],
+            [entry.kind],
           ),
         ],
       ),
+    ],
+  );
+};
+
+const trendingTiles = (model: Model): Html =>
+  h.section(
+    [h.Class('mt-12')],
+    [
+      chipHeading('Trending'),
       // Three tiles (user call — five was a crowd): full-width strips on
       // phones, one row of three from `sm`.
       h.div(
         [h.Class('mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:gap-6')],
-        trending.map((entry, index) => {
-          const featured = entry.photo !== '';
-          return h.a(
-            [
-              h.Href(entry.href),
-              // Photo tiles are FRAMELESS (user call — the ink border read
-              // as clutter around a dark image): the photo IS the card
-              // edge. Only the photoless fallback keeps the panel frame.
-              // Without the rank row the content no longer props the tile
-              // open — justify-end pins the name to the bottom edge and
-              // the min-heights carry the photo's presence.
-              // Phone: EVERY tile runs full-width landscape (paired
-              // portrait tiles forced two-line names — the display type
-              // only sings as a one-liner); the leader stays the tallest.
-              // The grid takes over from `sm`.
-              h.Class(
-                `trend-row group relative isolate col-span-2 flex flex-col justify-end overflow-hidden p-5 sm:col-span-1 md:min-h-44 lg:min-h-56 ${
-                  featured ? 'bg-ink' : `${panel} transition-colors hover:border-pink`
-                } ${index === 0 ? 'min-h-64' : 'min-h-44 sm:min-h-60'}`,
-              ),
-              h.Style({ '--row-delay': `${0.3 + index * 0.08}s` }),
-            ],
-            [
-              // Featured tiles run DARK: the photo covers the card and an
-              // ink gradient rises from the bottom so the paper type stays
-              // readable over any crop.
-              ...(featured
-                ? [
-                    h.img([
-                      h.Src(entry.photo),
-                      h.Alt(''),
-                      h.Loading('lazy'),
-                      h.Class('absolute inset-0 -z-20 h-full w-full object-cover'),
-                      h.Style({ 'object-position': entry.focus }),
-                    ]),
-                    h.div(
-                      [
-                        h.Class(
-                          'absolute inset-0 -z-10 bg-gradient-to-t from-ink/90 via-ink/40 to-ink/20',
-                        ),
-                      ],
-                      [],
-                    ),
-                  ]
-                : []),
-              // Names WRAP instead of truncating — the long ones (KATEŘINA
-              // SVITKOVÁ) don't fit a half-width phone tile at this size,
-              // and an ellipsis on a person's name reads as a bug. No
-              // overflow clip also means Anton's accented caps need no
-              // headroom hack here.
-              h.p(
-                [
-                  h.Class(
-                    `display leading-[1.05] transition-colors group-hover:text-pink sm:text-2xl ${
-                      index === 0 ? 'text-4xl' : 'text-3xl'
-                    } ${featured ? 'text-paper' : 'text-ink'}`,
-                  ),
-                ],
-                [entry.name],
-              ),
-              h.p(
-                [
-                  h.Class(
-                    `mt-2 text-[11px] leading-none tracking-[0.2em] uppercase sm:text-[10px] ${
-                      featured ? 'text-paper/70' : 'text-ink/40'
-                    }`,
-                  ),
-                ],
-                [entry.kind],
-              ),
-            ],
-          );
-        }),
+        trending.map((entry, index) => trendingTile(model, entry, index)),
       ),
     ],
   );
@@ -1685,173 +1841,233 @@ const statSpark = (rounds: ReadonlyArray<number>): Html =>
     }),
   );
 
-// One stat board = pink chip heading + a pair of league cards. Goals and
-// Attendance share this anatomy verbatim.
-const statBoard = (title: string, entries: ReadonlyArray<StatEntry>): Html =>
-  h.section(
-    [h.Class('mt-12')],
+// The pin for a PHOTO tile — icon-only, so it stays small in a corner,
+// and always solid-backed so it reads on any crop (the bordered chip's
+// outline vanished on a dark photo). Sits over the tile as an absolute
+// sibling of the card link, never inside it.
+const pinOverlay = (model: Model, id: string, label: string): Html => {
+  const pinned = model.pinned.includes(id);
+  return h.button(
     [
-      h.div(
-        [h.Class('flex')],
-        [
-          h.span(
-            [
-              h.Class(
-                'display inline-block bg-pink px-4 py-2 text-xl tracking-[0.2em] text-ink md:px-5 md:text-2xl',
-              ),
-            ],
-            [title],
-          ),
-        ],
+      h.Type('button'),
+      h.OnClick(ToggledPin({ id })),
+      h.AriaPressed(pinned ? 'true' : 'false'),
+      h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
+      h.Class(
+        `absolute top-3 right-3 z-10 flex h-9 w-9 cursor-pointer items-center justify-center transition-colors ${
+          pinned ? 'bg-pink text-ink' : 'bg-paper/90 text-ink hover:bg-pink'
+        }`,
       ),
-      h.div(
-        [h.Class('mt-4 grid gap-4 sm:grid-cols-2 lg:gap-6')],
-        entries.map((entry, index) => {
-          const current = entry.rounds[entry.rounds.length - 1] ?? 0;
-          const previous = entry.rounds[entry.rounds.length - 2] ?? current;
-          const up = current >= previous;
-          const deltaPct = previous === 0 ? 0 : (Math.abs(current - previous) / previous) * 100;
-          const season = entry.rounds.reduce((sum, value) => sum + value, 0);
-          return h.a(
-            [
-              h.Href(entry.href),
-              // FINAL anatomy: NO text ever sits on the photo. The photo
-              // is a clean, untouched band up top; the stats live in a
-              // solid ink footer with guaranteed contrast. The sharp seam
-              // between them is deliberate — it's the same hard edge the
-              // paper panels use everywhere else.
-              h.Class('trend-row group flex flex-col overflow-hidden bg-ink'),
-              h.Style({ '--row-delay': `${0.3 + index * 0.08}s` }),
-            ],
-            [
-              ...(entry.photo === ''
-                ? []
-                : [
-                    h.div(
-                      [h.Class('relative h-48 w-full overflow-hidden md:h-56')],
-                      [
-                        // A slow settle-in zoom on hover — the photo is
-                        // the only piece that moves; the figures stay put.
-                        h.img([
-                          h.Src(entry.photo),
-                          h.Alt(''),
-                          h.Loading('lazy'),
-                          h.Class(
-                            'absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]',
-                          ),
-                          h.Style({ 'object-position': entry.focus }),
-                        ]),
-                      ],
-                    ),
-                    // The seam carries the brand: a hard pink rule between
-                    // the photo and the figures, the same ink-meets-pink
-                    // edge the section chips stamp everywhere else.
-                    h.div([h.Class('h-[3px] w-full shrink-0 bg-pink')], []),
-                  ]),
-              h.div(
-                [h.Class('flex flex-1 flex-col p-5 md:p-6')],
-                [
-                  // The LEAGUE is the headline of the card (user call) —
-                  // full Anton display voice, with the movement answering
-                  // on the same baseline.
-                  h.div(
-                    [h.Class('flex items-baseline justify-between gap-4')],
-                    [
-                      h.h3(
-                        [
-                          h.Class(
-                            'display text-2xl leading-[1.05] text-paper transition-colors group-hover:text-pink md:text-3xl',
-                          ),
-                        ],
-                        [entry.league],
+    ],
+    [pinGlyph('h-4 w-4')],
+  );
+};
+
+// 'First League' -> 'first-league', so a card's pin id is stable and
+// readable (`attendance:first-league`).
+const leagueSlug = (league: string): string => league.toLowerCase().replace(/\s+/g, '-');
+
+// A stable, accent-folded slug for any name — the tail of a pin id
+// (`trending:katerina-svitkova`, `best:most-goals`). Folded so a rename of
+// the DISPLAY text that keeps the same ascii shape does not orphan a pin.
+const slugify = (text: string): string =>
+  text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
+// ONE league card of a stat board — its own pinnable tile (user call: the
+// leagues must split, First League pinnable apart from Second). The card
+// is a LINK; the pin rides over it as an overlay sibling, so a tap on the
+// pin never also follows the link.
+const statCard = (
+  model: Model,
+  entry: StatEntry,
+  index: number,
+  pinId: string,
+  label: string,
+): Html => {
+  const current = entry.rounds[entry.rounds.length - 1] ?? 0;
+  const previous = entry.rounds[entry.rounds.length - 2] ?? current;
+  const up = current >= previous;
+  const deltaPct = previous === 0 ? 0 : (Math.abs(current - previous) / previous) * 100;
+  const season = entry.rounds.reduce((sum, value) => sum + value, 0);
+  return h.div(
+    [h.Class('relative')],
+    [
+      pinOverlay(model, pinId, label),
+      h.a(
+        [
+          h.Href(entry.href),
+          // FINAL anatomy: NO text ever sits on the photo. The photo
+          // is a clean, untouched band up top; the stats live in a
+          // solid ink footer with guaranteed contrast. The sharp seam
+          // between them is deliberate — it's the same hard edge the
+          // paper panels use everywhere else.
+          h.Class('trend-row group flex flex-col overflow-hidden bg-ink'),
+          h.Style({ '--row-delay': `${0.3 + index * 0.08}s` }),
+        ],
+        [
+          ...(entry.photo === ''
+            ? []
+            : [
+                h.div(
+                  [h.Class('relative h-48 w-full overflow-hidden md:h-56')],
+                  [
+                    // A slow settle-in zoom on hover — the photo is
+                    // the only piece that moves; the figures stay put.
+                    h.img([
+                      h.Src(entry.photo),
+                      h.Alt(''),
+                      h.Loading('lazy'),
+                      h.Class(
+                        'absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]',
                       ),
-                      h.span(
+                      h.Style({ 'object-position': entry.focus }),
+                    ]),
+                  ],
+                ),
+                // The seam carries the brand: a hard pink rule between
+                // the photo and the figures, the same ink-meets-pink
+                // edge the section chips stamp everywhere else.
+                h.div([h.Class('h-[3px] w-full shrink-0 bg-pink')], []),
+              ]),
+          h.div(
+            [h.Class('flex flex-1 flex-col p-5 md:p-6')],
+            [
+              // The LEAGUE is the headline of the card (user call) —
+              // full Anton display voice, with the movement answering
+              // on the same baseline.
+              h.div(
+                [h.Class('flex items-baseline justify-between gap-4')],
+                [
+                  h.h3(
+                    [
+                      h.Class(
+                        'display text-2xl leading-[1.05] text-paper transition-colors group-hover:text-pink md:text-3xl',
+                      ),
+                    ],
+                    [entry.league],
+                  ),
+                  h.span(
+                    [
+                      h.Class(
+                        `display flex items-center gap-2 text-xl md:text-2xl ${
+                          up ? 'text-rise' : 'text-fall'
+                        }`,
+                      ),
+                    ],
+                    [tapeArrow(up), `${deltaPct.toFixed(1)} %`],
+                  ),
+                ],
+              ),
+              // One figures row: round, season, sparkline — aligned
+              // on a shared baseline. The round wears the PINK STAMP
+              // (the matches panel's score-chip grammar): this is the
+              // fresh number, everything else is context.
+              h.div(
+                [h.Class('mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4')],
+                [
+                  h.div(
+                    [],
+                    [
+                      h.p(
+                        [h.Class('flex')],
                         [
-                          h.Class(
-                            `display flex items-center gap-2 text-xl md:text-2xl ${
-                              up ? 'text-rise' : 'text-fall'
-                            }`,
+                          h.span(
+                            [
+                              h.Class(
+                                'display bg-pink px-2.5 py-1 text-3xl leading-[1.05] text-ink transition-colors group-hover:bg-paper md:text-4xl',
+                              ),
+                            ],
+                            [formatCount(current)],
                           ),
                         ],
-                        [tapeArrow(up), `${deltaPct.toFixed(1)} %`],
+                      ),
+                      h.p(
+                        [
+                          h.Class(
+                            'mt-2 text-[10px] leading-none tracking-[0.2em] text-paper/50 uppercase',
+                          ),
+                        ],
+                        [`Round ${MATCHDAYS_PLAYED}`],
                       ),
                     ],
                   ),
-                  // One figures row: round, season, sparkline — aligned
-                  // on a shared baseline. The round wears the PINK STAMP
-                  // (the matches panel's score-chip grammar): this is the
-                  // fresh number, everything else is context.
                   h.div(
-                    [h.Class('mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4')],
+                    [],
                     [
-                      h.div(
-                        [],
+                      h.p(
+                        [h.Class('display text-4xl leading-[1.05] text-paper/60 md:text-5xl')],
+                        [formatCount(season)],
+                      ),
+                      h.p(
                         [
-                          h.p(
-                            [h.Class('flex')],
-                            [
-                              h.span(
-                                [
-                                  h.Class(
-                                    'display bg-pink px-2.5 py-1 text-3xl leading-[1.05] text-ink transition-colors group-hover:bg-paper md:text-4xl',
-                                  ),
-                                ],
-                                [formatCount(current)],
-                              ),
-                            ],
-                          ),
-                          h.p(
-                            [
-                              h.Class(
-                                'mt-2 text-[10px] leading-none tracking-[0.2em] text-paper/50 uppercase',
-                              ),
-                            ],
-                            [`Round ${MATCHDAYS_PLAYED}`],
+                          h.Class(
+                            'mt-2 text-[10px] leading-none tracking-[0.2em] text-paper/50 uppercase',
                           ),
                         ],
-                      ),
-                      h.div(
-                        [],
-                        [
-                          h.p(
-                            [h.Class('display text-4xl leading-[1.05] text-paper/60 md:text-5xl')],
-                            [formatCount(season)],
-                          ),
-                          h.p(
-                            [
-                              h.Class(
-                                'mt-2 text-[10px] leading-none tracking-[0.2em] text-paper/50 uppercase',
-                              ),
-                            ],
-                            ['Season total'],
-                          ),
-                        ],
-                      ),
-                      // Below `md` the sparkline ALWAYS takes its own
-                      // full-bleed strip along the card's bottom —
-                      // flex-wrap used to decide per card (wide First
-                      // League figures wrapped, narrow Second League
-                      // stayed inline) and the boards looked mismatched.
-                      // From `md` it sits inline, bleeding into the
-                      // bottom-right corner (negative margins cancel the
-                      // footer padding).
-                      h.div(
-                        [h.Class('-mx-5 -mb-5 basis-full md:-mr-6 md:-mb-6 md:ml-0 md:basis-auto')],
-                        [statSpark(entry.rounds)],
+                        ['Season total'],
                       ),
                     ],
+                  ),
+                  // Below `md` the sparkline ALWAYS takes its own
+                  // full-bleed strip along the card's bottom —
+                  // flex-wrap used to decide per card (wide First
+                  // League figures wrapped, narrow Second League
+                  // stayed inline) and the boards looked mismatched.
+                  // From `md` it sits inline, bleeding into the
+                  // bottom-right corner (negative margins cancel the
+                  // footer padding).
+                  h.div(
+                    [h.Class('-mx-5 -mb-5 basis-full md:-mr-6 md:-mb-6 md:ml-0 md:basis-auto')],
+                    [statSpark(entry.rounds)],
                   ),
                 ],
               ),
             ],
-          );
-        }),
+          ),
+        ],
+      ),
+    ],
+  );
+};
+
+// A stat board = plain chip heading + the league cards. The pin now lives
+// on each CARD, not the heading (user call: the leagues must split), so a
+// board has no single pin of its own. `noun` builds each card's pin id and
+// its accessible label (`attendance:first-league`, "First League
+// attendance").
+const statBoard = (
+  title: string,
+  noun: string,
+  entries: ReadonlyArray<StatEntry>,
+  model: Model,
+): Html =>
+  h.section(
+    [h.Class('mt-12')],
+    [
+      chipHeading(title),
+      h.div(
+        [h.Class('mt-4 grid gap-4 sm:grid-cols-2 lg:gap-6')],
+        entries.map((entry, index) =>
+          statCard(
+            model,
+            entry,
+            index,
+            `${noun}:${leagueSlug(entry.league)}`,
+            `${entry.league} ${noun}`,
+          ),
+        ),
       ),
     ],
   );
 
-const goalsTiles = (): Html => statBoard('Goals', goals);
-const attendanceTiles = (): Html => statBoard('Attendance', attendance);
+const goalsTiles = (model: Model): Html => statBoard('Goals', 'goals', goals, model);
+const attendanceTiles = (model: Model): Html =>
+  statBoard('Attendance', 'attendance', attendance, model);
 
 // The landing marquee's four-point spark, redrawn here (deliberate
 // duplicate — the two apps share a language, not code).
@@ -2165,93 +2381,284 @@ const sectionTileView = (tile: SectionTile): Html =>
 
 // The record board: one entry per all-time best. Placeholder values in the
 // mock's spirit — replace with API data when it exists.
+// The landing page's drawn arrow, ported with its hover contract intact
+// (`drawn-arrow` nudges right inside any hovered link or button — see
+// styles.css). Filled silhouette, not a text glyph: it sits next to
+// display type here, the same register it does over there.
+const drawnRightArrow = (classes: string): Html =>
+  h.svg(
+    [
+      h.Xmlns('http://www.w3.org/2000/svg'),
+      h.ViewBox('0 0 32 24'),
+      h.Class(`drawn-arrow ${classes}`),
+      h.Fill('currentColor'),
+      h.AriaHidden(true),
+    ],
+    [h.path([h.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')], [])],
+  );
+
+// The multiplication mark, DRAWN for the same reason (user call: next to
+// Anton's caps the text × all but disappeared — it is a light maths glyph
+// in a face whose letters are anything but, so it reads as a smudge
+// between the number and the word). Built to Anton's weight instead:
+// arms a fifth of the box thick, cut at 45°.
+//
+// Sized against Anton's MEASURED figures, not against a generic em. The
+// face runs abnormally large on the body — x-height 0.73em, figures
+// 0.86em — which is exactly why the text × vanished: a maths glyph drawn
+// for a normal face is far too small beside characters this big. At
+// 0.52em the mark is a little over half the figure height, which holds
+// its own without reading as a letter.
+//
+// Centred on the FIGURE axis rather than the usual x-height one, because
+// this mark only ever lands between digits and caps ("22× LEAGUE") and
+// never beside lowercase — on the x-height axis it sat a visible pixel
+// low against the numerals. An inline-block baselines on its BOTTOM
+// MARGIN EDGE, so the margin is the control: mb + height/2 ≈ half the
+// figure height. Both are em, so it holds at any size it inherits — it
+// renders at 18px in the honours chip and 36px in the history grid.
+const drawnTimes = (classes = ''): Html =>
+  h.svg(
+    [
+      h.Xmlns('http://www.w3.org/2000/svg'),
+      h.ViewBox('0 0 24 24'),
+      h.Class(`mb-[0.11em] inline-block h-[0.52em] w-auto ${classes}`),
+      h.Fill('currentColor'),
+      h.AriaHidden(true),
+    ],
+    [
+      h.path(
+        [
+          h.D(
+            'M3.4 0 L12 8.6 L20.6 0 L24 3.4 L15.4 12 L24 20.6 L20.6 24 L12 15.4 L3.4 24 L0 20.6 L8.6 12 L0 3.4 Z',
+          ),
+        ],
+        [],
+      ),
+    ],
+  );
+
+// A COUNT reads "22 times champions", so the mark hugs the number and
+// takes a word space after it.
+const timesCount = (count: number): ReadonlyArray<Html | string> => [
+  `${count}`,
+  drawnTimes('ml-[0.04em] mr-[0.26em]'),
+];
+
 interface BestRecord {
   readonly value: string;
+  // Counts take the drawn multiplication mark. Scorelines, totals and
+  // attendances do not — "15:1" is not fifteen times anything.
+  readonly times?: boolean;
   readonly holder: string;
   readonly label: string;
 }
 
 const allTimeBests: ReadonlyArray<BestRecord> = [
-  { value: '22×', holder: 'Sparta Praha', label: 'League titles' },
-  { value: '11×', holder: 'Sparta Praha', label: 'Domestic cup wins' },
+  { value: '22', times: true, holder: 'Sparta Praha', label: 'League titles' },
+  { value: '11', times: true, holder: 'Sparta Praha', label: 'Domestic cup wins' },
   { value: '168', holder: 'Iveta Dudová', label: 'Most goals' },
   { value: '15:1', holder: 'Sparta Praha × FC Praha', label: 'Biggest win' },
   { value: '6,882', holder: 'Eden Arena', label: 'Record attendance' },
   { value: '86', holder: 'Natálie Čampišová', label: 'Matches officiated' },
 ];
 
+// One all-time record — its own pinnable unit (user call: split the
+// board). Frameless like before, but the pin tick becomes the pin BUTTON:
+// the pink tick was always decorative, so making it the control adds no
+// clutter. `standalone` left-aligns it for the Her Game feed (the home grid
+// centres on phones); the id is `best:<label>`.
+const bestRecord = (model: Model, record: BestRecord, standalone: boolean): Html => {
+  const pinned = model.pinned.includes(`best:${slugify(record.label)}`);
+  return h.li(
+    [
+      h.Class(
+        standalone
+          ? 'flex flex-col items-start text-left'
+          : 'flex flex-col items-center text-center sm:items-start sm:text-left',
+      ),
+    ],
+    [
+      h.button(
+        [
+          h.Type('button'),
+          h.OnClick(ToggledPin({ id: `best:${slugify(record.label)}` })),
+          h.AriaPressed(pinned ? 'true' : 'false'),
+          h.AriaLabel(
+            pinned ? `Unpin ${record.label} from Her Game` : `Pin ${record.label} to Her Game`,
+          ),
+          // The tick, now a hit target: pink bar at rest, growing a pin
+          // glyph beside it when pinned so the state reads without colour.
+          h.Class(
+            `flex cursor-pointer items-center gap-2 transition-colors ${
+              pinned ? 'text-pink' : 'text-ink/30 hover:text-pink'
+            }`,
+          ),
+        ],
+        [
+          h.div([h.Class('h-1 w-10 bg-pink')], []),
+          pinned ? pinGlyph('h-3.5 w-3.5 text-pink') : h.g([], []),
+        ],
+      ),
+      h.p(
+        [h.Class('display mt-3 text-5xl text-ink sm:text-4xl md:text-5xl')],
+        record.times === true ? [record.value, drawnTimes()] : [record.value],
+      ),
+      h.p([h.Class('display mt-2 text-2xl text-pink sm:text-xl md:text-2xl')], [record.holder]),
+      h.p(
+        [h.Class('mt-1.5 text-[10px] tracking-[0.25em] text-ink/50 uppercase md:text-[11px]')],
+        [record.label],
+      ),
+    ],
+  );
+};
+
 // ALL-TIME BESTS — the same section grammar as Trending/Goals/Attendance/
 // New content: pink chip heading, frameless records straight on the paper.
-const allTimeBestsPanel = (): Html =>
+const allTimeBestsPanel = (model: Model): Html =>
   h.section(
     [h.Class('mt-12')],
     [
-      h.div(
-        [h.Class('flex')],
-        [
-          h.span(
-            [
-              h.Class(
-                'display inline-block bg-pink px-4 py-2 text-xl tracking-[0.2em] text-ink md:px-5 md:text-2xl',
-              ),
-            ],
-            ['All-time bests'],
-          ),
-        ],
-      ),
+      chipHeading('All-time bests'),
       h.ul(
         [h.Class('mt-8 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3')],
-        allTimeBests.map((record) =>
-          // Phones: each record runs full width and CENTERED (user call);
-          // the left-aligned column grid returns from `sm`.
-          h.li(
-            [h.Class('flex flex-col items-center text-center sm:items-start sm:text-left')],
-            [
-              pinkTick(),
-              h.p(
-                [h.Class('display mt-3 text-5xl text-ink sm:text-4xl md:text-5xl')],
-                [record.value],
-              ),
-              h.p(
-                [h.Class('display mt-2 text-2xl text-pink sm:text-xl md:text-2xl')],
-                [record.holder],
-              ),
-              h.p(
-                [
-                  h.Class(
-                    'mt-1.5 text-[10px] tracking-[0.25em] text-ink/50 uppercase md:text-[11px]',
-                  ),
-                ],
-                [record.label],
-              ),
-            ],
-          ),
-        ),
+        allTimeBests.map((record) => bestRecord(model, record, false)),
       ),
     ],
   );
 
-const welcomeScreen = (): Html =>
+const welcomeScreen = (model: Model): Html =>
   h.div(
     [],
     [
       welcomeHero(),
       // The movers first (results wait for the sections — user call). The
       // trending board's chip overflows its top edge, so the row gets
-      // breathing room (mt covers the chip).
-      trendingTiles(),
-      goalsTiles(),
-      attendanceTiles(),
+      // breathing room (mt covers the chip). Each board carries a pin that
+      // sends it to Her Game.
+      trendingTiles(model),
+      goalsTiles(model),
+      attendanceTiles(model),
       newContentPanel(),
       // All-time bests ABOVE the browse tiles; the "platform in numbers"
       // stat strip is gone entirely (user calls).
-      allTimeBestsPanel(),
+      allTimeBestsPanel(model),
       h.div(
         [h.Class('mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3')],
         sectionTiles.map(sectionTileView),
       ),
     ],
   );
+
+// A saved-chart card — the real thing, shared by the Saved charts grid and
+// the Pinned feed (a pinned chart shows its actual card, not a summary).
+const savedChartCard = (model: Model, chart: SavedChart): Html =>
+  h.article(
+    [h.Class(`${panel} flex flex-col p-6 transition-colors hover:border-pink`)],
+    [
+      sparkline(chart.spark),
+      h.h2([h.Class('display mt-5 text-xl text-ink')], [chart.title]),
+      h.div(
+        [h.Class('mt-2 flex items-center justify-between gap-4')],
+        [
+          h.p([h.Class('text-[10px] tracking-[0.2em] uppercase text-ink/40')], [chart.updated]),
+          pinToggle(model, chart.id, chart.title),
+        ],
+      ),
+    ],
+  );
+
+// THE PIN REGISTRY. Every individually-pinnable tile lists itself here
+// once: its id, a self-describing TITLE (user call — a pinned tile is cut
+// from its home context, so on Her Game it must say what it is; this is the
+// same slot a single stat pinned off a player or club profile will fill),
+// and the real card it renders. Ids match exactly what the home cards emit,
+// so a pin toggled there resolves here. No whole-board entries any more —
+// every board split into its tiles.
+interface PinnedTile {
+  readonly id: string;
+  readonly title: string;
+  readonly render: (model: Model) => Html;
+}
+
+const statTilesFor = (noun: string, entries: ReadonlyArray<StatEntry>): ReadonlyArray<PinnedTile> =>
+  entries.map((entry, index) => {
+    const id = `${noun}:${leagueSlug(entry.league)}`;
+    const label = `${entry.league} ${noun}`;
+    return {
+      id,
+      title: `${entry.league} · ${noun.charAt(0).toUpperCase()}${noun.slice(1)}`,
+      render: (model: Model) => statCard(model, entry, index, id, label),
+    };
+  });
+
+const pinRegistry: ReadonlyArray<PinnedTile> = [
+  ...statTilesFor('goals', goals),
+  ...statTilesFor('attendance', attendance),
+  ...trending.map(
+    (entry, index): PinnedTile => ({
+      id: `trending:${slugify(entry.name)}`,
+      title: `Trending · ${entry.name}`,
+      render: (model: Model) => trendingTile(model, entry, index),
+    }),
+  ),
+  ...allTimeBests.map(
+    (record): PinnedTile => ({
+      id: `best:${slugify(record.label)}`,
+      title: `All-time best · ${record.label}`,
+      render: (model: Model) => bestRecord(model, record, true),
+    }),
+  ),
+  ...savedCharts.map(
+    (chart): PinnedTile => ({
+      id: chart.id,
+      title: `Saved chart · ${chart.title}`,
+      render: (model: Model) => savedChartCard(model, chart),
+    }),
+  ),
+];
+
+// One pinned tile in the feed: its own TITLE above the real card (user
+// call). The title is the tile's self-description; the card below is
+// unchanged from the home screen, and carries its own pin control for
+// unpinning, so the header stays a label.
+const pinnedTileView = (model: Model, tile: PinnedTile): Html =>
+  h.div(
+    [h.Class('flex flex-col')],
+    [
+      h.p([h.Class('truncate text-[10px] tracking-[0.2em] text-ink/50 uppercase')], [tile.title]),
+      h.div([h.Class('mt-3')], [tile.render(model)]),
+    ],
+  );
+
+// The pinned feed — a uniform grid of self-titled tiles, each the real card
+// from its home. Empty until the visitor pins something; the empty state
+// names the gesture rather than leaving a blank slot.
+const pinnedFeed = (model: Model): Html => {
+  const tiles = pinRegistry.filter((tile) => model.pinned.includes(tile.id));
+  return h.div(
+    [h.Class('mt-14')],
+    [
+      sectionLabel('Pinned'),
+      tiles.length === 0
+        ? h.div(
+            [
+              h.Class(
+                'mt-6 flex items-center gap-3 border border-dashed border-ink/20 p-6 text-sm text-ink/50',
+              ),
+            ],
+            [
+              pinGlyph('h-4 w-4 shrink-0 text-ink/30'),
+              h.span([], ['Pin any tile or chart and it lands here — your own front page.']),
+            ],
+          )
+        : h.div(
+            [h.Class('mt-6 grid items-start gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3')],
+            tiles.map((tile) => pinnedTileView(model, tile)),
+          ),
+    ],
+  );
+};
 
 // HER GAME — the platform's personal section (the former charts screen).
 // For now it holds the chart studio and saved charts; the custom feed of
@@ -2264,24 +2671,14 @@ const herGameScreen = (model: Model): Html =>
         model,
         'Your side of the platform. Build a chart in the studio below and save it — soon this is where your own feed of clubs, players, and competitions lives.',
       ),
+      // Pinned first — it is the reason to come back here.
+      pinnedFeed(model),
       chartStudioPanel(model),
       h.div([h.Class('mt-14')], [sectionLabel('Saved charts')]),
       h.div(
         [h.Class('mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3')],
         [
-          ...savedCharts.map((chart) =>
-            h.article(
-              [h.Class(`${panel} group cursor-pointer p-6 transition-colors hover:border-pink`)],
-              [
-                sparkline(chart.spark),
-                h.h2([h.Class('display mt-5 text-xl text-ink')], [chart.title]),
-                h.p(
-                  [h.Class('mt-2 text-[10px] tracking-[0.2em] uppercase text-ink/40')],
-                  [chart.updated],
-                ),
-              ],
-            ),
-          ),
+          ...savedCharts.map((chart) => savedChartCard(model, chart)),
           h.button(
             [
               h.Type('button'),
@@ -2991,14 +3388,14 @@ const clubHighlights: Record<string, { readonly kicker: string; readonly stateme
 // that has never won the league. Clubs without an entry show nothing
 // rather than a padded-out list.
 interface ClubHonour {
-  readonly count?: string;
+  readonly count?: number;
   readonly label: string;
 }
 
 const clubHonours: Record<string, ReadonlyArray<ClubHonour>> = {
   'sparta-praha': [
-    { count: '22×', label: 'League champions' },
-    { count: '9×', label: 'Domestic double' },
+    { count: 22, label: 'League champions' },
+    { count: 9, label: 'Domestic double' },
     { label: 'Europa Cup semis' },
   ],
 };
@@ -3380,22 +3777,6 @@ const standingsHeadline = (text: string): Html =>
 const SEASON_OPENING = Date.UTC(2025, 7, 16); // 16 Aug 2025, a Saturday
 const DAY_MS = 86400000;
 
-// The landing page's drawn arrow, ported with its hover contract intact
-// (`drawn-arrow` nudges right inside any hovered link or button — see
-// styles.css). Filled silhouette, not a text glyph: it sits next to
-// display type here, the same register it does over there.
-const drawnRightArrow = (classes: string): Html =>
-  h.svg(
-    [
-      h.Xmlns('http://www.w3.org/2000/svg'),
-      h.ViewBox('0 0 32 24'),
-      h.Class(`drawn-arrow ${classes}`),
-      h.Fill('currentColor'),
-      h.AriaHidden(true),
-    ],
-    [h.path([h.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')], [])],
-  );
-
 const KICKOFFS = ['14:00', '16:00', '17:30', '19:00'] as const;
 
 const kickoffFor = (seed: string): string => KICKOFFS[hashSlug(seed) % KICKOFFS.length] ?? '17:00';
@@ -3488,16 +3869,58 @@ const clubMatchCrest = (team: string): Html => {
   );
 };
 
-// The outcome as a WORD, not a letter (user call: the strip took too much
-// decoding). "Won 2–1" answers what happened in one read; a W in a grid of
-// dates asks the reader to work out which date, which competition, and
-// what the letter refers to before they get the same fact.
-const matchOutcome = (entry: PlayedMatch): { readonly label: string; readonly tone: string } =>
-  entry.forGoals > entry.againstGoals
-    ? { label: 'Won', tone: 'text-rise-ink' }
-    : entry.forGoals === entry.againstGoals
-      ? { label: 'Drew', tone: 'text-ink/60' }
-      : { label: 'Lost', tone: 'text-fall' };
+// THE SCOREBOARD. The colon is FIXED (user call) — it is how a score is
+// written, and no amount of styling gets to trade that away. So the energy
+// comes from scale and from colour: the numerals go up to display scale,
+// and the colon goes brand pink, so the one punctuation mark on the card
+// is what carries the accent. Both numerals stay full ink (user call) —
+// an earlier pass faded the losing side to mark the result, but the WON
+// label already says that, and dimming half a score made the card look
+// like it had failed to load rather than like it had a winner.
+const clubMatchScore = (home: number, away: number): Html =>
+  h.div(
+    [
+      h.Class('relative z-10 -mx-2 flex shrink-0 items-baseline md:-mx-4'),
+      // The parts are styled fragments — announce the result once, whole.
+      h.AriaLabel(`${home}–${away}`),
+    ],
+    [
+      h.span(
+        [
+          h.Class('display text-6xl leading-none tabular-nums text-ink md:text-7xl'),
+          h.AriaHidden(true),
+        ],
+        [`${home}`],
+      ),
+      h.span(
+        [
+          h.Class('display px-1 text-6xl leading-none text-pink md:px-1.5 md:text-7xl'),
+          h.AriaHidden(true),
+        ],
+        [':'],
+      ),
+      h.span(
+        [
+          h.Class('display text-6xl leading-none tabular-nums text-ink md:text-7xl'),
+          h.AriaHidden(true),
+        ],
+        [`${away}`],
+      ),
+    ],
+  );
+
+// A fixture has no numerals to carry the accent, so the pink moves into a
+// filled chip — the same block the section headings are cut from — rather
+// than sitting between the crests as grey lowercase type.
+const clubMatchVersus = (): Html =>
+  h.span(
+    [
+      h.Class(
+        'display relative z-10 shrink-0 bg-pink px-3.5 py-1.5 text-xl leading-none text-ink md:px-4 md:py-2 md:text-2xl',
+      ),
+    ],
+    ['VS'],
+  );
 
 // ONE match, with the CRESTS as the whole point (user call). The badges
 // are what a supporter recognises before they read anything — they say
@@ -3506,7 +3929,6 @@ const matchOutcome = (entry: PlayedMatch): { readonly label: string; readonly to
 // The card carries no label: it is the only thing in its section, and the
 // section's chip has already named it.
 const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
-  const outcome = entry.played ? matchOutcome(entry) : null;
   const homeGoals = entry.home ? entry.forGoals : entry.againstGoals;
   const awayGoals = entry.home ? entry.againstGoals : entry.forGoals;
   const kickoff = kickoffFor(`${entry.match.round}-${entry.match.home}-${entry.match.away}`);
@@ -3527,18 +3949,7 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
         ],
         [
           clubMatchCrest(entry.match.home),
-          h.span(
-            [
-              h.Class(
-                `display shrink-0 tabular-nums ${
-                  entry.played
-                    ? 'text-5xl text-ink md:text-6xl'
-                    : 'text-3xl text-ink/35 md:text-4xl'
-                }`,
-              ),
-            ],
-            [entry.played ? `${homeGoals}:${awayGoals}` : 'vs'],
-          ),
+          entry.played ? clubMatchScore(homeGoals, awayGoals) : clubMatchVersus(),
           clubMatchCrest(entry.match.away),
         ],
       ),
@@ -3547,43 +3958,35 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
       h.div(
         [h.Class('mt-auto border-t border-ink/10 px-5 py-5 md:px-6')],
         [
-          // COMPETITION AND STAGE, stated outright (user call) — it is
-          // what tells you whether this is a league game, a cup tie or a
-          // European night, and the old calendar mixed all three without
-          // ever saying so. The outcome closes the same line: the card no
-          // longer carries a label of its own, because its section chip
-          // above already says which match this is.
-          h.div(
-            [h.Class('flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1')],
-            [
-              h.p([h.Class('display text-2xl text-ink md:text-3xl')], [target.league]),
-              ...(outcome === null
-                ? []
-                : [
-                    h.p(
-                      [h.Class(`display text-xl tracking-[0.08em] ${outcome.tone} md:text-2xl`)],
-                      [outcome.label],
-                    ),
-                  ]),
-            ],
-          ),
+          // COMPETITION AND STAGE on ONE line, split by a middot (user
+          // call) — it is what tells you whether this is a league game, a
+          // cup tie or a European night. Display type carries POSITIVE
+          // tracking here (the .display default is tight −0.01em); the
+          // widened caps read as a label, not a headline, so they don't
+          // fight the scoreline above.
           h.p(
-            [h.Class('mt-1.5 text-[10px] tracking-[0.2em] text-ink/50 uppercase')],
+            [h.Class('display text-2xl tracking-[0.05em] text-ink md:text-3xl')],
+            [`${target.league} · Round ${entry.match.round}`],
+          ),
+          // Date rides the quiet line below — SECONDARY (user call), plus
+          // the kickoff on a game still to come.
+          h.p(
+            [h.Class('mt-2 text-[10px] tracking-[0.2em] text-ink/50 uppercase')],
             [
-              // Date is SECONDARY (user call), so it rides the same quiet
-              // line as the stage rather than getting one of its own.
               entry.played
-                ? `Round ${entry.match.round} · ${roundDate(entry.match.round)}`
-                : `Round ${entry.match.round} · ${roundDate(entry.match.round)} · ${kickoff}`,
+                ? roundDate(entry.match.round)
+                : `${roundDate(entry.match.round)} · ${kickoff}`,
             ],
           ),
-          // Through to the match itself. No per-match route exists yet, so
-          // it points at the matches section rather than a dead href.
+          // Through to the match itself as a STANDARD button (user call) —
+          // a bordered ink control that fills on hover, the app's secondary
+          // button grammar, not a text link. No per-match route exists yet,
+          // so it points at the matches section rather than a dead href.
           h.a(
             [
               h.Href('/matches'),
               h.Class(
-                'display mt-4 inline-flex items-center gap-2 text-sm tracking-[0.12em] text-pink transition-colors hover:text-ink md:text-base',
+                'display mt-5 flex w-fit items-center gap-2 border border-ink px-5 py-2.5 text-sm tracking-[0.12em] text-ink uppercase transition-colors hover:bg-ink hover:text-paper md:text-base',
               ),
             ],
             ['Match info', drawnRightArrow('inline-block h-[0.72em] w-auto')],
@@ -3779,16 +4182,22 @@ const clubHistorySection = (target: Club): Html => {
     ...(target.leagueTitles > 0
       ? [
           {
-            value: `${target.leagueTitles}×`,
+            value: timesCount(target.leagueTitles),
             label: 'League champions',
             detail: 'Most recently 2024/25',
           },
         ]
       : []),
     ...(target.cupTitles > 0
-      ? [{ value: `${target.cupTitles}×`, label: 'Cup winners', detail: 'Most recently 2024/25' }]
+      ? [
+          {
+            value: timesCount(target.cupTitles),
+            label: 'Cup winners',
+            detail: 'Most recently 2024/25',
+          },
+        ]
       : []),
-    { value: '30', label: 'Seasons in the data', detail: 'Back to 1995/96' },
+    { value: ['30'], label: 'Seasons in the data', detail: 'Back to 1995/96' },
   ];
   return clubSection(
     'History',
@@ -3800,7 +4209,7 @@ const clubHistorySection = (target: Club): Html => {
             [],
             [
               h.div([h.Class('h-1 w-10 bg-pink')], []),
-              h.p([h.Class('display mt-3 text-4xl text-ink md:text-5xl')], [entry.value]),
+              h.p([h.Class('display mt-3 text-4xl text-ink md:text-5xl')], entry.value),
               h.p([h.Class('display mt-2 text-xl text-pink md:text-2xl')], [entry.label]),
               h.p(
                 [h.Class('mt-1.5 text-[10px] tracking-[0.25em] text-ink/50 uppercase')],
@@ -4014,11 +4423,9 @@ const clubProfileScreen = (target: Club, model: Model): Html => {
                             h.Class('col-start-1 row-start-1 text-center whitespace-nowrap'),
                             h.Style({ '--honour-index': `${index}` }),
                           ],
-                          [
-                            honour.count === undefined
-                              ? honour.label
-                              : `${honour.count} ${honour.label}`,
-                          ],
+                          honour.count === undefined
+                            ? [honour.label]
+                            : [...timesCount(honour.count), honour.label],
                         ),
                       ),
                     ),
@@ -4038,11 +4445,9 @@ const clubProfileScreen = (target: Club, model: Model): Html => {
                               'display bg-paper px-3 py-1.5 text-lg tracking-[0.12em] text-ink md:px-3.5 md:py-2 md:text-xl',
                             ),
                           ],
-                          [
-                            honour.count === undefined
-                              ? honour.label
-                              : `${honour.count} ${honour.label}`,
-                          ],
+                          honour.count === undefined
+                            ? [honour.label]
+                            : [...timesCount(honour.count), honour.label],
                         ),
                       ),
                     ),
@@ -4526,7 +4931,7 @@ const screenView = (model: Model): Html => {
   if (competition) return competitionProfileScreen(competition, model);
   return M.value(model.screen).pipe(
     M.withReturnType<Html>(),
-    M.when('welcome', () => welcomeScreen()),
+    M.when('welcome', () => welcomeScreen(model)),
     M.when('hergame', () => herGameScreen(model)),
     M.when('clubs', () => clubsScreen(model)),
     M.when('players', () => playersScreen(model)),
