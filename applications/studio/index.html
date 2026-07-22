@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="/src/styles.css" rel="stylesheet" />
+    <title>Skóreová Studio</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- ABSOLUTE path: with a relative one, deep links (/<section>/<id>)
+         make the dev server resolve /<section>/src/entry.ts, the SPA
+         fallback answers with HTML, and strict module MIME checking kills
+         the app. The production build rewrites this either way. -->
+    <script type="module" src="/src/entry.ts"></script>
+  </body>
+</html>
