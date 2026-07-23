@@ -705,10 +705,11 @@ body {
   animation-delay: var(--hero-delay, 1s);
 }
 
-/* Header platform CTA: hidden until the hero is scrolled past (motion.ts
-   toggles `.is-visible` off an observer on the hero). Unlayered so the
-   transition beats Tailwind's, and it carries the hover color change too
-   since we dropped `transition-colors` from the element. */
+/* Header platform CTA: hidden until the hero is scrolled past. The hero
+   observer (ObserveHeroPastHeader) feeds `model.heroPastHeader` and the view
+   renders `.is-visible` off it. Unlayered so the transition beats Tailwind's,
+   and it carries the hover color change too since we dropped
+   `transition-colors` from the element. */
 .header-cta {
   opacity: 0;
   transform: translateY(-0.5rem);

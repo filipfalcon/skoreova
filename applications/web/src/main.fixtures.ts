@@ -7,6 +7,7 @@ export const landingModel = Model.make({
   mapLeague: 'all',
   mapClub: '',
   mapAreaImperial: true,
+  heroPastHeader: false,
 });
 
 // The full-screen menu overlay open.

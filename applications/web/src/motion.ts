@@ -1,4 +1,4 @@
-import { Effect, Schema as S } from 'effect';
+import { Effect, Queue, Schema as S, Stream } from 'effect';
 import { Mount } from 'foldkit';
 import { m } from 'foldkit/message';
 
@@ -38,6 +38,9 @@ import { m } from 'foldkit/message';
 
 export const CompletedMountMotion = m('CompletedMountMotion');
 export const FailedMountMotion = m('FailedMountMotion', { reason: S.String });
+// Reports whether the hero has scrolled up under the fixed header — `past`
+// drives the header's persistent CTA in the Model. See ObserveHeroPastHeader.
+export const DetectedHeroPastHeader = m('DetectedHeroPastHeader', { past: S.Boolean });
 
 const REVEAL_CLIPPED_VARIANTS = new Set(['mask', 'wipe']);
 const COUNT_UP_MILLISECONDS = 1000;
@@ -670,42 +673,12 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
     });
   }
 
-  // ----- Header platform CTA -----------------------------------------------
-  // Lives in the header (outside this root), so it's queried off `document`.
-  // On the landing page it stays hidden while the hero — which owns the
-  // primary CTA — is on screen, then slides in once the hero scrolls past.
-  // On pages with no hero (profiles), or with reduced motion, it's shown.
-  //
-  // Driven from the rAF loop below (see `syncHeaderCta`) rather than an
-  // IntersectionObserver + one-shot class: Foldkit re-renders the header on
-  // state changes (opening the menu flips the button's aria/label) and would
-  // wipe an imperatively-added class, and a re-render can even swap the node.
-  // Re-asserting every frame — re-querying if the node was replaced — keeps
-  // the CTA in sync no matter what the vdom does.
-
-  const heroForCta = root.querySelector<HTMLElement>('#top');
-  let headerCta: HTMLElement | null = null;
-  let headerCtaShown: boolean | null = null;
-
-  const syncHeaderCta = (shown: boolean): void => {
-    // The header lives OUTSIDE this mount root and may not be in the DOM yet
-    // when the mount runs — and a re-render can replace the node. Resolve it
-    // lazily on every sync (a mount-time snapshot silently pinned `null`
-    // forever, which is why the CTA never appeared).
-    if (!headerCta?.isConnected) {
-      headerCta = document.querySelector<HTMLElement>('.header-cta');
-      headerCtaShown = null;
-    }
-    if (!headerCta) return;
-    // Re-assert if our tracked state changed OR the DOM was reset under us.
-    if (headerCtaShown === shown && headerCta.classList.contains('is-visible') === shown) return;
-    headerCtaShown = shown;
-    headerCta.classList.toggle('is-visible', shown);
-  };
-
-  // Reduced motion skips the rAF loop that drives the sync — just show it.
-  if (reduceMotion) syncHeaderCta(true);
-  cleanups.push(() => headerCta?.classList.remove('is-visible'));
+  // The header's persistent "Enter platform" CTA used to be driven from the
+  // rAF loop below, re-asserting an `.is-visible` class every frame because a
+  // header re-render (opening the menu flips the toggle's aria) kept wiping
+  // it. It now lives in the Model: ObserveHeroPastHeader watches the hero and
+  // reports when it slips under the header, and the view renders the class —
+  // so nothing here has to fight the vdom for it.
 
   if (reduceMotion) {
     return () => {
@@ -902,13 +875,6 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       animateCount(countUp, countUp.current, 700);
     }
 
-    // Header CTA slides in the moment the hero photo visually disappears —
-    // i.e. its bottom edge slips under the fixed header — not only once the
-    // whole section clears the layout viewport. Pages without a hero
-    // (profiles) simply show it.
-    const headerBottom = headerCta?.closest('header')?.getBoundingClientRect().bottom ?? 0;
-    syncHeaderCta(heroForCta ? heroForCta.getBoundingClientRect().bottom <= headerBottom : true);
-
     const viewportCenterY = window.innerHeight / 2;
 
     for (const layer of parallaxLayers) {
@@ -1059,4 +1025,45 @@ export const MountMotion = Mount.define(
       Effect.catch((error) => Effect.succeed(FailedMountMotion({ reason: error.message }))),
     );
   }),
+);
+
+// Watches the hero and reports when its bottom slips under the fixed header,
+// so the header's persistent "Enter platform" CTA can take over from the
+// hero's own primary CTA. A streaming Mount, not part of the rAF loop: the
+// visibility is discrete state that belongs in the Model, and observing the
+// element directly (rather than sampling geometry every frame) is both the
+// element-scoped shape a Mount wants and cheaper. The header renders the
+// class off the Model, so a header re-render can no longer wipe it.
+export const ObserveHeroPastHeader = Mount.defineStream(
+  'ObserveHeroPastHeader',
+  DetectedHeroPastHeader,
+)((element) =>
+  Stream.callback<typeof DetectedHeroPastHeader.Type>((queue) =>
+    Effect.gen(function* () {
+      yield* Effect.acquireRelease(
+        Effect.sync(() => {
+          // The fixed header's own height is the observer's top inset: the
+          // hero counts as "past" the instant its bottom crosses under the
+          // bar, not once it clears the whole viewport. Measured once at
+          // mount (3.5rem on phones, 4rem from md up) — a mid-session
+          // breakpoint cross is rare enough not to warrant re-observing.
+          const headerHeight =
+            document.querySelector('header')?.getBoundingClientRect().height ?? 64;
+          const observer = new IntersectionObserver(
+            (entries) => {
+              const entry = entries[entries.length - 1];
+              if (entry) {
+                Queue.offerUnsafe(queue, DetectedHeroPastHeader({ past: !entry.isIntersecting }));
+              }
+            },
+            { rootMargin: `-${headerHeight}px 0px 0px 0px` },
+          );
+          observer.observe(element);
+          return observer;
+        }),
+        (observer) => Effect.sync(() => observer.disconnect()),
+      );
+      return yield* Effect.never;
+    }),
+  ),
 );

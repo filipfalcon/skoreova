@@ -62,7 +62,13 @@ import youthCelebrationImage from './assets/youth-celebration.jpg';
 import youthTrophyImage from './assets/youth-trophy.jpg';
 import youthWalkoutImage from './assets/youth-walkout.jpg';
 import { CZECHIA_PATH, CZECHIA_VIEW_BOX, CZECH_REGIONS } from './czechia';
-import { CompletedMountMotion, FailedMountMotion, MountMotion } from './motion';
+import {
+  CompletedMountMotion,
+  DetectedHeroPastHeader,
+  FailedMountMotion,
+  MountMotion,
+  ObserveHeroPastHeader,
+} from './motion';
 import type { AppRoute } from './route';
 import { urlToAppRoute } from './route';
 
@@ -96,6 +102,12 @@ export const Model = S.Struct({
   // unit — the site speaks American English). A tap toggle on touch;
   // desktop hover previews the other unit via CSS, no model round-trip.
   mapAreaImperial: S.Boolean,
+  // Whether the hero has scrolled up under the fixed header, so the header's
+  // persistent "Enter platform" CTA can take over from the hero's own primary
+  // CTA. Fed by an IntersectionObserver on the hero (see ObserveHeroPastHeader
+  // in motion.ts) — the header owns the class in the view, so a re-render
+  // can't wipe it the way an imperatively-toggled class did.
+  heroPastHeader: S.Boolean,
 });
 export type Model = typeof Model.Type;
 
@@ -132,6 +144,7 @@ export const Message = S.Union([
   ToggledAreaUnit,
   CompletedMountMotion,
   FailedMountMotion,
+  DetectedHeroPastHeader,
 ]);
 export type Message = typeof Message.Type;
 
@@ -309,6 +322,7 @@ const initialModel: Model = {
   mapLeague: 'all',
   mapClub: '',
   mapAreaImperial: true,
+  heroPastHeader: false,
 };
 
 // Applies a parsed URL to the model — used for the initial load, our own
@@ -384,6 +398,9 @@ export const update = (
       // Motion is decorative — if it fails to attach, the page still renders
       // fully readable (reveal targets just stay at their resting state).
       FailedMountMotion: () => [model, []],
+      // The hero observer reports whether it has scrolled under the header;
+      // the header CTA renders off this flag.
+      DetectedHeroPastHeader: ({ past }) => [evo(model, { heroPastHeader: () => past }), []],
     }),
   );
 
@@ -759,13 +776,16 @@ const headerView = (model: Model): Html =>
             [
               // Persistent desktop CTA — hidden while the hero (with its own
               // primary CTA) is on screen, sliding in once it scrolls away.
-              // motion.ts toggles `.is-visible` off an observer on the hero;
-              // on pages without a hero it's shown immediately. Phone-hidden.
+              // `is-visible` rides `model.heroPastHeader`, which the hero
+              // observer feeds (see ObserveHeroPastHeader); rendering it from
+              // the Model means a header re-render can't wipe it. Phone-hidden.
               h.a(
                 [
                   h.Href(platformUrl),
                   h.Class(
-                    'header-cta platform-beckon display hidden bg-pink px-4 py-1 text-lg tracking-[0.08em] text-ink hover:bg-paper active:bg-paper md:inline-block',
+                    `header-cta platform-beckon display hidden bg-pink px-4 py-1 text-lg tracking-[0.08em] text-ink hover:bg-paper active:bg-paper md:inline-block ${
+                      model.heroPastHeader ? 'is-visible' : ''
+                    }`,
                   ),
                 ],
                 ['Enter platform', displayArrow],
@@ -904,6 +924,9 @@ const heroView = (): Html =>
   h.section(
     [
       h.Id('top'),
+      // Reports to the Model when the hero slips under the fixed header, so
+      // the header's persistent CTA can take over (see ObserveHeroPastHeader).
+      h.OnMount(ObserveHeroPastHeader()),
       // Starts below the fixed header — the photo must not slide under the
       // bar, or the players lose their heads. `lvh` (largest viewport) so the
       // hero always reaches the very bottom on mobile Safari: with `svh` the
