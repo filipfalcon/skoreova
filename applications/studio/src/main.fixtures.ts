@@ -19,6 +19,25 @@ export const sampleClub: Entry = Entry.make({
   values: ['Sparta Praha', 'Prague', '1893'],
 });
 
+// A competition and an edition that belongs to it. The edition stores its
+// competition's id (parentId + the raw id in the "Competition" cell); the view
+// resolves the name from the competitions section.
+export const sampleCompetition: Entry = Entry.make({
+  section: 'competitions',
+  id: 'comp-1',
+  parentId: '',
+  deleted: false,
+  values: ['First League', 'CZ1', 'Club'],
+});
+
+export const sampleEdition: Entry = Entry.make({
+  section: 'editions',
+  id: 'edition-1',
+  parentId: 'comp-1',
+  deleted: false,
+  values: ['2025/2026', 'comp-1', '2025-08-01', '2026-05-31'],
+});
+
 // The signed-out boot model — mirrors `initialModel` in main.ts (kept here so a
 // fixture tweak can never quietly reshape the app's real starting state).
 export const signedOutModel = Model.make({
@@ -60,6 +79,18 @@ export const playersListModel = Model.make({
   section: 'players',
   players: SectionData.Success({ data: [samplePlayer] }),
   playersTotal: 1,
+  serverHealth: 'ok',
+});
+
+// Signed in on the Editions list with both sections loaded — the edition's
+// "Competition" cell must render the resolved name, not the stored id.
+export const editionsListModel = Model.make({
+  ...signedOutModel,
+  signedIn: true,
+  showDashboard: false,
+  section: 'editions',
+  competitions: SectionData.Success({ data: [sampleCompetition] }),
+  editions: SectionData.Success({ data: [sampleEdition] }),
   serverHealth: 'ok',
 });
 

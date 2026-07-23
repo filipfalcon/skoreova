@@ -391,22 +391,26 @@ const editRecord = (entry: Entry): DrawerState =>
     confirmingDelete: false,
   });
 
-// Editions and Competitions can finish fetching in either order. Each edition's
-// "Competition" column (index 1) is resolved from the competitions rows —
-// re-run both when editions land (against whatever competitions exist) and when
-// competitions land (against the already-loaded editions), so a raw
-// competitionId is never left showing.
-const resolveEditionNames = (
-  editions: ReadonlyArray<Entry>,
-  competitions: ReadonlyArray<Entry>,
-): ReadonlyArray<Entry> =>
-  editions.map((row) => {
-    const competition = competitions.find((candidate) => candidate.id === row.parentId);
-    if (!competition) return row;
-    const values = [...row.values];
-    values[1] = competition.values[0] ?? values[1] ?? '';
-    return evo(row, { values: () => values });
-  });
+// An edition row stores its owning competition's id (in parentId); the display
+// name for the "Competition" column (index 1) is resolved from the competitions
+// section at render time. Deriving it in the view — rather than rewriting the
+// stored value when either fetch lands — means there's no arrival-order race to
+// coordinate: whatever competitions are loaded now is what shows.
+const resolveEditionCell = (model: Model, entry: Entry): Entry => {
+  if (entry.section !== 'editions') return entry;
+  const competition = sectionRows(model, 'competitions').find(
+    (candidate) => candidate.id === entry.parentId,
+  );
+  if (!competition) return entry;
+  const values = [...entry.values];
+  values[1] = competition.values[0] ?? values[1] ?? '';
+  return evo(entry, { values: () => values });
+};
+
+// A section's rows as displayed: editions get their competition name resolved
+// (see resolveEditionCell); every other section is shown as stored.
+const displayRows = (model: Model, section: Section): ReadonlyArray<Entry> =>
+  sectionRows(model, section).map((row) => resolveEditionCell(model, row));
 
 // Evolves one section's AsyncData by a runtime-chosen section. `evo` needs a
 // literal key, so a `model[section]` write goes through this switch.
@@ -835,13 +839,11 @@ export const update = (
       ],
       ClickedRetryNationals: () =>
         retrySection(model, 'nationals', [FetchNationals(), FetchHealth()]),
-      // Competitions landing re-resolves the already-loaded editions' names
-      // (the reverse of the race handled in SucceededFetchEditions).
+      // Editions store their competition's id (in parentId); the name is
+      // resolved in the view, so competitions and editions can land in either
+      // order with no re-resolution here.
       SucceededFetchCompetitions: ({ entries }) => [
-        evo(model, {
-          competitions: () => SectionData.Success({ data: entries }),
-          editions: (data) => mapSectionRows(data, (rows) => resolveEditionNames(rows, entries)),
-        }),
+        evo(model, { competitions: () => SectionData.Success({ data: entries }) }),
         [],
       ],
       FailedFetchCompetitions: ({ reason }) => [
@@ -852,8 +854,6 @@ export const update = (
       ],
       ClickedRetryCompetitions: () =>
         retrySection(model, 'competitions', [FetchCompetitions(), FetchHealth()]),
-      // Each edition's "Competition" column is resolved from the competitions
-      // rows now if they're loaded, otherwise once they land (see above).
       SucceededFetchEditions: ({ editions }) => {
         const entries: ReadonlyArray<Entry> = editions.map((edition) => ({
           section: 'editions' as const,
@@ -862,8 +862,7 @@ export const update = (
           parentId: edition.competitionId,
           values: editionToRow(edition, edition.competitionId),
         }));
-        const resolved = resolveEditionNames(entries, sectionRows(model, 'competitions'));
-        return [evo(model, { editions: () => SectionData.Success({ data: resolved }) }), []];
+        return [evo(model, { editions: () => SectionData.Success({ data: entries }) }), []];
       },
       FailedFetchEditions: ({ reason }) => [
         evo(model, { editions: () => AsyncData.settle(model.editions, Result.fail(reason)) }),
@@ -1733,10 +1732,10 @@ const content = (model: Model): Html => {
   const filterColumns = columns.map((column, index) => ({ column, index })).slice(1);
   const query = model.search.trim().toLowerCase();
 
-  // The current section's loaded rows (its AsyncData Success payload), minus
-  // soft-deleted ones. Kept in the `{ entry, index }` shape the filter and
-  // pagination chain below expects.
-  const entries = sectionRows(model, current)
+  // The current section's rows as displayed (edition competition names resolved
+  // in the view), minus soft-deleted ones. Kept in the `{ entry, index }` shape
+  // the filter and pagination chain below expects.
+  const entries = displayRows(model, current)
     .filter((entry) => !entry.deleted)
     .map((entry, index) => ({ entry, index }));
 
@@ -2152,6 +2151,8 @@ const drawer = (model: Model): Html => {
     const isTeam = entry.section === 'clubs' || entry.section === 'nationals';
     const isCompetition = entry.section === 'competitions';
     const isEdition = entry.section === 'editions';
+    // Read-only field values with the edition's competition name resolved.
+    const displayValues = resolveEditionCell(model, entry).values;
 
     // A competition's own editions, each opening its own drawer on click.
     const editionsList = (): Html => {
@@ -2283,7 +2284,7 @@ const drawer = (model: Model): Html => {
         h.div(
           [h.Class('flex flex-col gap-2')],
           columns.map((column, index) => {
-            const value = entry.values[index] ?? '';
+            const value = displayValues[index] ?? '';
             return h.div(
               [
                 h.Class(

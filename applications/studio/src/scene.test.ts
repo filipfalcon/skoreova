@@ -3,6 +3,7 @@ import { describe, test } from 'vitest';
 
 import {
   dashboardModel,
+  editionsListModel,
   playerRecordModel,
   playersListModel,
   signedOutModel,
@@ -43,6 +44,17 @@ describe('view', () => {
       Scene.with(playersListModel),
       Scene.expect(Scene.role('button', { name: '+ Add new' })).toExist(),
       Scene.expect(Scene.text('Sierra Pennock')).toExist(),
+    );
+  });
+
+  test("an edition's competition name is resolved in the view, not the stored id", () => {
+    Scene.scene(
+      { update, view },
+      Scene.with(editionsListModel),
+      // The row stores 'comp-1' in its Competition cell; the view shows the
+      // resolved name from the competitions section instead.
+      Scene.expect(Scene.text('First League')).toExist(),
+      Scene.expect(Scene.text('comp-1')).toBeAbsent(),
     );
   });
 
