@@ -3356,7 +3356,11 @@ const mutedChip = (text: string): Html =>
   );
 
 // A league table panel, with an optional pink-highlighted team.
-const standingsPanel = (label: string, league: string, highlightTeam: string | null): Html => {
+const standingsPanel = (
+  label: string,
+  league: string,
+  highlightTeam: Option.Option<string>,
+): Html => {
   const rows = league === 'First League' ? firstLeagueStandings : secondLeagueStandings;
   return h.section(
     [h.Class(`${panel} p-6 md:p-8`)],
@@ -3365,7 +3369,7 @@ const standingsPanel = (label: string, league: string, highlightTeam: string | n
       h.ol(
         [h.Class('mt-6 flex flex-col')],
         rows.map((row, index) => {
-          const highlighted = row.team === highlightTeam;
+          const highlighted = Option.contains(highlightTeam, row.team);
           return h.li(
             [
               h.Class(
@@ -3503,12 +3507,12 @@ const UWEC_ZONE: StandingsZone = { label: 'UWEC', bar: 'bg-uec-ink', text: 'text
 const UP_ZONE: StandingsZone = { label: 'Promotion', bar: 'bg-rise-ink', text: 'text-rise-ink' };
 const DOWN_ZONE: StandingsZone = { label: 'Relegation', bar: 'bg-drop', text: 'text-drop' };
 
-const zoneFor = (league: string, position: number, total: number): StandingsZone | null => {
-  if (league !== 'First League') return position === 1 ? UP_ZONE : null;
-  if (position <= 2) return UWCL_ZONE;
-  if (position === 3) return UWEC_ZONE;
-  if (position === total) return DOWN_ZONE;
-  return null;
+const zoneFor = (league: string, position: number, total: number): Option.Option<StandingsZone> => {
+  if (league !== 'First League') return position === 1 ? Option.some(UP_ZONE) : Option.none();
+  if (position <= 2) return Option.some(UWCL_ZONE);
+  if (position === 3) return Option.some(UWEC_ZONE);
+  if (position === total) return Option.some(DOWN_ZONE);
+  return Option.none();
 };
 
 // Season length per league — both are honest round-robins for the squad
@@ -3532,7 +3536,7 @@ interface EuroCampaign {
   readonly stage: string;
   readonly rounds: number;
   readonly rows: ReadonlyArray<StandingsRow>;
-  readonly zoneAt: (position: number) => StandingsZone | null;
+  readonly zoneAt: (position: number) => Option.Option<StandingsZone>;
 }
 
 const KO_UCL_ZONE: StandingsZone = { label: 'Quarterfinals', bar: 'bg-ucl', text: 'text-ucl' };
@@ -3591,7 +3595,12 @@ const UWCL_CAMPAIGN: EuroCampaign = {
   rounds: 6,
   rows: uwclLeaguePhase,
   // Top four go straight to the quarters, the next eight into the playoff.
-  zoneAt: (position) => (position <= 4 ? KO_UCL_ZONE : position <= 12 ? PLAYOFF_ZONE : null),
+  zoneAt: (position) =>
+    position <= 4
+      ? Option.some(KO_UCL_ZONE)
+      : position <= 12
+        ? Option.some(PLAYOFF_ZONE)
+        : Option.none(),
 };
 
 const UWEC_CAMPAIGN: EuroCampaign = {
@@ -3600,7 +3609,12 @@ const UWEC_CAMPAIGN: EuroCampaign = {
   stage: 'League phase',
   rounds: 6,
   rows: uwecLeaguePhase,
-  zoneAt: (position) => (position <= 4 ? KO_UEC_ZONE : position <= 8 ? PLAYOFF_ALT_ZONE : null),
+  zoneAt: (position) =>
+    position <= 4
+      ? Option.some(KO_UEC_ZONE)
+      : position <= 8
+        ? Option.some(PLAYOFF_ALT_ZONE)
+        : Option.none(),
 };
 
 const clubEurope: Record<string, EuroCampaign> = {
@@ -3648,12 +3662,12 @@ const allEntries = (rows: ReadonlyArray<StandingsRow>): ReadonlyArray<StandingsE
 // The legend describes the COMPETITION, not the window — deriving it
 // from the visible rows alone made it change as the table expanded.
 const zonesFor = (
-  zoneAt: (position: number) => StandingsZone | null,
+  zoneAt: (position: number) => Option.Option<StandingsZone>,
   totalRows: number,
 ): ReadonlyArray<StandingsZone> =>
-  Array.makeBy(totalRows, (index) => zoneAt(index + 1))
-    .filter((zone): zone is StandingsZone => zone !== null)
-    .filter((zone, index, all) => all.findIndex((other) => other.label === zone.label) === index);
+  Array.getSomes(Array.makeBy(totalRows, (index) => zoneAt(index + 1))).filter(
+    (zone, index, all) => all.findIndex((other) => other.label === zone.label) === index,
+  );
 
 // Column key — without it the two numeric columns are a guess.
 // Fixed columns stay NARROW below md: the score column eats the room
@@ -3682,7 +3696,7 @@ const standingsColumnKey = (): Html =>
 const standingsRows = (
   entries: ReadonlyArray<StandingsEntry>,
   highlightName: string,
-  zoneAt: (position: number) => StandingsZone | null,
+  zoneAt: (position: number) => Option.Option<StandingsZone>,
   flushFirst: boolean,
 ): Html =>
   h.ol(
@@ -3691,6 +3705,12 @@ const standingsRows = (
       const { row, position } = entry;
       const highlighted = row.team === highlightName;
       const zone = zoneAt(position);
+      const zoneBar = Option.match(zone, { onNone: () => 'bg-transparent', onSome: (z) => z.bar });
+      const zoneText = Option.match(zone, {
+        onNone: () => 'text-transparent',
+        onSome: (z) => z.text,
+      });
+      const zoneLabel = Option.match(zone, { onNone: () => '', onSome: (z) => z.label });
       return h.li(
         // The band lives in a GUTTER outside the row's own background:
         // inside it, the club's pink highlight row would swallow a pink
@@ -3704,13 +3724,7 @@ const standingsRows = (
         // edge vanishes in greyscale or for total colour blindness.
         [h.Class('flex items-stretch gap-px')],
         [
-          h.span(
-            [
-              h.Class(clsx('w-1.5 shrink-0', zone ? zone.bar : 'bg-transparent')),
-              h.AriaHidden(true),
-            ],
-            [],
-          ),
+          h.span([h.Class(clsx('w-1.5 shrink-0', zoneBar)), h.AriaHidden(true)], []),
           h.div(
             [
               h.Class(
@@ -3740,11 +3754,11 @@ const standingsRows = (
                   h.Class(
                     clsx(
                       'hidden w-28 text-[10px] tracking-[0.2em] uppercase md:block',
-                      highlighted ? 'text-ink/60' : (zone?.text ?? 'text-transparent'),
+                      highlighted ? 'text-ink/60' : zoneText,
                     ),
                   ),
                 ],
-                [zone?.label ?? ''],
+                [zoneLabel],
               ),
               // Goal record — "skóre" in the Czech sense: scored:conceded,
               // tabular-nums so the colons line up down the column.
@@ -3800,7 +3814,7 @@ const standingsLegend = (zones: ReadonlyArray<StandingsZone>): Html =>
 const standingsTable = (
   rows: ReadonlyArray<StandingsRow>,
   highlightName: string,
-  zoneAt: (position: number) => StandingsZone | null,
+  zoneAt: (position: number) => Option.Option<StandingsZone>,
 ): ReadonlyArray<Html> => [
   standingsColumnKey(),
   h.div([h.Class('mt-2')], [standingsRows(allEntries(rows), highlightName, zoneAt, true)]),
@@ -4659,7 +4673,7 @@ const clubProfileScreen = (target: Club, model: Model): Html => {
 
 const competitionStandingsPanel = (competition: Competition): Html =>
   competition.standings.kind === 'table'
-    ? standingsPanel('Current standings', competition.standings.league, null)
+    ? standingsPanel('Current standings', competition.standings.league, Option.none())
     : h.section(
         [h.Class(`${panel} p-6 md:p-8`)],
         [
@@ -4995,21 +5009,20 @@ const competitionProfileScreen = (competition: Competition, model: Model): Html 
 
 // An unknown slug falls back to the directory screen rather than a 404 —
 // the mock has no error page, and the directory is the useful neighbor.
-const openClub = (model: Model): Club | undefined => {
-  const slug = routeClubSlug(model.route);
-  return slug === '' ? undefined : clubs.find((candidate) => candidate.slug === slug);
-};
+const openClub = (model: Model): Option.Option<Club> =>
+  Array.findFirst(clubs, (candidate) => candidate.slug === routeClubSlug(model.route));
 
-const openCompetition = (model: Model): Competition | undefined => {
-  const slug = routeCompetitionSlug(model.route);
-  return slug === '' ? undefined : competitions.find((candidate) => candidate.slug === slug);
-};
+const openCompetition = (model: Model): Option.Option<Competition> =>
+  Array.findFirst(
+    competitions,
+    (candidate) => candidate.slug === routeCompetitionSlug(model.route),
+  );
 
 const screenView = (model: Model): Html => {
   const club = openClub(model);
-  if (club) return clubProfileScreen(club, model);
+  if (Option.isSome(club)) return clubProfileScreen(club.value, model);
   const competition = openCompetition(model);
-  if (competition) return competitionProfileScreen(competition, model);
+  if (Option.isSome(competition)) return competitionProfileScreen(competition.value, model);
   return M.value(screenOf(model.route)).pipe(
     M.withReturnType<Html>(),
     M.when('Welcome', () => welcomeScreen(model)),
@@ -5076,10 +5089,22 @@ const shellView = (model: Model): Html =>
     ],
   );
 
+// The open profile's name (club, then competition) titles the tab; away from
+// a profile it's the screen's own title, and the welcome screen is just the
+// brand.
+const documentTitle = (model: Model): string => {
+  if (screenOf(model.route) === 'Welcome') return 'Skóreová Platform';
+  const name = Option.getOrElse(
+    Option.orElse(
+      Option.map(openClub(model), (club) => club.name),
+      () => Option.map(openCompetition(model), (competition) => competition.name),
+    ),
+    () => screenTitles[screenOf(model.route)],
+  );
+  return `${name} — Skóreová Platform`;
+};
+
 export const view = (model: Model): Document => ({
-  title:
-    screenOf(model.route) === 'Welcome'
-      ? 'Skóreová Platform'
-      : `${openClub(model)?.name ?? openCompetition(model)?.name ?? screenTitles[screenOf(model.route)]} — Skóreová Platform`,
+  title: documentTitle(model),
   body: h.div([h.Class('bg-paper font-body text-ink antialiased')], [shellView(model)]),
 });
