@@ -3832,7 +3832,11 @@ const clubPin = (model: Model, club: Club): Html => {
                 // parent pin reads as its B side. Subgrid keeps the columns
                 // aligned across A and B.
                 bannerTeams.map((team, index) =>
-                  h.a(
+                  // Keyed by slug: the banner's rows appear and disappear with
+                  // the league filter, so patch by identity — the first-row
+                  // border and hover state follow the team, not the slot.
+                  h.keyed('a')(
+                    team.slug,
                     [
                       h.Href(`${platformUrl}/clubs/${team.slug}`),
                       // The hover fill SLIDES UP from below the row — the

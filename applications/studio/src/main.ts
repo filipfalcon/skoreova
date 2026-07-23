@@ -1703,8 +1703,13 @@ const content = (model: Model): Html => {
       ],
     );
 
+  // Keyed so re-sorting under search/filter/pagination patches by identity,
+  // not position — otherwise a card's OnClick(ClickedRecord) can end up over a
+  // different row. Local (unsaved) rows have no id, so fall back to the stable
+  // model-row index.
   const entryCard = ({ entry, index }: { entry: Entry; index: number }): Html =>
-    h.div(
+    h.keyed('div')(
+      entry.id === '' ? `local-${index}` : entry.id,
       [h.OnClick(ClickedRecord({ index })), h.Class(entryCardStyle)],
       [
         h.span([h.Class('font-medium text-neutral-900')], [entry.values[0] ?? '']),
@@ -2110,7 +2115,8 @@ const drawer = (model: Model): Html => {
             ? h.div(
                 [h.Class('flex flex-col gap-2')],
                 editions.map(({ row, index }) =>
-                  h.div(
+                  h.keyed('div')(
+                    row.id === '' ? `local-${index}` : row.id,
                     [h.OnClick(ClickedRecord({ index })), h.Class(entryCardStyle)],
                     [h.span([h.Class('font-medium text-neutral-900')], [row.values[0] ?? ''])],
                   ),
@@ -2177,7 +2183,8 @@ const drawer = (model: Model): Html => {
             ? h.div(
                 [h.Class('flex flex-col gap-2')],
                 teams.map(({ row, index }) =>
-                  h.div(
+                  h.keyed('div')(
+                    row.id === '' ? `local-${index}` : row.id,
                     [h.OnClick(ClickedRecord({ index })), h.Class(entryCardStyle)],
                     [h.span([h.Class('font-medium text-neutral-900')], [row.values[0] ?? ''])],
                   ),

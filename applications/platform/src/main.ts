@@ -2590,8 +2590,12 @@ const pinRegistry: ReadonlyArray<PinnedTile> = [
 // call). The title is the tile's self-description; the card below is
 // unchanged from the home screen, and carries its own pin control for
 // unpinning, so the header stays a label.
+// Keyed by the pin id: unpinning tile N must remove tile N, not positionally
+// patch tile N+1's card (and its pin control) up into N's slot under the
+// pointer.
 const pinnedTileView = (model: Model, tile: PinnedTile): Html =>
-  h.div(
+  h.keyed('div')(
+    tile.id,
     [h.Class('flex flex-col')],
     [
       h.p([h.Class('truncate text-[10px] tracking-[0.2em] text-ink/50 uppercase')], [tile.title]),
@@ -3006,7 +3010,11 @@ const clubsScreen = (model: Model): Html => {
         [h.Class('mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4')],
         filtered.map((entry) => {
           const played = entry.won + entry.drawn + entry.lost;
-          return h.a(
+          // Keyed by the club slug: the grid re-filters as the search box
+          // changes, so identity-patching keeps each card (and its handlers)
+          // bound to its own club instead of shifting by position.
+          return h.keyed('a')(
+            entry.slug,
             [
               h.Href(`/clubs/${entry.slug}`),
               h.Class(`${panel} group block p-6 transition-colors hover:border-pink`),
