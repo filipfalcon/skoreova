@@ -1,4 +1,4 @@
-import { Entry, Model } from './main';
+import { DrawerClosed, DrawerEditing, Entry, Model } from './main';
 
 // A single player record — enough columns to fill the drawer's fields and feed
 // the stats chart. `values` line up with `playerColumns`; extras are ignored
@@ -30,13 +30,10 @@ export const signedOutModel = Model.make({
   search: '',
   filters: [],
   rows: [],
-  editingIndex: -1,
-  draft: [],
-  drawerTab: 'overview',
+  drawer: DrawerClosed.make({}),
+  nextLocalId: 1,
   editLog: [],
   chartError: '',
-  deleteConfirming: false,
-  creating: false,
   playersRequest: 'idle',
   playersError: '',
   playersPage: 1,
@@ -77,10 +74,15 @@ export const playersListModel = Model.make({
 });
 
 // Signed in with a player record open in the drawer's Overview tab — the state
-// that mounts the stats chart (a non-team record, so only the single host).
+// that mounts the stats chart (a non-team record, so only the single host). The
+// drawer addresses the record by id, resolved against `rows`.
 export const playerRecordModel = Model.make({
   ...playersListModel,
-  editingIndex: 0,
-  drawerTab: 'overview',
-  draft: [...samplePlayer.values],
+  drawer: DrawerEditing.make({
+    section: 'players',
+    id: samplePlayer.id,
+    tab: 'overview',
+    draft: [...samplePlayer.values],
+    confirmingDelete: false,
+  }),
 });

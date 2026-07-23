@@ -1,7 +1,7 @@
 import { Story } from 'foldkit';
 import { expect, test } from 'vitest';
 
-import { playerRecordModel, sampleClub, signedOutModel } from './main.fixtures';
+import { playerRecordModel, sampleClub, samplePlayer, signedOutModel } from './main.fixtures';
 import {
   CHART_HOST_ID,
   ClickedPlayersPage,
@@ -9,6 +9,7 @@ import {
   ClickedSaveRecord,
   ClickedSignIn,
   CompletedNavigate,
+  DrawerEditing,
   CompletedSyncChart,
   FailedFetchAssociations,
   FailedFetchClubs,
@@ -197,7 +198,11 @@ test('a deep-linked team resolves by id, upserts the row, and opens its drawer',
     Story.message(SucceededFetchTeamById({ entry: sampleClub })),
     Story.model((model) => {
       expect(model.rows.some((row) => row.id === sampleClub.id)).toBe(true);
-      expect(model.editingIndex).toBeGreaterThanOrEqual(0);
+      // The drawer opens on the resolved record, addressed by id.
+      expect(model.drawer._tag).toBe('Editing');
+      if (model.drawer._tag === 'Editing') {
+        expect(model.drawer.id).toBe(sampleClub.id);
+      }
       expect(model.linkError).toBe('');
     }),
     Story.Command.expectNone(),
@@ -259,7 +264,13 @@ test('saving an edited record defers to the clock, then commits with that timest
     // A player record open with one field edited in the draft (index 1).
     Story.with({
       ...playerRecordModel,
-      draft: ['Sierra Pennock', 'Slavia Praha', 'Forward', '12', '5'],
+      drawer: DrawerEditing.make({
+        section: 'players',
+        id: samplePlayer.id,
+        tab: 'overview',
+        draft: ['Sierra Pennock', 'Slavia Praha', 'Forward', '12', '5'],
+        confirmingDelete: false,
+      }),
     }),
     Story.message(ClickedSaveRecord()),
     // update stays pure: the commit waits on the clock via StampSave.
@@ -267,7 +278,7 @@ test('saving an edited record defers to the clock, then commits with that timest
     Story.Command.resolve(StampSave, SavedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
     Story.model((model) => {
       // Drawer closed, and the change logged with the injected timestamp.
-      expect(model.editingIndex).toBe(-1);
+      expect(model.drawer._tag).toBe('Closed');
       expect(model.editLog).toHaveLength(1);
       expect(model.editLog[0]?.from).toBe('Sparta Praha');
       expect(model.editLog[0]?.to).toBe('Slavia Praha');
