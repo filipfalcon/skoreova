@@ -58,8 +58,8 @@ beforeAll(async () => {
 // intercepted and silently retried into oblivion.
 const clickChip = (label: string): void => {
   const chip = Array.from(
-    document.querySelectorAll<HTMLButtonElement>('#across-the-lands button'),
-  ).find((button) => button.textContent === label);
+    document.querySelectorAll<HTMLElement>('#across-the-lands [role="radio"]'),
+  ).find((option) => option.textContent === label);
   if (!chip) throw new Error(`chip ${label} not found`);
   chip.click();
 };

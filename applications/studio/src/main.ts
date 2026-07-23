@@ -1,5 +1,6 @@
 import * as echarts from 'echarts/core';
 import { Effect, Match as M, Option, Schema as S } from 'effect';
+import { Input } from '@foldkit/ui';
 import { Command, Mount, Runtime } from 'foldkit';
 import { html } from 'foldkit/html';
 import type { Document, Html } from 'foldkit/html';
@@ -1461,24 +1462,49 @@ const loginView = (model: Model): Document => {
                 h.div(
                   [h.Class('mt-6 flex flex-col gap-3')],
                   [
-                    h.input([
-                      h.Type('email'),
-                      h.Name('email'),
-                      h.Autocomplete('email'),
-                      h.Placeholder('email address'),
-                      h.Value(model.email),
-                      h.OnInput((value) => EnteredEmail({ value })),
-                      h.Class(inputStyle),
-                    ]),
-                    h.input([
-                      h.Type('password'),
-                      h.Name('password'),
-                      h.Autocomplete('current-password'),
-                      h.Placeholder('password'),
-                      h.Value(model.password),
-                      h.OnInput((value) => EnteredPassword({ value })),
-                      h.Class(inputStyle),
-                    ]),
+                    // The fields carry only a placeholder visually; the real
+                    // <label> is sr-only so each is a properly labeled form
+                    // control without changing the card's look.
+                    Input.view({
+                      id: 'signin-email',
+                      type: 'email',
+                      placeholder: 'email address',
+                      value: model.email,
+                      onInput: (value) => EnteredEmail({ value }),
+                      toView: (attributes) =>
+                        h.div(
+                          [],
+                          [
+                            h.label([...attributes.label, h.Class('sr-only')], ['Email address']),
+                            h.input([
+                              ...attributes.input,
+                              h.Name('email'),
+                              h.Autocomplete('email'),
+                              h.Class(inputStyle),
+                            ]),
+                          ],
+                        ),
+                    }),
+                    Input.view({
+                      id: 'signin-password',
+                      type: 'password',
+                      placeholder: 'password',
+                      value: model.password,
+                      onInput: (value) => EnteredPassword({ value }),
+                      toView: (attributes) =>
+                        h.div(
+                          [],
+                          [
+                            h.label([...attributes.label, h.Class('sr-only')], ['Password']),
+                            h.input([
+                              ...attributes.input,
+                              h.Name('password'),
+                              h.Autocomplete('current-password'),
+                              h.Class(inputStyle),
+                            ]),
+                          ],
+                        ),
+                    }),
                   ],
                 ),
                 h.a([h.Href('#'), h.Class(forgotStyle)], ['Forgot password?']),
@@ -1990,13 +2016,23 @@ const content = (model: Model): Html => {
       ),
       sectionStatusBanner(),
       linkErrorBanner(),
-      h.input([
-        h.Type('search'),
-        h.Placeholder(`Search ${label.toLowerCase()}…`),
-        h.Value(model.search),
-        h.OnInput((value) => EnteredSearch({ value })),
-        h.Class(`mt-6 ${searchInputStyle}`),
-      ]),
+      // Placeholder-only visually; the real <label> is sr-only so the search
+      // field is properly labeled without a visible caption.
+      Input.view({
+        id: 'section-search',
+        type: 'search',
+        placeholder: `Search ${label.toLowerCase()}…`,
+        value: model.search,
+        onInput: (value) => EnteredSearch({ value }),
+        toView: (attributes) =>
+          h.div(
+            [h.Class('mt-6')],
+            [
+              h.label([...attributes.label, h.Class('sr-only')], [`Search ${label}`]),
+              h.input([...attributes.input, h.Class(searchInputStyle)]),
+            ],
+          ),
+      }),
       h.div(
         [h.Class('mt-3 flex flex-wrap gap-2')],
         filterColumns.map(({ column, index }) => {

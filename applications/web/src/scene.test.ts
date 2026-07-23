@@ -27,7 +27,7 @@ describe('view', () => {
       { update, view },
       Scene.with(landingModel),
       acknowledgeMotion,
-      Scene.expect(Scene.role('button', { name: 'All clubs' })).toExist(),
+      Scene.expect(Scene.role('radio', { name: 'All clubs' })).toExist(),
       Scene.expect(Scene.label('Toggle between metric and imperial area')).toExist(),
     );
   });
