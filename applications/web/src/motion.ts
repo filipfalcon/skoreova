@@ -426,8 +426,10 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
           root
             .querySelector<HTMLElement>('.hero-photo')
             ?.getAnimations()
-            .find((animation) => (animation as CSSAnimation).animationName === 'hero-photo') ??
-          null;
+            .find(
+              (animation) =>
+                animation instanceof CSSAnimation && animation.animationName === 'hero-photo',
+            ) ?? null;
         const time = introAnimation?.currentTime;
         return typeof time === 'number' ? time : performance.now() - mountedAt;
       };
