@@ -1,11 +1,13 @@
+import { Option } from 'effect';
+
 import { Model } from './main';
 
 // The landing page at rest — mirrors `initialModel` in main.ts.
 export const landingModel = Model.make({
   isMenuOpen: false,
-  activeSection: '',
+  activeSection: Option.none(),
   mapLeague: 'All',
-  mapClub: '',
+  mapClub: Option.none(),
   isMapAreaImperial: true,
   heroPastHeader: false,
 });
@@ -17,5 +19,5 @@ export const menuOpenModel = Model.make({ ...landingModel, isMenuOpen: true });
 export const secondLeagueMapModel = Model.make({
   ...landingModel,
   mapLeague: 'Second',
-  mapClub: 'sparta-praha',
+  mapClub: Option.some('sparta-praha'),
 });

@@ -9,6 +9,7 @@ import { landingModel, menuOpenModel, secondLeagueMapModel } from './main.fixtur
 import {
   ChangedUrl,
   ClickedLink,
+  ClosedMapClub,
   ClosedMenu,
   CompletedLoad,
   CompletedNavigate,
@@ -35,14 +36,17 @@ test('opening the menu locks scroll and kicks off active-section detection', () 
     Story.model((model) => {
       expect(model.isMenuOpen).toBe(true);
       // Opening resets the marker so a stale highlight can't flash.
-      expect(model.activeSection).toBe('');
+      expect(model.activeSection).toEqual(Option.none());
     }),
     Story.Command.expectExact(SetScrollLock, DetectActiveSection),
     Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
     // Detection resolves with whichever section the viewport sat in.
-    Story.Command.resolve(DetectActiveSection, DetectedActiveSection({ section: 'on-the-rise' })),
+    Story.Command.resolve(
+      DetectActiveSection,
+      DetectedActiveSection({ section: Option.some('on-the-rise') }),
+    ),
     Story.model((model) => {
-      expect(model.activeSection).toBe('on-the-rise');
+      expect(model.activeSection).toEqual(Option.some('on-the-rise'));
     }),
   );
 });
@@ -79,7 +83,7 @@ test('selecting a map league switches the filter and closes any open club card',
     Story.message(SelectedMapLeague({ league: 'First' })),
     Story.model((model) => {
       expect(model.mapLeague).toBe('First');
-      expect(model.mapClub).toBe('');
+      expect(model.mapClub).toEqual(Option.none());
     }),
     Story.Command.expectNone(),
   );
@@ -91,7 +95,12 @@ test('opening a club card records its slug; the area unit toggles', () => {
     Story.with(landingModel),
     Story.message(OpenedMapClub({ slug: 'slavia-praha' })),
     Story.model((model) => {
-      expect(model.mapClub).toBe('slavia-praha');
+      expect(model.mapClub).toEqual(Option.some('slavia-praha'));
+    }),
+    // Closing is its own message now, not OpenedMapClub with an empty slug.
+    Story.message(ClosedMapClub()),
+    Story.model((model) => {
+      expect(model.mapClub).toEqual(Option.none());
     }),
     Story.message(ToggledAreaUnit()),
     Story.model((model) => {
