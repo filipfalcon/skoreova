@@ -15,8 +15,8 @@ export const welcomeModel = Model.make({
   featuredClub: 0,
   followed: [],
   pinned: [],
-  scorerScope: 'all',
-  metric: 'goals',
+  scorerScope: 'All',
+  metric: 'Goals',
 });
 
 export const herGameModel = Model.make({ ...welcomeModel, route: HerGameRoute() });
