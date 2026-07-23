@@ -1,5 +1,5 @@
 import * as echarts from 'echarts/core';
-import { Effect, Match as M, Option, Schema as S } from 'effect';
+import { Clock, Effect, Match as M, Option, Schema as S } from 'effect';
 import { Input } from '@foldkit/ui';
 import { Command, Mount, Runtime } from 'foldkit';
 import { html } from 'foldkit/html';
@@ -174,6 +174,9 @@ export const ClickedAddNew = m('ClickedAddNew');
 export const ClickedRecord = m('ClickedRecord', { index: S.Number });
 export const EditedField = m('EditedField', { index: S.Number, value: S.String });
 export const ClickedSaveRecord = m('ClickedSaveRecord');
+// Carries the edit-log timestamp fetched from the clock by StampSave, so the
+// commit stays out of `update`'s pure path.
+export const SavedRecordAt = m('SavedRecordAt', { at: S.String });
 export const ClickedCloseDrawer = m('ClickedCloseDrawer');
 export const SelectedDrawerTab = m('SelectedDrawerTab', { tab: DrawerTab });
 export const SucceededMountChart = m('SucceededMountChart', { hostId: S.String });
@@ -248,6 +251,7 @@ export const Message = S.Union([
   ClickedRecord,
   EditedField,
   ClickedSaveRecord,
+  SavedRecordAt,
   ClickedCloseDrawer,
   SelectedDrawerTab,
   SucceededMountChart,
@@ -620,12 +624,18 @@ export const update = (
         }
 
         if (model.editingIndex < 0) return [model, []];
+        // Editing commits with a timestamped edit log. The timestamp comes from
+        // the clock via StampSave (keeping `update` pure); SavedRecordAt then
+        // does the commit with it.
+        return [model, [StampSave()]];
+      },
+      SavedRecordAt: ({ at }) => {
+        if (model.editingIndex < 0) return [model, []];
         const index = model.editingIndex;
         const entry = model.rows[index];
         if (!entry) return [model, []];
 
         const columns = sectionData[entry.section].columns;
-        const at = new Date().toLocaleString('en-US');
         const changes: ReadonlyArray<LogEntry> = columns.flatMap((field, i) => {
           const from = entry.values[i] ?? '';
           const to = model.draft[i] ?? '';
@@ -1366,6 +1376,18 @@ export const FetchHealth = Command.define(
   }).pipe(
     Effect.map(() => SucceededFetchHealth()),
     Effect.catch((error) => Effect.succeed(FailedFetchHealth({ reason: error.message }))),
+  ),
+);
+
+// Reads the wall clock (through Effect's Clock, so it's swappable in tests) and
+// hands the formatted timestamp back as SavedRecordAt — the record commit needs
+// a timestamp for its edit log, and this keeps `new Date()` out of `update`.
+export const StampSave = Command.define(
+  'StampSave',
+  SavedRecordAt,
+)(
+  Clock.currentTimeMillis.pipe(
+    Effect.map((millis) => SavedRecordAt({ at: new Date(millis).toLocaleString('en-US') })),
   ),
 );
 
