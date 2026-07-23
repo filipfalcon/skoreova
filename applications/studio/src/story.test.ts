@@ -257,7 +257,7 @@ test('once the chart host mounts, the current record is synced into it', () => {
     Story.with(playerRecordModel),
     Story.message(SucceededMountChart({ hostId: CHART_HOST_ID })),
     Story.model((model) => {
-      expect(model.chartError).toBe('');
+      expect(model.chartError).toEqual(Option.none());
     }),
     Story.Command.expectHas(SyncChart),
     Story.Command.resolve(SyncChart, SucceededSyncChart()),
@@ -270,7 +270,7 @@ test('a failed chart mount records the reason as a chart error', () => {
     Story.with(playerRecordModel),
     Story.message(FailedMountChart({ reason: 'no canvas' })),
     Story.model((model) => {
-      expect(model.chartError).toBe('no canvas');
+      expect(model.chartError).toEqual(Option.some('no canvas'));
     }),
     Story.Command.expectNone(),
   );
@@ -282,7 +282,7 @@ test('a failed chart sync records the reason as a chart error', () => {
     Story.with(playerRecordModel),
     Story.message(FailedSyncChart({ reason: 'no live chart' })),
     Story.model((model) => {
-      expect(model.chartError).toBe('no live chart');
+      expect(model.chartError).toEqual(Option.some('no live chart'));
     }),
     Story.Command.expectNone(),
   );

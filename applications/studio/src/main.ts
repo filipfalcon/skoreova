@@ -142,7 +142,7 @@ export const Model = S.Struct({
   // History of committed field edits, across all records.
   editLog: S.Array(LogEntry),
   // Message from the last chart mount/sync attempt, or '' if it's fine.
-  chartError: S.String,
+  chartError: S.Option(S.String),
   // Each section's fetch state, holding its own rows in Success. Field names
   // match the Section literals, so `model[section]` selects a section's state.
   players: SectionData.schema,
@@ -175,7 +175,7 @@ export const Model = S.Struct({
   isShowingDashboard: S.Boolean,
   // Index of the column whose checkbox filter dropdown (see checkboxColumns)
   // is currently open, or -1 if none is.
-  openFilterColumn: S.Number,
+  openFilterColumn: S.Option(S.Number),
 });
 export type Model = typeof Model.Type;
 
@@ -332,7 +332,7 @@ const initialModel = (): Model => ({
   drawer: DrawerClosed.make({}),
   nextLocalId: 1,
   editLog: [],
-  chartError: '',
+  chartError: Option.none(),
   players: SectionData.Idle(),
   clubs: SectionData.Idle(),
   nationals: SectionData.Idle(),
@@ -346,7 +346,7 @@ const initialModel = (): Model => ({
   clientPage: 1,
   linkError: '',
   isShowingDashboard: true,
-  openFilterColumn: -1,
+  openFilterColumn: Option.none(),
 });
 
 const upsertEntry = (rows: ReadonlyArray<Entry>, entry: Entry): ReadonlyArray<Entry> => [
@@ -504,7 +504,7 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
               isShowingDashboard: () => false,
               isMenuOpen: () => false,
               drawer: () => editRecord(entry),
-              chartError: () => '',
+              chartError: () => Option.none(),
               linkError: () => '',
             }),
             [],
@@ -611,7 +611,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           drawer: () => DrawerClosed.make({}),
           clientPage: () => 1,
           linkError: () => '',
-          openFilterColumn: () => -1,
+          openFilterColumn: () => Option.none(),
         }),
         [Navigate({ url: sectionRouter({ section }) })],
       ],
@@ -634,7 +634,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       // Opens/closes a checkbox filter's dropdown panel; picking a new one
       // closes whatever else was open.
       ToggledFilterDropdown: ({ columnIndex }) => [
-        evo(model, { openFilterColumn: (open) => (open === columnIndex ? -1 : columnIndex) }),
+        evo(model, {
+          openFilterColumn: (open) =>
+            Option.contains(open, columnIndex) ? Option.none() : Option.some(columnIndex),
+        }),
         [],
       ],
       // Flips one value's membership in a checkbox filter's *excluded*
@@ -657,7 +660,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           evo(model, {
             drawer: () =>
               DrawerCreating.make({ section: model.section, draft: columns.map(() => '') }),
-            chartError: () => '',
+            chartError: () => Option.none(),
           }),
           [],
         ];
@@ -669,7 +672,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         return [
           evo(model, {
             drawer: () => editRecord(entry),
-            chartError: () => '',
+            chartError: () => Option.none(),
             linkError: () => '',
           }),
           [Navigate({ url: recordRouter({ section, id }) })],
@@ -789,18 +792,21 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       // message — branch on which one just mounted.
       SucceededMountChart: ({ hostId }) => {
         const entry = drawerRecord(model);
-        if (!entry) return [evo(model, { chartError: () => '' }), []];
+        if (!entry) return [evo(model, { chartError: () => Option.none() }), []];
         if (hostId === POINTS_CHART_HOST_ID) {
           return [
-            evo(model, { chartError: () => '' }),
+            evo(model, { chartError: () => Option.none() }),
             [SyncPointsChart({ hostId, ...pointsFor(entry) })],
           ];
         }
-        return [evo(model, { chartError: () => '' }), [SyncChart({ hostId, ...statsFor(entry) })]];
+        return [
+          evo(model, { chartError: () => Option.none() }),
+          [SyncChart({ hostId, ...statsFor(entry) })],
+        ];
       },
-      FailedMountChart: ({ reason }) => [evo(model, { chartError: () => reason }), []],
+      FailedMountChart: ({ reason }) => [evo(model, { chartError: () => Option.some(reason) }), []],
       SucceededSyncChart: () => [model, []],
-      FailedSyncChart: ({ reason }) => [evo(model, { chartError: () => reason }), []],
+      FailedSyncChart: ({ reason }) => [evo(model, { chartError: () => Option.some(reason) }), []],
       // A fetched page replaces the section's rows (one page at a time, not the
       // running total). settle folds the result into the AsyncData: success →
       // Success, failure → Failure or, if a prior page is still shown, Stale.
@@ -929,7 +935,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           evolveSection(model, entry.section, (data) => upsertRecord(data, entry)),
           {
             drawer: () => editRecord(entry),
-            chartError: () => '',
+            chartError: () => Option.none(),
             linkError: () => '',
           },
         ),
@@ -1846,7 +1852,7 @@ const content = (model: Model): Html => {
     // Stored value is the set of *excluded* (unchecked) values, comma-joined.
     // Empty = nothing excluded = every option checked, which is the default.
     const excludedValues = (model.filters[columnIndex] ?? '').split(',').filter((v) => v !== '');
-    const isOpen = model.openFilterColumn === columnIndex;
+    const isOpen = Option.contains(model.openFilterColumn, columnIndex);
 
     return h.div(
       [h.Class('relative')],
@@ -2282,9 +2288,10 @@ const drawer = (model: Model): Html => {
               [],
             )
           : h.div([], []),
-        model.chartError === ''
-          ? h.div([], [])
-          : h.p([h.Class('text-xs text-rose-600')], [model.chartError]),
+        Option.match(model.chartError, {
+          onNone: () => h.div([], []),
+          onSome: (error) => h.p([h.Class('text-xs text-rose-600')], [error]),
+        }),
         h.div(
           [h.Class('flex flex-col gap-2')],
           columns.map((column, index) => {
