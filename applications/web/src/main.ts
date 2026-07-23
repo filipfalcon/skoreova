@@ -1,5 +1,6 @@
-import { Effect, Match as M, Option, Schema as S, Stream } from 'effect';
+import { Array, Effect, Match as M, Option, Schema as S, Stream, pipe } from 'effect';
 import { RadioGroup } from '@foldkit/ui';
+import clsx from 'clsx';
 import type { Runtime } from 'foldkit';
 import { Command, Dom, Subscription } from 'foldkit';
 import type { Document, Html } from 'foldkit/html';
@@ -70,7 +71,7 @@ import {
   ObserveHeroPastHeader,
 } from './motion';
 import type { AppRoute } from './route';
-import { urlToAppRoute } from './route';
+import { homeRouter, urlToAppRoute } from './route';
 
 // MODEL
 //
@@ -266,18 +267,20 @@ export const DetectActiveSection = Command.define(
 )(
   Effect.sync(() => {
     const centre = window.innerHeight / 2;
-    let section = '';
-    for (const entry of menuEntries) {
-      const id = entry.target.split('#')[1];
-      if (id === undefined) continue;
-      const rect = document.getElementById(id)?.getBoundingClientRect();
-      // The last section whose top has passed the centre line wins — the
-      // unnumbered interludes (statement, marquee) then count toward the
-      // section above them. Above the first section (the hero) none wins.
-      if (rect !== undefined && rect.top <= centre) {
-        section = id;
-      }
-    }
+    // The last section whose top has passed the centre line wins — the
+    // unnumbered interludes (statement, marquee) then count toward the
+    // section above them. Above the first section (the hero) none wins.
+    const section = pipe(
+      menuEntries,
+      Array.findLast((entry) => {
+        const id = entry.target.split('#')[1];
+        if (id === undefined) return false;
+        const rect = document.getElementById(id)?.getBoundingClientRect();
+        return rect !== undefined && rect.top <= centre;
+      }),
+      Option.map((entry) => entry.target.split('#')[1] ?? ''),
+      Option.getOrElse(() => ''),
+    );
     return DetectedActiveSection({ section });
   }),
 );
@@ -632,11 +635,12 @@ const kicker = (index: string, label: string, dark: boolean, target: string): Ht
         [
           h.Href(target),
           h.Class(
-            `display inline-block px-4 py-2 text-fluid-xl-3xl tracking-[0.2em] transition-colors duration-300 md:px-5 md:py-3 ${
+            clsx(
+              'display inline-block px-4 py-2 text-fluid-xl-3xl tracking-[0.2em] transition-colors duration-300 md:px-5 md:py-3',
               dark
                 ? 'bg-pink text-ink hover:bg-paper active:bg-paper'
-                : 'bg-ink text-pink hover:text-paper active:text-paper'
-            }`,
+                : 'bg-ink text-pink hover:text-paper active:text-paper',
+            ),
           ),
           h.DataAttribute('reveal', 'wipe'),
         ],
@@ -795,7 +799,7 @@ const headerView = (model: Model): Html =>
                 // Navigate command scrolls to 0 when there's no fragment), not a
                 // `#top` anchor smooth-scroll.
                 [
-                  h.Href('/'),
+                  h.Href(homeRouter()),
                   h.Class(
                     'display text-xl tracking-wide text-paper transition-colors duration-300 hover:text-pink md:text-2xl',
                   ),
@@ -837,9 +841,10 @@ const headerView = (model: Model): Html =>
                 [
                   h.Href(platformUrl),
                   h.Class(
-                    `header-cta platform-beckon display hidden bg-pink px-4 py-1 text-lg tracking-[0.08em] text-ink hover:bg-paper active:bg-paper md:inline-block ${
-                      model.heroPastHeader ? 'is-visible' : ''
-                    }`,
+                    clsx(
+                      'header-cta platform-beckon display hidden bg-pink px-4 py-1 text-lg tracking-[0.08em] text-ink hover:bg-paper active:bg-paper md:inline-block',
+                      { 'is-visible': model.heroPastHeader },
+                    ),
                   ),
                 ],
                 ['Enter platform', displayArrow],
@@ -873,9 +878,10 @@ const menuOverlayView = (model: Model): Html =>
   h.nav(
     [
       h.Class(
-        `menu-overlay fixed inset-0 z-40 flex flex-col justify-between gap-y-8 overflow-y-auto bg-ink pt-24 pb-10 ${
-          model.isMenuOpen ? 'is-open' : ''
-        }`,
+        clsx(
+          'menu-overlay fixed inset-0 z-40 flex flex-col justify-between gap-y-8 overflow-y-auto bg-ink pt-24 pb-10',
+          { 'is-open': model.isMenuOpen },
+        ),
       ),
       h.AriaHidden(!model.isMenuOpen),
     ],
@@ -2589,11 +2595,12 @@ const championsView = (): Html =>
                                             // finals") must keep ONE line. The
                                             // pink stamp flips to ink on the
                                             // row hover's pink fill.
-                                            `display hidden w-24 shrink-0 py-1.5 text-center text-sm tracking-[0.15em] transition-colors duration-300 lg:block ${
+                                            clsx(
+                                              'display hidden w-24 shrink-0 py-1.5 text-center text-sm tracking-[0.15em] transition-colors duration-300 lg:block',
                                               tie.through
                                                 ? 'bg-pink text-ink group-hover:bg-ink group-hover:text-paper'
-                                                : 'bg-ink text-paper'
-                                            }`,
+                                                : 'bg-ink text-paper',
+                                            ),
                                           ),
                                         ],
                                         [tie.through ? 'THROUGH' : 'OUT'],
@@ -2630,11 +2637,10 @@ const championsView = (): Html =>
                                                 // of WON ties. Hammarby's away
                                                 // defeat stays ink — pink on
                                                 // the elimination would lie.
-                                                `display text-fluid-2xl-4xl${
-                                                  tie.through
-                                                    ? ' text-pink transition-colors duration-300 group-hover:text-ink'
-                                                    : ''
-                                                }`,
+                                                clsx('display text-fluid-2xl-4xl', {
+                                                  'text-pink transition-colors duration-300 group-hover:text-ink':
+                                                    tie.through,
+                                                }),
                                               ),
                                             ],
                                             [...tabularScore(tie.awayLeg)],
@@ -2674,11 +2680,12 @@ const championsView = (): Html =>
                               h.span(
                                 [
                                   h.Class(
-                                    `display mt-3 block py-1.5 text-center text-xs tracking-[0.15em] transition-colors duration-300 lg:hidden ${
+                                    clsx(
+                                      'display mt-3 block py-1.5 text-center text-xs tracking-[0.15em] transition-colors duration-300 lg:hidden',
                                       tie.through
                                         ? 'bg-pink text-ink group-hover:bg-ink group-hover:text-paper'
-                                        : 'bg-ink text-paper'
-                                    }`,
+                                        : 'bg-ink text-paper',
+                                    ),
                                   ),
                                 ],
                                 [tie.through ? 'THROUGH' : 'OUT'],
@@ -3857,9 +3864,10 @@ const clubPin = (model: Model, club: Club): Html => {
               h.OnClick(OpenedMapClub({ slug: model.mapClub === club.slug ? '' : club.slug })),
               h.AriaLabel(`${club.name} — ${club.city}, ${club.league}`),
               h.Class(
-                `club-pin-chip absolute flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-[scale,box-shadow] delay-[250ms] duration-300 group-hover:scale-110 group-hover:delay-0 group-hover:duration-150 sm:h-10 sm:w-10 sm:p-2 md:h-16 md:w-16 md:p-3${
-                  selected ? ' scale-110 ring-2 ring-pink delay-0 md:ring-[3px]' : ''
-                }`,
+                clsx(
+                  'club-pin-chip absolute flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-[scale,box-shadow] delay-[250ms] duration-300 group-hover:scale-110 group-hover:delay-0 group-hover:duration-150 sm:h-10 sm:w-10 sm:p-2 md:h-16 md:w-16 md:p-3',
+                  { 'scale-110 ring-2 ring-pink delay-0 md:ring-[3px]': selected },
+                ),
               ),
             ],
             [
@@ -3923,9 +3931,12 @@ const clubPin = (model: Model, club: Club): Html => {
                       // hides its left reach, and the sliver of row peeking
                       // around the circle's curve must flood too).
                       h.Class(
-                        `group/row relative isolate col-span-3 grid grid-cols-subgrid items-center gap-x-3 overflow-hidden py-1.5 pr-5 pl-[calc(var(--chip-r)+0.8rem)] ${bannerTeams.length > 1 ? 'md:py-2' : 'md:py-3'} before:absolute before:inset-y-0 before:right-0 before:left-0 before:-z-10 before:translate-y-[101%] before:bg-pink before:transition-transform before:duration-[450ms] before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-0 ${
-                          index > 0 ? 'border-t border-ink/10' : ''
-                        }`,
+                        clsx(
+                          'group/row relative isolate col-span-3 grid grid-cols-subgrid items-center gap-x-3 overflow-hidden py-1.5 pr-5 pl-[calc(var(--chip-r)+0.8rem)]',
+                          bannerTeams.length > 1 ? 'md:py-2' : 'md:py-3',
+                          'before:absolute before:inset-y-0 before:right-0 before:left-0 before:-z-10 before:translate-y-[101%] before:bg-pink before:transition-transform before:duration-[450ms] before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-0',
+                          { 'border-t border-ink/10': index > 0 },
+                        ),
                       ),
                     ],
                     [
@@ -4643,7 +4654,7 @@ const playoffTie = (home: string, away: string, czech: boolean, step: number): H
       ),
       // Czechia carries the pink — the eye should find our side of the
       // bracket first.
-      h.p([h.Class(`display mt-4 text-fluid-2xl-4xl${czech ? ' text-pink' : ''}`)], [home]),
+      h.p([h.Class(clsx('display mt-4 text-fluid-2xl-4xl', { 'text-pink': czech }))], [home]),
       h.div(
         [h.Class('my-3 h-px bg-paper/15 transition-colors duration-300 group-hover:bg-ink/15')],
         [],
