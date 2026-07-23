@@ -1,9 +1,14 @@
 import { foldkit } from '@foldkit/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vite-plus';
+
+// The Foldkit dev plugin (HMR + a DevTools MCP port) is only for `vp dev`; it
+// isn't needed to run tests and its MCP relay would keep the Vitest process
+// alive after the run (every workspace config loads when tests boot).
+const testing = process.env['VITEST'] === 'true';
 
 export default defineConfig({
-  plugins: [tailwindcss(), foldkit({ devToolsMcpPort: 9988 })],
+  plugins: [tailwindcss(), ...(testing ? [] : [foldkit({ devToolsMcpPort: 9988 })])],
   // Alchemy's deploy captures the build output through a `buildApp` post
   // hook, but Vite 8 only runs the default environment builds AFTER all
   // buildApp hooks when no real `builder.buildApp` exists — the hook then
@@ -54,5 +59,18 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  test: {
+    include: ['src/**/*.test.ts'],
+    // update/view/init are pure — every window/document/ECharts touch lives
+    // inside a Command or Mount effect, which Story and Scene intercept rather
+    // than run (the chart is never actually instantiated in a test). So these
+    // model/view tests need no browser; a Node environment keeps them fast.
+    environment: 'node',
+    setupFiles: ['./src/vitest-setup.ts'],
+    // Foldkit and ECharts ship as ESM with subpath exports; inline them so
+    // Vitest transforms them instead of externalizing to the bun isolated
+    // store, where the subpath resolution trips.
+    server: { deps: { inline: ['foldkit', 'echarts'] } },
   },
 });
