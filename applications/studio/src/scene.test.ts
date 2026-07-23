@@ -10,7 +10,7 @@ import {
 } from './main.fixtures';
 import {
   CHART_HOST_ID,
-  CompletedSyncChart,
+  SucceededSyncChart,
   MountChart,
   SucceededMountChart,
   SyncChart,
@@ -66,7 +66,7 @@ describe('view', () => {
       { update, view },
       Scene.with(playerRecordModel),
       Scene.Mount.resolve(MountChart, SucceededMountChart({ hostId: CHART_HOST_ID })),
-      Scene.Command.resolve(SyncChart, CompletedSyncChart()),
+      Scene.Command.resolve(SyncChart, SucceededSyncChart()),
       Scene.expect(Scene.label('Record stats chart')).toExist(),
       // The drawer's own footer control — unique to the open record.
       Scene.expect(Scene.role('button', { name: 'Save' })).toExist(),

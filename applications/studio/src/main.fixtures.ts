@@ -7,7 +7,7 @@ export const samplePlayer: Entry = Entry.make({
   section: 'players',
   id: 'player-1',
   parentId: '',
-  deleted: false,
+  isDeleted: false,
   values: ['Sierra Pennock', 'Sparta Praha', 'Forward', '12', '5'],
 });
 
@@ -15,7 +15,7 @@ export const sampleClub: Entry = Entry.make({
   section: 'clubs',
   id: 'club-1',
   parentId: '',
-  deleted: false,
+  isDeleted: false,
   values: ['Sparta Praha', 'Prague', '1893'],
 });
 
@@ -26,7 +26,7 @@ export const sampleCompetition: Entry = Entry.make({
   section: 'competitions',
   id: 'comp-1',
   parentId: '',
-  deleted: false,
+  isDeleted: false,
   values: ['First League', 'CZ1', 'Club'],
 });
 
@@ -34,7 +34,7 @@ export const sampleEdition: Entry = Entry.make({
   section: 'editions',
   id: 'edition-1',
   parentId: 'comp-1',
-  deleted: false,
+  isDeleted: false,
   values: ['2025/2026', 'comp-1', '2025-08-01', '2026-05-31'],
 });
 
@@ -43,9 +43,9 @@ export const sampleEdition: Entry = Entry.make({
 export const signedOutModel = Model.make({
   email: '',
   password: '',
-  signedIn: false,
+  isSignedIn: false,
   section: 'players',
-  menuOpen: false,
+  isMenuOpen: false,
   search: '',
   filters: [],
   drawer: DrawerClosed.make({}),
@@ -61,37 +61,37 @@ export const signedOutModel = Model.make({
   participations: ParticipationsData.Idle(),
   playersPage: 1,
   playersTotal: 0,
-  serverHealth: 'unknown',
+  serverHealth: 'Unknown',
   clientPage: 1,
   linkError: '',
-  showDashboard: true,
+  isShowingDashboard: true,
   openFilterColumn: -1,
 });
 
 // Signed in, on the dashboard landing page.
-export const dashboardModel = Model.make({ ...signedOutModel, signedIn: true });
+export const dashboardModel = Model.make({ ...signedOutModel, isSignedIn: true });
 
 // Signed in, viewing the Players section list with one loaded row.
 export const playersListModel = Model.make({
   ...signedOutModel,
-  signedIn: true,
-  showDashboard: false,
+  isSignedIn: true,
+  isShowingDashboard: false,
   section: 'players',
   players: SectionData.Success({ data: [samplePlayer] }),
   playersTotal: 1,
-  serverHealth: 'ok',
+  serverHealth: 'Ok',
 });
 
 // Signed in on the Editions list with both sections loaded — the edition's
 // "Competition" cell must render the resolved name, not the stored id.
 export const editionsListModel = Model.make({
   ...signedOutModel,
-  signedIn: true,
-  showDashboard: false,
+  isSignedIn: true,
+  isShowingDashboard: false,
   section: 'editions',
   competitions: SectionData.Success({ data: [sampleCompetition] }),
   editions: SectionData.Success({ data: [sampleEdition] }),
-  serverHealth: 'ok',
+  serverHealth: 'Ok',
 });
 
 // Signed in with a player record open in the drawer's Overview tab — the state
@@ -102,8 +102,8 @@ export const playerRecordModel = Model.make({
   drawer: DrawerEditing.make({
     section: 'players',
     id: samplePlayer.id,
-    tab: 'overview',
+    tab: 'Overview',
     draft: [...samplePlayer.values],
-    confirmingDelete: false,
+    isConfirmingDelete: false,
   }),
 });
