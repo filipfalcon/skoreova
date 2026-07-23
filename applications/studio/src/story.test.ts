@@ -6,7 +6,9 @@ import {
   CHART_HOST_ID,
   ClickedPlayersPage,
   ClickedRetryPlayers,
+  ClickedSaveRecord,
   ClickedSignIn,
+  CompletedNavigate,
   CompletedSyncChart,
   FailedFetchAssociations,
   FailedFetchClubs,
@@ -27,6 +29,9 @@ import {
   FetchNationals,
   FetchParticipations,
   FetchPlayers,
+  Navigate,
+  SavedRecordAt,
+  StampSave,
   SucceededFetchAssociations,
   SucceededFetchClubs,
   SucceededFetchCompetitions,
@@ -245,5 +250,30 @@ test('a failed chart sync records the reason as a chart error', () => {
       expect(model.chartError).toBe('no live chart');
     }),
     Story.Command.expectNone(),
+  );
+});
+
+test('saving an edited record defers to the clock, then commits with that timestamp', () => {
+  Story.story(
+    update,
+    // A player record open with one field edited in the draft (index 1).
+    Story.with({
+      ...playerRecordModel,
+      draft: ['Sierra Pennock', 'Slavia Praha', 'Forward', '12', '5'],
+    }),
+    Story.message(ClickedSaveRecord()),
+    // update stays pure: the commit waits on the clock via StampSave.
+    Story.Command.expectHas(StampSave),
+    Story.Command.resolve(StampSave, SavedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
+    Story.model((model) => {
+      // Drawer closed, and the change logged with the injected timestamp.
+      expect(model.editingIndex).toBe(-1);
+      expect(model.editLog).toHaveLength(1);
+      expect(model.editLog[0]?.from).toBe('Sparta Praha');
+      expect(model.editLog[0]?.to).toBe('Slavia Praha');
+      expect(model.editLog[0]?.at).toBe('6/1/2026, 12:00:00 PM');
+    }),
+    Story.Command.expectHas(Navigate),
+    Story.Command.resolve(Navigate, CompletedNavigate()),
   );
 });
