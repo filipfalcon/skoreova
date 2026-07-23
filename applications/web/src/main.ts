@@ -5,6 +5,7 @@ import type { Document, Html } from 'foldkit/html';
 import { html } from 'foldkit/html';
 import { m } from 'foldkit/message';
 import { UrlRequest, load, pushUrl } from 'foldkit/navigation';
+import { evo } from 'foldkit/struct';
 import { Url, toString as urlToString } from 'foldkit/url';
 
 import championsSquadImage from './assets/champions-squad.jpg';
@@ -314,13 +315,13 @@ const applyRoute = (model: Model, route: AppRoute): Model => {
   const next = M.value(route).pipe(
     M.withReturnType<Model>(),
     M.tagsExhaustive({
-      HomeRoute: () => ({ ...model, menuOpen: false }),
-      NotFoundRoute: () => ({ ...model, menuOpen: false }),
+      HomeRoute: () => evo(model, { menuOpen: () => false }),
+      NotFoundRoute: () => evo(model, { menuOpen: () => false }),
     }),
   );
   // Any navigation closes the map's club card — landing back on the page
   // with a stale card open would be odd.
-  return { ...next, mapClub: '' };
+  return evo(next, { mapClub: () => '' });
 };
 
 export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
@@ -340,14 +341,14 @@ export const update = (
         return [
           // Opening resets the marker to "unknown" so a stale highlight from
           // the previous open can't flash before detection lands.
-          { ...model, menuOpen, ...(menuOpen ? { activeSection: '' } : {}) },
+          evo(model, { menuOpen: () => menuOpen, activeSection: (s) => (menuOpen ? '' : s) }),
           menuOpen
             ? [SetScrollLock({ locked: true }), DetectActiveSection({})]
             : [SetScrollLock({ locked: false })],
         ];
       },
-      ClosedMenu: () => [{ ...model, menuOpen: false }, [SetScrollLock({ locked: false })]],
-      DetectedActiveSection: ({ section }) => [{ ...model, activeSection: section }, []],
+      ClosedMenu: () => [evo(model, { menuOpen: () => false }), [SetScrollLock({ locked: false })]],
+      DetectedActiveSection: ({ section }) => [evo(model, { activeSection: () => section }), []],
       // In-app links (club pins, menu anchors, back links) apply their route
       // immediately and push the URL; external links load normally. Any
       // in-app navigation also closes the menu, so release the scroll lock.
@@ -370,9 +371,12 @@ export const update = (
       CompletedNavigate: () => [model, []],
       CompletedLoad: () => [model, []],
       CompletedScrollLock: () => [model, []],
-      SelectedMapLeague: ({ league }) => [{ ...model, mapLeague: league, mapClub: '' }, []],
-      OpenedMapClub: ({ slug }) => [{ ...model, mapClub: slug }, []],
-      ToggledAreaUnit: () => [{ ...model, mapAreaImperial: !model.mapAreaImperial }, []],
+      SelectedMapLeague: ({ league }) => [
+        evo(model, { mapLeague: () => league, mapClub: () => '' }),
+        [],
+      ],
+      OpenedMapClub: ({ slug }) => [evo(model, { mapClub: () => slug }), []],
+      ToggledAreaUnit: () => [evo(model, { mapAreaImperial: (imperial) => !imperial }), []],
       CompletedMountMotion: () => [model, []],
       // Motion is decorative — if it fails to attach, the page still renders
       // fully readable (reveal targets just stay at their resting state).
