@@ -1,3 +1,5 @@
+import { Option } from 'effect';
+
 import { DrawerClosed, DrawerEditing, Entry, Model, ParticipationsData, SectionData } from './main';
 
 // A single player record — enough columns to fill the drawer's fields and feed
@@ -51,7 +53,7 @@ export const signedOutModel = Model.make({
   drawer: DrawerClosed.make({}),
   nextLocalId: 1,
   editLog: [],
-  chartError: '',
+  chartError: Option.none(),
   players: SectionData.Idle(),
   clubs: SectionData.Idle(),
   nationals: SectionData.Idle(),
@@ -65,7 +67,7 @@ export const signedOutModel = Model.make({
   clientPage: 1,
   linkError: '',
   isShowingDashboard: true,
-  openFilterColumn: -1,
+  openFilterColumn: Option.none(),
 });
 
 // Signed in, on the dashboard landing page.
