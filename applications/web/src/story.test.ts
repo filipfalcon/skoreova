@@ -12,7 +12,7 @@ import {
   ClosedMenu,
   CompletedLoad,
   CompletedNavigate,
-  CompletedScrollLock,
+  CompletedSetScrollLock,
   DetectActiveSection,
   DetectedActiveSection,
   Load,
@@ -33,12 +33,12 @@ test('opening the menu locks scroll and kicks off active-section detection', () 
     Story.with(landingModel),
     Story.message(ToggledMenu()),
     Story.model((model) => {
-      expect(model.menuOpen).toBe(true);
+      expect(model.isMenuOpen).toBe(true);
       // Opening resets the marker so a stale highlight can't flash.
       expect(model.activeSection).toBe('');
     }),
     Story.Command.expectExact(SetScrollLock, DetectActiveSection),
-    Story.Command.resolve(SetScrollLock, CompletedScrollLock()),
+    Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
     // Detection resolves with whichever section the viewport sat in.
     Story.Command.resolve(DetectActiveSection, DetectedActiveSection({ section: 'on-the-rise' })),
     Story.model((model) => {
@@ -53,10 +53,10 @@ test('closing the menu releases the scroll lock', () => {
     Story.with(menuOpenModel),
     Story.message(ToggledMenu()),
     Story.model((model) => {
-      expect(model.menuOpen).toBe(false);
+      expect(model.isMenuOpen).toBe(false);
     }),
     Story.Command.expectExact(SetScrollLock),
-    Story.Command.resolve(SetScrollLock, CompletedScrollLock()),
+    Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
   );
 });
 
@@ -66,9 +66,9 @@ test('ClosedMenu closes the overlay and releases the lock', () => {
     Story.with(menuOpenModel),
     Story.message(ClosedMenu()),
     Story.model((model) => {
-      expect(model.menuOpen).toBe(false);
+      expect(model.isMenuOpen).toBe(false);
     }),
-    Story.Command.resolve(SetScrollLock, CompletedScrollLock()),
+    Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
   );
 });
 
@@ -76,9 +76,9 @@ test('selecting a map league switches the filter and closes any open club card',
   Story.story(
     update,
     Story.with(secondLeagueMapModel),
-    Story.message(SelectedMapLeague({ league: 'first' })),
+    Story.message(SelectedMapLeague({ league: 'First' })),
     Story.model((model) => {
-      expect(model.mapLeague).toBe('first');
+      expect(model.mapLeague).toBe('First');
       expect(model.mapClub).toBe('');
     }),
     Story.Command.expectNone(),
@@ -96,7 +96,7 @@ test('opening a club card records its slug; the area unit toggles', () => {
     Story.message(ToggledAreaUnit()),
     Story.model((model) => {
       // Rests imperial, so the first toggle flips it to metric.
-      expect(model.mapAreaImperial).toBe(false);
+      expect(model.isMapAreaImperial).toBe(false);
     }),
     Story.Command.expectNone(),
   );
@@ -127,11 +127,11 @@ test('an internal link applies the route, pushes it, and releases the lock', () 
     Story.message(ClickedLink({ request: Internal({ url: url('/') }) })),
     Story.model((model) => {
       // Navigating always closes the menu and any open club card.
-      expect(model.menuOpen).toBe(false);
+      expect(model.isMenuOpen).toBe(false);
     }),
     Story.Command.expectExact(Navigate, SetScrollLock),
     Story.Command.resolve(Navigate, CompletedNavigate()),
-    Story.Command.resolve(SetScrollLock, CompletedScrollLock()),
+    Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
   );
 });
 
@@ -141,9 +141,9 @@ test('browser back/forward re-applies the route and releases the lock', () => {
     Story.with(menuOpenModel),
     Story.message(ChangedUrl({ url: url('/') })),
     Story.model((model) => {
-      expect(model.menuOpen).toBe(false);
+      expect(model.isMenuOpen).toBe(false);
     }),
-    Story.Command.resolve(SetScrollLock, CompletedScrollLock()),
+    Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
   );
 });
 
@@ -153,7 +153,7 @@ test('an external link loads the href and leaves the model alone', () => {
     Story.with(landingModel),
     Story.message(ClickedLink({ request: External({ href: 'https://uefa.com' }) })),
     Story.model((model) => {
-      expect(model.menuOpen).toBe(false);
+      expect(model.isMenuOpen).toBe(false);
     }),
     Story.Command.expectHas(Load),
     Story.Command.resolve(Load, CompletedLoad()),

@@ -82,11 +82,11 @@ import { urlToAppRoute } from './route';
 
 // The map's league filter. 'all' shows both flights; picking a league dims
 // the other one's pins.
-export const MapLeague = S.Literals(['all', 'first', 'second']);
+export const MapLeague = S.Literals(['All', 'First', 'Second']);
 export type MapLeague = typeof MapLeague.Type;
 
 export const Model = S.Struct({
-  menuOpen: S.Boolean,
+  isMenuOpen: S.Boolean,
   // Id of the landing section the viewport sat in when the menu was last
   // opened ('' = none, e.g. the hero). Resolved once per open by
   // DetectActiveSection — scroll is locked while the overlay is up,
@@ -101,7 +101,7 @@ export const Model = S.Struct({
   // Whether the country-area figure shows imperial units (the RESTING
   // unit — the site speaks American English). A tap toggle on touch;
   // desktop hover previews the other unit via CSS, no model round-trip.
-  mapAreaImperial: S.Boolean,
+  isMapAreaImperial: S.Boolean,
   // Whether the hero has scrolled up under the fixed header, so the header's
   // persistent "Enter platform" CTA can take over from the hero's own primary
   // CTA. Fed by an IntersectionObserver on the hero (see ObserveHeroPastHeader
@@ -123,7 +123,7 @@ export const ClickedLink = m('ClickedLink', { request: UrlRequest });
 export const ChangedUrl = m('ChangedUrl', { url: Url });
 export const CompletedNavigate = m('CompletedNavigate');
 export const CompletedLoad = m('CompletedLoad');
-export const CompletedScrollLock = m('CompletedScrollLock');
+export const CompletedSetScrollLock = m('CompletedSetScrollLock');
 export const SelectedMapLeague = m('SelectedMapLeague', { league: MapLeague });
 // '' closes the club card(s).
 export const OpenedMapClub = m('OpenedMapClub', { slug: S.String });
@@ -138,7 +138,7 @@ export const Message = S.Union([
   ChangedUrl,
   CompletedNavigate,
   CompletedLoad,
-  CompletedScrollLock,
+  CompletedSetScrollLock,
   SelectedMapLeague,
   OpenedMapClub,
   ToggledAreaUnit,
@@ -250,9 +250,9 @@ export const Load = Command.define(
 export const SetScrollLock = Command.define(
   'SetScrollLock',
   { locked: S.Boolean },
-  CompletedScrollLock,
+  CompletedSetScrollLock,
 )(({ locked }) =>
-  (locked ? Dom.lockScroll : Dom.unlockScroll).pipe(Effect.as(CompletedScrollLock())),
+  (locked ? Dom.lockScroll : Dom.unlockScroll).pipe(Effect.as(CompletedSetScrollLock())),
 );
 
 // Resolves which landing section the viewport centre sits in, so the open
@@ -285,11 +285,11 @@ export const DetectActiveSection = Command.define(
 // UPDATE
 
 const initialModel: Model = {
-  menuOpen: false,
+  isMenuOpen: false,
   activeSection: '',
-  mapLeague: 'all',
+  mapLeague: 'All',
   mapClub: '',
-  mapAreaImperial: true,
+  isMapAreaImperial: true,
   heroPastHeader: false,
 };
 
@@ -300,8 +300,8 @@ const applyRoute = (model: Model, route: AppRoute): Model => {
   const next = M.value(route).pipe(
     M.withReturnType<Model>(),
     M.tagsExhaustive({
-      HomeRoute: () => evo(model, { menuOpen: () => false }),
-      NotFoundRoute: () => evo(model, { menuOpen: () => false }),
+      HomeRoute: () => evo(model, { isMenuOpen: () => false }),
+      NotFoundRoute: () => evo(model, { isMenuOpen: () => false }),
     }),
   );
   // Any navigation closes the map's club card — landing back on the page
@@ -314,32 +314,38 @@ export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
   [],
 ];
 
-export const update = (
-  model: Model,
-  message: Message,
-): readonly [Model, ReadonlyArray<Command.Command<Message>>] =>
+// The pair returned by `update` (and by the nested match on link requests):
+// the next model and the commands to run. Named once rather than spelled out
+// at every withReturnType.
+type UpdateReturn = readonly [Model, ReadonlyArray<Command.Command<Message>>];
+const withUpdateReturn = M.withReturnType<UpdateReturn>();
+
+export const update = (model: Model, message: Message): UpdateReturn =>
   M.value(message).pipe(
-    M.withReturnType<readonly [Model, ReadonlyArray<Command.Command<Message>>]>(),
+    withUpdateReturn,
     M.tagsExhaustive({
       ToggledMenu: () => {
-        const menuOpen = !model.menuOpen;
+        const isMenuOpen = !model.isMenuOpen;
         return [
           // Opening resets the marker to "unknown" so a stale highlight from
           // the previous open can't flash before detection lands.
-          evo(model, { menuOpen: () => menuOpen, activeSection: (s) => (menuOpen ? '' : s) }),
-          menuOpen
+          evo(model, { isMenuOpen: () => isMenuOpen, activeSection: (s) => (isMenuOpen ? '' : s) }),
+          isMenuOpen
             ? [SetScrollLock({ locked: true }), DetectActiveSection()]
             : [SetScrollLock({ locked: false })],
         ];
       },
-      ClosedMenu: () => [evo(model, { menuOpen: () => false }), [SetScrollLock({ locked: false })]],
+      ClosedMenu: () => [
+        evo(model, { isMenuOpen: () => false }),
+        [SetScrollLock({ locked: false })],
+      ],
       DetectedActiveSection: ({ section }) => [evo(model, { activeSection: () => section }), []],
       // In-app links (club pins, menu anchors, back links) apply their route
       // immediately and push the URL; external links load normally. Any
       // in-app navigation also closes the menu, so release the scroll lock.
       ClickedLink: ({ request }) =>
         M.value(request).pipe(
-          M.withReturnType<readonly [Model, ReadonlyArray<Command.Command<Message>>]>(),
+          withUpdateReturn,
           M.tagsExhaustive({
             Internal: ({ url }) => [
               applyRoute(model, urlToAppRoute(url)),
@@ -355,13 +361,13 @@ export const update = (
       ],
       CompletedNavigate: () => [model, []],
       CompletedLoad: () => [model, []],
-      CompletedScrollLock: () => [model, []],
+      CompletedSetScrollLock: () => [model, []],
       SelectedMapLeague: ({ league }) => [
         evo(model, { mapLeague: () => league, mapClub: () => '' }),
         [],
       ],
       OpenedMapClub: ({ slug }) => [evo(model, { mapClub: () => slug }), []],
-      ToggledAreaUnit: () => [evo(model, { mapAreaImperial: (imperial) => !imperial }), []],
+      ToggledAreaUnit: () => [evo(model, { isMapAreaImperial: (imperial) => !imperial }), []],
       CompletedMountMotion: () => [model, []],
       // Motion is decorative — if it fails to attach, the page still renders
       // fully readable (reveal targets just stay at their resting state).
@@ -565,11 +571,11 @@ const smoothWheelScroll: Stream.Stream<never> = Stream.callback<never>((_queue) 
 // only exists while the menu is open; closing tears it down.
 export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
   menuEscape: entry(
-    { menuOpen: S.Boolean },
+    { isMenuOpen: S.Boolean },
     {
-      modelToDependencies: (model) => ({ menuOpen: model.menuOpen }),
-      dependenciesToStream: ({ menuOpen }) =>
-        menuOpen
+      modelToDependencies: (model) => ({ isMenuOpen: model.isMenuOpen }),
+      dependenciesToStream: ({ isMenuOpen }) =>
+        isMenuOpen
           ? Stream.fromEventListener<KeyboardEvent>(document, 'keydown').pipe(
               Stream.filter((event) => event.key === 'Escape'),
               // Focus would otherwise die with the hidden overlay — hand it
@@ -592,11 +598,11 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
   // stands down — which also retires the old overflow:hidden sniff the Mount
   // used to gate on.
   smoothWheel: entry(
-    { menuOpen: S.Boolean },
+    { isMenuOpen: S.Boolean },
     {
-      modelToDependencies: (model) => ({ menuOpen: model.menuOpen }),
-      dependenciesToStream: ({ menuOpen }) =>
-        menuOpen || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      modelToDependencies: (model) => ({ isMenuOpen: model.isMenuOpen }),
+      dependenciesToStream: ({ isMenuOpen }) =>
+        isMenuOpen || window.matchMedia('(prefers-reduced-motion: reduce)').matches
           ? Stream.empty
           : smoothWheelScroll,
     },
@@ -843,8 +849,8 @@ const headerView = (model: Model): Html =>
                   // The Escape-to-close subscription returns focus here.
                   h.Id('menu-toggle'),
                   h.OnClick(ToggledMenu()),
-                  h.AriaLabel(model.menuOpen ? 'Close menu' : 'Open menu'),
-                  h.AriaExpanded(model.menuOpen),
+                  h.AriaLabel(model.isMenuOpen ? 'Close menu' : 'Open menu'),
+                  h.AriaExpanded(model.isMenuOpen),
                   // The text size exists for the glyph alone (the button has
                   // no text): menuGlyph is 0.875em tall, so tracking the
                   // wordmark's text-xl/2xl keeps the two the same height.
@@ -854,7 +860,7 @@ const headerView = (model: Model): Html =>
                 ],
                 // The hamburger/X glyph on every breakpoint — the aria-label
                 // carries the wording the icon dropped.
-                [menuGlyph(model.menuOpen)],
+                [menuGlyph(model.isMenuOpen)],
               ),
             ],
           ),
@@ -868,10 +874,10 @@ const menuOverlayView = (model: Model): Html =>
     [
       h.Class(
         `menu-overlay fixed inset-0 z-40 flex flex-col justify-between gap-y-8 overflow-y-auto bg-ink pt-24 pb-10 ${
-          model.menuOpen ? 'is-open' : ''
+          model.isMenuOpen ? 'is-open' : ''
         }`,
       ),
-      h.AriaHidden(!model.menuOpen),
+      h.AriaHidden(!model.isMenuOpen),
     ],
     [
       h.ul(
@@ -3622,9 +3628,9 @@ const pinTeams = (club: Club): ReadonlyArray<Club> => [
 ];
 
 const teamMatchesLeague = (model: Model, team: Club): boolean =>
-  model.mapLeague === 'all' ||
-  (model.mapLeague === 'first' && team.league === FIRST_LEAGUE) ||
-  (model.mapLeague === 'second' && team.league === SECOND_LEAGUE);
+  model.mapLeague === 'All' ||
+  (model.mapLeague === 'First' && team.league === FIRST_LEAGUE) ||
+  (model.mapLeague === 'Second' && team.league === SECOND_LEAGUE);
 
 // Where a pin's crest sits relative to its dot. Every dot is at the
 // club's TRUE projected city location; in crowded cities (Prague ×4, Brno
@@ -3976,9 +3982,9 @@ const clubPin = (model: Model, club: Club): Html => {
 };
 
 const MAP_LEAGUE_LABELS: Record<MapLeague, string> = {
-  all: 'All clubs',
-  first: 'First League',
-  second: 'Second League',
+  All: 'All clubs',
+  First: 'First League',
+  Second: 'Second League',
 };
 
 // The map's league filter: three mutually-exclusive options, so a real
@@ -3989,7 +3995,7 @@ const mapLeagueFilter = (model: Model): Html =>
   RadioGroup.view<MapLeague, Message>({
     id: 'map-league-filter',
     selectedValue: Option.some(model.mapLeague),
-    options: ['all', 'first', 'second'],
+    options: ['All', 'First', 'Second'],
     ariaLabel: 'Filter clubs by league',
     onSelect: (league) => SelectedMapLeague({ league }),
     toView: ({ group, options }) =>
@@ -4125,7 +4131,7 @@ const clubsView = (model: Model): Html =>
                         // The odometer poses: metric parks ABOVE the clip,
                         // imperial BELOW — toggling rolls one out and the
                         // other through in the same direction.
-                        `area-metric col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.mapAreaImperial ? 'invisible -translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`,
+                        `area-metric col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'invisible -translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`,
                       ),
                     ],
                     ['78,871 km².'],
@@ -4133,7 +4139,7 @@ const clubsView = (model: Model): Html =>
                   h.span(
                     [
                       h.Class(
-                        `area-imperial col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.mapAreaImperial ? 'translate-y-0 opacity-100' : 'invisible translate-y-full opacity-0'}`,
+                        `area-imperial col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'translate-y-0 opacity-100' : 'invisible translate-y-full opacity-0'}`,
                       ),
                     ],
                     ['30,452 sq mi.'],
@@ -5125,12 +5131,12 @@ const followView = (): Html =>
     ],
   );
 
-const footerView = (menuOpen: boolean): Html =>
+const footerView = (isMenuOpen: boolean): Html =>
   h.footer(
     [
       h.Class('border-t border-paper/15 bg-ink py-10 text-paper'),
       // Same treatment as <main>: unreachable while the menu overlay is up.
-      ...(menuOpen ? [h.Inert(true)] : []),
+      ...(isMenuOpen ? [h.Inert(true)] : []),
     ],
     [
       h.div(
@@ -5194,10 +5200,10 @@ export const view = (model: Model): Document => ({
       // added conditionally rather than set to `false` because `inert`
       // is a boolean attribute: its mere presence would disable the page.
       h.main(
-        [h.OnMount(MountMotion()), ...(model.menuOpen ? [h.Inert(true)] : [])],
+        [h.OnMount(MountMotion()), ...(model.isMenuOpen ? [h.Inert(true)] : [])],
         landingSections(model),
       ),
-      footerView(model.menuOpen),
+      footerView(model.isMenuOpen),
     ],
   ),
 });
