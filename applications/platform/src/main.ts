@@ -1,4 +1,4 @@
-import { Effect, Match as M, Option, Schema as S } from 'effect';
+import { Array, Effect, Match as M, Option, Schema as S } from 'effect';
 import { Input, RadioGroup } from '@foldkit/ui';
 import clsx from 'clsx';
 import type { Runtime } from 'foldkit';
@@ -41,7 +41,20 @@ import secondLeagueGoalsPhoto from './assets/goals/second-league.jpg';
 import pardubicePhoto from './assets/trending/pardubice.jpg';
 import sierraPhoto from './assets/trending/sierra.jpg';
 import spartaPhoto from './assets/trending/sparta.jpg';
-import { AppRoute, WelcomeRoute, urlToAppRoute } from './route';
+import {
+  AppRoute,
+  WelcomeRoute,
+  clubRouter,
+  clubsRouter,
+  competitionRouter,
+  competitionsRouter,
+  herGameRouter,
+  matchesRouter,
+  officialsRouter,
+  playersRouter,
+  urlToAppRoute,
+  welcomeRouter,
+} from './route';
 
 // MODEL
 //
@@ -338,11 +351,22 @@ interface NavEntry {
 // Officials left the top nav (still reachable from the home browse tiles
 // and by URL) so HER GAME can hold the center with two sections per side.
 const navEntries: ReadonlyArray<NavEntry> = [
-  { screen: 'Clubs', label: 'Clubs', short: 'Clubs', href: '/clubs' },
-  { screen: 'Players', label: 'Players', short: 'Players', href: '/players' },
-  { screen: 'HerGame', label: 'Her Game', short: 'Her Game', href: '/her-game', isFeatured: true },
-  { screen: 'Matches', label: 'Matches', short: 'Matches', href: '/matches' },
-  { screen: 'Competitions', label: 'Competitions', short: 'Competitions', href: '/competitions' },
+  { screen: 'Clubs', label: 'Clubs', short: 'Clubs', href: clubsRouter() },
+  { screen: 'Players', label: 'Players', short: 'Players', href: playersRouter() },
+  {
+    screen: 'HerGame',
+    label: 'Her Game',
+    short: 'Her Game',
+    href: herGameRouter(),
+    isFeatured: true,
+  },
+  { screen: 'Matches', label: 'Matches', short: 'Matches', href: matchesRouter() },
+  {
+    screen: 'Competitions',
+    label: 'Competitions',
+    short: 'Competitions',
+    href: competitionsRouter(),
+  },
 ];
 
 const screenTitles: Record<Screen, string> = {
@@ -429,7 +453,7 @@ const trending: ReadonlyArray<TrendingEntry> = [
   {
     name: 'Sierra Pennock',
     kind: 'Player',
-    href: '/players',
+    href: playersRouter(),
     crest: '',
     photo: sierraPhoto,
     focus: '50% 22%',
@@ -437,7 +461,7 @@ const trending: ReadonlyArray<TrendingEntry> = [
   {
     name: 'Sparta Praha',
     kind: 'Club',
-    href: '/clubs/sparta-praha',
+    href: clubRouter({ slug: 'sparta-praha' }),
     crest: spartaPrahaLogo,
     photo: spartaPhoto,
     focus: '50% 35%',
@@ -445,7 +469,7 @@ const trending: ReadonlyArray<TrendingEntry> = [
   {
     name: 'FK Pardubice',
     kind: 'Club',
-    href: '/clubs/pardubice',
+    href: clubRouter({ slug: 'pardubice' }),
     crest: pardubiceLogo,
     photo: pardubicePhoto,
     focus: '50% 18%',
@@ -1012,13 +1036,8 @@ const scorerPool: ReadonlyArray<string> = [
   'Natálie Horáková',
 ];
 
-const hashSlug = (slug: string): number => {
-  let hash = 0;
-  for (let i = 0; i < slug.length; i++) {
-    hash = (hash * 31 + slug.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash);
-};
+const hashSlug = (slug: string): number =>
+  Math.abs(Array.reduce([...slug], 0, (hash, char) => (hash * 31 + char.charCodeAt(0)) | 0));
 
 // Top three per scope, goals strictly descending; Sparta's all-comps
 // leader is the canonical Rancová.
@@ -1350,7 +1369,7 @@ const headerView = (model: Model): Html =>
             [
               h.a(
                 [
-                  h.Href('/'),
+                  h.Href(welcomeRouter()),
                   h.Class(
                     'display flex items-baseline gap-3 text-xl tracking-wide text-paper transition-colors duration-300 hover:text-pink md:text-2xl',
                   ),
@@ -1786,14 +1805,14 @@ interface StatEntry {
 const goals: ReadonlyArray<StatEntry> = [
   {
     league: 'First League',
-    href: '/competitions/first-league',
+    href: competitionRouter({ slug: 'first-league' }),
     rounds: [14, 18, 11, 21, 16, 19, 13, 22, 17, 15, 20, 24],
     photo: firstLeagueGoalsPhoto,
     focus: '50% 22%',
   },
   {
     league: 'Second League',
-    href: '/competitions/second-league',
+    href: competitionRouter({ slug: 'second-league' }),
     rounds: [9, 12, 8, 14, 11, 13, 10, 15, 12, 16, 14, 12],
     photo: secondLeagueGoalsPhoto,
     focus: '50% 24%',
@@ -1803,14 +1822,14 @@ const goals: ReadonlyArray<StatEntry> = [
 const attendance: ReadonlyArray<StatEntry> = [
   {
     league: 'First League',
-    href: '/competitions/first-league',
+    href: competitionRouter({ slug: 'first-league' }),
     rounds: [15420, 16210, 15850, 17480, 16090, 17820, 16640, 18110, 17260, 18570, 17230, 18742],
     photo: firstLeagueAttendancePhoto,
     focus: '50% 26%',
   },
   {
     league: 'Second League',
-    href: '/competitions/second-league',
+    href: competitionRouter({ slug: 'second-league' }),
     rounds: [4620, 4890, 4740, 5120, 4980, 5260, 5050, 5340, 5180, 5230, 5410, 5318],
     photo: secondLeagueAttendancePhoto,
     focus: '50% 28%',
@@ -2187,7 +2206,7 @@ const HEX_CLIP = '[clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25
 const crestChip = (entry: Club, delaySeconds: number): Html =>
   h.a(
     [
-      h.Href(`/clubs/${entry.slug}`),
+      h.Href(clubRouter({ slug: entry.slug })),
       h.AriaLabel(entry.name),
       h.Class('trend-row group block shrink-0 transition-transform hover:scale-105'),
       h.Style({ '--row-delay': `${delaySeconds}s` }),
@@ -2304,42 +2323,42 @@ interface SectionTile {
 
 const sectionTiles: ReadonlyArray<SectionTile> = [
   {
-    href: '/clubs',
+    href: clubsRouter(),
     label: 'Clubs',
     count: `${clubs.length}`,
     caption: 'Both leagues, one directory',
     art: [spartaPrahaLogo, slaviaPrahaLogo, banikOstravaLogo, viktoriaPlzenLogo],
   },
   {
-    href: '/players',
+    href: playersRouter(),
     label: 'Players',
     count: '5,112',
     caption: 'Indexed across the country',
     art: [],
   },
   {
-    href: '/matches',
+    href: matchesRouter(),
     label: 'Matches',
     count: '1,284',
     caption: 'Round by round, both leagues',
     art: [],
   },
   {
-    href: '/competitions',
+    href: competitionsRouter(),
     label: 'Competitions',
     count: `${competitions.length}`,
     caption: 'Leagues, cup, Europe, national team',
     art: [firstLeagueBadge, domesticCupBadge, uwclBadge],
   },
   {
-    href: '/officials',
+    href: officialsRouter(),
     label: 'Officials',
     count: `${officials.length}`,
     caption: 'Appointments and cards in the open',
     art: [],
   },
   {
-    href: '/her-game',
+    href: herGameRouter(),
     label: 'Her Game',
     count: `${savedCharts.length}`,
     caption: 'Your charts and the studio',
@@ -2910,7 +2929,7 @@ const europeanContenders = (model: Model): Html => {
                   h.a(
                     [
                       h.Key(entryAt(active).slug),
-                      h.Href(`/clubs/${entryAt(active).slug}`),
+                      h.Href(clubRouter({ slug: entryAt(active).slug })),
                       h.Class('screen relative block h-full w-full'),
                     ],
                     [featuredArtwork(entryAt(active), clubAt(active))],
@@ -3051,7 +3070,7 @@ const clubsScreen = (model: Model): Html => {
           return h.keyed('a')(
             entry.slug,
             [
-              h.Href(`/clubs/${entry.slug}`),
+              h.Href(clubRouter({ slug: entry.slug })),
               h.Class(`${panel} group block p-6 transition-colors hover:border-pink`),
             ],
             [
@@ -3185,7 +3204,7 @@ const competitionsScreen = (model: Model): Html =>
         competitions.map((competition) =>
           h.a(
             [
-              h.Href(`/competitions/${competition.slug}`),
+              h.Href(competitionRouter({ slug: competition.slug })),
               h.Class(`${panel} group block p-6 transition-colors hover:border-pink`),
             ],
             [
@@ -3606,7 +3625,7 @@ const seasonProgress = (played: number, total: number): Html =>
       ),
       h.div(
         [h.Class('mt-2 flex gap-[3px]')],
-        Array.from({ length: total }, (_unused, index) =>
+        Array.makeBy(total, (index) =>
           h.div([h.Class(clsx('h-2 flex-1', index < played ? 'bg-pink' : 'bg-ink/15'))], []),
         ),
       ),
@@ -3632,7 +3651,7 @@ const zonesFor = (
   zoneAt: (position: number) => StandingsZone | null,
   totalRows: number,
 ): ReadonlyArray<StandingsZone> =>
-  Array.from({ length: totalRows }, (_unused, index) => zoneAt(index + 1))
+  Array.makeBy(totalRows, (index) => zoneAt(index + 1))
     .filter((zone): zone is StandingsZone => zone !== null)
     .filter((zone, index, all) => all.findIndex((other) => other.label === zone.label) === index);
 
@@ -4015,7 +4034,7 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
           // so it points at the matches section rather than a dead href.
           h.a(
             [
-              h.Href('/matches'),
+              h.Href(matchesRouter()),
               h.Class(
                 'display mt-5 flex w-fit items-center gap-2 border border-ink px-5 py-2.5 text-sm tracking-[0.12em] text-ink uppercase transition-colors hover:bg-ink hover:text-paper md:text-base',
               ),
@@ -4389,7 +4408,7 @@ const clubProfileScreen = (target: Club, model: Model): Html => {
                 ),
                 h.a(
                   [
-                    h.Href('/clubs'),
+                    h.Href(clubsRouter()),
                     h.Class(
                       'absolute top-5 left-5 z-10 text-[10px] tracking-[0.2em] text-paper/70 uppercase transition-colors hover:text-pink md:left-10',
                     ),
@@ -4411,7 +4430,7 @@ const clubProfileScreen = (target: Club, model: Model): Html => {
                   [
                     h.a(
                       [
-                        h.Href('/clubs'),
+                        h.Href(clubsRouter()),
                         h.Class(
                           'text-[10px] tracking-[0.2em] text-paper/50 uppercase transition-colors hover:text-pink',
                         ),
