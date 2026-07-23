@@ -1,6 +1,7 @@
 import * as echarts from 'echarts/core';
-import { Clock, Effect, Match as M, Option, Result, Schema as S } from 'effect';
+import { Array, Clock, Effect, Match as M, Option, Result, Schema as S } from 'effect';
 import { Input } from '@foldkit/ui';
+import clsx from 'clsx';
 import { AsyncData, Command, Mount, Runtime } from 'foldkit';
 import { html } from 'foldkit/html';
 import type { Document, Html } from 'foldkit/html';
@@ -1077,13 +1078,8 @@ const metricsBySection: Record<Section, ReadonlyArray<string>> = {
   associations: ['Members', 'Competitions', 'Years active'],
 };
 
-const hashString = (value: string): number => {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) {
-    hash = (hash * 31 + value.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash);
-};
+const hashString = (value: string): number =>
+  Math.abs(Array.reduce([...value], 0, (hash, char) => (hash * 31 + char.charCodeAt(0)) | 0));
 
 const statsFor = (
   entry: Entry,
@@ -1103,16 +1099,14 @@ const pointsFor = (
   entry: Entry,
 ): { title: string; weeks: ReadonlyArray<string>; points: ReadonlyArray<number> } => {
   const seed = hashString(`points:${entry.values.join('|')}`);
-  let cumulative = 0;
-  const weeks: Array<string> = [];
-  const points: Array<number> = [];
-  for (let matchday = 0; matchday < MATCHDAYS; matchday++) {
+  const weeks = Array.makeBy(MATCHDAYS, (matchday) => `MD${matchday + 1}`);
+  const results = Array.makeBy(MATCHDAYS, (matchday) => {
     const roll = (seed >> (matchday * 3)) % 10;
-    const result = roll < 4 ? 3 : roll < 7 ? 1 : 0; // win : draw : loss
-    cumulative += result;
-    weeks.push(`MD${matchday + 1}`);
-    points.push(cumulative);
-  }
+    return roll < 4 ? 3 : roll < 7 ? 1 : 0; // win : draw : loss
+  });
+  // Cumulative points after each matchday — the scan keeps every running
+  // total; drop its leading 0 (the pre-season starting point).
+  const points = Array.scan(results, 0, (cumulative, result) => cumulative + result).slice(1);
   return { title: 'Points over time', weeks, points };
 };
 
@@ -1696,7 +1690,7 @@ const sidebar = (current: Section, open: boolean, isShowingDashboard: boolean): 
   );
 
   return h.nav(
-    [h.Class(`${open ? 'flex' : 'hidden'} w-full flex-col gap-6 md:flex md:w-56 md:shrink-0`)],
+    [h.Class(clsx(open ? 'flex' : 'hidden', 'w-full flex-col gap-6 md:flex md:w-56 md:shrink-0'))],
     [dashboardItem, ...menu.map(node)],
   );
 };
@@ -2105,7 +2099,7 @@ const content = (model: Model): Html => {
       showSkeleton
         ? h.div(
             [h.Class('mt-6 flex flex-col gap-2')],
-            Array.from({ length: 5 }, () => skeletonCard()),
+            Array.makeBy(5, () => skeletonCard()),
           )
         : pageItems.length > 0
           ? h.div([h.Class('mt-6 flex flex-col gap-2')], pageItems.map(entryCard))
@@ -2449,7 +2443,10 @@ const drawer = (model: Model): Html => {
         [
           h.OnClick(ClickedCloseDrawer()),
           h.Class(
-            `fixed inset-0 z-40 bg-black/30 transition-opacity ${open ? 'opacity-100' : 'pointer-events-none opacity-0'}`,
+            clsx(
+              'fixed inset-0 z-40 bg-black/30 transition-opacity',
+              open ? 'opacity-100' : 'pointer-events-none opacity-0',
+            ),
           ),
         ],
         [],
@@ -2457,7 +2454,10 @@ const drawer = (model: Model): Html => {
       h.aside(
         [
           h.Class(
-            `fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-2xl transition-transform ${open ? 'translate-x-0' : 'translate-x-full'}`,
+            clsx(
+              'fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-2xl transition-transform',
+              open ? 'translate-x-0' : 'translate-x-full',
+            ),
           ),
         ],
         panel,
