@@ -3,20 +3,29 @@ import { describe, test } from 'vitest';
 
 import { landingModel, menuOpenModel } from './main.fixtures';
 import { update, view } from './main';
-import { CompletedMountMotion, MountMotion } from './motion';
+import {
+  CompletedMountMotion,
+  DetectedHeroPastHeader,
+  MountMotion,
+  ObserveHeroPastHeader,
+} from './motion';
 
-// The landing view always mounts the decorative motion controller
-// (`h.OnMount(MountMotion())`), so every scene acknowledges it — the real
-// effect (which needs a browser and IntersectionObserver) never runs here;
-// the motion-regression browser tests cover that path.
-const acknowledgeMotion = Scene.Mount.resolve(MountMotion, CompletedMountMotion());
+// The landing view mounts two decorative controllers — the motion loop on the
+// root (`MountMotion`) and the hero-past-header observer on the hero
+// (`ObserveHeroPastHeader`). Every scene acknowledges both; their real effects
+// need a browser and IntersectionObserver and never run here — the
+// motion-regression browser tests cover those paths.
+const acknowledgeMounts = [
+  Scene.Mount.resolve(MountMotion, CompletedMountMotion()),
+  Scene.Mount.resolve(ObserveHeroPastHeader, DetectedHeroPastHeader({ past: false })),
+];
 
 describe('view', () => {
   test('the landing page renders the hero and the closed-menu control', () => {
     Scene.scene(
       { update, view },
       Scene.with(landingModel),
-      acknowledgeMotion,
+      ...acknowledgeMounts,
       Scene.expect(Scene.text('Discover')).toExist(),
       Scene.expect(Scene.role('button', { name: 'Open menu' })).toExist(),
     );
@@ -26,7 +35,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.with(landingModel),
-      acknowledgeMotion,
+      ...acknowledgeMounts,
       Scene.expect(Scene.role('radio', { name: 'All clubs' })).toExist(),
       Scene.expect(Scene.label('Toggle between metric and imperial area')).toExist(),
     );
@@ -36,7 +45,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.with(menuOpenModel),
-      acknowledgeMotion,
+      ...acknowledgeMounts,
       Scene.expect(Scene.role('button', { name: 'Close menu' })).toExist(),
       Scene.expect(Scene.role('link', { name: 'On the rise' })).toExist(),
     );

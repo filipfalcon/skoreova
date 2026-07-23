@@ -4,6 +4,7 @@ import { External, Internal } from 'foldkit/navigation';
 import { fromString } from 'foldkit/url';
 import { expect, test } from 'vitest';
 
+import { DetectedHeroPastHeader } from './motion';
 import { landingModel, menuOpenModel, secondLeagueMapModel } from './main.fixtures';
 import {
   ChangedUrl,
@@ -96,6 +97,24 @@ test('opening a club card records its slug; the area unit toggles', () => {
     Story.model((model) => {
       // Rests imperial, so the first toggle flips it to metric.
       expect(model.mapAreaImperial).toBe(false);
+    }),
+    Story.Command.expectNone(),
+  );
+});
+
+test('the hero observer drives the header CTA flag', () => {
+  Story.story(
+    update,
+    Story.with(landingModel),
+    // Hero scrolled under the header → the persistent CTA takes over.
+    Story.message(DetectedHeroPastHeader({ past: true })),
+    Story.model((model) => {
+      expect(model.heroPastHeader).toBe(true);
+    }),
+    // Back on the hero → the CTA yields to the hero's own.
+    Story.message(DetectedHeroPastHeader({ past: false })),
+    Story.model((model) => {
+      expect(model.heroPastHeader).toBe(false);
     }),
     Story.Command.expectNone(),
   );
