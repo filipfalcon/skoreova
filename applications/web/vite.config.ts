@@ -37,6 +37,11 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.ts'],
+    // Registers Foldkit's Scene matchers for story.test.ts / scene.test.ts.
+    // These model/view tests are pure (update/view never touch the DOM at call
+    // time) so they'd run in any environment, but they ride along in the same
+    // browser project as the motion-regression guards — one runner, no split.
+    setupFiles: ['./src/vitest-setup.ts'],
     browser: {
       enabled: true,
       provider: playwright(),
