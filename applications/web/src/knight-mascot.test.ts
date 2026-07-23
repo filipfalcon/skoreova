@@ -146,7 +146,7 @@ test('nothing paints over the mascot head band', async () => {
             const top = document.elementFromPoint(x, y);
             if (!top || top === image || wrapper.contains(top)) continue;
             offenders.add(
-              `${top.tagName}.${(top as HTMLElement).className} at ${Math.round(x)},${Math.round(y)} (pose ${pose})`,
+              `${top.tagName}.${top.className} at ${Math.round(x)},${Math.round(y)} (pose ${pose})`,
             );
           }
         }

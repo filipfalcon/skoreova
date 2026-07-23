@@ -1117,12 +1117,6 @@ const CHIP_CLASS =
 const chipHeading = (title: string): Html =>
   h.div([h.Class('flex')], [h.span([h.Class(CHIP_CLASS)], [title])]);
 
-const pinnableHeading = (title: string, model: Model, pinId: string): Html =>
-  h.div(
-    [h.Class('flex items-center justify-between gap-4')],
-    [h.span([h.Class(CHIP_CLASS)], [title]), pinToggle(model, pinId, title)],
-  );
-
 // A tiny pink polyline preview — the saved-charts cards and anywhere a
 // dataset needs a face without a full chart.
 const sparkline = (values: ReadonlyArray<number>): Html => {

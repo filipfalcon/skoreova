@@ -236,8 +236,6 @@ export const Load = Command.define(
 // position:fixed trick rather than `overflow: hidden`, which iOS Safari
 // ignores for touch scrolling — the body is pinned and offset by the
 // current scroll, then restored on unlock so the position is preserved.
-let lockedScrollY = 0;
-
 export const SetScrollLock = Command.define(
   'SetScrollLock',
   { locked: S.Boolean },
@@ -248,13 +246,18 @@ export const SetScrollLock = Command.define(
     if (locked) {
       // Guard against double-locking (would capture top:-0 and lose position).
       if (body.style.position !== 'fixed') {
-        lockedScrollY = window.scrollY;
+        const scrollY = window.scrollY;
+        // Park the offset on the body itself, not a module-level binding:
+        // it is transient DOM state and belongs with the DOM it describes.
+        body.dataset['lockedScrollY'] = `${scrollY}`;
         body.style.position = 'fixed';
-        body.style.top = `-${lockedScrollY}px`;
+        body.style.top = `-${scrollY}px`;
         body.style.insetInline = '0';
         body.style.width = '100%';
       }
     } else if (body.style.position === 'fixed') {
+      const scrollY = Number(body.dataset['lockedScrollY'] ?? '0');
+      delete body.dataset['lockedScrollY'];
       body.style.position = '';
       body.style.top = '';
       body.style.insetInline = '';
@@ -264,7 +267,7 @@ export const SetScrollLock = Command.define(
       // animated ride from the top — the IntersectionObserver watched
       // every section exit and re-enter, replaying reveals and count-ups
       // whenever the menu closed mid-page.
-      window.scrollTo({ top: lockedScrollY, behavior: 'instant' });
+      window.scrollTo({ top: scrollY, behavior: 'instant' });
     }
     return CompletedScrollLock();
   }),
@@ -277,9 +280,8 @@ export const SetScrollLock = Command.define(
 // from menuEntries itself, so the two can't drift apart.
 export const DetectActiveSection = Command.define(
   'DetectActiveSection',
-  {},
   DetectedActiveSection,
-)(() =>
+)(
   Effect.sync(() => {
     const centre = window.innerHeight / 2;
     let section = '';
@@ -343,7 +345,7 @@ export const update = (
           // the previous open can't flash before detection lands.
           evo(model, { menuOpen: () => menuOpen, activeSection: (s) => (menuOpen ? '' : s) }),
           menuOpen
-            ? [SetScrollLock({ locked: true }), DetectActiveSection({})]
+            ? [SetScrollLock({ locked: true }), DetectActiveSection()]
             : [SetScrollLock({ locked: false })],
         ];
       },
