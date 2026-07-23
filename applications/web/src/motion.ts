@@ -796,39 +796,12 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       })
     : [];
 
-  // ----- Smooth wheel scrolling ----------------------------------------------
-  // Wheel input feeds a target that the rAF loop eases toward (Lenis-style
-  // inertia) instead of jumping the viewport in native steps. Wheel only:
-  // touch scrolling, the scrollbar, and keyboard keep their native feel, and
-  // it never runs under reduced motion (we're inside that gate here).
-
-  let smoothTarget = window.scrollY;
-  let smoothCurrent = window.scrollY;
-  let smoothSettled = true;
-
-  const onWheel = (event: WheelEvent): void => {
-    if (event.ctrlKey || event.defaultPrevented) return;
-    // Mostly-horizontal gestures belong to overflow-x containers (standings
-    // tables) — leave them native.
-    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
-    // The menu overlay locks the page (Dom.lockScroll sets overflow: hidden
-    // on the document element) — don't hijack the wheel over the overlay.
-    if (document.documentElement.style.overflow === 'hidden') return;
-    const max = (document.scrollingElement?.scrollHeight ?? 0) - window.innerHeight;
-    if (max <= 0) return;
-    event.preventDefault();
-    // Adopt any outside movement (anchor jump, keyboard, scrollbar drag)
-    // that happened while we were settled.
-    if (smoothSettled) {
-      smoothTarget = window.scrollY;
-      smoothCurrent = window.scrollY;
-    }
-    const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
-    smoothTarget = Math.max(0, Math.min(max, smoothTarget + event.deltaY * scale));
-    smoothSettled = false;
-  };
-  window.addEventListener('wheel', onWheel, { passive: false });
-  cleanups.push(() => window.removeEventListener('wheel', onWheel));
+  // Smooth wheel scrolling (Lenis-style inertia) used to live here too, but a
+  // window-level wheel listener with preventDefault and a per-frame
+  // window.scrollTo is a window event source, not element-scoped Mount work —
+  // and moving the live viewport from a Mount is unsafe under DevTools
+  // time-travel, which re-runs the factory. It is now a Subscription gated on
+  // the menu being closed (see `subscriptions` in main.ts).
 
   // ----- The loop ------------------------------------------------------------
 
@@ -840,18 +813,6 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
   const tick = (now: number): void => {
     const dt = Math.min(64, now - lastFrameAt) / 1000;
     lastFrameAt = now;
-
-    // Ease the viewport toward the wheel target. `behavior: 'instant'`
-    // matters — the page has CSS scroll-behavior: smooth, which would turn
-    // every per-frame scrollTo into its own competing animation.
-    if (!smoothSettled) {
-      smoothCurrent = lerp(smoothCurrent, smoothTarget, 0.14);
-      if (Math.abs(smoothCurrent - smoothTarget) < 0.5) {
-        smoothCurrent = smoothTarget;
-        smoothSettled = true;
-      }
-      window.scrollTo({ top: smoothCurrent, behavior: 'instant' });
-    }
 
     // Smoothed scroll velocity in px/s, feeding the marquees.
     if (dt > 0) {
