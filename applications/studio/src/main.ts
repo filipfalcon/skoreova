@@ -1,7 +1,7 @@
 import * as echarts from 'echarts/core';
-import { Clock, Effect, Match as M, Option, Schema as S } from 'effect';
+import { Clock, Effect, Match as M, Option, Result, Schema as S } from 'effect';
 import { Input } from '@foldkit/ui';
-import { Command, Mount, Runtime } from 'foldkit';
+import { AsyncData, Command, Mount, Runtime } from 'foldkit';
 import { html } from 'foldkit/html';
 import type { Document, Html } from 'foldkit/html';
 // `Html` is `VNode | null` — the node type is not parameterized by Message.
@@ -94,10 +94,6 @@ export const DrawerEditing = S.TaggedStruct('Editing', {
 export const DrawerState = S.Union([DrawerClosed, DrawerCreating, DrawerEditing]);
 export type DrawerState = typeof DrawerState.Type;
 
-// Status of a section's fetch from the real API. Every section uses this.
-export const RequestStatus = S.Literals(['idle', 'loading', 'loaded', 'failed']);
-export type RequestStatus = typeof RequestStatus.Type;
-
 // One recorded change to a field, for the drawer's History tab. Keyed by the
 // record's id (not its row index), so the log stays attached to its record
 // across refetches.
@@ -109,6 +105,19 @@ export const LogEntry = S.Struct({
   at: S.String,
 });
 export type LogEntry = typeof LogEntry.Type;
+
+// A section's fetch is a six-state AsyncData: Idle before sign-in, Loading on
+// the first fetch, Success holding its rows, Failure holding the error, and
+// Refreshing/Stale for stale-while-revalidate on retry. This replaces the flat
+// `xRequest`/`xError` pair per section, so a "loaded" state can't carry a stale
+// error, and the rows live inside Success (there's no separate flat array to
+// drift out of sync).
+export const SectionData = AsyncData.Schema(S.Array(Entry), S.String);
+export type SectionData = typeof SectionData.schema.Type;
+
+// Participations are a pure join (no list UI), so they carry their own decoded
+// rows rather than Entry rows.
+export const ParticipationsData = AsyncData.Schema(S.Array(ParticipationResponse), S.String);
 
 export const Model = S.Struct({
   email: S.String,
@@ -123,9 +132,6 @@ export const Model = S.Struct({
   // selected value for `columns[i]`, or '' for "All". Index 0 (the title
   // column) is unused but kept so indices line up with `columns`.
   filters: S.Array(S.String),
-  // The loaded dataset. Kept flat; each record carries its own id, which is
-  // how the drawer and edit log address a record (never a row index).
-  rows: S.Array(Entry),
   // The profile drawer: closed, creating a new record, or editing one by id.
   drawer: DrawerState,
   // Client-side id source for records created in the mock (the backend would
@@ -136,28 +142,21 @@ export const Model = S.Struct({
   editLog: S.Array(LogEntry),
   // Message from the last chart mount/sync attempt, or '' if it's fine.
   chartError: S.String,
-  // Status of fetching each section from the real API.
-  playersRequest: RequestStatus,
-  playersError: S.String,
+  // Each section's fetch state, holding its own rows in Success. Field names
+  // match the Section literals, so `model[section]` selects a section's state.
+  players: SectionData.schema,
+  clubs: SectionData.schema,
+  nationals: SectionData.schema,
+  competitions: SectionData.schema,
+  editions: SectionData.schema,
+  associations: SectionData.schema,
+  // Which team played in which edition. Not browsable as its own section —
+  // only used to resolve an edition's participating teams in its Overview tab.
+  participations: ParticipationsData.schema,
   // Only /players is paginated server-side right now; Clubs/Nationals fetch
   // everything in one request.
   playersPage: S.Number,
   playersTotal: S.Number,
-  clubsRequest: RequestStatus,
-  clubsError: S.String,
-  nationalsRequest: RequestStatus,
-  nationalsError: S.String,
-  competitionsRequest: RequestStatus,
-  competitionsError: S.String,
-  editionsRequest: RequestStatus,
-  editionsError: S.String,
-  associationsRequest: RequestStatus,
-  associationsError: S.String,
-  // Which team played in which edition. Not browsable as its own section —
-  // only used to resolve an edition's participating teams in its Overview tab.
-  participations: S.Array(ParticipationResponse),
-  participationsRequest: RequestStatus,
-  participationsError: S.String,
   // Whether the backend is reachable at all, via GET /health — shown as the
   // diode on every API-backed section's Refresh button. Separate from each
   // section's own request status, since a health check is cheaper/faster
@@ -319,8 +318,8 @@ export type Message = typeof Message.Type;
 
 // UPDATE
 
-// A fresh signed-out model. `rows` starts empty — every section is fetched
-// from the real API at sign-in, there's no mock seed data anymore.
+// A fresh signed-out model. Every section starts Idle — nothing is fetched
+// until sign-in, and there's no mock seed data.
 const initialModel = (): Model => ({
   email: '',
   password: '',
@@ -329,28 +328,19 @@ const initialModel = (): Model => ({
   menuOpen: false,
   search: '',
   filters: [],
-  rows: [],
   drawer: DrawerClosed.make({}),
   nextLocalId: 1,
   editLog: [],
   chartError: '',
-  playersRequest: 'idle',
-  playersError: '',
+  players: SectionData.Idle(),
+  clubs: SectionData.Idle(),
+  nationals: SectionData.Idle(),
+  competitions: SectionData.Idle(),
+  editions: SectionData.Idle(),
+  associations: SectionData.Idle(),
+  participations: ParticipationsData.Idle(),
   playersPage: 1,
   playersTotal: 0,
-  clubsRequest: 'idle',
-  clubsError: '',
-  nationalsRequest: 'idle',
-  nationalsError: '',
-  competitionsRequest: 'idle',
-  competitionsError: '',
-  editionsRequest: 'idle',
-  editionsError: '',
-  associationsRequest: 'idle',
-  associationsError: '',
-  participations: [],
-  participationsRequest: 'idle',
-  participationsError: '',
   serverHealth: 'unknown',
   clientPage: 1,
   linkError: '',
@@ -363,12 +353,21 @@ const upsertEntry = (rows: ReadonlyArray<Entry>, entry: Entry): ReadonlyArray<En
   entry,
 ];
 
-// The record the drawer is editing, resolved by id from the current rows
+// The rows a section currently holds (its Success/Refreshing/Stale data), or []
+// if it hasn't loaded. `model[section]` selects the section's AsyncData.
+const sectionRows = (model: Model, section: Section): ReadonlyArray<Entry> =>
+  Option.getOrElse(AsyncData.getData(model[section]), () => []);
+
+// Finds a record by id within its section's loaded rows.
+const findRecord = (model: Model, section: Section, id: string): Entry | undefined =>
+  sectionRows(model, section).find((row) => row.id === id);
+
+// The record the drawer is editing, resolved by id from its section's rows
 // (undefined when the drawer is closed, creating, or the record is gone).
 const drawerRecord = (model: Model): Entry | undefined => {
   const drawer = model.drawer;
   if (drawer._tag !== 'Editing') return undefined;
-  return model.rows.find((row) => row.section === drawer.section && row.id === drawer.id);
+  return findRecord(model, drawer.section, drawer.id);
 };
 
 // The edit buffer of whichever open drawer state carries one ([] when closed).
@@ -392,21 +391,61 @@ const editRecord = (entry: Entry): DrawerState =>
     confirmingDelete: false,
   });
 
-// Editions and Competitions can finish fetching in either order. Whichever
-// arrives second re-derives every edition's "Competition" column (index 1)
-// from `rows` as it stands right now, so it's never stuck showing the raw
-// competitionId just because Competitions hadn't loaded yet when Editions did.
-const withResolvedEditionCompetitionNames = (rows: ReadonlyArray<Entry>): ReadonlyArray<Entry> =>
-  rows.map((row) => {
-    if (row.section !== 'editions') return row;
-    const competition = rows.find(
-      (candidate) => candidate.section === 'competitions' && candidate.id === row.parentId,
-    );
+// Editions and Competitions can finish fetching in either order. Each edition's
+// "Competition" column (index 1) is resolved from the competitions rows —
+// re-run both when editions land (against whatever competitions exist) and when
+// competitions land (against the already-loaded editions), so a raw
+// competitionId is never left showing.
+const resolveEditionNames = (
+  editions: ReadonlyArray<Entry>,
+  competitions: ReadonlyArray<Entry>,
+): ReadonlyArray<Entry> =>
+  editions.map((row) => {
+    const competition = competitions.find((candidate) => candidate.id === row.parentId);
     if (!competition) return row;
     const values = [...row.values];
     values[1] = competition.values[0] ?? values[1] ?? '';
     return evo(row, { values: () => values });
   });
+
+// Evolves one section's AsyncData by a runtime-chosen section. `evo` needs a
+// literal key, so a `model[section]` write goes through this switch.
+const evolveSection = (
+  model: Model,
+  section: Section,
+  f: (data: SectionData) => SectionData,
+): Model => {
+  switch (section) {
+    case 'players':
+      return evo(model, { players: f });
+    case 'clubs':
+      return evo(model, { clubs: f });
+    case 'nationals':
+      return evo(model, { nationals: f });
+    case 'competitions':
+      return evo(model, { competitions: f });
+    case 'editions':
+      return evo(model, { editions: f });
+    case 'associations':
+      return evo(model, { associations: f });
+  }
+};
+
+// Upserts a record into a section's rows, forcing the section to Success (a
+// deep-linked record can arrive before the section's list has been fetched).
+const upsertRecord = (data: SectionData, entry: Entry): SectionData =>
+  SectionData.Success({
+    data: upsertEntry(
+      Option.getOrElse(AsyncData.getData(data), () => []),
+      entry,
+    ),
+  });
+
+// Maps a section's loaded rows in place (no-op unless it holds data).
+const mapSectionRows = (
+  data: SectionData,
+  f: (rows: ReadonlyArray<Entry>) => ReadonlyArray<Entry>,
+): SectionData => AsyncData.map(data, f);
 
 // Applies a parsed URL to the model — used both for the initial load and for
 // browser back/forward (ChangedUrl). Deep-linking to a specific record is
@@ -448,9 +487,8 @@ const applyRoute = (
         [],
       ],
       RecordRoute: ({ section, id }) => {
-        const entry = model.rows.find(
-          (row) => row.section === section && row.id === id && !row.deleted,
-        );
+        const found = findRecord(model, section, id);
+        const entry = found && !found.deleted ? found : undefined;
         if (entry) {
           return [
             evo(model, {
@@ -489,6 +527,35 @@ const applyRoute = (
     }),
   );
 
+// The browsable sections and the fetch each kicks off at sign-in. Driving the
+// fan-out from this list keeps ClickedSignIn declarative instead of an
+// imperative push per section. (Participations isn't here — it has no section
+// UI and is fetched alongside.)
+const SIGN_IN_SECTIONS: ReadonlyArray<{
+  readonly section: Section;
+  readonly fetch: (model: Model) => Command.Command<Message>;
+}> = [
+  { section: 'players', fetch: (model) => FetchPlayers({ page: model.playersPage }) },
+  { section: 'clubs', fetch: () => FetchClubs() },
+  { section: 'nationals', fetch: () => FetchNationals() },
+  { section: 'competitions', fetch: () => FetchCompetitions() },
+  { section: 'editions', fetch: () => FetchEditions() },
+  { section: 'associations', fetch: () => FetchAssociations() },
+];
+
+// A retry transitions the section to Refreshing (if it holds data) or Loading
+// and re-fetches; if it's already pending, revalidateOrLoad returns None and
+// nothing happens (no double-fetch).
+const retrySection = (
+  model: Model,
+  section: Section,
+  commands: ReadonlyArray<Command.Command<Message>>,
+): readonly [Model, ReadonlyArray<Command.Command<Message>>] =>
+  Option.match(AsyncData.revalidateOrLoad(model[section]), {
+    onNone: () => [model, []],
+    onSome: (next) => [evolveSection(model, section, () => next), commands],
+  });
+
 export const update = (
   model: Model,
   message: Message,
@@ -503,33 +570,28 @@ export const update = (
       // Kick off the Players/Clubs/Nationals fetches the first time we land
       // on the dashboard.
       ClickedSignIn: () => {
-        // Kick off every still-idle fetch, and flip each of those requests to
-        // 'loading' in one evolve. `start` leaves an already-running or done
-        // request untouched, so the model transform mirrors the command list.
-        const commands: Array<Command.Command<Message>> = [];
-        if (model.playersRequest === 'idle')
-          commands.push(FetchPlayers({ page: model.playersPage }));
-        if (model.clubsRequest === 'idle') commands.push(FetchClubs());
-        if (model.nationalsRequest === 'idle') commands.push(FetchNationals());
-        if (model.competitionsRequest === 'idle') commands.push(FetchCompetitions());
-        if (model.editionsRequest === 'idle') commands.push(FetchEditions());
-        if (model.associationsRequest === 'idle') commands.push(FetchAssociations());
-        if (model.participationsRequest === 'idle') commands.push(FetchParticipations());
-        commands.push(FetchHealth());
-        const start = (status: RequestStatus): RequestStatus =>
-          status === 'idle' ? 'loading' : status;
+        // Fan out over the section list: fetch each still-idle section and flip
+        // it to Loading in the same pass. `start` leaves an already-running or
+        // loaded section untouched, so the evolve mirrors the command list.
+        const start = (data: SectionData): SectionData =>
+          data._tag === 'Idle' ? SectionData.Loading() : data;
+        const idleFetches = SIGN_IN_SECTIONS.filter(
+          (entry) => model[entry.section]._tag === 'Idle',
+        ).map((entry) => entry.fetch(model));
+        const participationsFetch =
+          model.participations._tag === 'Idle' ? [FetchParticipations()] : [];
         return [
           evo(model, {
             signedIn: () => true,
-            playersRequest: start,
-            clubsRequest: start,
-            nationalsRequest: start,
-            competitionsRequest: start,
-            editionsRequest: start,
-            associationsRequest: start,
-            participationsRequest: start,
+            players: start,
+            clubs: start,
+            nationals: start,
+            competitions: start,
+            editions: start,
+            associations: start,
+            participations: (data) => (data._tag === 'Idle' ? ParticipationsData.Loading() : data),
           }),
-          commands,
+          [...idleFetches, ...participationsFetch, FetchHealth()],
         ];
       },
       ClickedSignOut: () => [initialModel(), []],
@@ -593,7 +655,7 @@ export const update = (
       },
       // Open the profile drawer with a working copy of the record's values.
       ClickedRecord: ({ section, id }) => {
-        const entry = model.rows.find((row) => row.section === section && row.id === id);
+        const entry = findRecord(model, section, id);
         if (!entry) return [model, []];
         return [
           evo(model, {
@@ -620,20 +682,23 @@ export const update = (
       ClickedSaveRecord: () => {
         const drawer = model.drawer;
         if (drawer._tag === 'Creating') {
+          const { section } = drawer;
           const entry: Entry = {
-            section: drawer.section,
+            section,
             values: drawer.draft,
             deleted: false,
             id: `local-${model.nextLocalId}`,
             parentId: '',
           };
+          const withRow = evolveSection(model, section, (data) =>
+            mapSectionRows(data, (rows) => [...rows, entry]),
+          );
           return [
-            evo(model, {
-              rows: (rows) => [...rows, entry],
+            evo(withRow, {
               nextLocalId: (n) => n + 1,
               drawer: () => DrawerClosed.make({}),
             }),
-            [Navigate({ url: sectionRouter({ section: drawer.section }) })],
+            [Navigate({ url: sectionRouter({ section }) })],
           ];
         }
         if (drawer._tag !== 'Editing') return [model, []];
@@ -646,7 +711,7 @@ export const update = (
         const drawer = model.drawer;
         if (drawer._tag !== 'Editing') return [model, []];
         const { section, id, draft } = drawer;
-        const entry = model.rows.find((row) => row.section === section && row.id === id);
+        const entry = findRecord(model, section, id);
         if (!entry) return [model, []];
 
         const columns = sectionData[section].columns;
@@ -656,12 +721,13 @@ export const update = (
           return from === to ? [] : [{ recordId: id, field, from, to, at }];
         });
 
-        const rows = model.rows.map((row) =>
-          row.section === section && row.id === id ? evo(row, { values: () => draft }) : row,
+        const withRows = evolveSection(model, section, (data) =>
+          mapSectionRows(data, (rows) =>
+            rows.map((row) => (row.id === id ? evo(row, { values: () => draft }) : row)),
+          ),
         );
         return [
-          evo(model, {
-            rows: () => rows,
+          evo(withRows, {
             editLog: (log) => [...changes, ...log],
             drawer: () => DrawerClosed.make({}),
           }),
@@ -698,11 +764,13 @@ export const update = (
         const drawer = model.drawer;
         if (drawer._tag !== 'Editing') return [model, []];
         const { section, id } = drawer;
-        const rows = model.rows.map((row) =>
-          row.section === section && row.id === id ? evo(row, { deleted: () => true }) : row,
+        const withRows = evolveSection(model, section, (data) =>
+          mapSectionRows(data, (rows) =>
+            rows.map((row) => (row.id === id ? evo(row, { deleted: () => true }) : row)),
+          ),
         );
         return [
-          evo(model, { rows: () => rows, drawer: () => DrawerClosed.make({}) }),
+          evo(withRows, { drawer: () => DrawerClosed.make({}) }),
           [Navigate({ url: sectionRouter({ section }) })],
         ];
       },
@@ -724,84 +792,68 @@ export const update = (
       FailedMountChart: ({ reason }) => [evo(model, { chartError: () => reason }), []],
       CompletedSyncChart: () => [model, []],
       FailedSyncChart: ({ reason }) => [evo(model, { chartError: () => reason }), []],
-      // Each page replaces the previous one's rows rather than appending —
-      // pagination shows one page of players at a time, not the running total.
+      // A fetched page replaces the section's rows (one page at a time, not the
+      // running total). settle folds the result into the AsyncData: success →
+      // Success, failure → Failure or, if a prior page is still shown, Stale.
       SucceededFetchPlayers: ({ entries, total }) => [
         evo(model, {
-          rows: (rows) => [...rows.filter((row) => row.section !== 'players'), ...entries],
-          playersRequest: () => 'loaded',
+          players: () => SectionData.Success({ data: entries }),
           playersTotal: () => total,
         }),
         [],
       ],
       FailedFetchPlayers: ({ reason }) => [
-        evo(model, { playersRequest: () => 'failed', playersError: () => reason }),
+        evo(model, { players: () => AsyncData.settle(model.players, Result.fail(reason)) }),
         [],
       ],
-      ClickedRetryPlayers: () => [
-        evo(model, { playersRequest: () => 'loading', playersError: () => '' }),
-        [FetchPlayers({ page: model.playersPage }), FetchHealth()],
-      ],
+      ClickedRetryPlayers: () =>
+        retrySection(model, 'players', [FetchPlayers({ page: model.playersPage }), FetchHealth()]),
       ClickedPlayersPage: ({ page }) => [
-        evo(model, { playersRequest: () => 'loading', playersPage: () => page }),
+        evo(model, {
+          players: (data) => Option.getOrElse(AsyncData.revalidateOrLoad(data), () => data),
+          playersPage: () => page,
+        }),
         [FetchPlayers({ page })],
       ],
       ClickedClientPage: ({ page }) => [evo(model, { clientPage: () => page }), []],
-      // Replaces rather than appends — otherwise a Refresh (or a record
-      // fetched by id just before this resolves) would leave duplicate rows.
       SucceededFetchClubs: ({ entries }) => [
-        evo(model, {
-          rows: (rows) => [...rows.filter((row) => row.section !== 'clubs'), ...entries],
-          clubsRequest: () => 'loaded',
-        }),
+        evo(model, { clubs: () => SectionData.Success({ data: entries }) }),
         [],
       ],
       FailedFetchClubs: ({ reason }) => [
-        evo(model, { clubsRequest: () => 'failed', clubsError: () => reason }),
+        evo(model, { clubs: () => AsyncData.settle(model.clubs, Result.fail(reason)) }),
         [],
       ],
-      ClickedRetryClubs: () => [
-        evo(model, { clubsRequest: () => 'loading', clubsError: () => '' }),
-        [FetchClubs(), FetchHealth()],
-      ],
+      ClickedRetryClubs: () => retrySection(model, 'clubs', [FetchClubs(), FetchHealth()]),
       SucceededFetchNationals: ({ entries }) => [
-        evo(model, {
-          rows: (rows) => [...rows.filter((row) => row.section !== 'nationals'), ...entries],
-          nationalsRequest: () => 'loaded',
-        }),
+        evo(model, { nationals: () => SectionData.Success({ data: entries }) }),
         [],
       ],
       FailedFetchNationals: ({ reason }) => [
-        evo(model, { nationalsRequest: () => 'failed', nationalsError: () => reason }),
+        evo(model, { nationals: () => AsyncData.settle(model.nationals, Result.fail(reason)) }),
         [],
       ],
-      ClickedRetryNationals: () => [
-        evo(model, { nationalsRequest: () => 'loading', nationalsError: () => '' }),
-        [FetchNationals(), FetchHealth()],
-      ],
+      ClickedRetryNationals: () =>
+        retrySection(model, 'nationals', [FetchNationals(), FetchHealth()]),
+      // Competitions landing re-resolves the already-loaded editions' names
+      // (the reverse of the race handled in SucceededFetchEditions).
       SucceededFetchCompetitions: ({ entries }) => [
         evo(model, {
-          rows: (rows) =>
-            withResolvedEditionCompetitionNames([
-              ...rows.filter((row) => row.section !== 'competitions'),
-              ...entries,
-            ]),
-          competitionsRequest: () => 'loaded',
+          competitions: () => SectionData.Success({ data: entries }),
+          editions: (data) => mapSectionRows(data, (rows) => resolveEditionNames(rows, entries)),
         }),
         [],
       ],
       FailedFetchCompetitions: ({ reason }) => [
-        evo(model, { competitionsRequest: () => 'failed', competitionsError: () => reason }),
+        evo(model, {
+          competitions: () => AsyncData.settle(model.competitions, Result.fail(reason)),
+        }),
         [],
       ],
-      ClickedRetryCompetitions: () => [
-        evo(model, { competitionsRequest: () => 'loading', competitionsError: () => '' }),
-        [FetchCompetitions(), FetchHealth()],
-      ],
-      // The "Competition" column starts as the raw id and gets resolved to a
-      // name below by withResolvedEditionCompetitionNames — immediately if
-      // Competitions already loaded, otherwise once it does (see
-      // SucceededFetchCompetitions, which re-resolves for the reverse race).
+      ClickedRetryCompetitions: () =>
+        retrySection(model, 'competitions', [FetchCompetitions(), FetchHealth()]),
+      // Each edition's "Competition" column is resolved from the competitions
+      // rows now if they're loaded, otherwise once they land (see above).
       SucceededFetchEditions: ({ editions }) => {
         const entries: ReadonlyArray<Entry> = editions.map((edition) => ({
           section: 'editions' as const,
@@ -810,56 +862,44 @@ export const update = (
           parentId: edition.competitionId,
           values: editionToRow(edition, edition.competitionId),
         }));
-        return [
-          evo(model, {
-            rows: (rows) =>
-              withResolvedEditionCompetitionNames([
-                ...rows.filter((row) => row.section !== 'editions'),
-                ...entries,
-              ]),
-            editionsRequest: () => 'loaded',
-          }),
-          [],
-        ];
+        const resolved = resolveEditionNames(entries, sectionRows(model, 'competitions'));
+        return [evo(model, { editions: () => SectionData.Success({ data: resolved }) }), []];
       },
       FailedFetchEditions: ({ reason }) => [
-        evo(model, { editionsRequest: () => 'failed', editionsError: () => reason }),
+        evo(model, { editions: () => AsyncData.settle(model.editions, Result.fail(reason)) }),
         [],
       ],
-      ClickedRetryEditions: () => [
-        evo(model, { editionsRequest: () => 'loading', editionsError: () => '' }),
-        [FetchEditions(), FetchHealth()],
-      ],
+      ClickedRetryEditions: () => retrySection(model, 'editions', [FetchEditions(), FetchHealth()]),
       SucceededFetchAssociations: ({ entries }) => [
-        evo(model, {
-          rows: (rows) => [...rows.filter((row) => row.section !== 'associations'), ...entries],
-          associationsRequest: () => 'loaded',
-        }),
+        evo(model, { associations: () => SectionData.Success({ data: entries }) }),
         [],
       ],
       FailedFetchAssociations: ({ reason }) => [
-        evo(model, { associationsRequest: () => 'failed', associationsError: () => reason }),
-        [],
-      ],
-      ClickedRetryAssociations: () => [
-        evo(model, { associationsRequest: () => 'loading', associationsError: () => '' }),
-        [FetchAssociations(), FetchHealth()],
-      ],
-      SucceededFetchParticipations: ({ participations }) => [
         evo(model, {
-          participations: () => participations,
-          participationsRequest: () => 'loaded',
+          associations: () => AsyncData.settle(model.associations, Result.fail(reason)),
         }),
         [],
       ],
-      FailedFetchParticipations: ({ reason }) => [
-        evo(model, { participationsRequest: () => 'failed', participationsError: () => reason }),
+      ClickedRetryAssociations: () =>
+        retrySection(model, 'associations', [FetchAssociations(), FetchHealth()]),
+      SucceededFetchParticipations: ({ participations }) => [
+        evo(model, { participations: () => ParticipationsData.Success({ data: participations }) }),
         [],
       ],
-      ClickedRetryParticipations: () => [
-        evo(model, { participationsRequest: () => 'loading', participationsError: () => '' }),
-        [FetchParticipations(), FetchHealth()],
+      FailedFetchParticipations: ({ reason }) => [
+        evo(model, {
+          participations: () => AsyncData.settle(model.participations, Result.fail(reason)),
+        }),
+        [],
       ],
+      ClickedRetryParticipations: () =>
+        Option.match(AsyncData.revalidateOrLoad(model.participations), {
+          onNone: () => [model, []],
+          onSome: (next) => [
+            evo(model, { participations: () => next }),
+            [FetchParticipations(), FetchHealth()],
+          ],
+        }),
       SucceededFetchHealth: () => [evo(model, { serverHealth: () => 'ok' }), []],
       FailedFetchHealth: () => [evo(model, { serverHealth: () => 'down' }), []],
       // Internal anchor clicks (e.g. the decorative "Forgot password?" link)
@@ -879,14 +919,16 @@ export const update = (
       CompletedNavigate: () => [model, []],
       CompletedLoad: () => [model, []],
       // The record wasn't in the currently loaded list, so it was fetched
-      // directly by id — open its drawer now that we have it.
+      // directly by id — insert it into its section and open its drawer.
       SucceededFetchTeamById: ({ entry }) => [
-        evo(model, {
-          rows: (rows) => upsertEntry(rows, entry),
-          drawer: () => editRecord(entry),
-          chartError: () => '',
-          linkError: () => '',
-        }),
+        evo(
+          evolveSection(model, entry.section, (data) => upsertRecord(data, entry)),
+          {
+            drawer: () => editRecord(entry),
+            chartError: () => '',
+            linkError: () => '',
+          },
+        ),
         [],
       ],
       FailedFetchTeamById: ({ reason }) => [evo(model, { linkError: () => reason }), []],
@@ -1658,7 +1700,7 @@ const dashboardHome = (model: Model): Html => {
   const account = model.email.length > 0 ? model.email : 'editor';
 
   const countFor = (section: Section): number =>
-    model.rows.filter((row) => row.section === section && !row.deleted).length;
+    sectionRows(model, section).filter((row) => !row.deleted).length;
 
   const card = (section: Section): Html => {
     const count = countFor(section);
@@ -1691,9 +1733,12 @@ const content = (model: Model): Html => {
   const filterColumns = columns.map((column, index) => ({ column, index })).slice(1);
   const query = model.search.trim().toLowerCase();
 
-  const entries = model.rows
-    .map((entry, index) => ({ entry, index }))
-    .filter(({ entry }) => entry.section === current && !entry.deleted);
+  // The current section's loaded rows (its AsyncData Success payload), minus
+  // soft-deleted ones. Kept in the `{ entry, index }` shape the filter and
+  // pagination chain below expects.
+  const entries = sectionRows(model, current)
+    .filter((entry) => !entry.deleted)
+    .map((entry, index) => ({ entry, index }));
 
   const optionsFor = (columnIndex: number) =>
     [...new Set(entries.map(({ entry }) => entry.values[columnIndex] ?? ''))].sort();
@@ -1838,42 +1883,24 @@ const content = (model: Model): Html => {
     );
   };
 
-  // Every section is backed by the real API.
-  const apiSectionStatus: Partial<
-    Record<
-      Section,
-      { readonly request: RequestStatus; readonly error: string; readonly retry: Message }
-    >
-  > = {
-    players: {
-      request: model.playersRequest,
-      error: model.playersError,
-      retry: ClickedRetryPlayers(),
-    },
-    clubs: { request: model.clubsRequest, error: model.clubsError, retry: ClickedRetryClubs() },
-    nationals: {
-      request: model.nationalsRequest,
-      error: model.nationalsError,
-      retry: ClickedRetryNationals(),
-    },
-    competitions: {
-      request: model.competitionsRequest,
-      error: model.competitionsError,
-      retry: ClickedRetryCompetitions(),
-    },
-    editions: {
-      request: model.editionsRequest,
-      error: model.editionsError,
-      retry: ClickedRetryEditions(),
-    },
-    associations: {
-      request: model.associationsRequest,
-      error: model.associationsError,
-      retry: ClickedRetryAssociations(),
-    },
+  // Every section is backed by the real API; its state drives the skeleton,
+  // the failure banner, and the Refresh control.
+  const retryBySection: Record<Section, Message> = {
+    players: ClickedRetryPlayers(),
+    clubs: ClickedRetryClubs(),
+    nationals: ClickedRetryNationals(),
+    competitions: ClickedRetryCompetitions(),
+    editions: ClickedRetryEditions(),
+    associations: ClickedRetryAssociations(),
   };
-  const status = apiSectionStatus[current];
-  const showSkeleton = status?.request === 'loading';
+  const sectionState = model[current];
+  const retry = retryBySection[current];
+  const pending = AsyncData.isPending(sectionState);
+  // Skeleton only on a cold load (no data yet); a Refreshing reload keeps the
+  // current rows on screen (stale-while-revalidate).
+  const showSkeleton = sectionState._tag === 'Loading';
+  // A failure with no data to fall back on — Stale keeps its rows instead.
+  const failureError = sectionState._tag === 'Failure' ? sectionState.error : '';
 
   const skeletonBar = (widthClass: string): Html =>
     h.div([h.Class(`h-3 rounded bg-neutral-200 ${widthClass}`)], []);
@@ -1905,10 +1932,10 @@ const content = (model: Model): Html => {
 
   const pagination = (): Html => {
     if (current === 'players') {
-      if (model.playersRequest === 'idle') return h.div([], []);
+      if (model.players._tag === 'Idle') return h.div([], []);
       const totalPages = Math.max(1, Math.ceil(model.playersTotal / PAGE_SIZE));
       const page = model.playersPage;
-      const busy = model.playersRequest === 'loading';
+      const busy = AsyncData.isPending(model.players);
 
       return h.div(
         [h.Class('mt-6 flex items-center justify-between border-t border-neutral-200 pt-4')],
@@ -1957,7 +1984,7 @@ const content = (model: Model): Html => {
   };
 
   const sectionStatusBanner = (): Html => {
-    if (!status || status.request !== 'failed') return h.div([], []);
+    if (sectionState._tag !== 'Failure') return h.div([], []);
     return h.div(
       [
         h.Class(
@@ -1967,9 +1994,9 @@ const content = (model: Model): Html => {
       [
         h.span(
           [h.Class('text-sm text-rose-700')],
-          [`Couldn't load ${label.toLowerCase()}: ${status.error}`],
+          [`Couldn't load ${label.toLowerCase()}: ${failureError}`],
         ),
-        h.button([h.OnClick(status.retry), h.Class(retryButtonStyle)], ['Retry']),
+        h.button([h.OnClick(retry), h.Class(retryButtonStyle)], ['Retry']),
       ],
     );
   };
@@ -2017,38 +2044,24 @@ const content = (model: Model): Html => {
               // Only sections backed by the real API have anything to refresh.
               // The left segment is just a health diode (from GET /health) —
               // not clickable; only the label on the right triggers a refetch.
-              status
-                ? h.div(
-                    [h.Class(refreshControlStyle)],
+              h.div(
+                [h.Class(refreshControlStyle)],
+                [
+                  h.span(
                     [
-                      h.span(
-                        [
-                          h.AriaLabel(
-                            model.serverHealth === 'down'
-                              ? 'Server unreachable'
-                              : 'Server reachable',
-                          ),
-                          h.Class(`${diodeStyle} ${diodeColorStyle[model.serverHealth]}`),
-                        ],
-                        [],
+                      h.AriaLabel(
+                        model.serverHealth === 'down' ? 'Server unreachable' : 'Server reachable',
                       ),
-                      h.button(
-                        [
-                          h.OnClick(status.retry),
-                          h.Disabled(status.request === 'loading'),
-                          h.Class(refreshButtonStyle),
-                        ],
-                        [
-                          status.request === 'loading'
-                            ? 'Refreshing…'
-                            : model.serverHealth === 'down'
-                              ? 'Retry'
-                              : 'Refresh',
-                        ],
-                      ),
+                      h.Class(`${diodeStyle} ${diodeColorStyle[model.serverHealth]}`),
                     ],
-                  )
-                : h.div([], []),
+                    [],
+                  ),
+                  h.button(
+                    [h.OnClick(retry), h.Disabled(pending), h.Class(refreshButtonStyle)],
+                    [pending ? 'Refreshing…' : model.serverHealth === 'down' ? 'Retry' : 'Refresh'],
+                  ),
+                ],
+              ),
               h.button([h.OnClick(ClickedAddNew()), h.Class(addNewStyle)], ['+ Add new']),
             ],
           ),
@@ -2143,8 +2156,8 @@ const drawer = (model: Model): Html => {
     // A competition's own editions, each opening its own drawer on click.
     const editionsList = (): Html => {
       if (!isCompetition) return h.div([], []);
-      const editions = model.rows.filter(
-        (row) => row.section === 'editions' && row.parentId === entry.id && !row.deleted,
+      const editions = sectionRows(model, 'editions').filter(
+        (row) => row.parentId === entry.id && !row.deleted,
       );
 
       return h.div(
@@ -2175,7 +2188,7 @@ const drawer = (model: Model): Html => {
     const participatingTeamsList = (): Html => {
       if (!isEdition) return h.div([], []);
 
-      if (model.participationsRequest === 'failed') {
+      if (model.participations._tag === 'Failure') {
         return h.div(
           [h.Class('flex flex-col gap-2')],
           [
@@ -2183,7 +2196,7 @@ const drawer = (model: Model): Html => {
             h.div(
               [h.Class('flex flex-wrap items-center gap-3 text-sm text-rose-700')],
               [
-                h.span([], [`Couldn't load teams: ${model.participationsError}`]),
+                h.span([], [`Couldn't load teams: ${model.participations.error}`]),
                 h.button(
                   [h.OnClick(ClickedRetryParticipations()), h.Class(retryButtonStyle)],
                   ['Retry'],
@@ -2194,7 +2207,7 @@ const drawer = (model: Model): Html => {
         );
       }
 
-      if (model.participationsRequest === 'loading' || model.participationsRequest === 'idle') {
+      if (!AsyncData.hasData(model.participations)) {
         return h.div(
           [h.Class('flex flex-col gap-2')],
           [
@@ -2205,15 +2218,12 @@ const drawer = (model: Model): Html => {
       }
 
       const teamIds = new Set(
-        model.participations
+        Option.getOrElse(AsyncData.getData(model.participations), () => [])
           .filter((participation) => participation.editionId === entry.id)
           .map((participation) => participation.teamId),
       );
-      const teams = model.rows.filter(
-        (row) =>
-          (row.section === 'clubs' || row.section === 'nationals') &&
-          teamIds.has(row.id) &&
-          !row.deleted,
+      const teams = [...sectionRows(model, 'clubs'), ...sectionRows(model, 'nationals')].filter(
+        (row) => teamIds.has(row.id) && !row.deleted,
       );
 
       return h.div(

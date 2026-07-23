@@ -1,7 +1,14 @@
-import { Story } from 'foldkit';
+import { Option } from 'effect';
+import { AsyncData, Story } from 'foldkit';
 import { expect, test } from 'vitest';
 
-import { playerRecordModel, sampleClub, samplePlayer, signedOutModel } from './main.fixtures';
+import {
+  playerRecordModel,
+  playersListModel,
+  sampleClub,
+  samplePlayer,
+  signedOutModel,
+} from './main.fixtures';
 import {
   CHART_HOST_ID,
   ClickedPlayersPage,
@@ -10,6 +17,8 @@ import {
   ClickedSignIn,
   CompletedNavigate,
   DrawerEditing,
+  ParticipationsData,
+  SectionData,
   CompletedSyncChart,
   FailedFetchAssociations,
   FailedFetchClubs,
@@ -48,17 +57,23 @@ import {
 } from './main';
 
 // A model with every section mid-flight — the state each Failed* handler acts
-// on. (`signedOutModel` starts every request 'idle'.)
+// on. (`signedOutModel` starts every section Idle.)
 const loadingModel = {
   ...signedOutModel,
   signedIn: true,
-  playersRequest: 'loading' as const,
-  clubsRequest: 'loading' as const,
-  nationalsRequest: 'loading' as const,
-  competitionsRequest: 'loading' as const,
-  editionsRequest: 'loading' as const,
-  associationsRequest: 'loading' as const,
-  participationsRequest: 'loading' as const,
+  players: SectionData.Loading(),
+  clubs: SectionData.Loading(),
+  nationals: SectionData.Loading(),
+  competitions: SectionData.Loading(),
+  editions: SectionData.Loading(),
+  associations: SectionData.Loading(),
+  participations: ParticipationsData.Loading(),
+};
+
+// Asserts a section is in Failure with the given error.
+const expectFailure = (data: SectionData, error: string): void => {
+  expect(data._tag).toBe('Failure');
+  if (data._tag === 'Failure') expect(data.error).toBe(error);
 };
 
 test('signing in fans out one fetch per section, and each success loads it', () => {
@@ -68,8 +83,8 @@ test('signing in fans out one fetch per section, and each success loads it', () 
     Story.message(ClickedSignIn()),
     Story.model((model) => {
       expect(model.signedIn).toBe(true);
-      expect(model.playersRequest).toBe('loading');
-      expect(model.clubsRequest).toBe('loading');
+      expect(model.players._tag).toBe('Loading');
+      expect(model.clubs._tag).toBe('Loading');
     }),
     // The whole idle fleet is dispatched, plus the health probe.
     Story.Command.expectExact(
@@ -82,7 +97,7 @@ test('signing in fans out one fetch per section, and each success loads it', () 
       FetchParticipations,
       FetchHealth,
     ),
-    // Every fallible fetch's SUCCESS path — each flips its request to 'loaded'.
+    // Every fallible fetch's SUCCESS path — each settles into Success.
     Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 0 })),
     Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [] })),
     Story.Command.resolve(FetchNationals, SucceededFetchNationals({ entries: [] })),
@@ -95,22 +110,22 @@ test('signing in fans out one fetch per section, and each success loads it', () 
     ),
     Story.Command.resolve(FetchHealth, SucceededFetchHealth()),
     Story.model((model) => {
-      expect(model.playersRequest).toBe('loaded');
-      expect(model.clubsRequest).toBe('loaded');
-      expect(model.nationalsRequest).toBe('loaded');
-      expect(model.competitionsRequest).toBe('loaded');
-      expect(model.editionsRequest).toBe('loaded');
-      expect(model.associationsRequest).toBe('loaded');
-      expect(model.participationsRequest).toBe('loaded');
+      expect(model.players._tag).toBe('Success');
+      expect(model.clubs._tag).toBe('Success');
+      expect(model.nationals._tag).toBe('Success');
+      expect(model.competitions._tag).toBe('Success');
+      expect(model.editions._tag).toBe('Success');
+      expect(model.associations._tag).toBe('Success');
+      expect(model.participations._tag).toBe('Success');
       expect(model.serverHealth).toBe('ok');
     }),
   );
 });
 
-test('a successful players fetch replaces only the players rows and records the total', () => {
+test('a successful players fetch loads its rows and records the total', () => {
   Story.story(
     update,
-    Story.with({ ...signedOutModel, signedIn: true, playersRequest: 'loading' as const }),
+    Story.with({ ...signedOutModel, signedIn: true, players: SectionData.Loading() }),
     Story.message(
       SucceededFetchPlayers({
         entries: [
@@ -126,15 +141,15 @@ test('a successful players fetch replaces only the players rows and records the 
       }),
     ),
     Story.model((model) => {
-      expect(model.playersRequest).toBe('loaded');
+      expect(model.players._tag).toBe('Success');
+      expect(Option.getOrElse(AsyncData.getData(model.players), () => [])).toHaveLength(1);
       expect(model.playersTotal).toBe(42);
-      expect(model.rows).toHaveLength(1);
     }),
     Story.Command.expectNone(),
   );
 });
 
-test('every fetch FAILURE flips its section to failed and records the reason', () => {
+test('every fetch FAILURE settles the section into Failure with the reason', () => {
   Story.story(
     update,
     Story.with(loadingModel),
@@ -147,14 +162,13 @@ test('every fetch FAILURE flips its section to failed and records the reason', (
     Story.message(FailedFetchParticipations({ reason: 'participations down' })),
     Story.message(FailedFetchHealth({ reason: 'health down' })),
     Story.model((model) => {
-      expect(model.playersRequest).toBe('failed');
-      expect(model.playersError).toBe('players down');
-      expect(model.clubsRequest).toBe('failed');
-      expect(model.nationalsRequest).toBe('failed');
-      expect(model.competitionsRequest).toBe('failed');
-      expect(model.editionsRequest).toBe('failed');
-      expect(model.associationsRequest).toBe('failed');
-      expect(model.participationsRequest).toBe('failed');
+      expectFailure(model.players, 'players down');
+      expectFailure(model.clubs, 'clubs down');
+      expectFailure(model.nationals, 'nationals down');
+      expectFailure(model.competitions, 'competitions down');
+      expectFailure(model.editions, 'editions down');
+      expectFailure(model.associations, 'associations down');
+      expect(model.participations._tag).toBe('Failure');
       // A failed health probe reads as the backend being down.
       expect(model.serverHealth).toBe('down');
     }),
@@ -162,14 +176,14 @@ test('every fetch FAILURE flips its section to failed and records the reason', (
   );
 });
 
-test('retrying players re-fetches the page and re-probes health', () => {
+test('retrying a failed section reloads it and re-probes health', () => {
   Story.story(
     update,
-    Story.with({ ...loadingModel, playersRequest: 'failed' as const, playersError: 'boom' }),
+    Story.with({ ...loadingModel, players: SectionData.Failure({ error: 'boom' }) }),
     Story.message(ClickedRetryPlayers()),
     Story.model((model) => {
-      expect(model.playersRequest).toBe('loading');
-      expect(model.playersError).toBe('');
+      // Failure has no data to keep, so a retry starts a fresh Loading.
+      expect(model.players._tag).toBe('Loading');
     }),
     Story.Command.expectExact(FetchPlayers, FetchHealth),
     Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 0 })),
@@ -177,14 +191,16 @@ test('retrying players re-fetches the page and re-probes health', () => {
   );
 });
 
-test('paging the players list fetches the requested page', () => {
+test('paging the players list revalidates while keeping the current page', () => {
   Story.story(
     update,
-    Story.with({ ...signedOutModel, signedIn: true, showDashboard: false }),
+    // playersListModel holds a loaded page, so paging goes to Refreshing
+    // (stale-while-revalidate) rather than discarding the rows.
+    Story.with(playersListModel),
     Story.message(ClickedPlayersPage({ page: 3 })),
     Story.model((model) => {
       expect(model.playersPage).toBe(3);
-      expect(model.playersRequest).toBe('loading');
+      expect(model.players._tag).toBe('Refreshing');
     }),
     Story.Command.expectHas(FetchPlayers),
     Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 0 })),
@@ -197,7 +213,11 @@ test('a deep-linked team resolves by id, upserts the row, and opens its drawer',
     Story.with({ ...signedOutModel, signedIn: true, showDashboard: false, section: 'clubs' }),
     Story.message(SucceededFetchTeamById({ entry: sampleClub })),
     Story.model((model) => {
-      expect(model.rows.some((row) => row.id === sampleClub.id)).toBe(true);
+      expect(
+        Option.getOrElse(AsyncData.getData(model.clubs), () => []).some(
+          (row) => row.id === sampleClub.id,
+        ),
+      ).toBe(true);
       // The drawer opens on the resolved record, addressed by id.
       expect(model.drawer._tag).toBe('Editing');
       if (model.drawer._tag === 'Editing') {

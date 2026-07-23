@@ -1,4 +1,4 @@
-import { DrawerClosed, DrawerEditing, Entry, Model } from './main';
+import { DrawerClosed, DrawerEditing, Entry, Model, ParticipationsData, SectionData } from './main';
 
 // A single player record — enough columns to fill the drawer's fields and feed
 // the stats chart. `values` line up with `playerColumns`; extras are ignored
@@ -29,28 +29,19 @@ export const signedOutModel = Model.make({
   menuOpen: false,
   search: '',
   filters: [],
-  rows: [],
   drawer: DrawerClosed.make({}),
   nextLocalId: 1,
   editLog: [],
   chartError: '',
-  playersRequest: 'idle',
-  playersError: '',
+  players: SectionData.Idle(),
+  clubs: SectionData.Idle(),
+  nationals: SectionData.Idle(),
+  competitions: SectionData.Idle(),
+  editions: SectionData.Idle(),
+  associations: SectionData.Idle(),
+  participations: ParticipationsData.Idle(),
   playersPage: 1,
   playersTotal: 0,
-  clubsRequest: 'idle',
-  clubsError: '',
-  nationalsRequest: 'idle',
-  nationalsError: '',
-  competitionsRequest: 'idle',
-  competitionsError: '',
-  editionsRequest: 'idle',
-  editionsError: '',
-  associationsRequest: 'idle',
-  associationsError: '',
-  participations: [],
-  participationsRequest: 'idle',
-  participationsError: '',
   serverHealth: 'unknown',
   clientPage: 1,
   linkError: '',
@@ -67,15 +58,14 @@ export const playersListModel = Model.make({
   signedIn: true,
   showDashboard: false,
   section: 'players',
-  rows: [samplePlayer],
-  playersRequest: 'loaded',
+  players: SectionData.Success({ data: [samplePlayer] }),
   playersTotal: 1,
   serverHealth: 'ok',
 });
 
 // Signed in with a player record open in the drawer's Overview tab — the state
 // that mounts the stats chart (a non-team record, so only the single host). The
-// drawer addresses the record by id, resolved against `rows`.
+// drawer addresses the record by id, resolved against the players section.
 export const playerRecordModel = Model.make({
   ...playersListModel,
   drawer: DrawerEditing.make({
