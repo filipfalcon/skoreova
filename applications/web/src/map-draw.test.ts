@@ -83,16 +83,19 @@ test('the draw survives a model re-render mid-flight', async () => {
   // svg. The borders must stay fully drawn afterwards. (This used to toggle
   // a land checkbox; the region-toggle mechanism was removed.)
   const chip = (label: string): HTMLElement => {
-    const found = [...document.querySelectorAll<HTMLElement>('#across-the-lands button')].find(
-      (candidate) => candidate.textContent?.trim() === label,
-    );
+    const found = [
+      ...document.querySelectorAll<HTMLElement>('#across-the-lands [role="radio"]'),
+    ].find((candidate) => candidate.textContent?.trim() === label);
     if (!found) throw new Error(`${label} chip not rendered`);
     return found;
   };
+  // The league filter is a radiogroup now; selection shows through
+  // aria-checked, not a class (the active color is a static data-[checked]
+  // variant that is always present in the class string).
   chip('First League').click();
-  await waitUntil(() => chip('First League').className.includes('bg-pink'));
+  await waitUntil(() => chip('First League').getAttribute('aria-checked') === 'true');
   chip('All clubs').click();
-  await waitUntil(() => chip('All clubs').className.includes('bg-pink'));
+  await waitUntil(() => chip('All clubs').getAttribute('aria-checked') === 'true');
 
   await new Promise((resolve) => setTimeout(resolve, 400));
   expect(svg.classList.contains('is-in')).toBe(true);

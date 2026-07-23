@@ -1,4 +1,5 @@
-import { Effect, Match as M, Schema as S, Stream } from 'effect';
+import { Effect, Match as M, Option, Schema as S, Stream } from 'effect';
+import { RadioGroup } from '@foldkit/ui';
 import type { Runtime } from 'foldkit';
 import { Command, Subscription } from 'foldkit';
 import type { Document, Html } from 'foldkit/html';
@@ -3899,26 +3900,51 @@ const clubPin = (model: Model, club: Club): Html => {
   );
 };
 
-// One option of the map's league filter.
-const mapLeagueChip = (model: Model, league: MapLeague, label: string): Html =>
-  h.button(
-    [
-      h.Type('button'),
-      h.OnClick(SelectedMapLeague({ league })),
-      // Compact on phones so all three fit one row (incl. the tighter
-      // tracking — the canonical 0.2em wraps the row); from `md` up the
-      // chips match the outlined-button spec (border-2 + text-xs — the
-      // UEFA strategy link is the reference).
-      h.Class(
-        `cursor-pointer border px-2 py-1.5 text-[10px] tracking-[0.15em] uppercase transition-colors duration-300 md:border-2 md:px-4 md:py-2 md:text-xs md:tracking-[0.2em] ${
-          model.mapLeague === league
-            ? 'border-pink bg-pink text-ink'
-            : 'border-paper text-paper hover:border-pink'
-        }`,
+const MAP_LEAGUE_LABELS: Record<MapLeague, string> = {
+  all: 'All clubs',
+  first: 'First League',
+  second: 'Second League',
+};
+
+// The map's league filter: three mutually-exclusive options, so a real
+// radiogroup rather than a row of independent buttons (arrow-key roving and
+// the radio semantics come from the component). The selected state is
+// color-only visually, driven by the `data-checked` the component sets.
+const mapLeagueFilter = (model: Model): Html =>
+  RadioGroup.view<MapLeague, Message>({
+    id: 'map-league-filter',
+    selectedValue: Option.some(model.mapLeague),
+    options: ['all', 'first', 'second'],
+    ariaLabel: 'Filter clubs by league',
+    onSelect: (league) => SelectedMapLeague({ league }),
+    toView: ({ group, options }) =>
+      h.div(
+        [
+          ...group,
+          // Centered on phones (one row, all three side by side); right-aligned
+          // to the stage from md, where it reads as a map control.
+          h.Class(
+            'mx-auto mt-10 flex max-w-5xl flex-wrap justify-center gap-1.5 md:mt-14 md:justify-end md:gap-2',
+          ),
+          h.DataAttribute('reveal', 'up'),
+        ],
+        options.map((option) =>
+          h.div(
+            [
+              ...option.option,
+              // Compact on phones so all three fit one row (incl. the tighter
+              // tracking — the canonical 0.2em wraps the row); from `md` up the
+              // chips match the outlined-button spec (border-2 + text-xs — the
+              // UEFA strategy link is the reference).
+              h.Class(
+                'cursor-pointer border border-paper px-2 py-1.5 text-[10px] tracking-[0.15em] text-paper uppercase transition-colors duration-300 hover:border-pink md:border-2 md:px-4 md:py-2 md:text-xs md:tracking-[0.2em] data-[checked]:border-pink data-[checked]:bg-pink data-[checked]:text-ink',
+              ),
+            ],
+            [MAP_LEAGUE_LABELS[option.value]],
+          ),
+        ),
       ),
-    ],
-    [label],
-  );
+  });
 
 const clubsView = (model: Model): Html =>
   h.section(
@@ -4156,22 +4182,7 @@ const clubsView = (model: Model): Html =>
               // it floated orphaned in the section's landing frame (the menu
               // jump shows the head of the section while the map it controls
               // is still below the fold).
-              h.div(
-                [
-                  h.Class(
-                    // Centered on phones (one row, all three side by side);
-                    // right-aligned to the stage from md, where it reads as
-                    // a map control.
-                    'mx-auto mt-10 flex max-w-5xl flex-wrap justify-center gap-1.5 md:mt-14 md:justify-end md:gap-2',
-                  ),
-                  h.DataAttribute('reveal', 'up'),
-                ],
-                [
-                  mapLeagueChip(model, 'all', 'All clubs'),
-                  mapLeagueChip(model, 'first', 'First League'),
-                  mapLeagueChip(model, 'second', 'Second League'),
-                ],
-              ),
+              mapLeagueFilter(model),
               h.div(
                 // The chips row above owns the band spacing; the stage keeps
                 // only a tight gap so the filter reads as part of the map.

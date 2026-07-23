@@ -37,12 +37,13 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.ts'],
-    // update/view/init are pure and never touch the DOM at call time (every
-    // window/document reference lives inside a Command effect, which Story and
-    // Scene intercept rather than run), so these model/view tests need no
-    // browser — a Node environment keeps them fast. The motion/scroll effects
-    // that DO need a real browser aren't exercised here.
-    environment: 'node',
+    // The app's own update/view/init never touch the DOM at call time, but the
+    // @foldkit/ui components rendered in the view do (CSS.escape when building
+    // id selectors), so scene tests run under happy-dom rather than bare Node.
+    // This matches @foldkit/ui's own test setup. The motion/scroll Command
+    // effects that need a real browser aren't exercised here — Story and Scene
+    // intercept Commands rather than run them.
+    environment: 'happy-dom',
     setupFiles: ['./src/vitest-setup.ts'],
     // Foldkit ships as ESM with subpath exports (foldkit/struct, foldkit/test/*);
     // inline it so Vitest transforms it instead of externalizing to the bun

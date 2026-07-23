@@ -62,11 +62,12 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.ts'],
-    // update/view/init are pure — every window/document/ECharts touch lives
-    // inside a Command or Mount effect, which Story and Scene intercept rather
-    // than run (the chart is never actually instantiated in a test). So these
-    // model/view tests need no browser; a Node environment keeps them fast.
-    environment: 'node',
+    // The app's own update/view/init are pure (the ECharts touch lives inside a
+    // Mount effect that Scene intercepts rather than runs), but the @foldkit/ui
+    // components rendered in the view use browser globals (CSS.escape when
+    // building id selectors), so scene tests run under happy-dom rather than
+    // bare Node. This matches @foldkit/ui's own test setup.
+    environment: 'happy-dom',
     setupFiles: ['./src/vitest-setup.ts'],
     // Foldkit and ECharts ship as ESM with subpath exports; inline them so
     // Vitest transforms them instead of externalizing to the bun isolated

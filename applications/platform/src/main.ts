@@ -1,4 +1,5 @@
-import { Effect, Match as M, Schema as S } from 'effect';
+import { Effect, Match as M, Option, Schema as S } from 'effect';
+import { Input, RadioGroup } from '@foldkit/ui';
 import type { Runtime } from 'foldkit';
 import { Command } from 'foldkit';
 import type { Document, Html } from 'foldkit/html';
@@ -1311,14 +1312,10 @@ const headerView = (model: Model): Html =>
     [
       h.div(
         [
-          // The landing's container + bar. The search is ABSOLUTELY
-          // centered (left-1/2), so it sits on the true viewport center at
-          // every width — the container is symmetric, so its center IS the
-          // viewport's. Its width backs off from the viewport edges
-          // (100vw - 45rem) so it can never collide with the brand or the
-          // account; below `lg` that formula leaves too little room to be a
-          // usable input, so the search moves to the rail under the bar
-          // (topbarView) instead.
+          // The landing's container + bar: brand on the left, account on the
+          // right. Global search will land here once the search backend
+          // exists; until then there is no control (a focusable box that
+          // does nothing is worse than none).
           h.Class(
             'relative mx-auto flex h-14 w-full max-w-7xl items-center justify-between gap-4 px-5 md:h-16 md:px-10',
           ),
@@ -1339,14 +1336,6 @@ const headerView = (model: Model): Html =>
               previewStamp(),
             ],
           ),
-          h.input([
-            h.Type('search'),
-            h.Placeholder('Search clubs, players, competitions, officials…'),
-            h.AriaLabel('Search'),
-            h.Class(
-              'absolute top-1/2 left-1/2 hidden w-[min(32rem,100vw-45rem)] -translate-x-1/2 -translate-y-1/2 border border-paper/15 bg-transparent px-4 py-2 text-sm text-paper lg:block',
-            ),
-          ]),
           accountButton(),
         ],
       ),
@@ -1385,29 +1374,6 @@ const headerView = (model: Model): Html =>
     ],
   );
 
-// The search rail below the header — the md BAND only: from `lg` the
-// search sits centered in the bar itself, and on phones there is no
-// search AT ALL for now — the preview stamp occupies the exact bar slot
-// a phone search would need.
-// TODO(prod): once the PREVIEW BUILD / WORK IN PROGRESS stamp comes off
-// the header, add the search back into the phone bar in its place.
-const topbarView = (): Html =>
-  h.div(
-    [
-      h.Class(
-        'sticky z-20 hidden items-center gap-4 border-b border-paper/10 bg-ink/85 px-10 py-4 backdrop-blur md:top-[107px] md:flex lg:hidden',
-      ),
-    ],
-    [
-      h.input([
-        h.Type('search'),
-        h.Placeholder('Search clubs, players, competitions, officials…'),
-        h.AriaLabel('Search'),
-        h.Class('w-full border border-paper/15 bg-transparent px-4 py-2 text-sm text-paper'),
-      ]),
-    ],
-  );
-
 // SCREENS
 
 const screenHeader = (model: Model, subtitle: string): Html =>
@@ -1428,21 +1394,32 @@ const screenHeader = (model: Model, subtitle: string): Html =>
     ],
   );
 
-const metricChip = (model: Model, metric: Metric): Html =>
-  h.button(
-    [
-      h.Type('button'),
-      h.OnClick(SelectedMetric({ metric })),
-      h.Class(
-        `border px-4 py-2 text-[10px] tracking-[0.2em] uppercase transition-colors ${
-          model.metric === metric
-            ? 'border-pink bg-pink text-ink'
-            : 'border-ink/15 text-ink/60 hover:border-pink hover:text-ink'
-        }`,
+// The chart studio's metric selector: three mutually-exclusive options, so a
+// real radiogroup rather than a row of independent buttons. Selected state is
+// color-only, driven by the `data-checked` the component sets.
+const metricRadioGroup = (model: Model): Html =>
+  RadioGroup.view<Metric, Message>({
+    id: 'chart-studio-metric',
+    selectedValue: Option.some(model.metric),
+    options: ['goals', 'attendance', 'conversion'],
+    ariaLabel: 'Chart metric',
+    onSelect: (metric) => SelectedMetric({ metric }),
+    toView: ({ group, options }) =>
+      h.div(
+        [...group, h.Class('mt-6 flex flex-wrap gap-2')],
+        options.map((option) =>
+          h.div(
+            [
+              ...option.option,
+              h.Class(
+                'cursor-pointer border border-ink/15 px-4 py-2 text-[10px] tracking-[0.2em] text-ink/60 uppercase transition-colors hover:border-pink hover:text-ink data-[checked]:border-pink data-[checked]:bg-pink data-[checked]:text-ink',
+              ),
+            ],
+            [metricSeries[option.value].label],
+          ),
+        ),
       ),
-    ],
-    [metricSeries[metric].label],
-  );
+  });
 
 // The studio chart: 14 matchday bars, three faint gridlines, and a dashed
 // season-average line. Pure SVG — the real chart engine replaces this.
@@ -1559,10 +1536,7 @@ const chartStudioPanel = (model: Model): Html =>
           ),
         ],
       ),
-      h.div(
-        [h.Class('mt-6 flex flex-wrap gap-2')],
-        (['goals', 'attendance', 'conversion'] as const).map((metric) => metricChip(model, metric)),
-      ),
+      metricRadioGroup(model),
       // Keyed by metric so the bars replay their grow-in on every switch.
       h.div([h.Key(model.metric)], [studioChart(metricSeries[model.metric])]),
     ],
@@ -2997,16 +2971,29 @@ const clubsScreen = (model: Model): Html => {
       // visual "you are here".
       h.h1([h.Class('sr-only')], ['Clubs']),
       europeanContenders(model),
-      h.input([
-        h.Type('search'),
-        h.Placeholder('Search clubs…'),
-        h.AriaLabel('Search clubs'),
-        h.Value(model.clubQuery),
-        h.OnInput((value: string) => ChangedClubQuery({ query: value })),
-        h.Class(
-          'mt-10 w-full border-2 border-ink/15 bg-transparent px-5 py-3.5 text-base text-ink transition-colors placeholder:text-ink/35 focus:border-pink focus:outline-none',
-        ),
-      ]),
+      // The search box is unlabeled visually by design, so the real <label>
+      // is sr-only — the accessible name stays "Search clubs" without adding
+      // a visible caption above the field.
+      Input.view({
+        id: 'clubs-search',
+        type: 'search',
+        placeholder: 'Search clubs…',
+        value: model.clubQuery,
+        onInput: (value) => ChangedClubQuery({ query: value }),
+        toView: (attributes) =>
+          h.div(
+            [h.Class('mt-10')],
+            [
+              h.label([...attributes.label, h.Class('sr-only')], ['Search clubs']),
+              h.input([
+                ...attributes.input,
+                h.Class(
+                  'w-full border-2 border-ink/15 bg-transparent px-5 py-3.5 text-base text-ink transition-colors placeholder:text-ink/35 focus:border-pink focus:outline-none',
+                ),
+              ]),
+            ],
+          ),
+      }),
       ...(filtered.length === 0
         ? [
             h.p(
@@ -4113,22 +4100,40 @@ const clubCupSection = (): Html =>
     'domestic-cup',
   );
 
-const scopeChip = (model: Model, scope: ScorerScope, label: string): Html =>
-  h.button(
-    [
-      h.Type('button'),
-      h.OnClick(SelectedScorerScope({ scope })),
-      h.AriaPressed(model.scorerScope === scope ? 'true' : 'false'),
-      h.Class(
-        `cursor-pointer border px-4 py-2 text-[10px] tracking-[0.2em] uppercase transition-colors ${
-          model.scorerScope === scope
-            ? 'border-pink bg-pink text-ink'
-            : 'border-ink/20 text-ink/60 hover:border-pink hover:text-ink'
-        }`,
+// The top-scorers scope selector. These are mutually-exclusive choices (all
+// competitions, the club's league, or the cup), so a real radiogroup — not the
+// per-button AriaPressed toggle semantics this wore before, which read to a
+// screen reader as N independent toggles rather than one single-select group.
+// The 'league' label is the club's own league name, so labels come from target.
+const scopeRadioGroup = (target: Club, model: Model): Html => {
+  const labels: Record<ScorerScope, string> = {
+    all: 'All',
+    league: target.league,
+    cup: 'Domestic Cup',
+  };
+  return RadioGroup.view<ScorerScope, Message>({
+    id: 'club-top-scorers-scope',
+    selectedValue: Option.some(model.scorerScope),
+    options: ['all', 'league', 'cup'],
+    ariaLabel: 'Top-scorers competition',
+    onSelect: (scope) => SelectedScorerScope({ scope }),
+    toView: ({ group, options }) =>
+      h.div(
+        [...group, h.Class('mt-6 flex flex-wrap gap-2')],
+        options.map((option) =>
+          h.div(
+            [
+              ...option.option,
+              h.Class(
+                'cursor-pointer border border-ink/20 px-4 py-2 text-[10px] tracking-[0.2em] text-ink/60 uppercase transition-colors hover:border-pink hover:text-ink data-[checked]:border-pink data-[checked]:bg-pink data-[checked]:text-ink',
+              ),
+            ],
+            [labels[option.value]],
+          ),
+        ),
       ),
-    ],
-    [label],
-  );
+  });
+};
 
 // ONE top-scorers component, scoped by chips: all competitions, the
 // club's league, or the cup (user call).
@@ -4137,14 +4142,7 @@ const clubScorersSection = (target: Club, model: Model): Html => {
   return clubSection(
     'Top scorers',
     [
-      h.div(
-        [h.Class('mt-6 flex flex-wrap gap-2')],
-        [
-          scopeChip(model, 'all', 'All'),
-          scopeChip(model, 'league', target.league),
-          scopeChip(model, 'cup', 'Domestic Cup'),
-        ],
-      ),
+      scopeRadioGroup(target, model),
       h.ol(
         [h.Key(`scorers-${model.scorerScope}`), h.Class('screen mt-6 flex flex-col')],
         scorers.map((scorer, index) =>
@@ -4832,27 +4830,37 @@ const competitionMatchesPanel = (competition: Competition, model: Model): Html =
   );
 };
 
-// The edition picker — one chip per season, newest first, the open one
-// pink. Past editions swap the standings panel for the archive card.
-const editionChip = (competition: Competition, model: Model, target: Edition): Html => {
+// The edition picker — one chip per season, newest first, the open one pink.
+// Past editions swap the standings panel for the archive card. A real
+// radiogroup, not the per-button AriaPressed toggle it wore before (mutually
+// exclusive, so single-select). The Model stores '' for the current edition,
+// so the selected value is resolved to the real label, and a pick of the
+// current edition maps back to ''.
+const editionRadioGroup = (competition: Competition, model: Model): Html => {
   const currentLabel = competition.editions.find((entry) => entry.current)?.label ?? '';
   const openLabel = model.competitionEdition === '' ? currentLabel : model.competitionEdition;
-  const active = target.label === openLabel;
-  return h.button(
-    [
-      h.Type('button'),
-      h.OnClick(SelectedCompetitionEdition({ label: target.current ? '' : target.label })),
-      h.AriaPressed(active ? 'true' : 'false'),
-      h.Class(
-        `border px-4 py-2 text-[10px] tracking-[0.2em] uppercase transition-colors ${
-          active
-            ? 'border-pink bg-pink text-ink'
-            : 'border-ink/15 text-ink/60 hover:border-pink hover:text-ink'
-        }`,
+  return RadioGroup.view<string, Message>({
+    id: 'competition-edition',
+    selectedValue: Option.some(openLabel),
+    options: competition.editions.map((entry) => entry.label),
+    ariaLabel: 'Competition edition',
+    onSelect: (label) => SelectedCompetitionEdition({ label: label === currentLabel ? '' : label }),
+    toView: ({ group, options }) =>
+      h.div(
+        [...group, h.Class('mt-8 flex flex-wrap gap-2')],
+        options.map((option) =>
+          h.div(
+            [
+              ...option.option,
+              h.Class(
+                'cursor-pointer border border-ink/15 px-4 py-2 text-[10px] tracking-[0.2em] text-ink/60 uppercase transition-colors hover:border-pink hover:text-ink data-[checked]:border-pink data-[checked]:bg-pink data-[checked]:text-ink',
+              ),
+            ],
+            [option.value],
+          ),
+        ),
       ),
-    ],
-    [target.label],
-  );
+  });
 };
 
 // A finished edition's card — the champion holds the stage until the full
@@ -4885,10 +4893,7 @@ const competitionProfileScreen = (competition: Competition, model: Model): Html 
         competition.name,
         [honorChip(competition.tagline), mutedChip(competition.stage)],
       ),
-      h.div(
-        [h.Class('mt-8 flex flex-wrap gap-2')],
-        competition.editions.map((entry) => editionChip(competition, model, entry)),
-      ),
+      editionRadioGroup(competition, model),
       h.div(
         [h.Class('mt-8 flex flex-col gap-8')],
         [
@@ -4949,7 +4954,6 @@ const shellView = (model: Model): Html =>
         [],
         [
           h.div([h.Class('h-[104px] bg-black md:h-[107px] lg:h-[108px]')], []),
-          topbarView(),
           // Keyed per screen AND per open profile so the slide-in replays
           // on every section or profile change.
           h.main(
