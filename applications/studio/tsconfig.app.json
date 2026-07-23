@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*.ts"],
+  "references": [],
+  "compilerOptions": {
+    "outDir": "./tsbuild",
+    "lib": ["esnext", "dom", "dom.iterable"]
+  }
+}
