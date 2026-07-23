@@ -811,8 +811,9 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
     // Mostly-horizontal gestures belong to overflow-x containers (standings
     // tables) — leave them native.
     if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
-    // The menu overlay pins the body (position: fixed) — nothing to scroll.
-    if (document.body.style.position === 'fixed') return;
+    // The menu overlay locks the page (Dom.lockScroll sets overflow: hidden
+    // on the document element) — don't hijack the wheel over the overlay.
+    if (document.documentElement.style.overflow === 'hidden') return;
     const max = (document.scrollingElement?.scrollHeight ?? 0) - window.innerHeight;
     if (max <= 0) return;
     event.preventDefault();
