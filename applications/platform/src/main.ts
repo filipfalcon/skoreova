@@ -53,23 +53,23 @@ import { AppRoute, WelcomeRoute, urlToAppRoute } from './route';
 // metric.
 
 export const Screen = S.Literals([
-  'welcome',
-  'hergame',
-  'clubs',
-  'players',
-  'matches',
-  'competitions',
-  'officials',
+  'Welcome',
+  'HerGame',
+  'Clubs',
+  'Players',
+  'Matches',
+  'Competitions',
+  'Officials',
 ]);
 export type Screen = typeof Screen.Type;
 
-export const Metric = S.Literals(['goals', 'attendance', 'conversion']);
+export const Metric = S.Literals(['Goals', 'Attendance', 'Conversion']);
 export type Metric = typeof Metric.Type;
 
 // Which top-scorer board a club profile shows.
 // Which competition the club profile's TOP SCORERS board shows — one
 // component, scoped by chips (user call).
-export const ScorerScope = S.Literals(['all', 'league', 'cup']);
+export const ScorerScope = S.Literals(['All', 'League', 'Cup']);
 export type ScorerScope = typeof ScorerScope.Type;
 
 export const Model = S.Struct({
@@ -114,15 +114,15 @@ export const SelectedMetric = m('SelectedMetric', { metric: Metric });
 export const SelectedScorerScope = m('SelectedScorerScope', { scope: ScorerScope });
 export const SelectedCompetitionEdition = m('SelectedCompetitionEdition', { label: S.String });
 export const SelectedCompetitionRound = m('SelectedCompetitionRound', { round: S.Number });
-export const ChangedClubQuery = m('ChangedClubQuery', { query: S.String });
+export const UpdatedClubQuery = m('UpdatedClubQuery', { query: S.String });
 export const SelectedFeaturedClub = m('SelectedFeaturedClub', { index: S.Number });
 export const ToggledFollow = m('ToggledFollow', { slug: S.String });
-// Pins: ReadPins hands the stored ids back through PinsLoaded; a pin toggle
+// Pins: ReadPins hands the stored ids back through LoadedPins; a pin toggle
 // updates the model and mirrors it out through WritePins, whose completion
-// is PinsSynced (nothing to fold back in — the write is fire-and-forget).
-export const PinsLoaded = m('PinsLoaded', { ids: S.Array(S.String) });
+// is CompletedWritePins (nothing to fold back in — the write is fire-and-forget).
+export const LoadedPins = m('LoadedPins', { ids: S.Array(S.String) });
 export const ToggledPin = m('ToggledPin', { id: S.String });
-export const PinsSynced = m('PinsSynced');
+export const CompletedWritePins = m('CompletedWritePins');
 
 export const Message = S.Union([
   ClickedLink,
@@ -133,12 +133,12 @@ export const Message = S.Union([
   SelectedScorerScope,
   SelectedCompetitionEdition,
   SelectedCompetitionRound,
-  ChangedClubQuery,
+  UpdatedClubQuery,
   SelectedFeaturedClub,
   ToggledFollow,
-  PinsLoaded,
+  LoadedPins,
   ToggledPin,
-  PinsSynced,
+  CompletedWritePins,
 ]);
 export type Message = typeof Message.Type;
 
@@ -202,17 +202,17 @@ const pinsStore = {
 
 export const ReadPins = Command.define(
   'ReadPins',
-  PinsLoaded,
-)(Effect.sync(() => PinsLoaded({ ids: [...pinsStore.load()] })));
+  LoadedPins,
+)(Effect.sync(() => LoadedPins({ ids: [...pinsStore.load()] })));
 
 export const WritePins = Command.define(
   'WritePins',
   { ids: S.Array(S.String) },
-  PinsSynced,
+  CompletedWritePins,
 )(({ ids }) =>
   Effect.sync(() => {
     pinsStore.save(ids);
-    return PinsSynced();
+    return CompletedWritePins();
   }),
 );
 
@@ -227,8 +227,8 @@ const initialModel: Model = {
   followed: [],
   // Real value arrives from storage via ReadPins (init) — empty until then.
   pinned: [],
-  scorerScope: 'all',
-  metric: 'goals',
+  scorerScope: 'All',
+  metric: 'Goals',
 };
 
 // A route change stores the new route and resets the transient per-view state
@@ -241,7 +241,7 @@ const applyRoute = (model: Model, route: AppRoute): Model =>
     competitionRound: () => Option.none(),
     clubQuery: () => '',
     featuredClub: () => 0,
-    scorerScope: (current) => (route._tag === 'ClubRoute' ? 'all' : current),
+    scorerScope: (current) => (route._tag === 'ClubRoute' ? 'All' : current),
   });
 
 export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
@@ -253,16 +253,19 @@ export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
   [ReadPins()],
 ];
 
-export const update = (
-  model: Model,
-  message: Message,
-): readonly [Model, ReadonlyArray<Command.Command<Message>>] =>
+// The pair returned by `update` (and by the nested match on link requests):
+// the next model and the commands to run. Extracted so the shape is named
+// once rather than spelled out at every `withReturnType`.
+type UpdateReturn = readonly [Model, ReadonlyArray<Command.Command<Message>>];
+const withUpdateReturn = M.withReturnType<UpdateReturn>();
+
+export const update = (model: Model, message: Message): UpdateReturn =>
   M.value(message).pipe(
-    M.withReturnType<readonly [Model, ReadonlyArray<Command.Command<Message>>]>(),
+    withUpdateReturn,
     M.tagsExhaustive({
       ClickedLink: ({ request }) =>
         M.value(request).pipe(
-          M.withReturnType<readonly [Model, ReadonlyArray<Command.Command<Message>>]>(),
+          withUpdateReturn,
           M.tagsExhaustive({
             Internal: ({ url }) => [
               applyRoute(model, urlToAppRoute(url)),
@@ -291,7 +294,7 @@ export const update = (
         }),
         [],
       ],
-      ChangedClubQuery: ({ query }) => [evo(model, { clubQuery: () => query }), []],
+      UpdatedClubQuery: ({ query }) => [evo(model, { clubQuery: () => query }), []],
       SelectedFeaturedClub: ({ index }) => [evo(model, { featuredClub: () => index }), []],
       ToggledFollow: ({ slug }) => [
         evo(model, {
@@ -302,7 +305,7 @@ export const update = (
         }),
         [],
       ],
-      PinsLoaded: ({ ids }) => [evo(model, { pinned: () => [...ids] }), []],
+      LoadedPins: ({ ids }) => [evo(model, { pinned: () => [...ids] }), []],
       ToggledPin: ({ id }) => {
         const pinned = model.pinned.includes(id)
           ? model.pinned.filter((entry) => entry !== id)
@@ -311,7 +314,7 @@ export const update = (
         // command so the reducer stays pure and testable.
         return [evo(model, { pinned: () => pinned }), [WritePins({ ids: pinned })]];
       },
-      PinsSynced: () => [model, []],
+      CompletedWritePins: () => [model, []],
     }),
   );
 
@@ -328,27 +331,27 @@ interface NavEntry {
   readonly href: string;
   // HER GAME — the personal section. Always the CENTER tab and visually
   // set apart from the rest (solid pink chip, no number).
-  readonly featured?: boolean;
+  readonly isFeatured?: boolean;
 }
 
 // Officials left the top nav (still reachable from the home browse tiles
 // and by URL) so HER GAME can hold the center with two sections per side.
 const navEntries: ReadonlyArray<NavEntry> = [
-  { screen: 'clubs', label: 'Clubs', short: 'Clubs', href: '/clubs' },
-  { screen: 'players', label: 'Players', short: 'Players', href: '/players' },
-  { screen: 'hergame', label: 'Her Game', short: 'Her Game', href: '/her-game', featured: true },
-  { screen: 'matches', label: 'Matches', short: 'Matches', href: '/matches' },
-  { screen: 'competitions', label: 'Competitions', short: 'Competitions', href: '/competitions' },
+  { screen: 'Clubs', label: 'Clubs', short: 'Clubs', href: '/clubs' },
+  { screen: 'Players', label: 'Players', short: 'Players', href: '/players' },
+  { screen: 'HerGame', label: 'Her Game', short: 'Her Game', href: '/her-game', isFeatured: true },
+  { screen: 'Matches', label: 'Matches', short: 'Matches', href: '/matches' },
+  { screen: 'Competitions', label: 'Competitions', short: 'Competitions', href: '/competitions' },
 ];
 
 const screenTitles: Record<Screen, string> = {
-  welcome: 'Home',
-  hergame: 'Her Game',
-  clubs: 'Clubs',
-  players: 'Players',
-  matches: 'Matches',
-  competitions: 'Competitions',
-  officials: 'Officials',
+  Welcome: 'Home',
+  HerGame: 'Her Game',
+  Clubs: 'Clubs',
+  Players: 'Players',
+  Matches: 'Matches',
+  Competitions: 'Competitions',
+  Officials: 'Officials',
 };
 
 // The visible screen implied by the route. The Model stores the route; the
@@ -360,16 +363,16 @@ const screenOf = (route: AppRoute): Screen =>
   M.value(route).pipe(
     M.withReturnType<Screen>(),
     M.tagsExhaustive({
-      WelcomeRoute: () => 'welcome',
-      HerGameRoute: () => 'hergame',
-      ClubsRoute: () => 'clubs',
-      ClubRoute: () => 'clubs',
-      PlayersRoute: () => 'players',
-      MatchesRoute: () => 'matches',
-      CompetitionsRoute: () => 'competitions',
-      CompetitionRoute: () => 'competitions',
-      OfficialsRoute: () => 'officials',
-      NotFoundRoute: () => 'welcome',
+      WelcomeRoute: () => 'Welcome',
+      HerGameRoute: () => 'HerGame',
+      ClubsRoute: () => 'Clubs',
+      ClubRoute: () => 'Clubs',
+      PlayersRoute: () => 'Players',
+      MatchesRoute: () => 'Matches',
+      CompetitionsRoute: () => 'Competitions',
+      CompetitionRoute: () => 'Competitions',
+      OfficialsRoute: () => 'Officials',
+      NotFoundRoute: () => 'Welcome',
     }),
   );
 
@@ -385,17 +388,17 @@ interface MetricSeries {
 }
 
 const metricSeries: Record<Metric, MetricSeries> = {
-  goals: {
+  Goals: {
     label: 'Goals per matchday',
     unit: 'goals across both leagues',
     values: [19, 26, 22, 31, 24, 28, 35, 23, 27, 30, 25, 33, 29, 36],
   },
-  attendance: {
+  Attendance: {
     label: 'Average attendance',
     unit: 'fans per match',
     values: [640, 720, 690, 810, 760, 900, 840, 880, 930, 1010, 970, 1120, 1080, 1240],
   },
-  conversion: {
+  Conversion: {
     label: 'Shot conversion',
     unit: 'percent of shots scored',
     values: [9.8, 11.2, 10.1, 12.6, 11.9, 13.4, 12.2, 14.1, 13, 14.8, 13.9, 15.6, 14.7, 16.2],
@@ -739,13 +742,13 @@ type CompetitionStandings =
 // current one.
 interface Edition {
   readonly label: string;
-  readonly current: boolean;
+  readonly isCurrent: boolean;
   readonly detail: string;
 }
 
-const edition = (label: string, current: boolean, detail: string): Edition => ({
+const edition = (label: string, isCurrent: boolean, detail: string): Edition => ({
   label,
-  current,
+  isCurrent,
   detail,
 });
 
@@ -981,13 +984,13 @@ const secondLeagueStandings: ReadonlyArray<StandingsRow> = [
 interface CupTie {
   readonly round: string;
   readonly result: string;
-  readonly upcoming: boolean;
+  readonly isUpcoming: boolean;
 }
 
 const cupRun: ReadonlyArray<CupTie> = [
-  { round: 'Round of 16', result: 'Won 3:0', upcoming: false },
-  { round: 'Quarters', result: 'Won 2:1', upcoming: false },
-  { round: 'Semis', result: 'Coming up', upcoming: true },
+  { round: 'Round of 16', result: 'Won 3:0', isUpcoming: false },
+  { round: 'Quarters', result: 'Won 2:1', isUpcoming: false },
+  { round: 'Semis', result: 'Coming up', isUpcoming: true },
 ];
 
 interface Scorer {
@@ -1020,12 +1023,12 @@ const hashSlug = (slug: string): number => {
 // leader is the canonical Rancová.
 const scorersFor = (target: Club, scope: ScorerScope): ReadonlyArray<Scorer> => {
   const seed = hashSlug(`${scope}:${target.slug}`);
-  const ceiling = scope === 'cup' ? 6 : scope === 'league' ? 13 : 17;
+  const ceiling = scope === 'Cup' ? 6 : scope === 'League' ? 13 : 17;
   const generated = [0, 1, 2].map((rank) => ({
     name: scorerPool[(seed + rank * 5) % scorerPool.length] ?? '—',
     goals: Math.max(1, ceiling - (seed % 3) - rank * (2 + (seed % 2))),
   }));
-  if (target.slug === 'sparta-praha' && scope === 'all') {
+  if (target.slug === 'sparta-praha' && scope === 'All') {
     return [{ name: 'Denisa Rancová', goals: 17 }, ...generated.slice(1)];
   }
   return generated;
@@ -1245,15 +1248,15 @@ const accountButton = (): Html =>
 const navIcon = (screen: Screen): Html => {
   const paths: Partial<Record<Screen, string>> = {
     // Crest/shield — clubs.
-    clubs: 'M12 3 L20 6 V12 C20 17 16.5 20 12 21.5 C7.5 20 4 17 4 12 V6 Z',
+    Clubs: 'M12 3 L20 6 V12 C20 17 16.5 20 12 21.5 C7.5 20 4 17 4 12 V6 Z',
     // Person — players.
-    players:
+    Players:
       'M12 4 A3.5 3.5 0 1 1 11.99 4 M4.5 20 C5.5 15.5 8.5 13.5 12 13.5 C15.5 13.5 18.5 15.5 19.5 20',
     // Ball — matches.
-    matches:
+    Matches:
       'M12 3 A9 9 0 1 1 11.99 3 M12 8 L15.8 10.8 L14.4 15.2 H9.6 L8.2 10.8 Z M12 3 V8 M15.8 10.8 L20.5 9.5 M14.4 15.2 L17.5 19 M9.6 15.2 L6.5 19 M8.2 10.8 L3.5 9.5',
     // Trophy — competitions.
-    competitions:
+    Competitions:
       'M7 4 H17 V9 C17 12 15 14 12 14 C9 14 7 12 7 9 Z M7 5.5 H4 C4 9 5.5 10.5 7.5 10.5 M17 5.5 H20 C20 9 18.5 10.5 16.5 10.5 M12 14 V17.5 M8.5 20.5 H15.5 M9.5 17.5 H14.5 L15 20.5 H9 Z',
   };
   return h.svg(
@@ -1278,7 +1281,7 @@ const desktopNavLink = (model: Model, entry: NavEntry): Html => {
   // with a periodic pink gradient sweeping through it (.hergame-chip).
   // Solid pink only when the section is OPEN (and on hover), so the pink
   // always reads as "you are here / go here".
-  if (entry.featured) {
+  if (entry.isFeatured) {
     return h.a(
       [
         h.Href(entry.href),
@@ -1421,7 +1424,7 @@ const metricRadioGroup = (model: Model): Html =>
   RadioGroup.view<Metric, Message>({
     id: 'chart-studio-metric',
     selectedValue: Option.some(model.metric),
-    options: ['goals', 'attendance', 'conversion'],
+    options: ['Goals', 'Attendance', 'Conversion'],
     ariaLabel: 'Chart metric',
     onSelect: (metric) => SelectedMetric({ metric }),
     toView: ({ group, options }) =>
@@ -2088,10 +2091,10 @@ const tickerSpark: Html = h.svg(
 interface TapeQuote {
   readonly name: string;
   readonly delta: string;
-  readonly up: boolean;
+  readonly isUp: boolean;
 }
 
-const quote = (name: string, delta: string, up: boolean): TapeQuote => ({ name, delta, up });
+const quote = (name: string, delta: string, isUp: boolean): TapeQuote => ({ name, delta, isUp });
 
 // CLUBS ONLY (user call) — no players, coaches, or competitions on the
 // tape.
@@ -2135,8 +2138,8 @@ const quoteView = (entry: TapeQuote): ReadonlyArray<Html> => [
     [
       h.span([], [entry.name]),
       h.span(
-        [h.Class(`flex items-center gap-1 ${entry.up ? 'text-rise' : 'text-fall'}`)],
-        [tapeArrow(entry.up), h.span([], [entry.delta])],
+        [h.Class(`flex items-center gap-1 ${entry.isUp ? 'text-rise' : 'text-fall'}`)],
+        [tapeArrow(entry.isUp), h.span([], [entry.delta])],
       ),
     ],
   ),
@@ -2437,14 +2440,14 @@ interface BestRecord {
   readonly value: string;
   // Counts take the drawn multiplication mark. Scorelines, totals and
   // attendances do not — "15:1" is not fifteen times anything.
-  readonly times?: boolean;
+  readonly isCount?: boolean;
   readonly holder: string;
   readonly label: string;
 }
 
 const allTimeBests: ReadonlyArray<BestRecord> = [
-  { value: '22', times: true, holder: 'Sparta Praha', label: 'League titles' },
-  { value: '11', times: true, holder: 'Sparta Praha', label: 'Domestic cup wins' },
+  { value: '22', isCount: true, holder: 'Sparta Praha', label: 'League titles' },
+  { value: '11', isCount: true, holder: 'Sparta Praha', label: 'Domestic cup wins' },
   { value: '168', holder: 'Iveta Dudová', label: 'Most goals' },
   { value: '15:1', holder: 'Sparta Praha × FC Praha', label: 'Biggest win' },
   { value: '6,882', holder: 'Eden Arena', label: 'Record attendance' },
@@ -2490,7 +2493,7 @@ const bestRecord = (model: Model, record: BestRecord, standalone: boolean): Html
       ),
       h.p(
         [h.Class('display mt-3 text-5xl text-ink sm:text-4xl md:text-5xl')],
-        record.times === true ? [record.value, drawnTimes()] : [record.value],
+        record.isCount === true ? [record.value, drawnTimes()] : [record.value],
       ),
       h.p([h.Class('display mt-2 text-2xl text-pink sm:text-xl md:text-2xl')], [record.holder]),
       h.p(
@@ -3003,7 +3006,7 @@ const clubsScreen = (model: Model): Html => {
         type: 'search',
         placeholder: 'Search clubs…',
         value: model.clubQuery,
-        onInput: (value) => ChangedClubQuery({ query: value }),
+        onInput: (value) => UpdatedClubQuery({ query: value }),
         toView: (attributes) =>
           h.div(
             [h.Class('mt-10')],
@@ -3822,10 +3825,10 @@ const roundDate = (round: number): string =>
 interface PlayedMatch {
   readonly match: ClubMatch;
   readonly index: number;
-  readonly played: boolean;
+  readonly isPlayed: boolean;
   readonly forGoals: number;
   readonly againstGoals: number;
-  readonly home: boolean;
+  readonly isHome: boolean;
 }
 
 // Everything the calendar needs about one game, from the CLUB'S side —
@@ -3835,19 +3838,19 @@ const describeMatch = (
   target: Club,
   match: ClubMatch,
   index: number,
-  played: boolean,
+  isPlayed: boolean,
 ): PlayedMatch => {
   const [homeGoals, awayGoals] = mockScore(
     `${target.league}-${match.round}-${match.home}-${match.away}`,
   );
-  const home = match.home === target.name;
+  const isHome = match.home === target.name;
   return {
     match,
     index,
-    played,
-    home,
-    forGoals: home ? homeGoals : awayGoals,
-    againstGoals: home ? awayGoals : homeGoals,
+    isPlayed,
+    isHome,
+    forGoals: isHome ? homeGoals : awayGoals,
+    againstGoals: isHome ? awayGoals : homeGoals,
   };
 };
 
@@ -3938,8 +3941,8 @@ const clubMatchVersus = (): Html =>
 // The card carries no label: it is the only thing in its section, and the
 // section's chip has already named it.
 const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
-  const homeGoals = entry.home ? entry.forGoals : entry.againstGoals;
-  const awayGoals = entry.home ? entry.againstGoals : entry.forGoals;
+  const homeGoals = entry.isHome ? entry.forGoals : entry.againstGoals;
+  const awayGoals = entry.isHome ? entry.againstGoals : entry.forGoals;
   const kickoff = kickoffFor(`${entry.match.round}-${entry.match.home}-${entry.match.away}`);
   return h.div(
     [h.Class('flex flex-col border border-ink/15')],
@@ -3958,7 +3961,7 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
         ],
         [
           clubMatchCrest(entry.match.home),
-          entry.played ? clubMatchScore(homeGoals, awayGoals) : clubMatchVersus(),
+          entry.isPlayed ? clubMatchScore(homeGoals, awayGoals) : clubMatchVersus(),
           clubMatchCrest(entry.match.away),
         ],
       ),
@@ -3982,7 +3985,7 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
           h.p(
             [h.Class('mt-2 text-[10px] tracking-[0.2em] text-ink/50 uppercase')],
             [
-              entry.played
+              entry.isPlayed
                 ? roundDate(entry.match.round)
                 : `${roundDate(entry.match.round)} · ${kickoff}`,
             ],
@@ -4028,9 +4031,9 @@ const clubMatchesSections = (target: Club): Html => {
   const entries = clubMatches(target).map((match, index) =>
     describeMatch(target, match, index, match.round <= playedRounds),
   );
-  const played = entries.filter((entry) => entry.played);
+  const played = entries.filter((entry) => entry.isPlayed);
   const last = played[played.length - 1];
-  const next = entries.find((entry) => !entry.played);
+  const next = entries.find((entry) => !entry.isPlayed);
   // Start of the season has no result yet, the end has no fixture left —
   // each section simply drops out on its own, and the survivor takes the
   // full width.
@@ -4104,7 +4107,7 @@ const clubCupSection = (): Html =>
             [
               h.Class(
                 `flex items-baseline justify-between gap-4 border-t px-2 py-3.5 first:border-t-0 ${
-                  tie.upcoming ? 'border-pink bg-pink text-ink' : 'border-ink/10 text-ink'
+                  tie.isUpcoming ? 'border-pink bg-pink text-ink' : 'border-ink/10 text-ink'
                 }`,
               ),
             ],
@@ -4114,7 +4117,7 @@ const clubCupSection = (): Html =>
                 [
                   h.Class(
                     `text-[10px] tracking-[0.2em] uppercase ${
-                      tie.upcoming ? 'text-ink/70' : 'text-ink/50'
+                      tie.isUpcoming ? 'text-ink/70' : 'text-ink/50'
                     }`,
                   ),
                 ],
@@ -4135,14 +4138,14 @@ const clubCupSection = (): Html =>
 // The 'league' label is the club's own league name, so labels come from target.
 const scopeRadioGroup = (target: Club, model: Model): Html => {
   const labels: Record<ScorerScope, string> = {
-    all: 'All',
-    league: target.league,
-    cup: 'Domestic Cup',
+    All: 'All',
+    League: target.league,
+    Cup: 'Domestic Cup',
   };
   return RadioGroup.view<ScorerScope, Message>({
     id: 'club-top-scorers-scope',
     selectedValue: Option.some(model.scorerScope),
-    options: ['all', 'league', 'cup'],
+    options: ['All', 'League', 'Cup'],
     ariaLabel: 'Top-scorers competition',
     onSelect: (scope) => SelectedScorerScope({ scope }),
     toView: ({ group, options }) =>
@@ -4868,7 +4871,7 @@ const competitionMatchesPanel = (competition: Competition, model: Model): Html =
 // so the selected value is resolved to the real label, and a pick of the
 // current edition maps back to '' on the wire (the handler folds it to None).
 const editionRadioGroup = (competition: Competition, model: Model): Html => {
-  const currentLabel = competition.editions.find((entry) => entry.current)?.label ?? '';
+  const currentLabel = competition.editions.find((entry) => entry.isCurrent)?.label ?? '';
   const openLabel = Option.getOrElse(model.competitionEdition, () => currentLabel);
   return RadioGroup.view<string, Message>({
     id: 'competition-edition',
@@ -4936,7 +4939,7 @@ const competitionProfileScreen = (competition: Competition, model: Model): Html 
                   competition.editions.find(
                     (entry) => entry.label === Option.getOrNull(model.competitionEdition),
                   ) ??
-                    competition.editions[0] ?? { label: '', current: true, detail: '' },
+                    competition.editions[0] ?? { label: '', isCurrent: true, detail: '' },
                 ),
               ]),
           h.div(
@@ -4967,13 +4970,13 @@ const screenView = (model: Model): Html => {
   if (competition) return competitionProfileScreen(competition, model);
   return M.value(screenOf(model.route)).pipe(
     M.withReturnType<Html>(),
-    M.when('welcome', () => welcomeScreen(model)),
-    M.when('hergame', () => herGameScreen(model)),
-    M.when('clubs', () => clubsScreen(model)),
-    M.when('players', () => playersScreen(model)),
-    M.when('matches', () => matchesScreen(model)),
-    M.when('competitions', () => competitionsScreen(model)),
-    M.when('officials', () => officialsScreen(model)),
+    M.when('Welcome', () => welcomeScreen(model)),
+    M.when('HerGame', () => herGameScreen(model)),
+    M.when('Clubs', () => clubsScreen(model)),
+    M.when('Players', () => playersScreen(model)),
+    M.when('Matches', () => matchesScreen(model)),
+    M.when('Competitions', () => competitionsScreen(model)),
+    M.when('Officials', () => officialsScreen(model)),
     M.exhaustive,
   );
 };
@@ -5033,7 +5036,7 @@ const shellView = (model: Model): Html =>
 
 export const view = (model: Model): Document => ({
   title:
-    screenOf(model.route) === 'welcome'
+    screenOf(model.route) === 'Welcome'
       ? 'Skóreová Platform'
       : `${openClub(model)?.name ?? openCompetition(model)?.name ?? screenTitles[screenOf(model.route)]} — Skóreová Platform`,
   body: h.div([h.Class('bg-paper font-body text-ink antialiased')], [shellView(model)]),

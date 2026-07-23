@@ -12,8 +12,8 @@ import {
   CompletedNavigate,
   Load,
   Navigate,
-  PinsLoaded,
-  PinsSynced,
+  LoadedPins,
+  CompletedWritePins,
   SelectedCompetitionEdition,
   SelectedCompetitionRound,
   SelectedMetric,
@@ -32,9 +32,9 @@ test('selecting a chart metric records it and fires no command', () => {
   Story.story(
     update,
     Story.with(welcomeModel),
-    Story.message(SelectedMetric({ metric: 'attendance' })),
+    Story.message(SelectedMetric({ metric: 'Attendance' })),
     Story.model((model) => {
-      expect(model.metric).toBe('attendance');
+      expect(model.metric).toBe('Attendance');
     }),
     Story.Command.expectNone(),
   );
@@ -44,11 +44,11 @@ test('scope is a field write; edition and round fold their current sentinel to N
   Story.story(
     update,
     Story.with(welcomeModel),
-    Story.message(SelectedScorerScope({ scope: 'league' })),
+    Story.message(SelectedScorerScope({ scope: 'League' })),
     Story.message(SelectedCompetitionEdition({ label: '2023/24' })),
     Story.message(SelectedCompetitionRound({ round: 7 })),
     Story.model((model) => {
-      expect(model.scorerScope).toBe('league');
+      expect(model.scorerScope).toBe('League');
       expect(model.competitionEdition).toEqual(Option.some('2023/24'));
       expect(model.competitionRound).toEqual(Option.some(7));
     }),
@@ -89,9 +89,9 @@ test('pinning a tile updates the model and mirrors it out through WritePins', ()
       expect(model.pinned).toEqual(['trending:sparta-praha']);
     }),
     // The write is fire-and-forget: WritePins carries the new list and resolves
-    // with PinsSynced, which folds nothing back in.
+    // with CompletedWritePins, which folds nothing back in.
     Story.Command.expectHas(WritePins),
-    Story.Command.resolve(WritePins, PinsSynced()),
+    Story.Command.resolve(WritePins, CompletedWritePins()),
   );
 });
 
@@ -103,15 +103,15 @@ test('unpinning the last tile writes the now-empty list', () => {
     Story.model((model) => {
       expect(model.pinned).toEqual([]);
     }),
-    Story.Command.resolve(WritePins, PinsSynced()),
+    Story.Command.resolve(WritePins, CompletedWritePins()),
   );
 });
 
-test('ReadPins hydration seeds the pinned list via PinsLoaded', () => {
+test('ReadPins hydration seeds the pinned list via LoadedPins', () => {
   Story.story(
     update,
     Story.with(welcomeModel),
-    Story.message(PinsLoaded({ ids: ['best:sparta', 'trending:pardubice'] })),
+    Story.message(LoadedPins({ ids: ['best:sparta', 'trending:pardubice'] })),
     Story.model((model) => {
       expect(model.pinned).toEqual(['best:sparta', 'trending:pardubice']);
     }),
