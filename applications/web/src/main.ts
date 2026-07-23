@@ -1,7 +1,7 @@
 import { Effect, Match as M, Option, Schema as S, Stream } from 'effect';
 import { RadioGroup } from '@foldkit/ui';
 import type { Runtime } from 'foldkit';
-import { Command, Subscription } from 'foldkit';
+import { Command, Dom, Subscription } from 'foldkit';
 import type { Document, Html } from 'foldkit/html';
 import { html } from 'foldkit/html';
 import { m } from 'foldkit/message';
@@ -206,7 +206,13 @@ const animateScrollTo = (target: HTMLElement): void => {
 
 // Pushes the URL, then either scrolls to the fragment's element (see
 // animateScrollTo) or jumps to the top (entering a page mid-scroll would
-// be disorienting).
+// be disorienting). No wait for the scroll lock to release first: the lock
+// (Dom.lockScroll) keeps the page's real scroll position, so window.scrollY
+// is truthful even mid-lock and the trip animates from where the reader
+// actually sits — the old position:fixed trick zeroed scrollY, which is why
+// this used to poll `body.style.position` before measuring. Every fragment
+// the landing page links to is always rendered, so there is nothing to wait
+// for on the render side either.
 export const Navigate = Command.define(
   'Navigate',
   { url: S.String },
@@ -214,19 +220,7 @@ export const Navigate = Command.define(
 )(({ url }) =>
   pushUrl(url).pipe(
     Effect.andThen(
-      Effect.promise(async () => {
-        // Two things must happen before measuring: the new page renders
-        // (the fragment's element may not exist until the route's view is
-        // patched in), and the menu's scroll-lock releases — while the
-        // body is position:fixed, scrollY reads 0 and every trip would
-        // animate downward from the top (the old bug).
-        const waitStartedAt = performance.now();
-        do {
-          await new Promise((resolve) => setTimeout(resolve, 50));
-        } while (
-          document.body.style.position === 'fixed' &&
-          performance.now() - waitStartedAt < 500
-        );
+      Effect.sync(() => {
         const fragment = url.split('#')[1];
         const target = fragment === undefined ? null : document.getElementById(fragment);
         if (target) {
@@ -246,52 +240,26 @@ export const Load = Command.define(
   CompletedLoad,
 )(({ href }) => load(href).pipe(Effect.as(CompletedLoad())));
 
-// Locks/unlocks page scrolling while the menu overlay is open. Uses the
-// position:fixed trick rather than `overflow: hidden`, which iOS Safari
-// ignores for touch scrolling — the body is pinned and offset by the
-// current scroll, then restored on unlock so the position is preserved.
+// Locks/unlocks page scrolling while the menu overlay is open. Delegates to
+// Foldkit's Dom.lockScroll/unlockScroll: they lock via `overflow: hidden`
+// (with scrollbar-width compensation, so nothing shifts), intercept iOS
+// `touchmove` so touch scrolling is pinned too, and reference-count nested
+// locks. Crucially the page keeps its real scroll position — there is no
+// position:fixed offset zeroing window.scrollY — so measurements taken while
+// the lock is up (Navigate's fragment scroll, DetectActiveSection) read true.
 export const SetScrollLock = Command.define(
   'SetScrollLock',
   { locked: S.Boolean },
   CompletedScrollLock,
 )(({ locked }) =>
-  Effect.sync(() => {
-    const { body } = document;
-    if (locked) {
-      // Guard against double-locking (would capture top:-0 and lose position).
-      if (body.style.position !== 'fixed') {
-        const scrollY = window.scrollY;
-        // Park the offset on the body itself, not a module-level binding:
-        // it is transient DOM state and belongs with the DOM it describes.
-        body.dataset['lockedScrollY'] = `${scrollY}`;
-        body.style.position = 'fixed';
-        body.style.top = `-${scrollY}px`;
-        body.style.insetInline = '0';
-        body.style.width = '100%';
-      }
-    } else if (body.style.position === 'fixed') {
-      const scrollY = Number(body.dataset['lockedScrollY'] ?? '0');
-      delete body.dataset['lockedScrollY'];
-      body.style.position = '';
-      body.style.top = '';
-      body.style.insetInline = '';
-      body.style.width = '';
-      // MUST be instant: the two-arg scrollTo obeys the page's CSS
-      // `scroll-behavior: smooth`, which turned this restore into an
-      // animated ride from the top — the IntersectionObserver watched
-      // every section exit and re-enter, replaying reveals and count-ups
-      // whenever the menu closed mid-page.
-      window.scrollTo({ top: scrollY, behavior: 'instant' });
-    }
-    return CompletedScrollLock();
-  }),
+  (locked ? Dom.lockScroll : Dom.unlockScroll).pipe(Effect.as(CompletedScrollLock())),
 );
 
 // Resolves which landing section the viewport centre sits in, so the open
 // menu can mark "you are here". Runs once per menu open. Measures
-// viewport-relative rects, which the scroll lock's position:fixed trick
-// preserves (window.scrollY would read 0 under it). The candidate ids come
-// from menuEntries itself, so the two can't drift apart.
+// viewport-relative rects (getBoundingClientRect), unaffected by the scroll
+// lock — the page holds its real position under `overflow: hidden`. The
+// candidate ids come from menuEntries itself, so the two can't drift apart.
 export const DetectActiveSection = Command.define(
   'DetectActiveSection',
   DetectedActiveSection,

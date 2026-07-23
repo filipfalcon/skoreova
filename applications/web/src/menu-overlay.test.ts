@@ -132,9 +132,10 @@ test('the open overlay marks the section the viewport is in', async () => {
 
   await page.getByRole('button', { name: 'Close menu' }).click();
   await expect.poll(overlayVisibility, { timeout: 2000 }).toBe('hidden');
-  // Wait out the scroll-lock release before scrolling, or its restore
-  // (scrollTo the locked position) would undo the jump below.
-  await waitUntil(() => document.body.style.position !== 'fixed');
+  // Wait out the scroll-lock release before scrolling — while the page is
+  // locked (Dom.lockScroll sets overflow: hidden) the jump below might not
+  // take.
+  await waitUntil(() => document.documentElement.style.overflow !== 'hidden');
 
   const clubs = document.getElementById('across-the-lands');
   if (!clubs) throw new Error('across-the-lands section not rendered');
