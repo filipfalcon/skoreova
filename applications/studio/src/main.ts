@@ -74,13 +74,35 @@ export type Entry = typeof Entry.Type;
 export const DrawerTab = S.Literals(['overview', 'persistency', 'history']);
 export type DrawerTab = typeof DrawerTab.Type;
 
+// The profile drawer's state. A tagged union so its shape can't drift into an
+// impossible state (a draft with the drawer closed, a delete-confirm on a
+// record that isn't open). An open record is addressed by its stable
+// section+id, NOT a row index, so a background refetch that rebuilds `rows`
+// can't repoint the drawer at a different record.
+export const DrawerClosed = S.TaggedStruct('Closed', {});
+export const DrawerCreating = S.TaggedStruct('Creating', {
+  section: Section,
+  draft: S.Array(S.String),
+});
+export const DrawerEditing = S.TaggedStruct('Editing', {
+  section: Section,
+  id: S.String,
+  tab: DrawerTab,
+  draft: S.Array(S.String),
+  confirmingDelete: S.Boolean,
+});
+export const DrawerState = S.Union([DrawerClosed, DrawerCreating, DrawerEditing]);
+export type DrawerState = typeof DrawerState.Type;
+
 // Status of a section's fetch from the real API. Every section uses this.
 export const RequestStatus = S.Literals(['idle', 'loading', 'loaded', 'failed']);
 export type RequestStatus = typeof RequestStatus.Type;
 
-// One recorded change to a field, for the drawer's History tab.
+// One recorded change to a field, for the drawer's History tab. Keyed by the
+// record's id (not its row index), so the log stays attached to its record
+// across refetches.
 export const LogEntry = S.Struct({
-  index: S.Number,
+  recordId: S.String,
   field: S.String,
   from: S.String,
   to: S.String,
@@ -101,22 +123,19 @@ export const Model = S.Struct({
   // selected value for `columns[i]`, or '' for "All". Index 0 (the title
   // column) is unused but kept so indices line up with `columns`.
   filters: S.Array(S.String),
-  // The editable dataset. Kept flat so a record has a stable index to address.
+  // The loaded dataset. Kept flat; each record carries its own id, which is
+  // how the drawer and edit log address a record (never a row index).
   rows: S.Array(Entry),
-  // Index into `rows` of the record open in the profile drawer, or -1 = closed.
-  editingIndex: S.Number,
-  // Working copy of the open record's `values` while it is being edited.
-  draft: S.Array(S.String),
-  drawerTab: DrawerTab,
+  // The profile drawer: closed, creating a new record, or editing one by id.
+  drawer: DrawerState,
+  // Client-side id source for records created in the mock (the backend would
+  // assign one). Monotonic so a created row gets a stable, unique id the
+  // drawer and keyed lists can address.
+  nextLocalId: S.Number,
   // History of committed field edits, across all records.
   editLog: S.Array(LogEntry),
   // Message from the last chart mount/sync attempt, or '' if it's fine.
   chartError: S.String,
-  // Whether the Danger Zone's delete button is awaiting confirmation.
-  deleteConfirming: S.Boolean,
-  // Whether the drawer is open in "new record" mode rather than editing an
-  // existing one at `editingIndex`.
-  creating: S.Boolean,
   // Status of fetching each section from the real API.
   playersRequest: RequestStatus,
   playersError: S.String,
@@ -171,7 +190,7 @@ export const ToggledMenu = m('ToggledMenu');
 export const EnteredSearch = m('EnteredSearch', { value: S.String });
 export const SelectedFilter = m('SelectedFilter', { columnIndex: S.Number, value: S.String });
 export const ClickedAddNew = m('ClickedAddNew');
-export const ClickedRecord = m('ClickedRecord', { index: S.Number });
+export const ClickedRecord = m('ClickedRecord', { section: Section, id: S.String });
 export const EditedField = m('EditedField', { index: S.Number, value: S.String });
 export const ClickedSaveRecord = m('ClickedSaveRecord');
 // Carries the edit-log timestamp fetched from the clock by StampSave, so the
@@ -311,13 +330,10 @@ const initialModel = (): Model => ({
   search: '',
   filters: [],
   rows: [],
-  editingIndex: -1,
-  draft: [],
-  drawerTab: 'overview',
+  drawer: DrawerClosed.make({}),
+  nextLocalId: 1,
   editLog: [],
   chartError: '',
-  deleteConfirming: false,
-  creating: false,
   playersRequest: 'idle',
   playersError: '',
   playersPage: 1,
@@ -346,6 +362,35 @@ const upsertEntry = (rows: ReadonlyArray<Entry>, entry: Entry): ReadonlyArray<En
   ...rows.filter((row) => !(row.section === entry.section && row.id === entry.id)),
   entry,
 ];
+
+// The record the drawer is editing, resolved by id from the current rows
+// (undefined when the drawer is closed, creating, or the record is gone).
+const drawerRecord = (model: Model): Entry | undefined => {
+  const drawer = model.drawer;
+  if (drawer._tag !== 'Editing') return undefined;
+  return model.rows.find((row) => row.section === drawer.section && row.id === drawer.id);
+};
+
+// The edit buffer of whichever open drawer state carries one ([] when closed).
+const draftOf = (drawer: DrawerState): ReadonlyArray<string> =>
+  drawer._tag === 'Closed' ? [] : drawer.draft;
+
+// Replaces the draft on whichever open drawer state carries one.
+const withDraft = (drawer: DrawerState, draft: ReadonlyArray<string>): DrawerState => {
+  if (drawer._tag === 'Creating') return evo(drawer, { draft: () => draft });
+  if (drawer._tag === 'Editing') return evo(drawer, { draft: () => draft });
+  return drawer;
+};
+
+// Opens the drawer on an existing record, populating the edit buffer from it.
+const editRecord = (entry: Entry): DrawerState =>
+  DrawerEditing.make({
+    section: entry.section,
+    id: entry.id,
+    tab: 'overview',
+    draft: [...entry.values],
+    confirmingDelete: false,
+  });
 
 // Editions and Competitions can finish fetching in either order. Whichever
 // arrives second re-derives every edition's "Competition" column (index 1)
@@ -381,9 +426,7 @@ const applyRoute = (
         evo(model, {
           showDashboard: () => true,
           menuOpen: () => false,
-          editingIndex: () => -1,
-          draft: () => [],
-          creating: () => false,
+          drawer: () => DrawerClosed.make({}),
         }),
         [],
       ],
@@ -391,9 +434,7 @@ const applyRoute = (
         evo(model, {
           showDashboard: () => true,
           menuOpen: () => false,
-          editingIndex: () => -1,
-          draft: () => [],
-          creating: () => false,
+          drawer: () => DrawerClosed.make({}),
         }),
         [],
       ],
@@ -402,38 +443,22 @@ const applyRoute = (
           section: () => section,
           showDashboard: () => false,
           menuOpen: () => false,
-          editingIndex: () => -1,
-          draft: () => [],
-          creating: () => false,
+          drawer: () => DrawerClosed.make({}),
         }),
         [],
       ],
       RecordRoute: ({ section, id }) => {
-        const index = model.rows.findIndex(
+        const entry = model.rows.find(
           (row) => row.section === section && row.id === id && !row.deleted,
         );
-        if (index >= 0) {
-          const entry = model.rows[index];
-          if (!entry)
-            return [
-              evo(model, {
-                section: () => section,
-                showDashboard: () => false,
-                menuOpen: () => false,
-              }),
-              [],
-            ];
+        if (entry) {
           return [
             evo(model, {
               section: () => section,
               showDashboard: () => false,
               menuOpen: () => false,
-              editingIndex: () => index,
-              draft: () => [...entry.values],
-              drawerTab: () => 'overview',
+              drawer: () => editRecord(entry),
               chartError: () => '',
-              deleteConfirming: () => false,
-              creating: () => false,
               linkError: () => '',
             }),
             [],
@@ -456,8 +481,7 @@ const applyRoute = (
             section: () => section,
             showDashboard: () => false,
             menuOpen: () => false,
-            editingIndex: () => -1,
-            draft: () => [],
+            drawer: () => DrawerClosed.make({}),
           }),
           [],
         ];
@@ -517,10 +541,7 @@ export const update = (
           menuOpen: () => false,
           search: () => '',
           filters: () => [],
-          editingIndex: () => -1,
-          draft: () => [],
-          deleteConfirming: () => false,
-          creating: () => false,
+          drawer: () => DrawerClosed.make({}),
           clientPage: () => 1,
           linkError: () => '',
           openFilterColumn: () => -1,
@@ -563,40 +584,33 @@ export const update = (
         const columns = sectionData[model.section].columns;
         return [
           evo(model, {
-            editingIndex: () => -1,
-            draft: () => columns.map(() => ''),
-            drawerTab: () => 'persistency',
+            drawer: () =>
+              DrawerCreating.make({ section: model.section, draft: columns.map(() => '') }),
             chartError: () => '',
-            deleteConfirming: () => false,
-            creating: () => true,
           }),
           [],
         ];
       },
       // Open the profile drawer with a working copy of the record's values.
-      ClickedRecord: ({ index }) => {
-        const entry = model.rows[index];
+      ClickedRecord: ({ section, id }) => {
+        const entry = model.rows.find((row) => row.section === section && row.id === id);
         if (!entry) return [model, []];
-        const url =
-          entry.id === ''
-            ? sectionRouter({ section: entry.section })
-            : recordRouter({ section: entry.section, id: entry.id });
         return [
           evo(model, {
-            editingIndex: () => index,
-            draft: () => [...entry.values],
-            drawerTab: () => 'overview',
+            drawer: () => editRecord(entry),
             chartError: () => '',
-            deleteConfirming: () => false,
-            creating: () => false,
             linkError: () => '',
           }),
-          [Navigate({ url })],
+          [Navigate({ url: recordRouter({ section, id }) })],
         ];
       },
       EditedField: ({ index, value }) => [
         evo(model, {
-          draft: (draft) => draft.map((current, i) => (i === index ? value : current)),
+          drawer: (drawer) =>
+            withDraft(
+              drawer,
+              draftOf(drawer).map((current, i) => (i === index ? value : current)),
+            ),
         }),
         [],
       ],
@@ -604,84 +618,92 @@ export const update = (
       // existing one (logging which fields changed, for the History tab).
       // Mock only, no backend yet.
       ClickedSaveRecord: () => {
-        if (model.creating) {
+        const drawer = model.drawer;
+        if (drawer._tag === 'Creating') {
           const entry: Entry = {
-            section: model.section,
-            values: model.draft,
+            section: drawer.section,
+            values: drawer.draft,
             deleted: false,
-            id: '',
+            id: `local-${model.nextLocalId}`,
             parentId: '',
           };
           return [
             evo(model, {
               rows: (rows) => [...rows, entry],
-              editingIndex: () => -1,
-              draft: () => [],
-              creating: () => false,
+              nextLocalId: (n) => n + 1,
+              drawer: () => DrawerClosed.make({}),
             }),
-            [Navigate({ url: sectionRouter({ section: model.section }) })],
+            [Navigate({ url: sectionRouter({ section: drawer.section }) })],
           ];
         }
-
-        if (model.editingIndex < 0) return [model, []];
+        if (drawer._tag !== 'Editing') return [model, []];
         // Editing commits with a timestamped edit log. The timestamp comes from
         // the clock via StampSave (keeping `update` pure); SavedRecordAt then
         // does the commit with it.
         return [model, [StampSave()]];
       },
       SavedRecordAt: ({ at }) => {
-        if (model.editingIndex < 0) return [model, []];
-        const index = model.editingIndex;
-        const entry = model.rows[index];
+        const drawer = model.drawer;
+        if (drawer._tag !== 'Editing') return [model, []];
+        const { section, id, draft } = drawer;
+        const entry = model.rows.find((row) => row.section === section && row.id === id);
         if (!entry) return [model, []];
 
-        const columns = sectionData[entry.section].columns;
+        const columns = sectionData[section].columns;
         const changes: ReadonlyArray<LogEntry> = columns.flatMap((field, i) => {
           const from = entry.values[i] ?? '';
-          const to = model.draft[i] ?? '';
-          return from === to ? [] : [{ index, field, from, to, at }];
+          const to = draft[i] ?? '';
+          return from === to ? [] : [{ recordId: id, field, from, to, at }];
         });
 
-        const rows = model.rows.map((row, i) =>
-          i === index ? evo(row, { values: () => model.draft }) : row,
+        const rows = model.rows.map((row) =>
+          row.section === section && row.id === id ? evo(row, { values: () => draft }) : row,
         );
         return [
           evo(model, {
             rows: () => rows,
             editLog: (log) => [...changes, ...log],
-            editingIndex: () => -1,
-            draft: () => [],
-            deleteConfirming: () => false,
+            drawer: () => DrawerClosed.make({}),
           }),
-          [Navigate({ url: sectionRouter({ section: model.section }) })],
+          [Navigate({ url: sectionRouter({ section }) })],
         ];
       },
       ClickedCloseDrawer: () => [
-        evo(model, {
-          editingIndex: () => -1,
-          draft: () => [],
-          deleteConfirming: () => false,
-          creating: () => false,
-        }),
+        evo(model, { drawer: () => DrawerClosed.make({}) }),
         [Navigate({ url: sectionRouter({ section: model.section }) })],
       ],
-      SelectedDrawerTab: ({ tab }) => [evo(model, { drawerTab: () => tab }), []],
-      ClickedDeleteRecord: () => [evo(model, { deleteConfirming: () => true }), []],
-      ClickedCancelDelete: () => [evo(model, { deleteConfirming: () => false }), []],
+      SelectedDrawerTab: ({ tab }) => [
+        evo(model, {
+          drawer: (drawer) =>
+            drawer._tag === 'Editing' ? evo(drawer, { tab: () => tab }) : drawer,
+        }),
+        [],
+      ],
+      ClickedDeleteRecord: () => [
+        evo(model, {
+          drawer: (drawer) =>
+            drawer._tag === 'Editing' ? evo(drawer, { confirmingDelete: () => true }) : drawer,
+        }),
+        [],
+      ],
+      ClickedCancelDelete: () => [
+        evo(model, {
+          drawer: (drawer) =>
+            drawer._tag === 'Editing' ? evo(drawer, { confirmingDelete: () => false }) : drawer,
+        }),
+        [],
+      ],
       // Soft-delete: mark the record and close the drawer (mock — no backend yet).
       ClickedConfirmDelete: () => {
-        if (model.editingIndex < 0) return [model, []];
-        const rows = model.rows.map((row, i) =>
-          i === model.editingIndex ? evo(row, { deleted: () => true }) : row,
+        const drawer = model.drawer;
+        if (drawer._tag !== 'Editing') return [model, []];
+        const { section, id } = drawer;
+        const rows = model.rows.map((row) =>
+          row.section === section && row.id === id ? evo(row, { deleted: () => true }) : row,
         );
         return [
-          evo(model, {
-            rows: () => rows,
-            editingIndex: () => -1,
-            draft: () => [],
-            deleteConfirming: () => false,
-          }),
-          [Navigate({ url: sectionRouter({ section: model.section }) })],
+          evo(model, { rows: () => rows, drawer: () => DrawerClosed.make({}) }),
+          [Navigate({ url: sectionRouter({ section }) })],
         ];
       },
       // Once a chart's host element is mounted, push the current record's
@@ -689,7 +711,7 @@ export const update = (
       // the chart instance, Command feeds it data). Two hosts share this
       // message — branch on which one just mounted.
       SucceededMountChart: ({ hostId }) => {
-        const entry = model.editingIndex >= 0 ? model.rows[model.editingIndex] : undefined;
+        const entry = drawerRecord(model);
         if (!entry) return [evo(model, { chartError: () => '' }), []];
         if (hostId === POINTS_CHART_HOST_ID) {
           return [
@@ -858,23 +880,15 @@ export const update = (
       CompletedLoad: () => [model, []],
       // The record wasn't in the currently loaded list, so it was fetched
       // directly by id — open its drawer now that we have it.
-      SucceededFetchTeamById: ({ entry }) => {
-        const rows = upsertEntry(model.rows, entry);
-        const index = rows.findIndex((row) => row.section === entry.section && row.id === entry.id);
-        return [
-          evo(model, {
-            rows: () => rows,
-            editingIndex: () => index,
-            draft: () => [...entry.values],
-            drawerTab: () => 'overview',
-            chartError: () => '',
-            deleteConfirming: () => false,
-            creating: () => false,
-            linkError: () => '',
-          }),
-          [],
-        ];
-      },
+      SucceededFetchTeamById: ({ entry }) => [
+        evo(model, {
+          rows: (rows) => upsertEntry(rows, entry),
+          drawer: () => editRecord(entry),
+          chartError: () => '',
+          linkError: () => '',
+        }),
+        [],
+      ],
       FailedFetchTeamById: ({ reason }) => [evo(model, { linkError: () => reason }), []],
     }),
   );
@@ -1725,14 +1739,13 @@ const content = (model: Model): Html => {
       ],
     );
 
-  // Keyed so re-sorting under search/filter/pagination patches by identity,
-  // not position — otherwise a card's OnClick(ClickedRecord) can end up over a
-  // different row. Local (unsaved) rows have no id, so fall back to the stable
-  // model-row index.
-  const entryCard = ({ entry, index }: { entry: Entry; index: number }): Html =>
+  // Keyed by record id so re-sorting under search/filter/pagination patches by
+  // identity, not position — otherwise a card's OnClick(ClickedRecord) can end
+  // up over a different row.
+  const entryCard = ({ entry }: { entry: Entry }): Html =>
     h.keyed('div')(
-      entry.id === '' ? `local-${index}` : entry.id,
-      [h.OnClick(ClickedRecord({ index })), h.Class(entryCardStyle)],
+      entry.id,
+      [h.OnClick(ClickedRecord({ section: entry.section, id: entry.id })), h.Class(entryCardStyle)],
       [
         h.span([h.Class('font-medium text-neutral-900')], [entry.values[0] ?? '']),
         h.div(
@@ -2092,12 +2105,19 @@ const drawerTabs: ReadonlyArray<{ readonly tab: DrawerTab; readonly label: strin
 
 const drawer = (model: Model): Html => {
   const h = html<Message>();
-  const editingExisting = model.editingIndex >= 0 && model.editingIndex < model.rows.length;
-  const open = model.creating || editingExisting;
-  const entry = editingExisting ? model.rows[model.editingIndex] : undefined;
+  const drawerState = model.drawer;
+  const open = drawerState._tag !== 'Closed';
+  const creating = drawerState._tag === 'Creating';
+  // The record being edited, resolved by id (undefined while creating/closed
+  // or if it has since gone).
+  const entry = drawerRecord(model);
+  const draft = draftOf(drawerState);
+  const tab = drawerState._tag === 'Editing' ? drawerState.tab : 'overview';
+  const confirmingDelete = drawerState._tag === 'Editing' ? drawerState.confirmingDelete : false;
+  const editingId = drawerState._tag === 'Editing' ? drawerState.id : '';
   // The section this drawer is scoped to: the record's own section when
-  // editing, or the active dashboard section when creating a new one.
-  const drawerSection = model.creating ? model.section : entry?.section;
+  // editing, or the target section when creating a new one.
+  const drawerSection = drawerState._tag === 'Closed' ? undefined : drawerState.section;
   const columns = drawerSection ? sectionData[drawerSection].columns : [];
 
   const field = (column: string, index: number): Html =>
@@ -2107,7 +2127,7 @@ const drawer = (model: Model): Html => {
         h.span([h.Class('text-sm font-medium text-neutral-700')], [column]),
         h.input([
           h.Type('text'),
-          h.Value(model.draft[index] ?? ''),
+          h.Value(draft[index] ?? ''),
           h.OnInput((value) => EditedField({ index, value })),
           h.Class(drawerInputStyle),
         ]),
@@ -2123,11 +2143,9 @@ const drawer = (model: Model): Html => {
     // A competition's own editions, each opening its own drawer on click.
     const editionsList = (): Html => {
       if (!isCompetition) return h.div([], []);
-      const editions = model.rows
-        .map((row, index) => ({ row, index }))
-        .filter(
-          ({ row }) => row.section === 'editions' && row.parentId === entry.id && !row.deleted,
-        );
+      const editions = model.rows.filter(
+        (row) => row.section === 'editions' && row.parentId === entry.id && !row.deleted,
+      );
 
       return h.div(
         [h.Class('flex flex-col gap-2')],
@@ -2136,10 +2154,13 @@ const drawer = (model: Model): Html => {
           editions.length > 0
             ? h.div(
                 [h.Class('flex flex-col gap-2')],
-                editions.map(({ row, index }) =>
+                editions.map((row) =>
                   h.keyed('div')(
-                    row.id === '' ? `local-${index}` : row.id,
-                    [h.OnClick(ClickedRecord({ index })), h.Class(entryCardStyle)],
+                    row.id,
+                    [
+                      h.OnClick(ClickedRecord({ section: row.section, id: row.id })),
+                      h.Class(entryCardStyle),
+                    ],
                     [h.span([h.Class('font-medium text-neutral-900')], [row.values[0] ?? ''])],
                   ),
                 ),
@@ -2188,14 +2209,12 @@ const drawer = (model: Model): Html => {
           .filter((participation) => participation.editionId === entry.id)
           .map((participation) => participation.teamId),
       );
-      const teams = model.rows
-        .map((row, index) => ({ row, index }))
-        .filter(
-          ({ row }) =>
-            (row.section === 'clubs' || row.section === 'nationals') &&
-            teamIds.has(row.id) &&
-            !row.deleted,
-        );
+      const teams = model.rows.filter(
+        (row) =>
+          (row.section === 'clubs' || row.section === 'nationals') &&
+          teamIds.has(row.id) &&
+          !row.deleted,
+      );
 
       return h.div(
         [h.Class('flex flex-col gap-2')],
@@ -2204,10 +2223,13 @@ const drawer = (model: Model): Html => {
           teams.length > 0
             ? h.div(
                 [h.Class('flex flex-col gap-2')],
-                teams.map(({ row, index }) =>
+                teams.map((row) =>
                   h.keyed('div')(
-                    row.id === '' ? `local-${index}` : row.id,
-                    [h.OnClick(ClickedRecord({ index })), h.Class(entryCardStyle)],
+                    row.id,
+                    [
+                      h.OnClick(ClickedRecord({ section: row.section, id: row.id })),
+                      h.Class(entryCardStyle),
+                    ],
                     [h.span([h.Class('font-medium text-neutral-900')], [row.values[0] ?? ''])],
                   ),
                 ),
@@ -2220,7 +2242,12 @@ const drawer = (model: Model): Html => {
     return h.div(
       [h.Class('flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-6')],
       [
-        h.div(
+        // Keyed by record id so opening a different record from an already-open
+        // drawer tears the host down and remounts it — OnMount refires, and the
+        // new record's data is synced in (an unkeyed host would keep the prior
+        // record's chart, since OnMount only fires once per element).
+        h.keyed('div')(
+          `chart-${entry.id}`,
           [
             h.OnMount(MountChart({ hostId: CHART_HOST_ID })),
             h.AriaLabel('Record stats chart'),
@@ -2230,7 +2257,8 @@ const drawer = (model: Model): Html => {
         ),
         // Points-over-time only makes sense for a team's league campaign.
         isTeam
-          ? h.div(
+          ? h.keyed('div')(
+              `points-${entry.id}`,
               [
                 h.OnMount(MountChart({ hostId: POINTS_CHART_HOST_ID })),
                 h.AriaLabel('Points over time chart'),
@@ -2277,7 +2305,7 @@ const drawer = (model: Model): Html => {
           [h.Class('mt-1 text-sm text-rose-700')],
           ['Deleting this record removes it from the list. This cannot be undone.'],
         ),
-        model.deleteConfirming
+        confirmingDelete
           ? h.div(
               [h.Class('mt-3 flex items-center gap-3')],
               [
@@ -2306,7 +2334,7 @@ const drawer = (model: Model): Html => {
     );
 
   const historyTab = (): Html => {
-    const changes = model.editLog.filter((change) => change.index === model.editingIndex);
+    const changes = model.editLog.filter((change) => change.recordId === editingId);
 
     const changeCard = (change: LogEntry): Html =>
       h.div(
@@ -2335,18 +2363,18 @@ const drawer = (model: Model): Html => {
   };
 
   const tabContent = (): Html =>
-    M.value(model.drawerTab).pipe(
+    M.value(tab).pipe(
       M.when('overview', overviewTab),
       M.when('persistency', persistencyTab),
       M.when('history', historyTab),
       M.exhaustive,
     );
 
-  const tabButton = ({ tab, label }: { tab: DrawerTab; label: string }): Html =>
+  const tabButton = ({ tab: buttonTab, label }: { tab: DrawerTab; label: string }): Html =>
     h.button(
       [
-        h.OnClick(SelectedDrawerTab({ tab })),
-        h.Class(model.drawerTab === tab ? drawerTabActiveStyle : drawerTabStyle),
+        h.OnClick(SelectedDrawerTab({ tab: buttonTab })),
+        h.Class(tab === buttonTab ? drawerTabActiveStyle : drawerTabStyle),
       ],
       [label],
     );
@@ -2360,9 +2388,7 @@ const drawer = (model: Model): Html => {
               h.h2(
                 [h.Class('flex items-center gap-2 text-lg font-semibold text-neutral-900')],
                 [
-                  model.creating
-                    ? `New ${sectionSingularLabels[drawerSection]}`
-                    : (model.draft[0] ?? ''),
+                  creating ? `New ${sectionSingularLabels[drawerSection]}` : (draft[0] ?? ''),
                   h.span([h.Class(drawerTypePillStyle)], [sectionSingularLabels[drawerSection]]),
                 ],
               ),
@@ -2371,7 +2397,7 @@ const drawer = (model: Model): Html => {
           ),
           // Creating a new record skips Overview/History (nothing to show yet)
           // and the tab bar entirely — just the fields to fill in.
-          ...(model.creating
+          ...(creating
             ? [
                 h.div(
                   [h.Class('flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-6')],
