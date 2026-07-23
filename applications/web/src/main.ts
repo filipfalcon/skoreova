@@ -89,14 +89,13 @@ export type MapLeague = typeof MapLeague.Type;
 export const Model = S.Struct({
   isMenuOpen: S.Boolean,
   // Id of the landing section the viewport sat in when the menu was last
-  // opened ('' = none, e.g. the hero). Resolved once per open by
-  // DetectActiveSection — scroll is locked while the overlay is up,
-  // so it cannot go stale.
-  activeSection: S.String,
+  // opened (None at the hero). Resolved once per open by DetectActiveSection —
+  // scroll is locked while the overlay is up, so it cannot go stale.
+  activeSection: S.Option(S.String),
   mapLeague: MapLeague,
-  // Slug of the club whose card is open over the map ('' = none). Pins open
-  // the card; navigation to the profile happens via the card's button.
-  mapClub: S.String,
+  // Slug of the club whose card is open over the map (None = closed). Pins
+  // open the card; navigation to the profile happens via the card's button.
+  mapClub: S.Option(S.String),
   // Team cards individually dismissed (via their ✕) since the pin opened —
   // lets one of a pair close while the other stays.
   // Whether the country-area figure shows imperial units (the RESTING
@@ -118,17 +117,18 @@ export const ToggledMenu = m('ToggledMenu');
 // Sent by every anchor inside the overlay: close the menu and let navigation
 // take care of the rest.
 export const ClosedMenu = m('ClosedMenu');
-// Reports which landing section the viewport is in — see DetectActiveSection.
-export const DetectedActiveSection = m('DetectedActiveSection', { section: S.String });
+// Reports which landing section the viewport is in (None at the hero) — see
+// DetectActiveSection.
+export const DetectedActiveSection = m('DetectedActiveSection', { section: S.Option(S.String) });
 export const ClickedLink = m('ClickedLink', { request: UrlRequest });
 export const ChangedUrl = m('ChangedUrl', { url: Url });
 export const CompletedNavigate = m('CompletedNavigate');
 export const CompletedLoad = m('CompletedLoad');
 export const CompletedSetScrollLock = m('CompletedSetScrollLock');
 export const SelectedMapLeague = m('SelectedMapLeague', { league: MapLeague });
-// '' closes the club card(s).
 export const OpenedMapClub = m('OpenedMapClub', { slug: S.String });
-// Dismisses ONE card of an open pair via its ✕; the sibling stays.
+// Closes the open club card.
+export const ClosedMapClub = m('ClosedMapClub');
 export const ToggledAreaUnit = m('ToggledAreaUnit');
 
 export const Message = S.Union([
@@ -142,6 +142,7 @@ export const Message = S.Union([
   CompletedSetScrollLock,
   SelectedMapLeague,
   OpenedMapClub,
+  ClosedMapClub,
   ToggledAreaUnit,
   CompletedMountMotion,
   FailedMountMotion,
@@ -279,7 +280,6 @@ export const DetectActiveSection = Command.define(
         return rect !== undefined && rect.top <= centre;
       }),
       Option.map((entry) => entry.target.split('#')[1] ?? ''),
-      Option.getOrElse(() => ''),
     );
     return DetectedActiveSection({ section });
   }),
@@ -289,9 +289,9 @@ export const DetectActiveSection = Command.define(
 
 const initialModel: Model = {
   isMenuOpen: false,
-  activeSection: '',
+  activeSection: Option.none(),
   mapLeague: 'All',
-  mapClub: '',
+  mapClub: Option.none(),
   isMapAreaImperial: true,
   heroPastHeader: false,
 };
@@ -309,7 +309,7 @@ const applyRoute = (model: Model, route: AppRoute): Model => {
   );
   // Any navigation closes the map's club card — landing back on the page
   // with a stale card open would be odd.
-  return evo(next, { mapClub: () => '' });
+  return evo(next, { mapClub: () => Option.none() });
 };
 
 export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
@@ -332,7 +332,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         return [
           // Opening resets the marker to "unknown" so a stale highlight from
           // the previous open can't flash before detection lands.
-          evo(model, { isMenuOpen: () => isMenuOpen, activeSection: (s) => (isMenuOpen ? '' : s) }),
+          evo(model, {
+            isMenuOpen: () => isMenuOpen,
+            activeSection: (s) => (isMenuOpen ? Option.none() : s),
+          }),
           isMenuOpen
             ? [SetScrollLock({ locked: true }), DetectActiveSection()]
             : [SetScrollLock({ locked: false })],
@@ -366,10 +369,11 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       CompletedLoad: () => [model, []],
       CompletedSetScrollLock: () => [model, []],
       SelectedMapLeague: ({ league }) => [
-        evo(model, { mapLeague: () => league, mapClub: () => '' }),
+        evo(model, { mapLeague: () => league, mapClub: () => Option.none() }),
         [],
       ],
-      OpenedMapClub: ({ slug }) => [evo(model, { mapClub: () => slug }), []],
+      OpenedMapClub: ({ slug }) => [evo(model, { mapClub: () => Option.some(slug) }), []],
+      ClosedMapClub: () => [evo(model, { mapClub: () => Option.none() }), []],
       ToggledAreaUnit: () => [evo(model, { isMapAreaImperial: (imperial) => !imperial }), []],
       CompletedMountMotion: () => [model, []],
       // Motion is decorative — if it fails to attach, the page still renders
@@ -917,8 +921,10 @@ const menuOverlayView = (model: Model): Html =>
             // "You are here" — the section the viewport sat in when the menu
             // opened gets the brand full stop, the same mark the wordmark
             // carries. Detection runs per open; see DetectActiveSection.
-            const active =
-              model.activeSection !== '' && entry.target === `/#${model.activeSection}`;
+            const active = Option.exists(
+              model.activeSection,
+              (section) => entry.target === `/#${section}`,
+            );
             return h.li(
               [
                 // The last anchor closes the list — no rule under it.
@@ -3782,7 +3788,7 @@ const clubPin = (model: Model, club: Club): Html => {
   const phoneAnchor = PIN_ANCHOR_PHONE[club.slug];
   // The open card's pin wears a pink ring — hover already talks (the
   // crest grows), the ring answers WHICH one is selected.
-  const selected = model.mapClub === club.slug;
+  const selected = Option.contains(model.mapClub, club.slug);
   // The root is a DIV, not a button: the banner rows are links, and links
   // must not nest inside a button (invalid HTML, broken for screen
   // readers). The crest below is the actual button; the root carries the
@@ -3792,7 +3798,7 @@ const clubPin = (model: Model, club: Club): Html => {
       // Selection as a data attribute, NOT a class: the root's class
       // string must stay static or Foldkit's patch would wipe the
       // observer-stamped `.is-in` (see the pin wrapper comment below).
-      h.DataAttribute('selected', model.mapClub === club.slug ? 'true' : 'false'),
+      h.DataAttribute('selected', selected ? 'true' : 'false'),
       // The z-index transition lives in styles.css (.club-pin): a fresh
       // hover rises after a 150ms hold, the drop on hover-out DECAYS over
       // the scale-back. The REVEAL deliberately does NOT live on this
@@ -3861,7 +3867,7 @@ const clubPin = (model: Model, club: Club): Html => {
           h.button(
             [
               h.Type('button'),
-              h.OnClick(OpenedMapClub({ slug: model.mapClub === club.slug ? '' : club.slug })),
+              h.OnClick(selected ? ClosedMapClub() : OpenedMapClub({ slug: club.slug })),
               h.AriaLabel(`${club.name} — ${club.city}, ${club.league}`),
               h.Class(
                 clsx(
@@ -4386,13 +4392,13 @@ const clubsView = (model: Model): Html =>
                       // closes it on any click outside. It sits BELOW the pins
                       // (z-10), so clicking another pin still switches the card
                       // instead of merely closing this one.
-                      ...(model.mapClub === ''
+                      ...(Option.isNone(model.mapClub)
                         ? []
                         : [
                             h.div(
                               [
                                 h.Class('absolute inset-0 z-[5]'),
-                                h.OnClick(OpenedMapClub({ slug: '' })),
+                                h.OnClick(ClosedMapClub()),
                                 h.AriaHidden(true),
                               ],
                               [],
