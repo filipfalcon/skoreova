@@ -40,7 +40,7 @@ test('selecting a chart metric records it and fires no command', () => {
   );
 });
 
-test('the top-scorers scope, edition, and round are plain field writes', () => {
+test('scope is a field write; edition and round fold their current sentinel to None', () => {
   Story.story(
     update,
     Story.with(welcomeModel),
@@ -49,8 +49,16 @@ test('the top-scorers scope, edition, and round are plain field writes', () => {
     Story.message(SelectedCompetitionRound({ round: 7 })),
     Story.model((model) => {
       expect(model.scorerScope).toBe('league');
-      expect(model.competitionEdition).toBe('2023/24');
-      expect(model.competitionRound).toBe(7);
+      expect(model.competitionEdition).toEqual(Option.some('2023/24'));
+      expect(model.competitionRound).toEqual(Option.some(7));
+    }),
+    // The chip sends '' / 0 for the current edition / matchday; the Model holds
+    // None so the sentinel never lives in the state.
+    Story.message(SelectedCompetitionEdition({ label: '' })),
+    Story.message(SelectedCompetitionRound({ round: 0 })),
+    Story.model((model) => {
+      expect(model.competitionEdition).toEqual(Option.none());
+      expect(model.competitionRound).toEqual(Option.none());
     }),
     Story.Command.expectNone(),
   );
@@ -117,7 +125,7 @@ test('an internal link applies the route and pushes it through Navigate', () => 
     Story.with(welcomeModel),
     Story.message(ClickedLink({ request: Internal({ url: url('/her-game') }) })),
     Story.model((model) => {
-      expect(model.screen).toBe('hergame');
+      expect(model.route._tag).toBe('HerGameRoute');
     }),
     Story.Command.expectHas(Navigate),
     Story.Command.resolve(Navigate, CompletedNavigate()),
@@ -130,8 +138,10 @@ test('a browser back/forward to a club profile applies the slug route', () => {
     Story.with(clubsModel),
     Story.message(ChangedUrl({ url: url('/clubs/sparta-praha') })),
     Story.model((model) => {
-      expect(model.screen).toBe('clubs');
-      expect(model.clubSlug).toBe('sparta-praha');
+      expect(model.route._tag).toBe('ClubRoute');
+      if (model.route._tag === 'ClubRoute') {
+        expect(model.route.slug).toBe('sparta-praha');
+      }
     }),
     Story.Command.expectNone(),
   );
@@ -143,7 +153,7 @@ test('an external link leaves the model and loads the href', () => {
     Story.with(welcomeModel),
     Story.message(ClickedLink({ request: External({ href: 'https://uefa.com' }) })),
     Story.model((model) => {
-      expect(model.screen).toBe('welcome');
+      expect(model.route._tag).toBe('WelcomeRoute');
     }),
     Story.Command.expectHas(Load),
     Story.Command.resolve(Load, CompletedLoad()),

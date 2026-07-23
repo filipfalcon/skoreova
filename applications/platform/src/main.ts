@@ -40,8 +40,7 @@ import secondLeagueGoalsPhoto from './assets/goals/second-league.jpg';
 import pardubicePhoto from './assets/trending/pardubice.jpg';
 import sierraPhoto from './assets/trending/sierra.jpg';
 import spartaPhoto from './assets/trending/sparta.jpg';
-import type { AppRoute } from './route';
-import { urlToAppRoute } from './route';
+import { AppRoute, WelcomeRoute, urlToAppRoute } from './route';
 
 // MODEL
 //
@@ -74,19 +73,20 @@ export const ScorerScope = S.Literals(['all', 'league', 'cup']);
 export type ScorerScope = typeof ScorerScope.Type;
 
 export const Model = S.Struct({
-  screen: Screen,
-  // '' = the clubs directory; otherwise the slug of the open club profile.
-  clubSlug: S.String,
-  // '' = the competitions directory; otherwise the open competition's slug.
-  competitionSlug: S.String,
-  // Which of the open competition's EDITIONS is showing ('' = the current
-  // one). Every competition is a series of editions — one per season —
-  // and the profile carries a picker; the backend exposes them via
+  // The current route is THE source of truth for what's on screen — the
+  // visible screen and any open club/competition slug are derived from it in
+  // the view (see screenOf / routeClubSlug / routeCompetitionSlug), so the
+  // impossible states a screen+slug pair allowed (a slug set on the wrong
+  // screen, both slugs at once) can't be represented.
+  route: AppRoute,
+  // Which of the open competition's EDITIONS is showing (None = the current
+  // one). Every competition is a series of editions — one per season — and
+  // the profile carries a picker; the backend exposes them via
   // /editions?competitionId= once real data lands.
-  competitionEdition: S.String,
-  // Which matchday the competition profile's matches panel shows (0 = the
+  competitionEdition: S.Option(S.String),
+  // Which matchday the competition profile's matches panel shows (None = the
   // current one).
-  competitionRound: S.Number,
+  competitionRound: S.Option(S.Number),
   // The clubs directory's search box ('' = show everything).
   clubQuery: S.String,
   // Which of the featured EUROPEAN CONTENDERS the clubs carousel shows.
@@ -219,11 +219,9 @@ export const WritePins = Command.define(
 // UPDATE
 
 const initialModel: Model = {
-  screen: 'welcome',
-  clubSlug: '',
-  competitionSlug: '',
-  competitionEdition: '',
-  competitionRound: 0,
+  route: WelcomeRoute(),
+  competitionEdition: Option.none(),
+  competitionRound: Option.none(),
   clubQuery: '',
   featuredClub: 0,
   followed: [],
@@ -233,36 +231,18 @@ const initialModel: Model = {
   metric: 'goals',
 };
 
-// Every route resets both profile slugs; the two profile routes then set
-// their own. Unknown slugs fall back to the directory (resolved in view —
-// the model just carries the slug).
-const applyRoute = (model: Model, route: AppRoute): Model => {
-  const base = evo(model, {
-    clubSlug: () => '',
-    competitionSlug: () => '',
-    competitionEdition: () => '',
-    competitionRound: () => 0,
+// A route change stores the new route and resets the transient per-view state
+// (the edition/round pickers, the clubs search, the carousel index). Opening a
+// club also resets the top-scorers scope; other routes leave it alone.
+const applyRoute = (model: Model, route: AppRoute): Model =>
+  evo(model, {
+    route: () => route,
+    competitionEdition: () => Option.none(),
+    competitionRound: () => Option.none(),
     clubQuery: () => '',
     featuredClub: () => 0,
+    scorerScope: (current) => (route._tag === 'ClubRoute' ? 'all' : current),
   });
-  return M.value(route).pipe(
-    M.withReturnType<Model>(),
-    M.tagsExhaustive({
-      WelcomeRoute: () => evo(base, { screen: () => 'welcome' }),
-      HerGameRoute: () => evo(base, { screen: () => 'hergame' }),
-      ClubsRoute: () => evo(base, { screen: () => 'clubs' }),
-      ClubRoute: ({ slug }) =>
-        evo(base, { screen: () => 'clubs', clubSlug: () => slug, scorerScope: () => 'all' }),
-      PlayersRoute: () => evo(base, { screen: () => 'players' }),
-      MatchesRoute: () => evo(base, { screen: () => 'matches' }),
-      CompetitionsRoute: () => evo(base, { screen: () => 'competitions' }),
-      CompetitionRoute: ({ slug }) =>
-        evo(base, { screen: () => 'competitions', competitionSlug: () => slug }),
-      OfficialsRoute: () => evo(base, { screen: () => 'officials' }),
-      NotFoundRoute: () => evo(base, { screen: () => 'welcome' }),
-    }),
-  );
-};
 
 export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
   applyRoute(initialModel, urlToAppRoute(url)),
@@ -296,11 +276,21 @@ export const update = (
       CompletedLoad: () => [model, []],
       SelectedMetric: ({ metric }) => [evo(model, { metric: () => metric }), []],
       SelectedScorerScope: ({ scope }) => [evo(model, { scorerScope: () => scope }), []],
+      // The chip sends '' for the current edition and 0 for the current
+      // matchday; the Model holds None for "current" so the sentinel never
+      // lives in the state.
       SelectedCompetitionEdition: ({ label }) => [
-        evo(model, { competitionEdition: () => label }),
+        evo(model, {
+          competitionEdition: () => (label === '' ? Option.none() : Option.some(label)),
+        }),
         [],
       ],
-      SelectedCompetitionRound: ({ round }) => [evo(model, { competitionRound: () => round }), []],
+      SelectedCompetitionRound: ({ round }) => [
+        evo(model, {
+          competitionRound: () => (round === 0 ? Option.none() : Option.some(round)),
+        }),
+        [],
+      ],
       ChangedClubQuery: ({ query }) => [evo(model, { clubQuery: () => query }), []],
       SelectedFeaturedClub: ({ index }) => [evo(model, { featuredClub: () => index }), []],
       ToggledFollow: ({ slug }) => [
@@ -360,6 +350,33 @@ const screenTitles: Record<Screen, string> = {
   competitions: 'Competitions',
   officials: 'Officials',
 };
+
+// The visible screen implied by the route. The Model stores the route; the
+// nav, titles, and screen dispatch read the screen it maps to. The two profile
+// routes fold onto their directory screen (the open profile is drawn by
+// screenView resolving the slug), and NotFound onto the welcome screen (the
+// mock has no error page).
+const screenOf = (route: AppRoute): Screen =>
+  M.value(route).pipe(
+    M.withReturnType<Screen>(),
+    M.tagsExhaustive({
+      WelcomeRoute: () => 'welcome',
+      HerGameRoute: () => 'hergame',
+      ClubsRoute: () => 'clubs',
+      ClubRoute: () => 'clubs',
+      PlayersRoute: () => 'players',
+      MatchesRoute: () => 'matches',
+      CompetitionsRoute: () => 'competitions',
+      CompetitionRoute: () => 'competitions',
+      OfficialsRoute: () => 'officials',
+      NotFoundRoute: () => 'welcome',
+    }),
+  );
+
+// The open club / competition slug, or '' when the route is not that profile.
+const routeClubSlug = (route: AppRoute): string => (route._tag === 'ClubRoute' ? route.slug : '');
+const routeCompetitionSlug = (route: AppRoute): string =>
+  route._tag === 'CompetitionRoute' ? route.slug : '';
 
 interface MetricSeries {
   readonly label: string;
@@ -1256,7 +1273,7 @@ const navIcon = (screen: Screen): Html => {
 };
 
 const desktopNavLink = (model: Model, entry: NavEntry): Html => {
-  const active = model.screen === entry.screen;
+  const active = screenOf(model.route) === entry.screen;
   // HER GAME — the featured center tab: a paper chip in Anton, no number,
   // with a periodic pink gradient sweeping through it (.hergame-chip).
   // Solid pink only when the section is OPEN (and on hover), so the pink
@@ -1385,11 +1402,14 @@ const screenHeader = (model: Model, subtitle: string): Html =>
         [
           h.span(
             [h.Class('display inline-block bg-pink px-3 py-1.5 text-sm tracking-[0.2em] text-ink')],
-            [screenTitles[model.screen]],
+            [screenTitles[screenOf(model.route)]],
           ),
         ],
       ),
-      h.h1([h.Class('display mt-6 text-5xl text-ink md:text-7xl')], [screenTitles[model.screen]]),
+      h.h1(
+        [h.Class('display mt-6 text-5xl text-ink md:text-7xl')],
+        [screenTitles[screenOf(model.route)]],
+      ),
       h.p([h.Class('mt-3 max-w-2xl text-sm leading-relaxed text-ink/50')], [subtitle]),
     ],
   );
@@ -4767,7 +4787,10 @@ const competitionMatchesPanel = (competition: Competition, model: Model): Html =
   const total = rounds.length;
   const open = Math.min(
     total,
-    Math.max(1, model.competitionRound === 0 ? MATCHDAYS_PLAYED : model.competitionRound),
+    Math.max(
+      1,
+      Option.getOrElse(model.competitionRound, () => MATCHDAYS_PLAYED),
+    ),
   );
   const matches = rounds[open - 1] ?? [];
   const arrow = (target: number, glyph: string, label: string): Html => {
@@ -4841,12 +4864,12 @@ const competitionMatchesPanel = (competition: Competition, model: Model): Html =
 // The edition picker — one chip per season, newest first, the open one pink.
 // Past editions swap the standings panel for the archive card. A real
 // radiogroup, not the per-button AriaPressed toggle it wore before (mutually
-// exclusive, so single-select). The Model stores '' for the current edition,
+// exclusive, so single-select). The Model holds None for the current edition,
 // so the selected value is resolved to the real label, and a pick of the
-// current edition maps back to ''.
+// current edition maps back to '' on the wire (the handler folds it to None).
 const editionRadioGroup = (competition: Competition, model: Model): Html => {
   const currentLabel = competition.editions.find((entry) => entry.current)?.label ?? '';
-  const openLabel = model.competitionEdition === '' ? currentLabel : model.competitionEdition;
+  const openLabel = Option.getOrElse(model.competitionEdition, () => currentLabel);
   return RadioGroup.view<string, Message>({
     id: 'competition-edition',
     selectedValue: Option.some(openLabel),
@@ -4905,12 +4928,14 @@ const competitionProfileScreen = (competition: Competition, model: Model): Html 
       h.div(
         [h.Class('mt-8 flex flex-col gap-8')],
         [
-          ...(model.competitionEdition === ''
+          ...(Option.isNone(model.competitionEdition)
             ? [competitionStandingsPanel(competition), competitionMatchesPanel(competition, model)]
             : [
                 editionArchivePanel(
                   competition,
-                  competition.editions.find((entry) => entry.label === model.competitionEdition) ??
+                  competition.editions.find(
+                    (entry) => entry.label === Option.getOrNull(model.competitionEdition),
+                  ) ??
                     competition.editions[0] ?? { label: '', current: true, detail: '' },
                 ),
               ]),
@@ -4925,18 +4950,22 @@ const competitionProfileScreen = (competition: Competition, model: Model): Html 
 
 // An unknown slug falls back to the directory screen rather than a 404 —
 // the mock has no error page, and the directory is the useful neighbor.
-const openClub = (model: Model): Club | undefined =>
-  clubs.find((candidate) => candidate.slug === model.clubSlug);
+const openClub = (model: Model): Club | undefined => {
+  const slug = routeClubSlug(model.route);
+  return slug === '' ? undefined : clubs.find((candidate) => candidate.slug === slug);
+};
 
-const openCompetition = (model: Model): Competition | undefined =>
-  competitions.find((candidate) => candidate.slug === model.competitionSlug);
+const openCompetition = (model: Model): Competition | undefined => {
+  const slug = routeCompetitionSlug(model.route);
+  return slug === '' ? undefined : competitions.find((candidate) => candidate.slug === slug);
+};
 
 const screenView = (model: Model): Html => {
   const club = openClub(model);
   if (club) return clubProfileScreen(club, model);
   const competition = openCompetition(model);
   if (competition) return competitionProfileScreen(competition, model);
-  return M.value(model.screen).pipe(
+  return M.value(screenOf(model.route)).pipe(
     M.withReturnType<Html>(),
     M.when('welcome', () => welcomeScreen(model)),
     M.when('hergame', () => herGameScreen(model)),
@@ -4966,7 +4995,9 @@ const shellView = (model: Model): Html =>
           // on every section or profile change.
           h.main(
             [
-              h.Key(`${model.screen}:${model.clubSlug}:${model.competitionSlug}`),
+              h.Key(
+                `${screenOf(model.route)}:${routeClubSlug(model.route)}:${routeCompetitionSlug(model.route)}`,
+              ),
               h.Class('screen mx-auto w-full max-w-7xl px-5 pt-10 pb-10 md:px-10 md:pt-14'),
             ],
             [screenView(model)],
@@ -5002,8 +5033,8 @@ const shellView = (model: Model): Html =>
 
 export const view = (model: Model): Document => ({
   title:
-    model.screen === 'welcome'
+    screenOf(model.route) === 'welcome'
       ? 'Skóreová Platform'
-      : `${openClub(model)?.name ?? openCompetition(model)?.name ?? screenTitles[model.screen]} — Skóreová Platform`,
+      : `${openClub(model)?.name ?? openCompetition(model)?.name ?? screenTitles[screenOf(model.route)]} — Skóreová Platform`,
   body: h.div([h.Class('bg-paper font-body text-ink antialiased')], [shellView(model)]),
 });
