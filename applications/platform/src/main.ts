@@ -1,5 +1,6 @@
 import { Effect, Match as M, Option, Schema as S } from 'effect';
 import { Input, RadioGroup } from '@foldkit/ui';
+import clsx from 'clsx';
 import type { Runtime } from 'foldkit';
 import { Command } from 'foldkit';
 import type { Document, Html } from 'foldkit/html';
@@ -1116,11 +1117,12 @@ const pinToggle = (model: Model, id: string, label: string): Html => {
       h.AriaPressed(pinned ? 'true' : 'false'),
       h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
       h.Class(
-        `group/pin flex shrink-0 cursor-pointer items-center gap-1.5 border px-2.5 py-1.5 text-[10px] tracking-[0.2em] uppercase transition-colors ${
+        clsx(
+          'group/pin flex shrink-0 cursor-pointer items-center gap-1.5 border px-2.5 py-1.5 text-[10px] tracking-[0.2em] uppercase transition-colors',
           pinned
             ? 'border-pink bg-pink text-ink'
-            : 'border-ink/20 text-ink/50 hover:border-pink hover:text-ink'
-        }`,
+            : 'border-ink/20 text-ink/50 hover:border-pink hover:text-ink',
+        ),
       ),
     ],
     [pinGlyph('h-3.5 w-3.5'), pinned ? 'Pinned' : 'Pin'],
@@ -1286,9 +1288,10 @@ const desktopNavLink = (model: Model, entry: NavEntry): Html => {
       [
         h.Href(entry.href),
         h.Class(
-          `display flex items-center self-center px-3.5 py-2 text-[min(14px,3.4vw)] tracking-[0.08em] whitespace-nowrap uppercase transition-colors md:px-4 md:py-2.5 md:text-sm lg:px-5 lg:text-base md:tracking-[0.14em] ${
-            active ? 'bg-pink text-ink' : 'hergame-chip bg-paper text-ink hover:bg-pink'
-          }`,
+          clsx(
+            'display flex items-center self-center px-3.5 py-2 text-[min(14px,3.4vw)] tracking-[0.08em] whitespace-nowrap uppercase transition-colors md:px-4 md:py-2.5 md:text-sm lg:px-5 lg:text-base md:tracking-[0.14em]',
+            active ? 'bg-pink text-ink' : 'hergame-chip bg-paper text-ink hover:bg-pink',
+          ),
         ),
       ],
       [entry.label],
@@ -1301,9 +1304,10 @@ const desktopNavLink = (model: Model, entry: NavEntry): Html => {
       // the name); from `md` up it's the plain uppercase label.
       h.AriaLabel(entry.label),
       h.Class(
-        `flex items-center border-b-2 px-2 py-3 whitespace-nowrap uppercase transition-colors md:px-2.5 md:text-[11px] md:tracking-[0.12em] lg:px-4 lg:text-xs lg:tracking-[0.2em] ${
-          active ? 'border-pink text-pink' : 'border-transparent text-paper hover:text-pink'
-        }`,
+        clsx(
+          'flex items-center border-b-2 px-2 py-3 whitespace-nowrap uppercase transition-colors md:px-2.5 md:text-[11px] md:tracking-[0.12em] lg:px-4 lg:text-xs lg:tracking-[0.2em]',
+          active ? 'border-pink text-pink' : 'border-transparent text-paper hover:text-pink',
+        ),
       ),
     ],
     [navIcon(entry.screen), h.span([h.Class('hidden md:block')], [entry.label])],
@@ -1666,7 +1670,7 @@ const newContentPanel = (): Html =>
 const trendingTile = (model: Model, entry: TrendingEntry, index: number): Html => {
   const featured = entry.photo !== '';
   return h.div(
-    [h.Class(`relative ${index === 0 ? 'col-span-2 sm:col-span-1' : ''}`)],
+    [h.Class(clsx('relative', { 'col-span-2 sm:col-span-1': index === 0 }))],
     [
       pinOverlay(model, `trending:${slugify(entry.name)}`, entry.name),
       h.a(
@@ -1683,9 +1687,11 @@ const trendingTile = (model: Model, entry: TrendingEntry, index: number): Html =
           // only sings as a one-liner); the leader stays the tallest.
           // The grid takes over from `sm`.
           h.Class(
-            `trend-row group relative isolate flex h-full flex-col justify-end overflow-hidden p-5 md:min-h-44 lg:min-h-56 ${
-              featured ? 'bg-ink' : `${panel} transition-colors hover:border-pink`
-            } ${index === 0 ? 'min-h-64' : 'min-h-44 sm:min-h-60'}`,
+            clsx(
+              'trend-row group relative isolate flex h-full flex-col justify-end overflow-hidden p-5 md:min-h-44 lg:min-h-56',
+              featured ? 'bg-ink' : `${panel} transition-colors hover:border-pink`,
+              index === 0 ? 'min-h-64' : 'min-h-44 sm:min-h-60',
+            ),
           ),
           h.Style({ '--row-delay': `${0.3 + index * 0.08}s` }),
         ],
@@ -1720,9 +1726,11 @@ const trendingTile = (model: Model, entry: TrendingEntry, index: number): Html =
           h.p(
             [
               h.Class(
-                `display leading-[1.05] transition-colors group-hover:text-pink sm:text-2xl ${
-                  index === 0 ? 'text-4xl' : 'text-3xl'
-                } ${featured ? 'text-paper' : 'text-ink'}`,
+                clsx(
+                  'display leading-[1.05] transition-colors group-hover:text-pink sm:text-2xl',
+                  index === 0 ? 'text-4xl' : 'text-3xl',
+                  featured ? 'text-paper' : 'text-ink',
+                ),
               ),
             ],
             [entry.name],
@@ -1730,9 +1738,10 @@ const trendingTile = (model: Model, entry: TrendingEntry, index: number): Html =
           h.p(
             [
               h.Class(
-                `mt-2 text-[11px] leading-none tracking-[0.2em] uppercase sm:text-[10px] ${
-                  featured ? 'text-paper/70' : 'text-ink/40'
-                }`,
+                clsx(
+                  'mt-2 text-[11px] leading-none tracking-[0.2em] uppercase sm:text-[10px]',
+                  featured ? 'text-paper/70' : 'text-ink/40',
+                ),
               ),
             ],
             [entry.kind],
@@ -1824,7 +1833,7 @@ const statSpark = (rounds: ReadonlyArray<number>): Html =>
       const height = 25 + (spread === 0 ? 65 : ((value - min) / spread) * 65);
       return h.div(
         [
-          h.Class(`bar flex-1 ${index === rounds.length - 1 ? 'bg-pink' : 'bg-paper/30'}`),
+          h.Class(clsx('bar flex-1', index === rounds.length - 1 ? 'bg-pink' : 'bg-paper/30')),
           h.Style({ height: `${height.toFixed(1)}%`, '--bar-delay': `${index * 0.03}s` }),
         ],
         [],
@@ -1845,9 +1854,10 @@ const pinOverlay = (model: Model, id: string, label: string): Html => {
       h.AriaPressed(pinned ? 'true' : 'false'),
       h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
       h.Class(
-        `absolute top-3 right-3 z-10 flex h-9 w-9 cursor-pointer items-center justify-center transition-colors ${
-          pinned ? 'bg-pink text-ink' : 'bg-paper/90 text-ink hover:bg-pink'
-        }`,
+        clsx(
+          'absolute top-3 right-3 z-10 flex h-9 w-9 cursor-pointer items-center justify-center transition-colors',
+          pinned ? 'bg-pink text-ink' : 'bg-paper/90 text-ink hover:bg-pink',
+        ),
       ),
     ],
     [pinGlyph('h-4 w-4')],
@@ -1945,9 +1955,10 @@ const statCard = (
                   h.span(
                     [
                       h.Class(
-                        `display flex items-center gap-2 text-xl md:text-2xl ${
-                          up ? 'text-rise' : 'text-fall'
-                        }`,
+                        clsx(
+                          'display flex items-center gap-2 text-xl md:text-2xl',
+                          up ? 'text-rise' : 'text-fall',
+                        ),
                       ),
                     ],
                     [tapeArrow(up), `${deltaPct.toFixed(1)} %`],
@@ -2138,7 +2149,7 @@ const quoteView = (entry: TapeQuote): ReadonlyArray<Html> => [
     [
       h.span([], [entry.name]),
       h.span(
-        [h.Class(`flex items-center gap-1 ${entry.isUp ? 'text-rise' : 'text-fall'}`)],
+        [h.Class(clsx('flex items-center gap-1', entry.isUp ? 'text-rise' : 'text-fall'))],
         [tapeArrow(entry.isUp), h.span([], [entry.delta])],
       ),
     ],
@@ -2252,7 +2263,7 @@ const crestRail = (): Html => {
         [h.Class('flex flex-col items-center xl:hidden')],
         rows.map((row, rowIndex) =>
           h.div(
-            [h.Class(`flex justify-center gap-[4px] ${rowIndex > 0 ? '-mt-[17px]' : ''}`)],
+            [h.Class(clsx('flex justify-center gap-[4px]', { '-mt-[17px]': rowIndex > 0 }))],
             row,
           ),
         ),
@@ -2481,9 +2492,10 @@ const bestRecord = (model: Model, record: BestRecord, standalone: boolean): Html
           // The tick, now a hit target: pink bar at rest, growing a pin
           // glyph beside it when pinned so the state reads without colour.
           h.Class(
-            `flex cursor-pointer items-center gap-2 transition-colors ${
-              pinned ? 'text-pink' : 'text-ink/30 hover:text-pink'
-            }`,
+            clsx(
+              'flex cursor-pointer items-center gap-2 transition-colors',
+              pinned ? 'text-pink' : 'text-ink/30 hover:text-pink',
+            ),
           ),
         ],
         [
@@ -3338,29 +3350,31 @@ const standingsPanel = (label: string, league: string, highlightTeam: string | n
           return h.li(
             [
               h.Class(
-                `flex items-baseline gap-4 border-t px-2 py-3.5 first:border-t-0 ${
-                  highlighted ? 'border-pink bg-pink text-ink' : 'border-ink/10'
-                }`,
+                clsx(
+                  'flex items-baseline gap-4 border-t px-2 py-3.5 first:border-t-0',
+                  highlighted ? 'border-pink bg-pink text-ink' : 'border-ink/10',
+                ),
               ),
             ],
             [
               h.span(
-                [h.Class(`display w-8 text-lg ${highlighted ? 'text-ink/60' : 'text-ink/30'}`)],
+                [h.Class(clsx('display w-8 text-lg', highlighted ? 'text-ink/60' : 'text-ink/30'))],
                 [`${index + 1}`],
               ),
               h.span([h.Class('display flex-1 truncate text-xl')], [row.team]),
               h.span(
                 [
                   h.Class(
-                    `hidden text-[10px] tracking-[0.2em] uppercase sm:block ${
-                      highlighted ? 'text-ink/60' : 'text-ink/40'
-                    }`,
+                    clsx(
+                      'hidden text-[10px] tracking-[0.2em] uppercase sm:block',
+                      highlighted ? 'text-ink/60' : 'text-ink/40',
+                    ),
                   ),
                 ],
                 [`${row.played} played`],
               ),
               h.span(
-                [h.Class(`display w-12 text-right text-xl ${highlighted ? '' : 'text-pink'}`)],
+                [h.Class(clsx('display w-12 text-right text-xl', { 'text-pink': !highlighted }))],
                 [`${row.points}`],
               ),
             ],
@@ -3593,7 +3607,7 @@ const seasonProgress = (played: number, total: number): Html =>
       h.div(
         [h.Class('mt-2 flex gap-[3px]')],
         Array.from({ length: total }, (_unused, index) =>
-          h.div([h.Class(`h-2 flex-1 ${index < played ? 'bg-pink' : 'bg-ink/15'}`)], []),
+          h.div([h.Class(clsx('h-2 flex-1', index < played ? 'bg-pink' : 'bg-ink/15'))], []),
         ),
       ),
     ],
@@ -3672,26 +3686,29 @@ const standingsRows = (
         [h.Class('flex items-stretch gap-px')],
         [
           h.span(
-            [h.Class(`w-1.5 shrink-0 ${zone ? zone.bar : 'bg-transparent'}`), h.AriaHidden(true)],
+            [
+              h.Class(clsx('w-1.5 shrink-0', zone ? zone.bar : 'bg-transparent')),
+              h.AriaHidden(true),
+            ],
             [],
           ),
           h.div(
             [
               h.Class(
-                `flex flex-1 items-baseline gap-2 py-3.5 pr-2 pl-3 transition-colors sm:gap-3 md:gap-4 ${
-                  index === 0 && flushFirst ? '' : 'border-t'
-                } ${
+                clsx(
+                  'flex flex-1 items-baseline gap-2 py-3.5 pr-2 pl-3 transition-colors sm:gap-3 md:gap-4',
+                  { 'border-t': !(index === 0 && flushFirst) },
                   highlighted
                     ? 'border-pink bg-pink text-ink'
-                    : 'border-ink/10 text-ink hover:bg-ink/5'
-                }`,
+                    : 'border-ink/10 text-ink hover:bg-ink/5',
+                ),
               ),
             ],
             [
               h.span(
                 [
                   h.Class(
-                    `display w-6 text-lg md:w-8 ${highlighted ? 'text-ink/60' : 'text-ink/35'}`,
+                    clsx('display w-6 text-lg md:w-8', highlighted ? 'text-ink/60' : 'text-ink/35'),
                   ),
                 ],
                 [`${position}`],
@@ -3702,9 +3719,10 @@ const standingsRows = (
               h.span(
                 [
                   h.Class(
-                    `hidden w-28 text-[10px] tracking-[0.2em] uppercase md:block ${
-                      highlighted ? 'text-ink/60' : (zone?.text ?? 'text-transparent')
-                    }`,
+                    clsx(
+                      'hidden w-28 text-[10px] tracking-[0.2em] uppercase md:block',
+                      highlighted ? 'text-ink/60' : (zone?.text ?? 'text-transparent'),
+                    ),
                   ),
                 ],
                 [zone?.label ?? ''],
@@ -3714,9 +3732,10 @@ const standingsRows = (
               h.span(
                 [
                   h.Class(
-                    `display w-12 text-right text-base tabular-nums md:w-20 md:text-xl ${
-                      highlighted ? 'text-ink/70' : 'text-ink/60'
-                    }`,
+                    clsx(
+                      'display w-12 text-right text-base tabular-nums md:w-20 md:text-xl',
+                      highlighted ? 'text-ink/70' : 'text-ink/60',
+                    ),
                   ),
                 ],
                 [`${row.scored}:${row.conceded}`],
@@ -3724,9 +3743,9 @@ const standingsRows = (
               h.span(
                 [
                   h.Class(
-                    `display w-10 text-right text-xl tabular-nums md:w-12 ${
-                      highlighted ? '' : 'text-pink'
-                    }`,
+                    clsx('display w-10 text-right text-xl tabular-nums md:w-12', {
+                      'text-pink': !highlighted,
+                    }),
                   ),
                 ],
                 [`${row.points}`],
@@ -4106,9 +4125,10 @@ const clubCupSection = (): Html =>
           h.li(
             [
               h.Class(
-                `flex items-baseline justify-between gap-4 border-t px-2 py-3.5 first:border-t-0 ${
-                  tie.isUpcoming ? 'border-pink bg-pink text-ink' : 'border-ink/10 text-ink'
-                }`,
+                clsx(
+                  'flex items-baseline justify-between gap-4 border-t px-2 py-3.5 first:border-t-0',
+                  tie.isUpcoming ? 'border-pink bg-pink text-ink' : 'border-ink/10 text-ink',
+                ),
               ),
             ],
             [
@@ -4116,9 +4136,10 @@ const clubCupSection = (): Html =>
               h.span(
                 [
                   h.Class(
-                    `text-[10px] tracking-[0.2em] uppercase ${
-                      tie.isUpcoming ? 'text-ink/70' : 'text-ink/50'
-                    }`,
+                    clsx(
+                      'text-[10px] tracking-[0.2em] uppercase',
+                      tie.isUpcoming ? 'text-ink/70' : 'text-ink/50',
+                    ),
                   ),
                 ],
                 [tie.result],
@@ -4302,9 +4323,10 @@ const clubFollowSection = (target: Club, model: Model): Html => {
             // action is the pink fill, and the settled "following" state
             // goes solid ink — on a light surface a paper fill would have
             // been the button disappearing, not receding.
-            `display mt-8 inline-block cursor-pointer px-10 py-4 text-xl tracking-[0.12em] transition-colors md:text-2xl ${
-              following ? 'bg-ink text-paper' : 'bg-pink text-ink hover:bg-ink hover:text-paper'
-            }`,
+            clsx(
+              'display mt-8 inline-block cursor-pointer px-10 py-4 text-xl tracking-[0.12em] transition-colors md:text-2xl',
+              following ? 'bg-ink text-paper' : 'bg-pink text-ink hover:bg-ink hover:text-paper',
+            ),
           ),
         ],
         [following ? 'Following ✓' : `Follow ${target.name}`],
@@ -4484,7 +4506,7 @@ const clubProfileScreen = (target: Club, model: Model): Html => {
           // placeholder glyph until her photo lands — swap it for an
           // <img> in the circle then.
           h.figure(
-            [h.Class(`mx-auto max-w-2xl ${heroArt ? 'mt-10' : 'mt-16 md:mt-24'}`)],
+            [h.Class(clsx('mx-auto max-w-2xl', heroArt ? 'mt-10' : 'mt-16 md:mt-24'))],
             [
               // The TEXT is the anchor of this block (user call): it gets a
               // measure of its own and is centred inside the figure, and
@@ -4806,11 +4828,12 @@ const competitionMatchesPanel = (competition: Competition, model: Model): Html =
           ? [h.Disabled(true)]
           : [h.OnClick(SelectedCompetitionRound({ round: target }))]),
         h.Class(
-          `display border px-3.5 py-1.5 text-base transition-colors ${
+          clsx(
+            'display border px-3.5 py-1.5 text-base transition-colors',
             disabled
               ? 'cursor-default border-ink/10 text-ink/20'
-              : 'cursor-pointer border-ink/20 text-ink hover:border-pink hover:text-pink'
-          }`,
+              : 'cursor-pointer border-ink/20 text-ink hover:border-pink hover:text-pink',
+          ),
         ),
       ],
       [glyph],
