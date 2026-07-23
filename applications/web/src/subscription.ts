@@ -1,0 +1,121 @@
+// Landing page subscriptions: smooth wheel scrolling (a model-gated,
+// no-emission DOM effect) and Escape-to-close for the menu overlay.
+
+import { Effect, Schema as S, Stream } from 'effect';
+import { Subscription } from 'foldkit';
+
+import type { Model } from './model';
+import { type Message, ClosedMenu } from './message';
+
+// SUBSCRIPTIONS
+
+// Smooth wheel scrolling (Lenis-style inertia): wheel input feeds a target
+// that an rAF loop eases the viewport toward, replacing the browser's stepped
+// jumps. It emits no Messages — it is the sanctioned "maintain a DOM behavior
+// for as long as a Model condition holds" kind of Subscription — but it lives
+// here rather than in the motion Mount for two reasons. The wheel listener is
+// a window event source whose `preventDefault` must run inside the browser's
+// own dispatch (Subscription territory), and keeping the per-frame
+// window.scrollTo out of the Mount means DevTools time-travel — which re-runs
+// Mount factories — can never scroll the live viewport. Wheel only, so touch,
+// keyboard, and the scrollbar keep their native feel.
+const smoothWheelScroll: Stream.Stream<never> = Stream.callback<never>((_queue) =>
+  Effect.gen(function* () {
+    yield* Effect.acquireRelease(
+      Effect.sync(() => {
+        let target = window.scrollY;
+        let current = window.scrollY;
+        let settled = true;
+        let frame = 0;
+
+        const onWheel = (event: WheelEvent): void => {
+          if (event.ctrlKey || event.defaultPrevented) return;
+          // Mostly-horizontal gestures belong to overflow-x containers
+          // (standings tables) — leave them native.
+          if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+          const max = (document.scrollingElement?.scrollHeight ?? 0) - window.innerHeight;
+          if (max <= 0) return;
+          event.preventDefault();
+          // Adopt any outside movement (anchor jump, keyboard, scrollbar
+          // drag) that happened while we were settled.
+          if (settled) {
+            target = window.scrollY;
+            current = window.scrollY;
+          }
+          const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
+          target = Math.max(0, Math.min(max, target + event.deltaY * scale));
+          settled = false;
+        };
+
+        const step = (): void => {
+          if (!settled) {
+            current += (target - current) * 0.14;
+            if (Math.abs(current - target) < 0.5) {
+              current = target;
+              settled = true;
+            }
+            // `behavior: 'instant'` matters — the page has CSS scroll-behavior:
+            // smooth, which would turn every per-frame scrollTo into its own
+            // competing animation.
+            window.scrollTo({ top: current, behavior: 'instant' });
+          }
+          frame = window.requestAnimationFrame(step);
+        };
+
+        window.addEventListener('wheel', onWheel, { passive: false });
+        frame = window.requestAnimationFrame(step);
+        return () => {
+          window.removeEventListener('wheel', onWheel);
+          window.cancelAnimationFrame(frame);
+        };
+      }),
+      (teardown) => Effect.sync(teardown),
+    );
+    return yield* Effect.never;
+  }),
+);
+
+// Escape closes the open menu — the standard keyboard contract for a
+// full-screen overlay. A document-level stream (not `OnKeyDown` on the
+// overlay) because focus usually sits on the header toggle right after
+// opening, so the overlay itself never sees the keydown. The subscription
+// only exists while the menu is open; closing tears it down.
+export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
+  menuEscape: entry(
+    { isMenuOpen: S.Boolean },
+    {
+      modelToDependencies: (model) => ({ isMenuOpen: model.isMenuOpen }),
+      dependenciesToStream: ({ isMenuOpen }) =>
+        isMenuOpen
+          ? Stream.fromEventListener<KeyboardEvent>(document, 'keydown').pipe(
+              Stream.filter((event) => event.key === 'Escape'),
+              // Focus would otherwise die with the hidden overlay — hand it
+              // back to the toggle, like a native dialog returns focus to
+              // its opener.
+              Stream.tap(() =>
+                Effect.sync(() =>
+                  document
+                    .querySelector<HTMLButtonElement>('#menu-toggle')
+                    ?.focus({ preventScroll: true }),
+                ),
+              ),
+              Stream.map(() => ClosedMenu()),
+            )
+          : Stream.empty,
+    },
+  ),
+  // Smooth wheel scrolling runs while the menu is closed and motion is
+  // allowed. An open overlay owns its own (native) scroll, so the wheel hijack
+  // stands down — which also retires the old overflow:hidden sniff the Mount
+  // used to gate on.
+  smoothWheel: entry(
+    { isMenuOpen: S.Boolean },
+    {
+      modelToDependencies: (model) => ({ isMenuOpen: model.isMenuOpen }),
+      dependenciesToStream: ({ isMenuOpen }) =>
+        isMenuOpen || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? Stream.empty
+          : smoothWheelScroll,
+    },
+  ),
+}));
