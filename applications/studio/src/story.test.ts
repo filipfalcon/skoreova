@@ -19,7 +19,7 @@ import {
   DrawerEditing,
   ParticipationsData,
   SectionData,
-  CompletedSyncChart,
+  SucceededSyncChart,
   FailedFetchAssociations,
   FailedFetchClubs,
   FailedFetchCompetitions,
@@ -60,7 +60,7 @@ import {
 // on. (`signedOutModel` starts every section Idle.)
 const loadingModel = {
   ...signedOutModel,
-  signedIn: true,
+  isSignedIn: true,
   players: SectionData.Loading(),
   clubs: SectionData.Loading(),
   nationals: SectionData.Loading(),
@@ -82,7 +82,7 @@ test('signing in fans out one fetch per section, and each success loads it', () 
     Story.with(signedOutModel),
     Story.message(ClickedSignIn()),
     Story.model((model) => {
-      expect(model.signedIn).toBe(true);
+      expect(model.isSignedIn).toBe(true);
       expect(model.players._tag).toBe('Loading');
       expect(model.clubs._tag).toBe('Loading');
     }),
@@ -117,7 +117,7 @@ test('signing in fans out one fetch per section, and each success loads it', () 
       expect(model.editions._tag).toBe('Success');
       expect(model.associations._tag).toBe('Success');
       expect(model.participations._tag).toBe('Success');
-      expect(model.serverHealth).toBe('ok');
+      expect(model.serverHealth).toBe('Ok');
     }),
   );
 });
@@ -125,7 +125,7 @@ test('signing in fans out one fetch per section, and each success loads it', () 
 test('a successful players fetch loads its rows and records the total', () => {
   Story.story(
     update,
-    Story.with({ ...signedOutModel, signedIn: true, players: SectionData.Loading() }),
+    Story.with({ ...signedOutModel, isSignedIn: true, players: SectionData.Loading() }),
     Story.message(
       SucceededFetchPlayers({
         entries: [
@@ -133,7 +133,7 @@ test('a successful players fetch loads its rows and records the total', () => {
             section: 'players',
             id: 'p1',
             parentId: '',
-            deleted: false,
+            isDeleted: false,
             values: ['Sierra Pennock'],
           },
         ],
@@ -170,7 +170,7 @@ test('every fetch FAILURE settles the section into Failure with the reason', () 
       expectFailure(model.associations, 'associations down');
       expect(model.participations._tag).toBe('Failure');
       // A failed health probe reads as the backend being down.
-      expect(model.serverHealth).toBe('down');
+      expect(model.serverHealth).toBe('Down');
     }),
     Story.Command.expectNone(),
   );
@@ -210,7 +210,12 @@ test('paging the players list revalidates while keeping the current page', () =>
 test('a deep-linked team resolves by id, upserts the row, and opens its drawer', () => {
   Story.story(
     update,
-    Story.with({ ...signedOutModel, signedIn: true, showDashboard: false, section: 'clubs' }),
+    Story.with({
+      ...signedOutModel,
+      isSignedIn: true,
+      isShowingDashboard: false,
+      section: 'clubs',
+    }),
     Story.message(SucceededFetchTeamById({ entry: sampleClub })),
     Story.model((model) => {
       expect(
@@ -232,7 +237,12 @@ test('a deep-linked team resolves by id, upserts the row, and opens its drawer',
 test('a team that cannot be resolved by id surfaces a link error', () => {
   Story.story(
     update,
-    Story.with({ ...signedOutModel, signedIn: true, showDashboard: false, section: 'clubs' }),
+    Story.with({
+      ...signedOutModel,
+      isSignedIn: true,
+      isShowingDashboard: false,
+      section: 'clubs',
+    }),
     Story.message(FailedFetchTeamById({ reason: 'No such team' })),
     Story.model((model) => {
       expect(model.linkError).toBe('No such team');
@@ -250,7 +260,7 @@ test('once the chart host mounts, the current record is synced into it', () => {
       expect(model.chartError).toBe('');
     }),
     Story.Command.expectHas(SyncChart),
-    Story.Command.resolve(SyncChart, CompletedSyncChart()),
+    Story.Command.resolve(SyncChart, SucceededSyncChart()),
   );
 });
 
@@ -287,9 +297,9 @@ test('saving an edited record defers to the clock, then commits with that timest
       drawer: DrawerEditing.make({
         section: 'players',
         id: samplePlayer.id,
-        tab: 'overview',
+        tab: 'Overview',
         draft: ['Sierra Pennock', 'Slavia Praha', 'Forward', '12', '5'],
-        confirmingDelete: false,
+        isConfirmingDelete: false,
       }),
     }),
     Story.message(ClickedSaveRecord()),

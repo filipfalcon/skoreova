@@ -61,7 +61,7 @@ export const Entry = S.Struct({
   section: Section,
   values: S.Array(S.String),
   // Soft-deleted rather than removed, so its index stays stable for `editLog`.
-  deleted: S.Boolean,
+  isDeleted: S.Boolean,
   // Server-assigned UUID once this record is backed by the API, '' for
   // records that only exist locally (mock rows, or a record not yet saved).
   id: S.String,
@@ -71,7 +71,7 @@ export const Entry = S.Struct({
 });
 export type Entry = typeof Entry.Type;
 
-export const DrawerTab = S.Literals(['overview', 'persistency', 'history']);
+export const DrawerTab = S.Literals(['Overview', 'Persistency', 'History']);
 export type DrawerTab = typeof DrawerTab.Type;
 
 // The profile drawer's state. A tagged union so its shape can't drift into an
@@ -89,7 +89,7 @@ export const DrawerEditing = S.TaggedStruct('Editing', {
   id: S.String,
   tab: DrawerTab,
   draft: S.Array(S.String),
-  confirmingDelete: S.Boolean,
+  isConfirmingDelete: S.Boolean,
 });
 export const DrawerState = S.Union([DrawerClosed, DrawerCreating, DrawerEditing]);
 export type DrawerState = typeof DrawerState.Type;
@@ -122,11 +122,11 @@ export const ParticipationsData = AsyncData.Schema(S.Array(ParticipationResponse
 export const Model = S.Struct({
   email: S.String,
   password: S.String,
-  signedIn: S.Boolean,
+  isSignedIn: S.Boolean,
   section: Section,
   // Whether the nav is open. Only affects small screens; from `md:` up the
   // sidebar is always visible.
-  menuOpen: S.Boolean,
+  isMenuOpen: S.Boolean,
   search: S.String,
   // One dropdown filter per column of the current section. `filters[i]` is the
   // selected value for `columns[i]`, or '' for "All". Index 0 (the title
@@ -161,7 +161,7 @@ export const Model = S.Struct({
   // diode on every API-backed section's Refresh button. Separate from each
   // section's own request status, since a health check is cheaper/faster
   // than waiting on a full list fetch to fail.
-  serverHealth: S.Literals(['unknown', 'ok', 'down']),
+  serverHealth: S.Literals(['Unknown', 'Ok', 'Down']),
   // Page within the current section's *filtered* list, for every section
   // other than Players (which pages server-side instead). Resets to 1 on
   // section switch, search, or filter change.
@@ -171,7 +171,7 @@ export const Model = S.Struct({
   linkError: S.String,
   // Whether the dashboard landing page is shown instead of a section's list.
   // This is the default entrypoint right after signing in.
-  showDashboard: S.Boolean,
+  isShowingDashboard: S.Boolean,
   // Index of the column whose checkbox filter dropdown (see checkboxColumns)
   // is currently open, or -1 if none is.
   openFilterColumn: S.Number,
@@ -180,17 +180,17 @@ export type Model = typeof Model.Type;
 
 // MESSAGE
 
-export const EnteredEmail = m('EnteredEmail', { value: S.String });
-export const EnteredPassword = m('EnteredPassword', { value: S.String });
+export const UpdatedEmail = m('UpdatedEmail', { value: S.String });
+export const UpdatedPassword = m('UpdatedPassword', { value: S.String });
 export const ClickedSignIn = m('ClickedSignIn');
 export const ClickedSignOut = m('ClickedSignOut');
 export const SelectedSection = m('SelectedSection', { section: Section });
 export const ToggledMenu = m('ToggledMenu');
-export const EnteredSearch = m('EnteredSearch', { value: S.String });
+export const UpdatedSearch = m('UpdatedSearch', { value: S.String });
 export const SelectedFilter = m('SelectedFilter', { columnIndex: S.Number, value: S.String });
 export const ClickedAddNew = m('ClickedAddNew');
 export const ClickedRecord = m('ClickedRecord', { section: Section, id: S.String });
-export const EditedField = m('EditedField', { index: S.Number, value: S.String });
+export const UpdatedDraftField = m('UpdatedDraftField', { index: S.Number, value: S.String });
 export const ClickedSaveRecord = m('ClickedSaveRecord');
 // Carries the edit-log timestamp fetched from the clock by StampSave, so the
 // commit stays out of `update`'s pure path.
@@ -199,7 +199,7 @@ export const ClickedCloseDrawer = m('ClickedCloseDrawer');
 export const SelectedDrawerTab = m('SelectedDrawerTab', { tab: DrawerTab });
 export const SucceededMountChart = m('SucceededMountChart', { hostId: S.String });
 export const FailedMountChart = m('FailedMountChart', { reason: S.String });
-export const CompletedSyncChart = m('CompletedSyncChart');
+export const SucceededSyncChart = m('SucceededSyncChart');
 export const FailedSyncChart = m('FailedSyncChart', { reason: S.String });
 export const ClickedDeleteRecord = m('ClickedDeleteRecord');
 export const ClickedConfirmDelete = m('ClickedConfirmDelete');
@@ -257,24 +257,24 @@ export const ToggledFilterValue = m('ToggledFilterValue', {
 });
 
 export const Message = S.Union([
-  EnteredEmail,
-  EnteredPassword,
+  UpdatedEmail,
+  UpdatedPassword,
   ClickedSignIn,
   ClickedSignOut,
   SelectedSection,
   ToggledMenu,
-  EnteredSearch,
+  UpdatedSearch,
   SelectedFilter,
   ClickedAddNew,
   ClickedRecord,
-  EditedField,
+  UpdatedDraftField,
   ClickedSaveRecord,
   SavedRecordAt,
   ClickedCloseDrawer,
   SelectedDrawerTab,
   SucceededMountChart,
   FailedMountChart,
-  CompletedSyncChart,
+  SucceededSyncChart,
   FailedSyncChart,
   ClickedDeleteRecord,
   ClickedConfirmDelete,
@@ -323,9 +323,9 @@ export type Message = typeof Message.Type;
 const initialModel = (): Model => ({
   email: '',
   password: '',
-  signedIn: false,
+  isSignedIn: false,
   section: 'players',
-  menuOpen: false,
+  isMenuOpen: false,
   search: '',
   filters: [],
   drawer: DrawerClosed.make({}),
@@ -341,10 +341,10 @@ const initialModel = (): Model => ({
   participations: ParticipationsData.Idle(),
   playersPage: 1,
   playersTotal: 0,
-  serverHealth: 'unknown',
+  serverHealth: 'Unknown',
   clientPage: 1,
   linkError: '',
-  showDashboard: true,
+  isShowingDashboard: true,
   openFilterColumn: -1,
 });
 
@@ -386,9 +386,9 @@ const editRecord = (entry: Entry): DrawerState =>
   DrawerEditing.make({
     section: entry.section,
     id: entry.id,
-    tab: 'overview',
+    tab: 'Overview',
     draft: [...entry.values],
-    confirmingDelete: false,
+    isConfirmingDelete: false,
   });
 
 // An edition row stores its owning competition's id (in parentId); the display
@@ -457,26 +457,29 @@ const mapSectionRows = (
 // not already loaded); other sections have no single-record endpoint, so a
 // link only opens the record if it's already in the currently loaded list —
 // otherwise it falls back to that section's list.
-const applyRoute = (
-  model: Model,
-  route: AppRoute,
-): readonly [Model, ReadonlyArray<Command.Command<Message>>] =>
+// The pair returned by `update` and the helpers it delegates to: the next
+// model and the commands to run. Named once rather than spelled out at every
+// signature and withReturnType.
+type UpdateReturn = readonly [Model, ReadonlyArray<Command.Command<Message>>];
+const withUpdateReturn = M.withReturnType<UpdateReturn>();
+
+const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
   M.value(route).pipe(
-    M.withReturnType<readonly [Model, ReadonlyArray<Command.Command<Message>>]>(),
+    withUpdateReturn,
     M.tagsExhaustive({
       // The dashboard landing page — the default entrypoint after signing in.
       HomeRoute: () => [
         evo(model, {
-          showDashboard: () => true,
-          menuOpen: () => false,
+          isShowingDashboard: () => true,
+          isMenuOpen: () => false,
           drawer: () => DrawerClosed.make({}),
         }),
         [],
       ],
       NotFoundRoute: () => [
         evo(model, {
-          showDashboard: () => true,
-          menuOpen: () => false,
+          isShowingDashboard: () => true,
+          isMenuOpen: () => false,
           drawer: () => DrawerClosed.make({}),
         }),
         [],
@@ -484,21 +487,21 @@ const applyRoute = (
       SectionRoute: ({ section }) => [
         evo(model, {
           section: () => section,
-          showDashboard: () => false,
-          menuOpen: () => false,
+          isShowingDashboard: () => false,
+          isMenuOpen: () => false,
           drawer: () => DrawerClosed.make({}),
         }),
         [],
       ],
       RecordRoute: ({ section, id }) => {
         const found = findRecord(model, section, id);
-        const entry = found && !found.deleted ? found : undefined;
+        const entry = found && !found.isDeleted ? found : undefined;
         if (entry) {
           return [
             evo(model, {
               section: () => section,
-              showDashboard: () => false,
-              menuOpen: () => false,
+              isShowingDashboard: () => false,
+              isMenuOpen: () => false,
               drawer: () => editRecord(entry),
               chartError: () => '',
               linkError: () => '',
@@ -510,8 +513,8 @@ const applyRoute = (
           return [
             evo(model, {
               section: () => section,
-              showDashboard: () => false,
-              menuOpen: () => false,
+              isShowingDashboard: () => false,
+              isMenuOpen: () => false,
             }),
             [FetchTeamById({ section, id })],
           ];
@@ -521,8 +524,8 @@ const applyRoute = (
         return [
           evo(model, {
             section: () => section,
-            showDashboard: () => false,
-            menuOpen: () => false,
+            isShowingDashboard: () => false,
+            isMenuOpen: () => false,
             drawer: () => DrawerClosed.make({}),
           }),
           [],
@@ -554,21 +557,18 @@ const retrySection = (
   model: Model,
   section: Section,
   commands: ReadonlyArray<Command.Command<Message>>,
-): readonly [Model, ReadonlyArray<Command.Command<Message>>] =>
+): UpdateReturn =>
   Option.match(AsyncData.revalidateOrLoad(model[section]), {
     onNone: () => [model, []],
     onSome: (next) => [evolveSection(model, section, () => next), commands],
   });
 
-export const update = (
-  model: Model,
-  message: Message,
-): readonly [Model, ReadonlyArray<Command.Command<Message>>] =>
+export const update = (model: Model, message: Message): UpdateReturn =>
   M.value(message).pipe(
-    M.withReturnType<readonly [Model, ReadonlyArray<Command.Command<Message>>]>(),
+    withUpdateReturn,
     M.tagsExhaustive({
-      EnteredEmail: ({ value }) => [evo(model, { email: () => value }), []],
-      EnteredPassword: ({ value }) => [evo(model, { password: () => value }), []],
+      UpdatedEmail: ({ value }) => [evo(model, { email: () => value }), []],
+      UpdatedPassword: ({ value }) => [evo(model, { password: () => value }), []],
       // TODO: Replace this with real backend authentication. For now any
       // credentials (including empty ones) are accepted.
       // Kick off the Players/Clubs/Nationals fetches the first time we land
@@ -586,7 +586,7 @@ export const update = (
           model.participations._tag === 'Idle' ? [FetchParticipations()] : [];
         return [
           evo(model, {
-            signedIn: () => true,
+            isSignedIn: () => true,
             players: start,
             clubs: start,
             nationals: start,
@@ -603,8 +603,8 @@ export const update = (
       SelectedSection: ({ section }) => [
         evo(model, {
           section: () => section,
-          showDashboard: () => false,
-          menuOpen: () => false,
+          isShowingDashboard: () => false,
+          isMenuOpen: () => false,
           search: () => '',
           filters: () => [],
           drawer: () => DrawerClosed.make({}),
@@ -616,11 +616,15 @@ export const update = (
       ],
       // Back to the dashboard landing page.
       ClickedDashboard: () => [
-        evo(model, { showDashboard: () => true, menuOpen: () => false, linkError: () => '' }),
+        evo(model, {
+          isShowingDashboard: () => true,
+          isMenuOpen: () => false,
+          linkError: () => '',
+        }),
         [Navigate({ url: homeRouter() })],
       ],
-      ToggledMenu: () => [evo(model, { menuOpen: (open) => !open }), []],
-      EnteredSearch: ({ value }) => [evo(model, { search: () => value, clientPage: () => 1 }), []],
+      ToggledMenu: () => [evo(model, { isMenuOpen: (open) => !open }), []],
+      UpdatedSearch: ({ value }) => [evo(model, { search: () => value, clientPage: () => 1 }), []],
       SelectedFilter: ({ columnIndex, value }) => {
         const filters = [...model.filters];
         filters[columnIndex] = value;
@@ -670,7 +674,7 @@ export const update = (
           [Navigate({ url: recordRouter({ section, id }) })],
         ];
       },
-      EditedField: ({ index, value }) => [
+      UpdatedDraftField: ({ index, value }) => [
         evo(model, {
           drawer: (drawer) =>
             withDraft(
@@ -690,7 +694,7 @@ export const update = (
           const entry: Entry = {
             section,
             values: drawer.draft,
-            deleted: false,
+            isDeleted: false,
             id: `local-${model.nextLocalId}`,
             parentId: '',
           };
@@ -752,14 +756,14 @@ export const update = (
       ClickedDeleteRecord: () => [
         evo(model, {
           drawer: (drawer) =>
-            drawer._tag === 'Editing' ? evo(drawer, { confirmingDelete: () => true }) : drawer,
+            drawer._tag === 'Editing' ? evo(drawer, { isConfirmingDelete: () => true }) : drawer,
         }),
         [],
       ],
       ClickedCancelDelete: () => [
         evo(model, {
           drawer: (drawer) =>
-            drawer._tag === 'Editing' ? evo(drawer, { confirmingDelete: () => false }) : drawer,
+            drawer._tag === 'Editing' ? evo(drawer, { isConfirmingDelete: () => false }) : drawer,
         }),
         [],
       ],
@@ -770,7 +774,7 @@ export const update = (
         const { section, id } = drawer;
         const withRows = evolveSection(model, section, (data) =>
           mapSectionRows(data, (rows) =>
-            rows.map((row) => (row.id === id ? evo(row, { deleted: () => true }) : row)),
+            rows.map((row) => (row.id === id ? evo(row, { isDeleted: () => true }) : row)),
           ),
         );
         return [
@@ -794,7 +798,7 @@ export const update = (
         return [evo(model, { chartError: () => '' }), [SyncChart({ hostId, ...statsFor(entry) })]];
       },
       FailedMountChart: ({ reason }) => [evo(model, { chartError: () => reason }), []],
-      CompletedSyncChart: () => [model, []],
+      SucceededSyncChart: () => [model, []],
       FailedSyncChart: ({ reason }) => [evo(model, { chartError: () => reason }), []],
       // A fetched page replaces the section's rows (one page at a time, not the
       // running total). settle folds the result into the AsyncData: success →
@@ -858,7 +862,7 @@ export const update = (
         const entries: ReadonlyArray<Entry> = editions.map((edition) => ({
           section: 'editions' as const,
           id: edition.id,
-          deleted: false,
+          isDeleted: false,
           parentId: edition.competitionId,
           values: editionToRow(edition, edition.competitionId),
         }));
@@ -899,13 +903,13 @@ export const update = (
             [FetchParticipations(), FetchHealth()],
           ],
         }),
-      SucceededFetchHealth: () => [evo(model, { serverHealth: () => 'ok' }), []],
-      FailedFetchHealth: () => [evo(model, { serverHealth: () => 'down' }), []],
+      SucceededFetchHealth: () => [evo(model, { serverHealth: () => 'Ok' }), []],
+      FailedFetchHealth: () => [evo(model, { serverHealth: () => 'Down' }), []],
       // Internal anchor clicks (e.g. the decorative "Forgot password?" link)
       // navigate within the app; anything else is a real page load.
       ClickedLink: ({ request }) =>
         M.value(request).pipe(
-          M.withReturnType<readonly [Model, ReadonlyArray<Command.Command<Message>>]>(),
+          withUpdateReturn,
           M.tagsExhaustive({
             Internal: ({ url }) => [model, [Navigate({ url: urlToString(url) })]],
             External: ({ href }) => [model, [Load({ href })]],
@@ -1163,7 +1167,7 @@ export const SyncChart = Command.define(
     categories: S.Array(S.String),
     values: S.Array(S.Number),
   },
-  CompletedSyncChart,
+  SucceededSyncChart,
   FailedSyncChart,
 )((args) =>
   Effect.sync(() => {
@@ -1173,7 +1177,7 @@ export const SyncChart = Command.define(
     }
     try {
       maybeChart.value.setOption(makeStatsOption(args), true);
-      return CompletedSyncChart();
+      return SucceededSyncChart();
     } catch (error) {
       return FailedSyncChart({
         reason: error instanceof Error ? error.message : `${error}`,
@@ -1192,7 +1196,7 @@ export const SyncPointsChart = Command.define(
     weeks: S.Array(S.String),
     points: S.Array(S.Number),
   },
-  CompletedSyncChart,
+  SucceededSyncChart,
   FailedSyncChart,
 )((args) =>
   Effect.sync(() => {
@@ -1202,7 +1206,7 @@ export const SyncPointsChart = Command.define(
     }
     try {
       maybeChart.value.setOption(makePointsOption(args), true);
-      return CompletedSyncChart();
+      return SucceededSyncChart();
     } catch (error) {
       return FailedSyncChart({
         reason: error instanceof Error ? error.message : `${error}`,
@@ -1236,7 +1240,7 @@ export const FetchPlayers = Command.define(
         entries: page.items.map((player) => ({
           section: 'players' as const,
           id: player.id,
-          deleted: false,
+          isDeleted: false,
           parentId: '',
           values: playerToRow(player),
         })),
@@ -1271,7 +1275,7 @@ const fetchTeamEntries = (
       teams.map((team) => ({
         section,
         id: team.id,
-        deleted: false,
+        isDeleted: false,
         parentId: '',
         values: teamToRow(team),
       })),
@@ -1322,7 +1326,7 @@ export const FetchCompetitions = Command.define(
         entries: competitions.map((competition) => ({
           section: 'competitions' as const,
           id: competition.id,
-          deleted: false,
+          isDeleted: false,
           parentId: '',
           values: competitionToRow(competition),
         })),
@@ -1401,7 +1405,7 @@ export const FetchAssociations = Command.define(
         entries: associations.map((association) => ({
           section: 'associations' as const,
           id: association.id,
-          deleted: false,
+          isDeleted: false,
           parentId: '',
           values: associationToRow(association),
         })),
@@ -1490,7 +1494,7 @@ export const FetchTeamById = Command.define(
             entry: {
               section: args.section,
               id: team.id,
-              deleted: false,
+              isDeleted: false,
               parentId: '',
               values: teamToRow(team),
             },
@@ -1503,7 +1507,7 @@ export const FetchTeamById = Command.define(
 // VIEW
 
 export const view = (model: Model): Document =>
-  model.signedIn ? dashboardView(model) : loginView(model);
+  model.isSignedIn ? dashboardView(model) : loginView(model);
 
 const loginView = (model: Model): Document => {
   const h = html<Message>();
@@ -1547,7 +1551,7 @@ const loginView = (model: Model): Document => {
                       type: 'email',
                       placeholder: 'email address',
                       value: model.email,
-                      onInput: (value) => EnteredEmail({ value }),
+                      onInput: (value) => UpdatedEmail({ value }),
                       toView: (attributes) =>
                         h.div(
                           [],
@@ -1567,7 +1571,7 @@ const loginView = (model: Model): Document => {
                       type: 'password',
                       placeholder: 'password',
                       value: model.password,
-                      onInput: (value) => EnteredPassword({ value }),
+                      onInput: (value) => UpdatedPassword({ value }),
                       toView: (attributes) =>
                         h.div(
                           [],
@@ -1635,7 +1639,7 @@ const dashboardView = (model: Model): Document => {
                 h.button([h.OnClick(ClickedSignOut()), h.Class(signOutStyle)], ['Sign out']),
                 h.button(
                   [h.OnClick(ToggledMenu()), h.Class(menuToggleStyle)],
-                  [model.menuOpen ? '✕' : '☰'],
+                  [model.isMenuOpen ? '✕' : '☰'],
                 ),
               ],
             ),
@@ -1648,8 +1652,8 @@ const dashboardView = (model: Model): Document => {
             ),
           ],
           [
-            sidebar(model.section, model.menuOpen, model.showDashboard),
-            model.showDashboard ? dashboardHome(model) : content(model),
+            sidebar(model.section, model.isMenuOpen, model.isShowingDashboard),
+            model.isShowingDashboard ? dashboardHome(model) : content(model),
           ],
         ),
         drawer(model),
@@ -1658,14 +1662,16 @@ const dashboardView = (model: Model): Document => {
   };
 };
 
-const sidebar = (current: Section, open: boolean, showDashboard: boolean): Html => {
+const sidebar = (current: Section, open: boolean, isShowingDashboard: boolean): Html => {
   const h = html<Message>();
 
   const leafItem = (leaf: MenuLeaf): Html =>
     h.button(
       [
         h.OnClick(SelectedSection({ section: leaf.section })),
-        h.Class(!showDashboard && leaf.section === current ? navItemActiveStyle : navItemStyle),
+        h.Class(
+          !isShowingDashboard && leaf.section === current ? navItemActiveStyle : navItemStyle,
+        ),
       ],
       [leaf.label],
     );
@@ -1682,7 +1688,10 @@ const sidebar = (current: Section, open: boolean, showDashboard: boolean): Html 
       : leafItem(entry.leaf);
 
   const dashboardItem: Html = h.button(
-    [h.OnClick(ClickedDashboard()), h.Class(showDashboard ? navItemActiveStyle : navItemStyle)],
+    [
+      h.OnClick(ClickedDashboard()),
+      h.Class(isShowingDashboard ? navItemActiveStyle : navItemStyle),
+    ],
     ['Dashboard'],
   );
 
@@ -1699,7 +1708,7 @@ const dashboardHome = (model: Model): Html => {
   const account = model.email.length > 0 ? model.email : 'editor';
 
   const countFor = (section: Section): number =>
-    sectionRows(model, section).filter((row) => !row.deleted).length;
+    sectionRows(model, section).filter((row) => !row.isDeleted).length;
 
   const card = (section: Section): Html => {
     const count = countFor(section);
@@ -1736,7 +1745,7 @@ const content = (model: Model): Html => {
   // in the view), minus soft-deleted ones. Kept in the `{ entry, index }` shape
   // the filter and pagination chain below expects.
   const entries = displayRows(model, current)
-    .filter((entry) => !entry.deleted)
+    .filter((entry) => !entry.isDeleted)
     .map((entry, index) => ({ entry, index }));
 
   const optionsFor = (columnIndex: number) =>
@@ -2049,7 +2058,7 @@ const content = (model: Model): Html => {
                   h.span(
                     [
                       h.AriaLabel(
-                        model.serverHealth === 'down' ? 'Server unreachable' : 'Server reachable',
+                        model.serverHealth === 'Down' ? 'Server unreachable' : 'Server reachable',
                       ),
                       h.Class(`${diodeStyle} ${diodeColorStyle[model.serverHealth]}`),
                     ],
@@ -2057,7 +2066,7 @@ const content = (model: Model): Html => {
                   ),
                   h.button(
                     [h.OnClick(retry), h.Disabled(pending), h.Class(refreshButtonStyle)],
-                    [pending ? 'Refreshing…' : model.serverHealth === 'down' ? 'Retry' : 'Refresh'],
+                    [pending ? 'Refreshing…' : model.serverHealth === 'Down' ? 'Retry' : 'Refresh'],
                   ),
                 ],
               ),
@@ -2075,7 +2084,7 @@ const content = (model: Model): Html => {
         type: 'search',
         placeholder: `Search ${label.toLowerCase()}…`,
         value: model.search,
-        onInput: (value) => EnteredSearch({ value }),
+        onInput: (value) => UpdatedSearch({ value }),
         toView: (attributes) =>
           h.div(
             [h.Class('mt-6')],
@@ -2110,9 +2119,9 @@ const content = (model: Model): Html => {
 // always mounted so the open/close transform can animate; its content renders
 // only while a record is open.
 const drawerTabs: ReadonlyArray<{ readonly tab: DrawerTab; readonly label: string }> = [
-  { tab: 'overview', label: 'Overview' },
-  { tab: 'persistency', label: 'Persistency' },
-  { tab: 'history', label: 'History' },
+  { tab: 'Overview', label: 'Overview' },
+  { tab: 'Persistency', label: 'Persistency' },
+  { tab: 'History', label: 'History' },
 ];
 
 const drawer = (model: Model): Html => {
@@ -2124,8 +2133,9 @@ const drawer = (model: Model): Html => {
   // or if it has since gone).
   const entry = drawerRecord(model);
   const draft = draftOf(drawerState);
-  const tab = drawerState._tag === 'Editing' ? drawerState.tab : 'overview';
-  const confirmingDelete = drawerState._tag === 'Editing' ? drawerState.confirmingDelete : false;
+  const tab = drawerState._tag === 'Editing' ? drawerState.tab : 'Overview';
+  const isConfirmingDelete =
+    drawerState._tag === 'Editing' ? drawerState.isConfirmingDelete : false;
   const editingId = drawerState._tag === 'Editing' ? drawerState.id : '';
   // The section this drawer is scoped to: the record's own section when
   // editing, or the target section when creating a new one.
@@ -2140,7 +2150,7 @@ const drawer = (model: Model): Html => {
         h.input([
           h.Type('text'),
           h.Value(draft[index] ?? ''),
-          h.OnInput((value) => EditedField({ index, value })),
+          h.OnInput((value) => UpdatedDraftField({ index, value })),
           h.Class(drawerInputStyle),
         ]),
       ],
@@ -2158,7 +2168,7 @@ const drawer = (model: Model): Html => {
     const editionsList = (): Html => {
       if (!isCompetition) return h.div([], []);
       const editions = sectionRows(model, 'editions').filter(
-        (row) => row.parentId === entry.id && !row.deleted,
+        (row) => row.parentId === entry.id && !row.isDeleted,
       );
 
       return h.div(
@@ -2224,7 +2234,7 @@ const drawer = (model: Model): Html => {
           .map((participation) => participation.teamId),
       );
       const teams = [...sectionRows(model, 'clubs'), ...sectionRows(model, 'nationals')].filter(
-        (row) => teamIds.has(row.id) && !row.deleted,
+        (row) => teamIds.has(row.id) && !row.isDeleted,
       );
 
       return h.div(
@@ -2316,7 +2326,7 @@ const drawer = (model: Model): Html => {
           [h.Class('mt-1 text-sm text-rose-700')],
           ['Deleting this record removes it from the list. This cannot be undone.'],
         ),
-        confirmingDelete
+        isConfirmingDelete
           ? h.div(
               [h.Class('mt-3 flex items-center gap-3')],
               [
@@ -2375,9 +2385,9 @@ const drawer = (model: Model): Html => {
 
   const tabContent = (): Html =>
     M.value(tab).pipe(
-      M.when('overview', overviewTab),
-      M.when('persistency', persistencyTab),
-      M.when('history', historyTab),
+      M.when('Overview', overviewTab),
+      M.when('Persistency', persistencyTab),
+      M.when('History', historyTab),
       M.exhaustive,
     );
 
@@ -2522,9 +2532,9 @@ const refreshControlStyle =
 const diodeStyle = 'w-2.5 shrink-0';
 
 const diodeColorStyle: Record<Model['serverHealth'], string> = {
-  unknown: 'bg-neutral-300',
-  ok: 'bg-emerald-500',
-  down: 'bg-rose-500',
+  Unknown: 'bg-neutral-300',
+  Ok: 'bg-emerald-500',
+  Down: 'bg-rose-500',
 };
 
 const refreshButtonStyle =
