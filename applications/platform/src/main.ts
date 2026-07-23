@@ -1,14 +1,12 @@
-import { Array, Effect, Match as M, Option, Schema as S } from 'effect';
+import { Array, Match as M, Option } from 'effect';
 import { Input, RadioGroup } from '@foldkit/ui';
 import clsx from 'clsx';
 import type { Runtime } from 'foldkit';
 import { Command } from 'foldkit';
 import type { Document, Html } from 'foldkit/html';
 import { html } from 'foldkit/html';
-import { m } from 'foldkit/message';
-import { UrlRequest, load, pushUrl } from 'foldkit/navigation';
 import { evo } from 'foldkit/struct';
-import { Url, toString as urlToString } from 'foldkit/url';
+import { toString as urlToString } from 'foldkit/url';
 
 import firstLeagueAttendancePhoto from './assets/attendance/first-league.jpg';
 import secondLeagueAttendancePhoto from './assets/attendance/second-league.jpg';
@@ -55,180 +53,53 @@ import {
   urlToAppRoute,
   welcomeRouter,
 } from './route';
-
-// MODEL
-//
-// A MOCK of the platform: the shell, the navigation, and every screen are
-// real Foldkit views, but all data is hardcoded placeholder. There is NO
-// account gate — the platform's free plan is open to everyone, so every
-// deep link from the landing page drops straight onto content. The model
-// only tracks what the mock genuinely needs — the open screen, the open
-// profile (if any), the mobile menu, and the chart studio's selected
-// metric.
-
-export const Screen = S.Literals([
-  'Welcome',
-  'HerGame',
-  'Clubs',
-  'Players',
-  'Matches',
-  'Competitions',
-  'Officials',
-]);
-export type Screen = typeof Screen.Type;
-
-export const Metric = S.Literals(['Goals', 'Attendance', 'Conversion']);
-export type Metric = typeof Metric.Type;
-
-// Which top-scorer board a club profile shows.
-// Which competition the club profile's TOP SCORERS board shows — one
-// component, scoped by chips (user call).
-export const ScorerScope = S.Literals(['All', 'League', 'Cup']);
-export type ScorerScope = typeof ScorerScope.Type;
-
-export const Model = S.Struct({
-  // The current route is THE source of truth for what's on screen — the
-  // visible screen and any open club/competition slug are derived from it in
-  // the view (see screenOf / routeClubSlug / routeCompetitionSlug), so the
-  // impossible states a screen+slug pair allowed (a slug set on the wrong
-  // screen, both slugs at once) can't be represented.
-  route: AppRoute,
-  // Which of the open competition's EDITIONS is showing (None = the current
-  // one). Every competition is a series of editions — one per season — and
-  // the profile carries a picker; the backend exposes them via
-  // /editions?competitionId= once real data lands.
-  competitionEdition: S.Option(S.String),
-  // Which matchday the competition profile's matches panel shows (None = the
-  // current one).
-  competitionRound: S.Option(S.Number),
-  // The clubs directory's search box ('' = show everything).
-  clubQuery: S.String,
-  // Which of the featured EUROPEAN CONTENDERS the clubs carousel shows.
-  featuredClub: S.Number,
-  // Slugs of the clubs the visitor follows (mock — session only; feeds
-  // HER GAME once the real accounts land).
-  followed: S.Array(S.String),
-  // Ids of the boards and charts pinned to HER GAME. Unlike `followed`
-  // this DOES survive a reload — it is mirrored to storage through the
-  // pins port (see `pinsStore`). Seeded from storage by the ReadPins
-  // command fired in `init`.
-  pinned: S.Array(S.String),
-  scorerScope: ScorerScope,
-  metric: Metric,
-});
-export type Model = typeof Model.Type;
-
-// MESSAGE
-
-export const ClickedLink = m('ClickedLink', { request: UrlRequest });
-export const ChangedUrl = m('ChangedUrl', { url: Url });
-export const CompletedNavigate = m('CompletedNavigate');
-export const CompletedLoad = m('CompletedLoad');
-export const SelectedMetric = m('SelectedMetric', { metric: Metric });
-export const SelectedScorerScope = m('SelectedScorerScope', { scope: ScorerScope });
-export const SelectedCompetitionEdition = m('SelectedCompetitionEdition', { label: S.String });
-export const SelectedCompetitionRound = m('SelectedCompetitionRound', { round: S.Number });
-export const UpdatedClubQuery = m('UpdatedClubQuery', { query: S.String });
-export const SelectedFeaturedClub = m('SelectedFeaturedClub', { index: S.Number });
-export const ToggledFollow = m('ToggledFollow', { slug: S.String });
-// Pins: ReadPins hands the stored ids back through LoadedPins; a pin toggle
-// updates the model and mirrors it out through WritePins, whose completion
-// is CompletedWritePins (nothing to fold back in — the write is fire-and-forget).
-export const LoadedPins = m('LoadedPins', { ids: S.Array(S.String) });
-export const ToggledPin = m('ToggledPin', { id: S.String });
-export const CompletedWritePins = m('CompletedWritePins');
-
-export const Message = S.Union([
-  ClickedLink,
+import { Metric, Model, Screen, ScorerScope } from './model';
+import {
   ChangedUrl,
-  CompletedNavigate,
+  ClickedLink,
   CompletedLoad,
-  SelectedMetric,
-  SelectedScorerScope,
+  CompletedNavigate,
+  CompletedWritePins,
+  LoadedPins,
+  Message,
   SelectedCompetitionEdition,
   SelectedCompetitionRound,
-  UpdatedClubQuery,
   SelectedFeaturedClub,
+  SelectedMetric,
+  SelectedScorerScope,
   ToggledFollow,
-  LoadedPins,
   ToggledPin,
-  CompletedWritePins,
-]);
-export type Message = typeof Message.Type;
+  UpdatedClubQuery,
+} from './message';
+import { Load, Navigate, ReadPins, WritePins } from './command';
 
-// COMMAND
+// MODEL, MESSAGE, COMMAND, DATA, and the SCREENS live in their own modules
+// now (model.ts, message.ts, command.ts, domain/, data/, components.ts,
+// page/*); this file wires them into init/update/view. Re-export the public
+// surface so fixtures and tests can keep importing from the app entry.
+export { Metric, Model, Screen, ScorerScope };
 
-export const Navigate = Command.define(
-  'Navigate',
-  { url: S.String },
-  CompletedNavigate,
-)(({ url }) =>
-  pushUrl(url).pipe(
-    Effect.andThen(Effect.sync(() => window.scrollTo(0, 0))),
-    Effect.as(CompletedNavigate()),
-  ),
-);
-
-export const Load = Command.define(
-  'Load',
-  { href: S.String },
+// MESSAGE — see message.ts.
+export {
+  ChangedUrl,
+  ClickedLink,
   CompletedLoad,
-)(({ href }) => load(href).pipe(Effect.as(CompletedLoad())));
-
-// ——— THE PINS PORT. Every read and write of a visitor's pins goes through
-// this ONE object, so the whole app is blind to where pins actually live.
-// Today that is localStorage, which needs no account — a guest keeps their
-// pins on their own device.
-//
-// When accounts arrive, ONLY this object changes: `load`/`save` become
-// calls to the pins API (a signed-in visitor's list belongs on the server,
-// keyed by their id). For that, KV is the fit — one small JSON value per
-// user, read far more than written; D1 only earns its place if pins ever
-// need cross-user queries ("who else pinned this"), and R2 never, it is for
-// blobs. On first sign-in the guest's local list merges up into the
-// account, then this device defers to the server. None of the view or the
-// update code below has to know any of that happened.
-const PINS_KEY = 'skoreova-pins';
-
-const pinsStore = {
-  load: (): ReadonlyArray<string> => {
-    try {
-      const raw = localStorage.getItem(PINS_KEY);
-      const parsed: unknown = raw === null ? [] : JSON.parse(raw);
-      // Trust nothing off the wire/disk: keep only strings, so a hand-edited
-      // or half-written value can never crash the feed that renders them.
-      return Array.isArray(parsed)
-        ? parsed.filter((id): id is string => typeof id === 'string')
-        : [];
-    } catch {
-      return [];
-    }
-  },
-  save: (ids: ReadonlyArray<string>): void => {
-    try {
-      localStorage.setItem(PINS_KEY, JSON.stringify(ids));
-    } catch {
-      // Private-mode / quota / disabled storage: the pin still shows this
-      // session (it is in the model), it just will not outlive the tab.
-    }
-  },
+  CompletedNavigate,
+  CompletedWritePins,
+  LoadedPins,
+  Message,
+  SelectedCompetitionEdition,
+  SelectedCompetitionRound,
+  SelectedFeaturedClub,
+  SelectedMetric,
+  SelectedScorerScope,
+  ToggledFollow,
+  ToggledPin,
+  UpdatedClubQuery,
 };
 
-export const ReadPins = Command.define(
-  'ReadPins',
-  LoadedPins,
-)(Effect.sync(() => LoadedPins({ ids: [...pinsStore.load()] })));
-
-export const WritePins = Command.define(
-  'WritePins',
-  { ids: S.Array(S.String) },
-  CompletedWritePins,
-)(({ ids }) =>
-  Effect.sync(() => {
-    pinsStore.save(ids);
-    return CompletedWritePins();
-  }),
-);
+// COMMAND — see command.ts.
+export { Load, Navigate, ReadPins, WritePins };
 
 // UPDATE
 
