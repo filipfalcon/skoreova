@@ -7,6 +7,12 @@ import { defineConfig } from 'vite-plus';
 const testing = process.env['VITEST'] === 'true';
 
 export default defineConfig({
+  // IPv4 loopback, explicitly: under `alchemy dev` all three apps' inner
+  // vite servers race for ports, and a dual-stack bind lets two of them
+  // "own" the same port (one v4, one v6) — the workerd proxy then routes
+  // one app's traffic to another. On one family the collision is real and
+  // vite increments to a free port instead.
+  server: { host: '127.0.0.1' },
   // Studio claims 9988, web 9989 — each app needs its own DevTools MCP port.
   plugins: [tailwindcss(), ...(testing ? [] : [foldkit({ devToolsMcpPort: 9990 })])],
   // Alchemy's deploy captures the build output through a `buildApp` post
