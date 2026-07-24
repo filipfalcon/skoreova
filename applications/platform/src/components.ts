@@ -157,13 +157,15 @@ export const personGlyph: Html = h.svg(
   ],
 );
 
-// The account section is a mock like every other action here — accounts
-// arrive with the paid tiers; the free platform never demands one.
+// NOTE: deliberately inert mock — accounts arrive with the paid tiers; the
+// free platform never demands one. AriaDisabled keeps it in the tab order
+// while announcing honestly that it does nothing yet.
 export const accountButton = (): Html =>
   h.button(
     [
       h.Type('button'),
       h.AriaLabel('Account'),
+      h.AriaDisabled(true),
       h.Class('group flex shrink-0 cursor-pointer items-center gap-3'),
     ],
     [

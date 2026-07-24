@@ -174,9 +174,12 @@ const chartStudioPanel = (model: Model): Html =>
               ),
             ],
           ),
+          // NOTE: deliberately inert mock until saved charts persist —
+          // AriaDisabled announces the not-yet state to AT.
           h.button(
             [
               h.Type('button'),
+              h.AriaDisabled(true),
               h.Class(
                 'border border-ink/15 px-4 py-2 text-[10px] tracking-[0.2em] uppercase text-ink/60 transition-colors hover:border-pink hover:text-ink',
               ),
@@ -321,9 +324,12 @@ export const herGameScreen = (model: Model): Html =>
         [h.Class('mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3')],
         [
           ...savedCharts.map((chart) => savedChartCard(model, chart)),
+          // NOTE: deliberately inert mock until the chart builder exists —
+          // AriaDisabled announces the not-yet state to AT.
           h.button(
             [
               h.Type('button'),
+              h.AriaDisabled(true),
               h.Class(
                 'display flex min-h-40 items-center justify-center border border-dashed border-ink/20 p-6 text-xl text-ink/40 transition-colors hover:border-pink hover:text-pink',
               ),

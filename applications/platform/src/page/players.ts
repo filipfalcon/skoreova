@@ -49,7 +49,9 @@ export const playersScreen = (model: Model): Html =>
                   h.tr(
                     [
                       h.Class(
-                        'cursor-pointer border-b border-ink/5 transition-colors last:border-b-0 hover:bg-ink/[0.04]',
+                        // No cursor-pointer: the rows have no click handler
+                        // yet — the hover wash stays as a reading aid only.
+                        'border-b border-ink/5 transition-colors last:border-b-0 hover:bg-ink/[0.04]',
                       ),
                     ],
                     [
