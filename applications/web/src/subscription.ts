@@ -5,7 +5,7 @@ import { Effect, Schema as S, Stream } from 'effect';
 import { Subscription } from 'foldkit';
 
 import type { Model } from './model';
-import { type Message, PressedMenuEscape } from './message';
+import { type Message, ChangedReducedMotion, PressedMenuEscape } from './message';
 
 // SUBSCRIPTIONS
 
@@ -99,16 +99,30 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
   ),
   // Smooth wheel scrolling runs while the menu is closed and motion is
   // allowed. An open overlay owns its own (native) scroll, so the wheel hijack
-  // stands down — which also retires the old overflow:hidden sniff the Mount
-  // used to gate on.
+  // stands down. Reduced motion comes from the Model (seeded via Flags, kept
+  // fresh below) — not from a private matchMedia read.
   smoothWheel: entry(
-    { isMenuOpen: S.Boolean },
+    { isMenuOpen: S.Boolean, prefersReducedMotion: S.Boolean },
     {
-      modelToDependencies: (model) => ({ isMenuOpen: model.isMenuOpen }),
-      dependenciesToStream: ({ isMenuOpen }) =>
-        isMenuOpen || window.matchMedia('(prefers-reduced-motion: reduce)').matches
-          ? Stream.empty
-          : smoothWheelScroll,
+      modelToDependencies: (model) => ({
+        isMenuOpen: model.isMenuOpen,
+        prefersReducedMotion: model.prefersReducedMotion,
+      }),
+      dependenciesToStream: ({ isMenuOpen, prefersReducedMotion }) =>
+        isMenuOpen || prefersReducedMotion ? Stream.empty : smoothWheelScroll,
+    },
+  ),
+  // Follows the OS-level `prefers-reduced-motion` setting for the rest of
+  // the session — the boot value arrives via Flags; this reports flips.
+  reducedMotion: entry(
+    {},
+    {
+      modelToDependencies: () => ({}),
+      dependenciesToStream: () =>
+        Stream.fromEventListener<MediaQueryListEvent>(
+          window.matchMedia('(prefers-reduced-motion: reduce)'),
+          'change',
+        ).pipe(Stream.map((event) => ChangedReducedMotion({ reduce: event.matches }))),
     },
   ),
 }));

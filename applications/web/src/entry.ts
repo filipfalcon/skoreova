@@ -2,9 +2,20 @@ import '@fontsource/anton/400.css';
 import '@fontsource-variable/archivo/index.css';
 import { overlay } from '@foldkit/devtools';
 import * as Sentry from '@sentry/browser';
+import { Effect } from 'effect';
 import { Runtime } from 'foldkit';
 
-import { ChangedUrl, ClickedLink, Message, Model, init, subscriptions, update, view } from './main';
+import {
+  ChangedUrl,
+  ClickedLink,
+  Flags,
+  Message,
+  Model,
+  init,
+  subscriptions,
+  update,
+  view,
+} from './main';
 
 // Set by the inline consent-mode script in index.html: true everywhere
 // except the two production hostnames.
@@ -93,6 +104,12 @@ if (import.meta.env.DEV) {
 
 const application = Runtime.makeApplication({
   Model,
+  Flags,
+  // The boot-time reduced-motion read — mid-session flips arrive through
+  // the reducedMotion subscription.
+  flags: Effect.sync(() => ({
+    prefersReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  })),
   init,
   update,
   view,

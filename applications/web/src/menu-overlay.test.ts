@@ -1,8 +1,9 @@
+import { Effect } from 'effect';
 import { Runtime } from 'foldkit';
 import { beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 
-import { ChangedUrl, ClickedLink, Model, init, subscriptions, update, view } from './main';
+import { ChangedUrl, ClickedLink, Flags, Model, init, subscriptions, update, view } from './main';
 import './styles.css';
 
 // A browser-mode integration test: it mounts the real app into a real DOM so
@@ -36,6 +37,9 @@ beforeAll(async () => {
   Runtime.run(
     Runtime.makeApplication({
       Model,
+      Flags,
+      // Deterministic: the guards exercise the full motion path.
+      flags: Effect.sync(() => ({ prefersReducedMotion: false })),
       init,
       update,
       view,

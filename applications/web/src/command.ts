@@ -23,7 +23,7 @@ import { menuEntries } from './data';
 //   that grows gently with distance so a long trip is felt.
 // `behavior: 'instant'` per frame keeps the CSS `scroll-behavior: smooth`
 // from fighting the animation.
-const animateScrollTo = (target: HTMLElement): void => {
+const animateScrollTo = (target: HTMLElement, reduceMotion: boolean): void => {
   const startY = window.scrollY;
   const rect = target.getBoundingClientRect();
   // Respect the CSS scroll-margin-top (styles.css sets it to the fixed
@@ -37,7 +37,6 @@ const animateScrollTo = (target: HTMLElement): void => {
   const distance = targetY - startY;
   const insideSection =
     startY >= targetY - 8 && startY <= targetY + rect.height - Math.min(viewport / 2, rect.height);
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduceMotion || insideSection || Math.abs(distance) < 48) {
     window.scrollTo({ top: targetY, behavior: 'instant' });
     return;
@@ -81,16 +80,19 @@ const animateScrollTo = (target: HTMLElement): void => {
 // for on the render side either.
 export const Navigate = Command.define(
   'Navigate',
-  { url: S.String },
+  // `reduceMotion` rides in from the Model (seeded via Flags) so the scroll
+  // animation and the rest of the page obey the same value — this Command
+  // no longer samples matchMedia on its own.
+  { url: S.String, reduceMotion: S.Boolean },
   CompletedNavigate,
-)(({ url }) =>
+)(({ url, reduceMotion }) =>
   pushUrl(url).pipe(
     Effect.andThen(
       Effect.sync(() => {
         const fragment = url.split('#')[1];
         const target = fragment === undefined ? null : document.getElementById(fragment);
         if (target) {
-          animateScrollTo(target);
+          animateScrollTo(target, reduceMotion);
         } else if (fragment === undefined) {
           window.scrollTo(0, 0);
         }
