@@ -1,5 +1,11 @@
 import { Schema as S } from 'effect';
 
+// A keyed reveal target's on-screen state: 'entered' renders `.is-in`;
+// 'drawn' additionally `.is-drawn` (a draw target whose pen finished its
+// lap, or a downward-only pen re-entered from below). Absent = at rest.
+export const RevealState = S.Literals(['entered', 'drawn']);
+export type RevealState = typeof RevealState.Type;
+
 // The map's league filter. 'all' shows both flights; picking a league hides
 // the other one's pins outright (display:none on a wrapper — see the pin
 // wrapper comment in page/clubs.ts).
@@ -38,5 +44,12 @@ export const Model = S.Struct({
   // mount is keyed on it (page.ts), so flipping the OS setting mid-session
   // re-runs the choreography setup instead of leaving a stale snapshot.
   prefersReducedMotion: S.Boolean,
+  // The reveal system's discrete state, keyed by each target's
+  // data-reveal-key: the observers (ObserveReveals in motion.ts) report
+  // entries/exits as Messages, and the VIEW renders `.is-in`/`.is-drawn`
+  // from this record (see revealClass in components.ts). The patcher owns
+  // the class strings again — the old "reveal targets' classes must stay
+  // static forever" invariant is gone.
+  reveals: S.Record(S.String, RevealState),
 });
 export type Model = typeof Model.Type;

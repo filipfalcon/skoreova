@@ -9,9 +9,10 @@ import nationalHomeHuddleImage from '../assets/national-home-huddle.webp';
 import nationalHuddleImage from '../assets/national-huddle.webp';
 import nationalLineupImage from '../assets/national-lineup.webp';
 import worldCupTrophyMask from '../assets/world-cup-trophy.webp';
-import { container, displayArrowSolo, kicker, maskedLine } from '../components';
+import { container, displayArrowSolo, kicker, maskedLine, revealClass } from '../components';
 import { platformUrl } from '../data';
 import type { Message } from '../message';
+import type { Model } from '../model';
 
 const h = html<Message>();
 
@@ -96,7 +97,7 @@ const bracketDrop = (): Html => h.div([h.Class('mx-auto h-10 w-1 bg-ink md:hidde
 // full-width road rule had to clear the lioness column — leaving a dead
 // pink hole under the payoff at every width. The card is exactly the
 // height that hole wanted back.
-const nationalIdCard = (classes: string, cellReveals: boolean): Html =>
+const nationalIdCard = (model: Model, classes: string, cellReveals: boolean): Html =>
   h.div(
     [h.Class(`flex-wrap items-start justify-between gap-x-6 gap-y-6 ${classes}`)],
     (
@@ -109,7 +110,9 @@ const nationalIdCard = (classes: string, cellReveals: boolean): Html =>
       h.div(
         cellReveals
           ? [
+              h.Class(revealClass(model, `national-id-${index}`)),
               h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', `national-id-${index}`),
               h.Style({ '--reveal-delay': `${0.15 + index * 0.1}s` }),
             ]
           : [],
@@ -122,7 +125,7 @@ const nationalIdCard = (classes: string, cellReveals: boolean): Html =>
     ),
   );
 
-export const nationalTeamView = (): Html =>
+export const nationalTeamView = (model: Model): Html =>
   h.section(
     [h.Id('roar-as-one'), h.Class('relative bg-pink py-16 text-ink md:py-24')],
     [
@@ -141,9 +144,13 @@ export const nationalTeamView = (): Html =>
             // her boots land just above the mascots photo. Only possible
             // because the headline was shortened for her; the md tier is
             // smaller, the 768–1024 squeeze still pinches.
-            'pointer-events-none absolute top-4 right-4 z-0 hidden w-28 select-none sm:w-40 md:top-12 md:right-10 md:w-[30%] md:max-w-[300px] xl:right-[calc((100vw-80rem)/2+2.5rem)] xl:w-[38%] xl:max-w-[460px]',
+            clsx(
+              'pointer-events-none absolute top-4 right-4 z-0 hidden w-28 select-none sm:w-40 md:top-12 md:right-10 md:w-[30%] md:max-w-[300px] xl:right-[calc((100vw-80rem)/2+2.5rem)] xl:w-[38%] xl:max-w-[460px]',
+              revealClass(model, 'national-lioness'),
+            ),
           ),
           h.DataAttribute('reveal', 'right'),
+          h.DataAttribute('reveal-key', 'national-lioness'),
           h.Style({ '--reveal-delay': '0.1s' }),
         ],
         [
@@ -178,9 +185,13 @@ export const nationalTeamView = (): Html =>
             // tile read as hanging past the text). Everything above the
             // fluid cap is position-stable from xl, so the rem offset
             // holds at every xl width.
-            'pointer-events-none absolute top-4 right-4 z-0 hidden w-32 select-none sm:w-44 md:top-12 md:right-10 md:block md:w-[32%] md:max-w-[340px] xl:right-[calc((100vw-80rem)/2+2.5rem)] xl:top-[5.4rem] xl:w-[38%] xl:max-w-[460px]',
+            clsx(
+              'pointer-events-none absolute top-4 right-4 z-0 hidden w-32 select-none sm:w-44 md:top-12 md:right-10 md:block md:w-[32%] md:max-w-[340px] xl:right-[calc((100vw-80rem)/2+2.5rem)] xl:top-[5.4rem] xl:w-[38%] xl:max-w-[460px]',
+              revealClass(model, 'national-mascots'),
+            ),
           ),
           h.DataAttribute('reveal', 'up'),
+          h.DataAttribute('reveal-key', 'national-mascots'),
         ],
         [
           h.div(
@@ -188,8 +199,11 @@ export const nationalTeamView = (): Html =>
             [
               h.div(
                 [
-                  h.Class('photo-cycle relative'),
+                  h.Class(
+                    clsx('photo-cycle relative', revealClass(model, 'national-mascots-photo')),
+                  ),
                   h.DataAttribute('reveal', 'zoom'),
+                  h.DataAttribute('reveal-key', 'national-mascots-photo'),
                   h.Style({ '--reveal-delay': '0.15s' }),
                 ],
                 [
@@ -254,7 +268,7 @@ export const nationalTeamView = (): Html =>
               h.div(
                 [h.Class('md:min-h-[min(calc(100svh-10rem),40rem)]')],
                 [
-                  kicker('06', 'Roar as one', false, '/#roar-as-one'),
+                  kicker(model, '06', 'Roar as one', false, '/#roar-as-one'),
                   h.h2(
                     [h.Class('mt-10 md:mt-16')],
                     [
@@ -265,7 +279,13 @@ export const nationalTeamView = (): Html =>
                       // all ended up sparring with England — the Czech
                       // name introduces instead of comparing. Paper, no
                       // trailing dot (names don't carry one).
-                      maskedLine('Lvice', 'text-fluid-7xl-12xl text-paper', 0),
+                      maskedLine(
+                        model,
+                        'national-headline',
+                        'Lvice',
+                        'text-fluid-7xl-12xl text-paper',
+                        0,
+                      ),
                     ],
                   ),
                   // One display punch, not a paragraph — the camp-to-camp listing
@@ -279,9 +299,13 @@ export const nationalTeamView = (): Html =>
                         // max-w-2xl = the ID card's exact box, so the
                         // right-aligned echo line ENDS where the card's
                         // League B column ends — one shared right edge.
-                        'display mt-8 max-w-2xl text-fluid-2xl-4xl leading-snug md:mt-12',
+                        clsx(
+                          'display mt-8 max-w-2xl text-fluid-2xl-4xl leading-snug md:mt-12',
+                          revealClass(model, 'national-echo'),
+                        ),
                       ),
                       h.DataAttribute('reveal', 'up'),
+                      h.DataAttribute('reveal-key', 'national-echo'),
                     ],
                     [
                       // Staggered couplet (user layout): the answer line
@@ -298,7 +322,7 @@ export const nationalTeamView = (): Html =>
                   // max-w-2xl keeps the three cells inside the left column
                   // (the lioness starts ~780px in at 1280) while
                   // justify-between still spreads them into real columns.
-                  nationalIdCard('mt-12 flex md:mt-14 md:max-w-2xl', true),
+                  nationalIdCard(model, 'mt-12 flex md:mt-14 md:max-w-2xl', true),
                 ],
               ),
             ],
@@ -324,9 +348,13 @@ export const nationalTeamView = (): Html =>
                   h.div(
                     [
                       h.Class(
-                        'flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t-4 border-ink pt-5',
+                        clsx(
+                          'flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t-4 border-ink pt-5',
+                          revealClass(model, 'national-road-heading'),
+                        ),
                       ),
                       h.DataAttribute('reveal', 'up'),
+                      h.DataAttribute('reveal-key', 'national-road-heading'),
                     ],
                     [
                       h.h3([h.Class('display text-fluid-4xl-6xl')], ['The road to Brazil 2027.']),
@@ -338,8 +366,14 @@ export const nationalTeamView = (): Html =>
                   ),
                   h.p(
                     [
-                      h.Class('mt-5 max-w-3xl text-lg leading-relaxed md:text-xl'),
+                      h.Class(
+                        clsx(
+                          'mt-5 max-w-3xl text-lg leading-relaxed md:text-xl',
+                          revealClass(model, 'national-road-lede'),
+                        ),
+                      ),
                       h.DataAttribute('reveal', 'up'),
+                      h.DataAttribute('reveal-key', 'national-road-lede'),
                     ],
                     [
                       'The group stage is done — the Lvice went through Group B1 as runners-up. What remains is knockout football: two two-legged ties between us and our first World Cup.',

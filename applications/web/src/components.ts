@@ -15,6 +15,19 @@ const h = html<Message>();
 
 export const container = 'mx-auto w-full max-w-7xl px-5 md:px-10';
 
+// The classes a keyed reveal target renders, straight from the Model (fed
+// by the ObserveReveals mount in motion.ts). Under reduced motion every
+// target simply IS in — the observers aren't even installed, and
+// styles.css quiets the transitions. Each site merges this into its own
+// h.Class (foldkit keeps ONE class attribute per element, last one wins —
+// a separate h.Class here would overwrite the site's) and stamps the same
+// key as `data-reveal-key`.
+export const revealClass = (model: Model, key: string): string => {
+  if (model.prefersReducedMotion) return 'is-in';
+  const state = model.reveals[key];
+  return state === undefined ? '' : state === 'drawn' ? 'is-in is-drawn' : 'is-in';
+};
+
 // A `01 — LABEL` section kicker on a pink bar that wipes in from the left.
 // Deliberately large — it sets the section's context and shouldn't be
 // skimmed past.
@@ -24,7 +37,13 @@ export const container = 'mx-auto w-full max-w-7xl px-5 md:px-10';
 // anchors, so the header offset (scroll-margin-top) is honored. Hovers
 // follow the CTA language: pink chips lift to paper, ink chips swap their
 // pink type to paper.
-export const kicker = (index: string, label: string, dark: boolean, target: string): Html =>
+export const kicker = (
+  model: Model,
+  index: string,
+  label: string,
+  dark: boolean,
+  target: string,
+): Html =>
   h.div(
     [h.Class('flex')],
     [
@@ -37,9 +56,12 @@ export const kicker = (index: string, label: string, dark: boolean, target: stri
               dark
                 ? 'bg-pink text-ink hover:bg-paper active:bg-paper'
                 : 'bg-ink text-pink hover:text-paper active:text-paper',
+              // The section number is the kicker's identity — one per section.
+              revealClass(model, `kicker-${index}`),
             ),
           ),
           h.DataAttribute('reveal', 'wipe'),
+          h.DataAttribute('reveal-key', `kicker-${index}`),
         ],
         [`${index} — ${label}`],
       ),
@@ -68,6 +90,8 @@ export const kicker = (index: string, label: string, dark: boolean, target: stri
 // the overflow clip while the transform animates) handed back to normal
 // painting. That is the "renders, then gets cut" symptom.
 export const maskedLine = (
+  model: Model,
+  key: string,
   content: string | ReadonlyArray<Html | string>,
   classes: string,
   delaySeconds: number,
@@ -77,8 +101,9 @@ export const maskedLine = (
     [
       h.span(
         [
-          h.Class(`display block ${classes}`),
+          h.Class(clsx('display block', classes, revealClass(model, key))),
           h.DataAttribute('reveal', 'mask'),
+          h.DataAttribute('reveal-key', key),
           h.Style({ '--reveal-delay': `${delaySeconds}s` }),
         ],
         typeof content === 'string' ? [content] : [...content],

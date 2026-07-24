@@ -6,9 +6,17 @@ import championsSquadImage from '../assets/champions-squad.jpg';
 import championsTrophyImage from '../assets/champions-trophy.jpg';
 import domesticDoubleImage from '../assets/domestic-double.jpg';
 import spartaCrestImage from '../assets/sparta-praha.png';
-import { container, displayArrow, displayArrowSolo, kicker, maskedLine } from '../components';
+import {
+  container,
+  displayArrow,
+  displayArrowSolo,
+  kicker,
+  maskedLine,
+  revealClass,
+} from '../components';
 import { FIRST_LEAGUE, euroTies, honors, platformUrl, seasonCupRun, seasonRouts } from '../data';
 import type { Message } from '../message';
+import type { Model } from '../model';
 
 const h = html<Message>();
 
@@ -49,11 +57,14 @@ interface SingleMatch {
   readonly pens: string | null;
 }
 
-const singleMatchRow = (match: SingleMatch, index: number): Html =>
+const singleMatchRow = (model: Model, keyPrefix: string, match: SingleMatch, index: number): Html =>
   h.li(
     [
-      h.Class('border-b border-ink/15 last:border-b-0'),
+      h.Class(
+        clsx('border-b border-ink/15 last:border-b-0', revealClass(model, `${keyPrefix}-${index}`)),
+      ),
       h.DataAttribute('reveal', 'up'),
+      h.DataAttribute('reveal-key', `${keyPrefix}-${index}`),
       h.Style({ '--reveal-delay': `${index * 0.08}s` }),
     ],
     [
@@ -183,7 +194,7 @@ const singleMatchRow = (match: SingleMatch, index: number): Html =>
     ],
   );
 
-const seasonReceiptsGrid = (): Html =>
+const seasonReceiptsGrid = (model: Model): Html =>
   h.div(
     [
       h.Class('mt-10 grid gap-12 md:mt-14 md:grid-cols-2 md:gap-16'),
@@ -198,13 +209,28 @@ const seasonReceiptsGrid = (): Html =>
         [],
         [
           h.p(
-            [h.Class('text-xs tracking-[0.2em] uppercase'), h.DataAttribute('reveal', 'up')],
+            [
+              h.Class(
+                clsx(
+                  'text-xs tracking-[0.2em] uppercase',
+                  revealClass(model, 'champions-routs-label'),
+                ),
+              ),
+              h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', 'champions-routs-label'),
+            ],
             ['Biggest win — served four times'],
           ),
           h.p(
             [
-              h.Class('display mt-3 text-fluid-8xl-9xl leading-none text-pink'),
+              h.Class(
+                clsx(
+                  'display mt-3 text-fluid-8xl-9xl leading-none text-pink',
+                  revealClass(model, 'champions-routs-score'),
+                ),
+              ),
               h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', 'champions-routs-score'),
             ],
             [
               // A score can't count up — it gets the slot-machine
@@ -220,8 +246,14 @@ const seasonReceiptsGrid = (): Html =>
           ),
           h.p(
             [
-              h.Class('mt-4 max-w-md text-base leading-relaxed md:text-lg'),
+              h.Class(
+                clsx(
+                  'mt-4 max-w-md text-base leading-relaxed md:text-lg',
+                  revealClass(model, 'champions-routs-copy'),
+                ),
+              ),
               h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', 'champions-routs-copy'),
             ],
             [
               // "Four times" lives in the label above — the copy
@@ -233,6 +265,8 @@ const seasonReceiptsGrid = (): Html =>
             [h.Class('mt-8 border-t-2 border-ink')],
             seasonRouts.map((rout, index) =>
               singleMatchRow(
+                model,
+                'champions-rout',
                 {
                   opponent: rout.opponent,
                   logo: rout.logo,
@@ -255,20 +289,41 @@ const seasonReceiptsGrid = (): Html =>
         [],
         [
           h.p(
-            [h.Class('text-xs tracking-[0.2em] uppercase'), h.DataAttribute('reveal', 'up')],
+            [
+              h.Class(
+                clsx(
+                  'text-xs tracking-[0.2em] uppercase',
+                  revealClass(model, 'champions-euro-label'),
+                ),
+              ),
+              h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', 'champions-euro-label'),
+            ],
             ['Europe — UWEC semifinalists'],
           ),
           h.p(
             [
-              h.Class('display mt-3 text-fluid-5xl-7xl leading-none'),
+              h.Class(
+                clsx(
+                  'display mt-3 text-fluid-5xl-7xl leading-none',
+                  revealClass(model, 'champions-euro-headline'),
+                ),
+              ),
               h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', 'champions-euro-headline'),
             ],
             ['The road raiders.'],
           ),
           h.p(
             [
-              h.Class('mt-4 max-w-md text-base leading-relaxed md:text-lg'),
+              h.Class(
+                clsx(
+                  'mt-4 max-w-md text-base leading-relaxed md:text-lg',
+                  revealClass(model, 'champions-euro-copy'),
+                ),
+              ),
               h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', 'champions-euro-copy'),
             ],
             [
               // The data really does read like a spell: home legs
@@ -283,8 +338,14 @@ const seasonReceiptsGrid = (): Html =>
             euroTies.map((tie, index) =>
               h.li(
                 [
-                  h.Class('border-b border-ink/15 last:border-b-0'),
+                  h.Class(
+                    clsx(
+                      'border-b border-ink/15 last:border-b-0',
+                      revealClass(model, `champions-euro-tie-${index}`),
+                    ),
+                  ),
                   h.DataAttribute('reveal', 'up'),
+                  h.DataAttribute('reveal-key', `champions-euro-tie-${index}`),
                   h.Style({ '--reveal-delay': `${index * 0.08}s` }),
                 ],
                 [
@@ -469,7 +530,7 @@ const seasonReceiptsGrid = (): Html =>
     ],
   );
 
-const cupRunGrid = (): Html =>
+const cupRunGrid = (model: Model): Html =>
   h.div(
     [
       h.Class('mt-14 grid gap-12 md:mt-20 md:grid-cols-2 md:items-center md:gap-16'),
@@ -481,20 +542,41 @@ const cupRunGrid = (): Html =>
         [],
         [
           h.p(
-            [h.Class('text-xs tracking-[0.2em] uppercase'), h.DataAttribute('reveal', 'up')],
+            [
+              h.Class(
+                clsx(
+                  'text-xs tracking-[0.2em] uppercase',
+                  revealClass(model, 'champions-cup-label'),
+                ),
+              ),
+              h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', 'champions-cup-label'),
+            ],
             ['Domestic Cup — road to the double'],
           ),
           h.p(
             [
-              h.Class('display mt-3 text-fluid-5xl-7xl leading-none'),
+              h.Class(
+                clsx(
+                  'display mt-3 text-fluid-5xl-7xl leading-none',
+                  revealClass(model, 'champions-cup-headline'),
+                ),
+              ),
               h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', 'champions-cup-headline'),
             ],
             ['The quiet final.'],
           ),
           h.p(
             [
-              h.Class('mt-4 max-w-md text-base leading-relaxed md:text-lg'),
+              h.Class(
+                clsx(
+                  'mt-4 max-w-md text-base leading-relaxed md:text-lg',
+                  revealClass(model, 'champions-cup-copy'),
+                ),
+              ),
               h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', 'champions-cup-copy'),
             ],
             [
               'Twelve goals to get there, none in the finals — Slavia wouldn’t crack, and it took penalties to seal the double.',
@@ -504,6 +586,8 @@ const cupRunGrid = (): Html =>
             [h.Class('mt-8 border-t-2 border-ink')],
             seasonCupRun.map((tie, index) =>
               singleMatchRow(
+                model,
+                'champions-cup-tie',
                 {
                   opponent: tie.opponent,
                   logo: tie.logo,
@@ -524,13 +608,21 @@ const cupRunGrid = (): Html =>
       // to interactive tables, and a photo that reacts to the
       // pointer reads as another control.
       h.figure(
-        [h.DataAttribute('reveal', 'up')],
+        [
+          h.Class(revealClass(model, 'champions-double-figure')),
+          h.DataAttribute('reveal', 'up'),
+          h.DataAttribute('reveal-key', 'champions-double-figure'),
+        ],
         [
           h.div(
             [h.Class('overflow-hidden')],
             [
               h.div(
-                [h.DataAttribute('reveal', 'zoom')],
+                [
+                  h.Class(revealClass(model, 'champions-double-photo')),
+                  h.DataAttribute('reveal', 'zoom'),
+                  h.DataAttribute('reveal-key', 'champions-double-photo'),
+                ],
                 [
                   h.img([
                     h.Src(domesticDoubleImage),
@@ -555,7 +647,7 @@ const cupRunGrid = (): Html =>
     ],
   );
 
-const honorsBoard = (): Html =>
+const honorsBoard = (model: Model): Html =>
   h.div(
     [h.Class('mt-10 grid items-start gap-12 md:mt-14 md:grid-cols-2 md:items-center md:gap-16')],
     [
@@ -572,9 +664,13 @@ const honorsBoard = (): Html =>
               h.li(
                 [
                   h.Class(
-                    'flex flex-wrap items-baseline gap-x-4 border-b border-ink/15 py-5 md:py-6',
+                    clsx(
+                      'flex flex-wrap items-baseline gap-x-4 border-b border-ink/15 py-5 md:py-6',
+                      revealClass(model, `champions-honor-${index}`),
+                    ),
                   ),
                   h.DataAttribute('reveal', 'up'),
+                  h.DataAttribute('reveal-key', `champions-honor-${index}`),
                   h.Style({ '--reveal-delay': `${index * 0.12}s` }),
                 ],
                 [
@@ -676,10 +772,20 @@ const honorsBoard = (): Html =>
                 [h.Class('collage-snap collage-snap-left')],
                 [
                   h.div(
-                    [h.Class('overflow-hidden'), h.DataAttribute('reveal', 'up')],
+                    [
+                      h.Class(
+                        clsx('overflow-hidden', revealClass(model, 'champions-collage-left')),
+                      ),
+                      h.DataAttribute('reveal', 'up'),
+                      h.DataAttribute('reveal-key', 'champions-collage-left'),
+                    ],
                     [
                       h.div(
-                        [h.DataAttribute('reveal', 'zoom')],
+                        [
+                          h.Class(revealClass(model, 'champions-collage-left-photo')),
+                          h.DataAttribute('reveal', 'zoom'),
+                          h.DataAttribute('reveal-key', 'champions-collage-left-photo'),
+                        ],
                         [
                           h.img([
                             h.Src(championsTrophyImage),
@@ -705,13 +811,21 @@ const honorsBoard = (): Html =>
                 [
                   h.div(
                     [
-                      h.Class('overflow-hidden'),
+                      h.Class(
+                        clsx('overflow-hidden', revealClass(model, 'champions-collage-right')),
+                      ),
                       h.DataAttribute('reveal', 'up'),
+                      h.DataAttribute('reveal-key', 'champions-collage-right'),
                       h.Style({ '--reveal-delay': '0.15s' }),
                     ],
                     [
                       h.div(
-                        [h.DataAttribute('reveal', 'zoom'), h.Style({ '--reveal-delay': '0.25s' })],
+                        [
+                          h.Class(revealClass(model, 'champions-collage-right-photo')),
+                          h.DataAttribute('reveal', 'zoom'),
+                          h.DataAttribute('reveal-key', 'champions-collage-right-photo'),
+                          h.Style({ '--reveal-delay': '0.25s' }),
+                        ],
                         [
                           h.img([
                             h.Src(championsSquadImage),
@@ -736,7 +850,7 @@ const honorsBoard = (): Html =>
     ],
   );
 
-export const championsView = (): Html =>
+export const championsView = (model: Model): Html =>
   h.section(
     [h.Id('meet-our-champion'), h.Class('relative bg-paper py-16 text-ink md:py-24')],
     [
@@ -773,7 +887,7 @@ export const championsView = (): Html =>
             [
               // `dark: true` on a paper section is deliberate (user call,
               // same as 01): the pink chip + ink type over paper.
-              kicker('04', 'Meet our champion', true, '/#meet-our-champion'),
+              kicker(model, '04', 'Meet our champion', true, '/#meet-our-champion'),
               h.div(
                 [],
                 [
@@ -785,7 +899,15 @@ export const championsView = (): Html =>
                   // shorter viewports.
                   h.h2(
                     [h.Class('mt-10 md:mt-0')],
-                    [maskedLine('Sparta Praha', 'text-fluid-6xl-9xl', 0)],
+                    [
+                      maskedLine(
+                        model,
+                        'champions-headline',
+                        'Sparta Praha',
+                        'text-fluid-6xl-9xl',
+                        0,
+                      ),
+                    ],
                   ),
                   // Makes "champion" unambiguous: this is the REIGNING one, and the
                   // season below is the case for it. Body face, not `display`
@@ -794,8 +916,14 @@ export const championsView = (): Html =>
                   // cognitive load.
                   h.p(
                     [
-                      h.Class('mt-8 max-w-2xl text-lg leading-relaxed md:mt-12 md:text-xl'),
+                      h.Class(
+                        clsx(
+                          'mt-8 max-w-2xl text-lg leading-relaxed md:mt-12 md:text-xl',
+                          revealClass(model, 'champions-lede'),
+                        ),
+                      ),
                       h.DataAttribute('reveal', 'up'),
+                      h.DataAttribute('reveal-key', 'champions-lede'),
                     ],
                     [
                       // Europe leads because that's the real chronology (the
@@ -843,9 +971,13 @@ export const championsView = (): Html =>
                     // the column spans the head's full height, so the
                     // CTA's mt-auto pins its bottom edge to the head's
                     // floor — structurally level with the facts row.
-                    'pointer-events-none mx-auto mt-5 w-48 select-none md:absolute md:-top-12 md:right-0 md:bottom-0 md:mt-0 md:flex md:-z-10 md:w-[31%] md:max-w-[360px] md:flex-col',
+                    clsx(
+                      'pointer-events-none mx-auto mt-5 w-48 select-none md:absolute md:-top-12 md:right-0 md:bottom-0 md:mt-0 md:flex md:-z-10 md:w-[31%] md:max-w-[360px] md:flex-col',
+                      revealClass(model, 'champions-crest'),
+                    ),
                   ),
                   h.DataAttribute('reveal', 'right'),
+                  h.DataAttribute('reveal-key', 'champions-crest'),
                   h.Style({ '--reveal-delay': '0.1s' }),
                 ],
                 [
@@ -920,7 +1052,9 @@ export const championsView = (): Html =>
                   ).map(([label, value], index) =>
                     h.div(
                       [
+                        h.Class(revealClass(model, `champions-fact-${index}`)),
                         h.DataAttribute('reveal', 'up'),
+                        h.DataAttribute('reveal-key', `champions-fact-${index}`),
                         h.Style({ '--reveal-delay': `${0.15 + index * 0.1}s` }),
                       ],
                       [
@@ -934,7 +1068,12 @@ export const championsView = (): Html =>
                     ),
                   ),
                   h.div(
-                    [h.DataAttribute('reveal', 'up'), h.Style({ '--reveal-delay': '0.45s' })],
+                    [
+                      h.Class(revealClass(model, 'champions-fact-colors')),
+                      h.DataAttribute('reveal', 'up'),
+                      h.DataAttribute('reveal-key', 'champions-fact-colors'),
+                      h.Style({ '--reveal-delay': '0.45s' }),
+                    ],
                     [
                       h.div([h.Class('mb-4 h-1 w-12 bg-ink')], []),
                       h.div(
@@ -989,9 +1128,13 @@ export const championsView = (): Html =>
           h.div(
             [
               h.Class(
-                'mt-16 border-t-4 border-ink pt-5 md:mt-24 md:flex md:items-baseline md:justify-between md:gap-x-6',
+                clsx(
+                  'mt-16 border-t-4 border-ink pt-5 md:mt-24 md:flex md:items-baseline md:justify-between md:gap-x-6',
+                  revealClass(model, 'champions-season-divider'),
+                ),
               ),
               h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', 'champions-season-divider'),
             ],
             [
               // The two dividers of this section are structurally parallel:
@@ -1010,14 +1153,14 @@ export const championsView = (): Html =>
               ),
             ],
           ),
-          seasonReceiptsGrid(),
+          seasonReceiptsGrid(model),
           // ---- The cup run --------------------------------------------
           // Same anatomy as its two siblings above (kicker → display
           // headline → payoff → table), with the trophy photo beside it
           // (whole, uncropped) as the closing image. No stamps — but the
           // arrow affordance stays: these rows click through to the
           // platform exactly like their two louder siblings.
-          cupRunGrid(),
+          cupRunGrid(model),
           // ---- All time -------------------------------------------------
           // The historical honors board closes the section — the season's
           // receipts above are the argument, this is the legacy. Mirrors
@@ -1027,9 +1170,13 @@ export const championsView = (): Html =>
               // Stacked on phones like the season divider above — the two
               // must mirror each other.
               h.Class(
-                'mt-16 border-t-4 border-ink pt-5 md:mt-24 md:flex md:items-baseline md:justify-between md:gap-x-6',
+                clsx(
+                  'mt-16 border-t-4 border-ink pt-5 md:mt-24 md:flex md:items-baseline md:justify-between md:gap-x-6',
+                  revealClass(model, 'champions-alltime-divider'),
+                ),
               ),
               h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', 'champions-alltime-divider'),
             ],
             [
               h.h3([h.Class('display text-fluid-4xl-6xl')], ['All time.']),
@@ -1043,7 +1190,7 @@ export const championsView = (): Html =>
               ),
             ],
           ),
-          honorsBoard(),
+          honorsBoard(model),
         ],
       ),
     ],

@@ -2,14 +2,24 @@ import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
 import rancovaImage from '../assets/rancova.webp';
-import { container, displayArrow, displayArrowSolo, kicker, maskedLine } from '../components';
+import clsx from 'clsx';
+
+import {
+  container,
+  displayArrow,
+  displayArrowSolo,
+  kicker,
+  maskedLine,
+  revealClass,
+} from '../components';
 import { haulMatches, platformUrl, starStats } from '../data';
 import type { Message } from '../message';
+import type { Model } from '../model';
 import { tabularScore } from './champions';
 
 const h = html<Message>();
 
-export const starView = (): Html =>
+export const starView = (model: Model): Html =>
   h.section(
     [
       h.Id('hail-to-the-queen'),
@@ -19,10 +29,10 @@ export const starView = (): Html =>
       h.div(
         [h.Class(container)],
         [
-          kicker('05', 'Hail to the queen', true, '/#hail-to-the-queen'),
+          kicker(model, '05', 'Hail to the queen', true, '/#hail-to-the-queen'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
-            [maskedLine('Denisa Rancová', 'text-fluid-6xl-9xl', 0)],
+            [maskedLine(model, 'star-headline', 'Denisa Rancová', 'text-fluid-6xl-9xl', 0)],
           ),
           // She's the section — so she shows up immediately: the portrait
           // is FIRST in the DOM (right under the headline on phones) and
@@ -79,8 +89,11 @@ export const starView = (): Html =>
                         h.Height('1600'),
                         h.Alt('Denisa Rancová in the dark red Sparta Praha home shirt'),
                         h.Loading('lazy'),
-                        h.Class('relative h-full w-auto'),
+                        h.Class(
+                          clsx('relative h-full w-auto', revealClass(model, 'star-portrait')),
+                        ),
                         h.DataAttribute('reveal', 'up'),
+                        h.DataAttribute('reveal-key', 'star-portrait'),
                         h.Style({ '--reveal-delay': '0.2s' }),
                       ]),
                       // Our queen gets a crown — an original hand-drawn
@@ -100,7 +113,10 @@ export const starView = (): Html =>
                             // centered on the head's axis (user pick from a
                             // 96/100/104 ladder — 87 sat ON the hairline and
                             // read glued).
-                            'star-crown pointer-events-none absolute bottom-[96%] left-[32%] w-[34%] -rotate-6 text-pink md:bottom-[96%] md:left-[23%] md:w-[48%]',
+                            clsx(
+                              'star-crown pointer-events-none absolute bottom-[96%] left-[32%] w-[34%] -rotate-6 text-pink md:bottom-[96%] md:left-[23%] md:w-[48%]',
+                              revealClass(model, 'star-crown'),
+                            ),
                           ),
                           h.Fill('none'),
                           h.Stroke('currentColor'),
@@ -108,6 +124,7 @@ export const starView = (): Html =>
                           h.StrokeLinecap('round'),
                           h.StrokeLinejoin('round'),
                           h.DataAttribute('reveal', 'draw'),
+                          h.DataAttribute('reveal-key', 'star-crown'),
                           // The pen only performs on the way DOWN — coming
                           // back up the crown stands finished (motion.ts
                           // stamps is-drawn with is-in when scrolling up).
@@ -161,9 +178,13 @@ export const starView = (): Html =>
                             // lg, not md: the copy column stays phone-width through
                             // the md band (the photo column eats the rest), so the
                             // upsizing waits for lg across this whole section.
-                            'display block w-full bg-paper px-4 py-1.5 text-center text-base tracking-[0.2em] text-ink lg:inline-block lg:w-auto lg:bg-pink lg:px-5 lg:py-2 lg:text-left lg:text-xl',
+                            clsx(
+                              'display block w-full bg-paper px-4 py-1.5 text-center text-base tracking-[0.2em] text-ink lg:inline-block lg:w-auto lg:bg-pink lg:px-5 lg:py-2 lg:text-left lg:text-xl',
+                              revealClass(model, 'star-scorer-chip'),
+                            ),
                           ),
                           h.DataAttribute('reveal', 'wipe'),
+                          h.DataAttribute('reveal-key', 'star-scorer-chip'),
                           h.Style({ '--reveal-delay': '0.15s' }),
                         ],
                         ['First League top scorer'],
@@ -185,7 +206,9 @@ export const starView = (): Html =>
                     starStats.map((stat, index) =>
                       h.li(
                         [
+                          h.Class(revealClass(model, `star-stat-${index}`)),
                           h.DataAttribute('reveal', 'up'),
+                          h.DataAttribute('reveal-key', `star-stat-${index}`),
                           h.Style({ '--reveal-delay': `${index * 0.12}s` }),
                         ],
                         [
@@ -228,16 +251,31 @@ export const starView = (): Html =>
                     [
                       h.p(
                         [
-                          h.Class('display mt-12 text-fluid-3xl-5xl md:mt-16'),
+                          h.Class(
+                            clsx(
+                              'display mt-12 text-fluid-3xl-5xl md:mt-16',
+                              revealClass(model, 'star-hauls-heading'),
+                            ),
+                          ),
                           h.DataAttribute('reveal', 'up'),
+                          h.DataAttribute('reveal-key', 'star-hauls-heading'),
                         ],
                         ['The hauls.'],
                       ),
                       h.ul(
                         [h.Class('mt-5 border-t-2 border-paper')],
-                        haulMatches.map((haul) =>
+                        haulMatches.map((haul, haulIndex) =>
                           h.li(
-                            [h.Class('border-b border-paper/15'), h.DataAttribute('reveal', 'up')],
+                            [
+                              h.Class(
+                                clsx(
+                                  'border-b border-paper/15',
+                                  revealClass(model, `star-haul-${haulIndex}`),
+                                ),
+                              ),
+                              h.DataAttribute('reveal', 'up'),
+                              h.DataAttribute('reveal-key', `star-haul-${haulIndex}`),
+                            ],
                             [
                               h.a(
                                 [

@@ -1,8 +1,11 @@
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
-import { container, maskedLine } from '../components';
+import clsx from 'clsx';
+
+import { container, maskedLine, revealClass } from '../components';
 import type { Message } from '../message';
+import type { Model } from '../model';
 
 const h = html<Message>();
 
@@ -11,7 +14,13 @@ const h = html<Message>();
 // the wrapped block would only cross the seam between the lines); from
 // `md` up they flow inline and the slashes yield to the h2's continuous
 // full-width strike.
-const takeSegment = (text: string, maskDelaySeconds: number, strikeDelay: string): Html =>
+const takeSegment = (
+  model: Model,
+  key: string,
+  text: string,
+  maskDelaySeconds: number,
+  strikeDelay: string,
+): Html =>
   h.span(
     [h.Class('relative mx-auto block w-fit md:inline-block')],
     [
@@ -20,8 +29,9 @@ const takeSegment = (text: string, maskDelaySeconds: number, strikeDelay: string
         [
           h.span(
             [
-              h.Class('display block text-fluid-5xl-8xl'),
+              h.Class(clsx('display block text-fluid-5xl-8xl', revealClass(model, key))),
               h.DataAttribute('reveal', 'mask'),
+              h.DataAttribute('reveal-key', key),
               h.Style({ '--reveal-delay': `${maskDelaySeconds}s` }),
             ],
             [text],
@@ -31,10 +41,14 @@ const takeSegment = (text: string, maskDelaySeconds: number, strikeDelay: string
       h.span(
         [
           h.Class(
-            'pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 -rotate-2 bg-pink md:hidden',
+            clsx(
+              'pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 -rotate-2 bg-pink md:hidden',
+              revealClass(model, `${key}-strike`),
+            ),
           ),
           h.AriaHidden(true),
           h.DataAttribute('reveal', 'strike'),
+          h.DataAttribute('reveal-key', `${key}-strike`),
           h.DataAttribute('reveal-late', ''),
           h.Style({ '--reveal-delay': strikeDelay }),
         ],
@@ -48,11 +62,18 @@ const takeSegment = (text: string, maskDelaySeconds: number, strikeDelay: string
 // this section refuses. The visible line is aria-hidden (a screen reader
 // would read the struck '=' as plain equality — the opposite claim) and
 // the sr-only sibling carries the real sentence.
-const equationLine = (left: string, right: string, delaySeconds: number): Html =>
+const equationLine = (
+  model: Model,
+  key: string,
+  left: string,
+  right: string,
+  delaySeconds: number,
+): Html =>
   h.p(
     [
-      h.Class('display text-fluid-2xl-4xl'),
+      h.Class(clsx('display text-fluid-2xl-4xl', revealClass(model, key))),
       h.DataAttribute('reveal', 'up'),
+      h.DataAttribute('reveal-key', key),
       h.DataAttribute('reveal-late', ''),
       h.Style({ '--reveal-delay': `${delaySeconds}s` }),
     ],
@@ -71,10 +92,14 @@ const equationLine = (left: string, right: string, delaySeconds: number): Html =
                     // Native translate/rotate compose with the strike
                     // animation's transform (it only owns scaleX); origin
                     // left = the pen draws along the slash's own axis.
-                    'pointer-events-none absolute top-1/2 left-1/2 h-1 w-[130%] -translate-x-1/2 -translate-y-1/2 -rotate-[58deg] bg-pink md:h-1.5',
+                    clsx(
+                      'pointer-events-none absolute top-1/2 left-1/2 h-1 w-[130%] -translate-x-1/2 -translate-y-1/2 -rotate-[58deg] bg-pink md:h-1.5',
+                      revealClass(model, `${key}-strike`),
+                    ),
                   ),
                   h.AriaHidden(true),
                   h.DataAttribute('reveal', 'strike'),
+                  h.DataAttribute('reveal-key', `${key}-strike`),
                   h.DataAttribute('reveal-late', ''),
                   h.Style({ '--reveal-delay': `${delaySeconds + 0.35}s` }),
                 ],
@@ -91,7 +116,7 @@ const equationLine = (left: string, right: string, delaySeconds: number): Html =
 
 // An unnumbered full-bleed interlude — the site's attitude in three beats:
 // the tired take, the stamp slammed over it, and the deadpan analogy.
-export const statementView = (): Html =>
+export const statementView = (model: Model): Html =>
   h.section(
     [h.Class('overflow-hidden bg-ink py-20 text-paper md:py-32')],
     [
@@ -118,18 +143,22 @@ export const statementView = (): Html =>
                 // size it collapses to a sliver and the two words touch.
                 [h.Class('display relative inline-block text-fluid-5xl-8xl')],
                 [
-                  takeSegment('She doesn’t play', 0, '0.25s'),
+                  takeSegment(model, 'statement-take-1', 'She doesn’t play', 0, '0.25s'),
                   ' ',
-                  takeSegment('like men...', 0.08, '0.45s'),
+                  takeSegment(model, 'statement-take-2', 'like men...', 0.08, '0.45s'),
                   // From `md` up the take is one line — a single continuous
                   // slash across the whole h2 replaces the per-line pair.
                   h.span(
                     [
                       h.Class(
-                        'pointer-events-none absolute inset-x-0 top-1/2 hidden h-1.5 -translate-y-1/2 -rotate-2 bg-pink md:block md:h-2.5',
+                        clsx(
+                          'pointer-events-none absolute inset-x-0 top-1/2 hidden h-1.5 -translate-y-1/2 -rotate-2 bg-pink md:block md:h-2.5',
+                          revealClass(model, 'statement-strike-full'),
+                        ),
                       ),
                       h.AriaHidden(true),
                       h.DataAttribute('reveal', 'strike'),
+                      h.DataAttribute('reveal-key', 'statement-strike-full'),
                       h.DataAttribute('reveal-late', ''),
                       h.Style({ '--reveal-delay': '0.25s' }),
                     ],
@@ -145,9 +174,13 @@ export const statementView = (): Html =>
                   h.span(
                     [
                       h.Class(
-                        'display inline-block bg-pink px-5 py-3 text-fluid-3xl-6xl whitespace-nowrap text-ink md:px-8 md:py-4',
+                        clsx(
+                          'display inline-block bg-pink px-5 py-3 text-fluid-3xl-6xl whitespace-nowrap text-ink md:px-8 md:py-4',
+                          revealClass(model, 'statement-rebuttal'),
+                        ),
                       ),
                       h.DataAttribute('reveal', 'left'),
+                      h.DataAttribute('reveal-key', 'statement-rebuttal'),
                       h.DataAttribute('reveal-late', ''),
                       h.Style({ '--reveal-delay': '0.25s' }),
                     ],
@@ -164,15 +197,21 @@ export const statementView = (): Html =>
           h.div(
             [h.Class('mt-14 space-y-3 md:mt-20')],
             [
-              equationLine('Hockey', 'floorball', 0.5),
-              equationLine('Train', 'subway', 0.65),
-              equationLine('Men', 'women', 0.8),
+              equationLine(model, 'statement-eq-hockey', 'Hockey', 'floorball', 0.5),
+              equationLine(model, 'statement-eq-train', 'Train', 'subway', 0.65),
+              equationLine(model, 'statement-eq-men', 'Men', 'women', 0.8),
             ],
           ),
           h.p(
             [
-              h.Class('mx-auto mt-8 max-w-xl text-base leading-relaxed text-paper/70 md:text-lg'),
+              h.Class(
+                clsx(
+                  'mx-auto mt-8 max-w-xl text-base leading-relaxed text-paper/70 md:text-lg',
+                  revealClass(model, 'statement-standsalone'),
+                ),
+              ),
               h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', 'statement-standsalone'),
               h.DataAttribute('reveal-late', ''),
               h.Style({ '--reveal-delay': '0.7s' }),
             ],
@@ -182,8 +221,20 @@ export const statementView = (): Html =>
           h.div(
             [h.Class('mt-20 md:mt-28')],
             [
-              maskedLine('A whole new sport is being born.', 'text-fluid-3xl-6xl', 0),
-              maskedLine('Watch it rise to the top.', 'text-fluid-3xl-6xl text-pink', 0.2),
+              maskedLine(
+                model,
+                'statement-close-1',
+                'A whole new sport is being born.',
+                'text-fluid-3xl-6xl',
+                0,
+              ),
+              maskedLine(
+                model,
+                'statement-close-2',
+                'Watch it rise to the top.',
+                'text-fluid-3xl-6xl text-pink',
+                0.2,
+              ),
             ],
           ),
         ],

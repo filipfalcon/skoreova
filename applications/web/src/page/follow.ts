@@ -1,23 +1,26 @@
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
-import { container, displayArrowExternal, kicker, maskedLine } from '../components';
+import clsx from 'clsx';
+
+import { container, displayArrowExternal, kicker, maskedLine, revealClass } from '../components';
 import { socialChannels } from '../data';
 import type { Message } from '../message';
+import type { Model } from '../model';
 
 const h = html<Message>();
 
-export const followView = (): Html =>
+export const followView = (model: Model): Html =>
   h.section(
     [h.Id('follow'), h.Class('bg-ink py-16 text-paper md:py-24')],
     [
       h.div(
         [h.Class(container)],
         [
-          kicker('07', 'Week-in-week-out', true, '/#follow'),
+          kicker(model, '07', 'Week-in-week-out', true, '/#follow'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
-            [maskedLine('Follow the game.', 'text-fluid-5xl-9xl', 0)],
+            [maskedLine(model, 'follow-headline', 'Follow the game.', 'text-fluid-5xl-9xl', 0)],
           ),
           h.ul(
             // ONE reveal beat ('replay' group): on a menu-jump landing the
@@ -31,8 +34,11 @@ export const followView = (): Html =>
             socialChannels.map((channel, index) =>
               h.li(
                 [
-                  h.Class('border-b border-paper/15'),
+                  h.Class(
+                    clsx('border-b border-paper/15', revealClass(model, `follow-row-${index}`)),
+                  ),
                   h.DataAttribute('reveal', 'up'),
+                  h.DataAttribute('reveal-key', `follow-row-${index}`),
                   h.Style({ '--reveal-delay': `${index * 0.08}s` }),
                 ],
                 [

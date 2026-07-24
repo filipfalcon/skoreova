@@ -4,7 +4,7 @@ import type { Document, Html } from 'foldkit/html';
 import { footerView, headerView, menuOverlayView } from './components';
 import type { Message } from './message';
 import type { Model } from './model';
-import { MountMotion } from './motion';
+import { MountMotion, ObserveReveals } from './motion';
 import { championsView } from './page/champions';
 import { clubsView } from './page/clubs';
 import { competitionsView } from './page/competitions';
@@ -20,27 +20,36 @@ const h = html<Message>();
 
 const landingSections = (model: Model): ReadonlyArray<Html> => [
   heroView(),
-  storyView(),
-  competitionsView(),
+  storyView(model),
+  competitionsView(model),
   // The map right after the competitions — first WHAT we cover, then WHERE
   // it all happens, before zooming into individual protagonists.
   clubsView(model),
-  championsView(),
+  championsView(model),
   // Champion → her star player, then out to the national team.
-  starView(),
-  nationalTeamView(),
-  statementView(),
+  starView(model),
+  nationalTeamView(model),
+  statementView(model),
   // The competitions ticker answers the statement's closing line — "Watch
   // it rise to the top." and every competition name rolls past (user call;
   // it used to close the competitions section instead).
   marqueeView(),
-  followView(),
+  followView(model),
 ];
 
 export const view = (model: Model): Document => ({
   title: 'Skóreová — Czech Women’s Football',
-  body: h.div(
-    [h.Class('bg-ink font-body text-paper antialiased')],
+  // The root is keyed on the reduced-motion flag: flipping the OS setting
+  // tears both motion mounts down (symmetric release) and re-runs their
+  // setup with the fresh value — no stale mount-time snapshot. The reveal
+  // observers sit HERE (one OnMount per element; <main> below carries the
+  // per-frame choreography's MountMotion).
+  body: h.keyed('div')(
+    `motion-${model.prefersReducedMotion}`,
+    [
+      h.Class('bg-ink font-body text-paper antialiased'),
+      h.OnMount(ObserveReveals({ reduceMotion: model.prefersReducedMotion })),
+    ],
     [
       headerView(model),
       menuOverlayView(model),
@@ -49,11 +58,7 @@ export const view = (model: Model): Document => ({
       // cycles through the overlay (and header) only. The attribute is
       // added conditionally rather than set to `false` because `inert`
       // is a boolean attribute: its mere presence would disable the page.
-      // Keyed on the reduced-motion flag: flipping the OS setting tears the
-      // motion mount down (symmetric release) and re-runs setup with a
-      // fresh read — no stale mount-time snapshot.
-      h.keyed('main')(
-        `motion-${model.prefersReducedMotion}`,
+      h.main(
         [h.OnMount(MountMotion()), ...(model.isMenuOpen ? [h.Inert(true)] : [])],
         landingSections(model),
       ),
