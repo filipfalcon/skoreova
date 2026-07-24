@@ -1,4 +1,4 @@
-import { Array, Effect, Schema as S } from 'effect';
+import { Effect, Option, Schema as S } from 'effect';
 import { Command } from 'foldkit';
 import { load, pushUrl } from 'foldkit/navigation';
 
@@ -36,42 +36,37 @@ export const Load = Command.define(
 // update code has to know any of that happened.
 const PINS_KEY = 'skoreova-pins';
 
+// Trust nothing off the disk: the stored value must decode as an array of
+// strings, or it counts as no pins at all — a hand-edited or half-written
+// value can never crash the feed that renders them.
+const decodeStoredPins = S.decodeUnknownOption(S.Array(S.String));
+
+const noPins: ReadonlyArray<string> = [];
+
 const pinsStore = {
-  load: (): ReadonlyArray<string> => {
-    try {
-      const raw = localStorage.getItem(PINS_KEY);
-      const parsed: unknown = raw === null ? [] : JSON.parse(raw);
-      // Trust nothing off the wire/disk: keep only strings, so a hand-edited
-      // or half-written value can never crash the feed that renders them.
-      return Array.isArray(parsed)
-        ? parsed.filter((id): id is string => typeof id === 'string')
-        : [];
-    } catch {
-      return [];
-    }
-  },
-  save: (ids: ReadonlyArray<string>): void => {
-    try {
-      localStorage.setItem(PINS_KEY, JSON.stringify(ids));
-    } catch {
+  load: Effect.try((): unknown => {
+    const raw = localStorage.getItem(PINS_KEY);
+    return raw === null ? noPins : JSON.parse(raw);
+  }).pipe(
+    Effect.map((parsed) => Option.getOrElse(decodeStoredPins(parsed), () => noPins)),
+    // Disabled storage / malformed JSON: start from no pins.
+    Effect.orElseSucceed(() => noPins),
+  ),
+  save: (ids: ReadonlyArray<string>) =>
+    Effect.try(() => localStorage.setItem(PINS_KEY, JSON.stringify(ids))).pipe(
       // Private-mode / quota / disabled storage: the pin still shows this
       // session (it is in the model), it just will not outlive the tab.
-    }
-  },
+      Effect.ignore,
+    ),
 };
 
 export const ReadPins = Command.define(
   'ReadPins',
   LoadedPins,
-)(Effect.sync(() => LoadedPins({ ids: [...pinsStore.load()] })));
+)(pinsStore.load.pipe(Effect.map((ids) => LoadedPins({ ids: [...ids] }))));
 
 export const WritePins = Command.define(
   'WritePins',
   { ids: S.Array(S.String) },
   CompletedWritePins,
-)(({ ids }) =>
-  Effect.sync(() => {
-    pinsStore.save(ids);
-    return CompletedWritePins();
-  }),
-);
+)(({ ids }) => pinsStore.save(ids).pipe(Effect.as(CompletedWritePins())));
