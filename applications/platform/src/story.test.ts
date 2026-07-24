@@ -119,16 +119,22 @@ test('ReadPins hydration seeds the pinned list via LoadedPins', () => {
   );
 });
 
-test('an internal link applies the route and pushes it through Navigate', () => {
+test('an internal link only pushes the url — ChangedUrl applies the route', () => {
   Story.story(
     update,
     Story.with(welcomeModel),
     Story.message(ClickedLink({ request: Internal({ url: url('/her-game') }) })),
+    // The model is untouched until the runtime answers with ChangedUrl —
+    // applying eagerly here too would double-apply every navigation.
     Story.model((model) => {
-      expect(model.route._tag).toBe('HerGameRoute');
+      expect(model.route._tag).toBe('WelcomeRoute');
     }),
     Story.Command.expectHas(Navigate),
     Story.Command.resolve(Navigate, CompletedNavigate()),
+    Story.message(ChangedUrl({ url: url('/her-game') })),
+    Story.model((model) => {
+      expect(model.route._tag).toBe('HerGameRoute');
+    }),
   );
 });
 
