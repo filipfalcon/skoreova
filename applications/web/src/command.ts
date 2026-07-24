@@ -6,6 +6,7 @@ import { Command, Dom } from 'foldkit';
 import { load, pushUrl } from 'foldkit/navigation';
 
 import {
+  CompletedFocusMenuToggle,
   CompletedLoad,
   CompletedNavigate,
   CompletedSetScrollLock,
@@ -118,6 +119,21 @@ export const SetScrollLock = Command.define(
   CompletedSetScrollLock,
 )(({ locked }) =>
   (locked ? Dom.lockScroll : Dom.unlockScroll).pipe(Effect.as(CompletedSetScrollLock())),
+);
+
+// Returns focus to the header's menu toggle after Escape closes the overlay
+// — the native-dialog contract (focus returns to the opener), done as a
+// Command rather than a side effect inside the subscription's stream. A
+// missing toggle is ignored: the header always renders it, and focus
+// restoration is courtesy, not correctness.
+export const FocusMenuToggle = Command.define(
+  'FocusMenuToggle',
+  CompletedFocusMenuToggle,
+)(
+  Dom.focus('#menu-toggle', { preventScroll: true }).pipe(
+    Effect.ignore,
+    Effect.as(CompletedFocusMenuToggle()),
+  ),
 );
 
 // Resolves which landing section the viewport centre sits in, so the open

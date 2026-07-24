@@ -5,7 +5,7 @@ import { Effect, Schema as S, Stream } from 'effect';
 import { Subscription } from 'foldkit';
 
 import type { Model } from './model';
-import { type Message, ClosedMenu } from './message';
+import { type Message, PressedMenuEscape } from './message';
 
 // SUBSCRIPTIONS
 
@@ -89,17 +89,10 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
         isMenuOpen
           ? Stream.fromEventListener<KeyboardEvent>(document, 'keydown').pipe(
               Stream.filter((event) => event.key === 'Escape'),
-              // Focus would otherwise die with the hidden overlay — hand it
-              // back to the toggle, like a native dialog returns focus to
-              // its opener.
-              Stream.tap(() =>
-                Effect.sync(() =>
-                  document
-                    .querySelector<HTMLButtonElement>('#menu-toggle')
-                    ?.focus({ preventScroll: true }),
-                ),
-              ),
-              Stream.map(() => ClosedMenu()),
+              // Just the Message — the focus hand-back to the toggle runs as
+              // a Command from the update handler (FocusMenuToggle), not as
+              // a DOM side effect smuggled into the stream.
+              Stream.map(() => PressedMenuEscape()),
             )
           : Stream.empty,
     },
