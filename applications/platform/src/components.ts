@@ -450,3 +450,24 @@ export const screenHeader = (model: Model, subtitle: string): Html =>
       h.p([h.Class('mt-3 max-w-2xl text-sm leading-relaxed text-ink/50')], [subtitle]),
     ],
   );
+
+// A tiny upward spark for the welcome ticker and the clubs rail.
+export const tickerSpark: Html = h.svg(
+  [
+    h.Xmlns('http://www.w3.org/2000/svg'),
+    h.ViewBox('0 0 24 24'),
+    h.Class('inline-block h-[0.55em] w-auto shrink-0 text-pink'),
+    h.AriaHidden(true),
+    h.Fill('currentColor'),
+  ],
+  [
+    h.path(
+      [
+        h.D(
+          'M12 0 C13.5 7.5 16.5 10.5 24 12 C16.5 13.5 13.5 16.5 12 24 C10.5 16.5 7.5 13.5 0 12 C7.5 10.5 10.5 7.5 12 0 Z',
+        ),
+      ],
+      [],
+    ),
+  ],
+);
