@@ -60,7 +60,7 @@ export const signedOutModel = Model.make({
   section: 'players',
   isMenuOpen: false,
   search: '',
-  filters: [],
+  filters: {},
   drawer: DrawerClosed.make({}),
   dialog: Dialog.init({ id: DRAWER_DIALOG_ID }),
   tabs: Tabs.init({ id: DRAWER_TABS_ID }),

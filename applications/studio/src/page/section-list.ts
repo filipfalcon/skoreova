@@ -240,14 +240,17 @@ const content = (model: Model): Html => {
         });
         return !isBelowFrom && !isAboveTo;
       }
-      const selected = model.filters[index] ?? '';
-      if (selected === '') return true;
-      if (checkboxColumns.has(column)) {
-        // Stored value is the *excluded* (unchecked) set; a row passes unless
-        // its value is in it.
-        return !selected.split(',').includes(value);
-      }
-      return value === selected;
+      const filter = model.filters[column];
+      if (!filter) return true;
+      return M.value(filter).pipe(
+        M.withReturnType<boolean>(),
+        M.tagsExhaustive({
+          ExactFilter: ({ value: selected }) => value === selected,
+          // The *excluded* (unchecked) set; a row passes unless its value is
+          // in it.
+          ExcludedFilter: ({ excluded }) => !excluded.includes(value),
+        }),
+      );
     });
     const matchesQuery =
       query === '' || entry.values.some((cell) => cell.toLowerCase().includes(query));
@@ -285,13 +288,14 @@ const content = (model: Model): Html => {
     );
 
   const filterSelect = (column: string, columnIndex: number): Html => {
-    const selected = model.filters[columnIndex] ?? '';
+    const active = model.filters[column];
+    const selected = active?._tag === 'ExactFilter' ? active.value : '';
 
     const option = (optionValue: string, optionLabel: string): Html =>
       h.option([h.Value(optionValue), h.Selected(optionValue === selected)], [optionLabel]);
 
     return h.select(
-      [h.OnChange((value) => SelectedFilter({ columnIndex, value })), h.Class(filterSelectStyle)],
+      [h.OnChange((value) => SelectedFilter({ column, value })), h.Class(filterSelectStyle)],
       [
         option('', `All ${column}`),
         ...optionsFor(columnIndex).map((value) => option(value, value)),
@@ -352,9 +356,10 @@ const content = (model: Model): Html => {
   };
 
   const filterCheckbox = (column: string, columnIndex: number): Html => {
-    // Stored value is the set of *excluded* (unchecked) values, comma-joined.
-    // Empty = nothing excluded = every option checked, which is the default.
-    const excludedValues = (model.filters[columnIndex] ?? '').split(',').filter((v) => v !== '');
+    // The filter stores the set of *excluded* (unchecked) values. No filter =
+    // nothing excluded = every option checked, which is the default.
+    const active = model.filters[column];
+    const excludedValues = active?._tag === 'ExcludedFilter' ? active.excluded : [];
     const listbox = model.filterListboxes[column];
     if (!listbox) return h.div([], []);
     const options = optionsFor(columnIndex);

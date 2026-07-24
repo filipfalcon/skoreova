@@ -54,6 +54,17 @@ export const DrawerTabs: ReturnType<typeof Tabs.create<DrawerTab>> = Tabs.create
 export const FilterListbox: ReturnType<typeof Listbox.Multi.create<string>> =
   Listbox.Multi.create<string>();
 
+// One column's list filter, keyed by column name in `Model.filters` (an
+// absent key means "All"). Exact is a dropdown column's single choice;
+// Excluded is a checkbox column's *unchecked* set — a row passes unless its
+// value is in it. Tagged variants replace the old per-index string slot that
+// multiplexed both encodings comma-joined (a value containing a comma
+// corrupted the excluded set).
+export const ExactFilter = S.TaggedStruct('ExactFilter', { value: S.String });
+export const ExcludedFilter = S.TaggedStruct('ExcludedFilter', { excluded: S.Array(S.String) });
+export const ColumnFilter = S.Union([ExactFilter, ExcludedFilter]);
+export type ColumnFilter = typeof ColumnFilter.Type;
+
 // A date column's from/to range filter as typed CalendarDates — replaces the
 // old comma-joined "from,to" string that rode in the `filters` slot. Either
 // side may be unset.
@@ -115,10 +126,9 @@ export const Model = S.Struct({
   // sidebar is always visible.
   isMenuOpen: S.Boolean,
   search: S.String,
-  // One dropdown filter per column of the current section. `filters[i]` is the
-  // selected value for `columns[i]`, or '' for "All". Index 0 (the title
-  // column) is unused but kept so indices line up with `columns`.
-  filters: S.Array(S.String),
+  // The active list filter per column of the current section, keyed by the
+  // column's name (see ColumnFilter). Absent key = "All".
+  filters: S.Record(S.String, ColumnFilter),
   // The profile drawer: closed, creating a new record, or editing one by id.
   drawer: DrawerState,
   // The Dialog submodel presenting the drawer: the native <dialog> element,
