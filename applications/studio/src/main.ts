@@ -11,6 +11,7 @@ import { editionToRow } from './editionsApi';
 import { Section } from './section';
 export { Section } from './section';
 import {
+  Anonymous,
   DRAWER_DIALOG_ID,
   DRAWER_TABS_ID,
   DrawerClosed,
@@ -22,6 +23,7 @@ import {
   Model,
   ParticipationsData,
   SectionData,
+  SignedIn,
 } from './model';
 
 import {
@@ -74,9 +76,7 @@ export { view } from './page';
 // A fresh signed-out model. Every section starts Idle — nothing is fetched
 // until sign-in, and there's no mock seed data.
 const initialModel = (): Model => ({
-  email: '',
-  password: '',
-  isSignedIn: false,
+  session: Anonymous.make({ emailInput: '', passwordInput: '' }),
   section: 'players',
   isMenuOpen: false,
   search: '',
@@ -298,8 +298,22 @@ export const update = (model: Model, message: Message): UpdateReturn =>
   M.value(message).pipe(
     withUpdateReturn,
     M.tagsExhaustive({
-      UpdatedEmail: ({ value }) => [evo(model, { email: () => value }), []],
-      UpdatedPassword: ({ value }) => [evo(model, { password: () => value }), []],
+      // The credential fields only exist while signed out — a stray input
+      // message after sign-in has nothing to write into.
+      UpdatedEmail: ({ value }) => [
+        evo(model, {
+          session: (session) =>
+            session._tag === 'Anonymous' ? evo(session, { emailInput: () => value }) : session,
+        }),
+        [],
+      ],
+      UpdatedPassword: ({ value }) => [
+        evo(model, {
+          session: (session) =>
+            session._tag === 'Anonymous' ? evo(session, { passwordInput: () => value }) : session,
+        }),
+        [],
+      ],
       // NOTE: mock sign-in — there is no backend authentication endpoint
       // yet, so any credentials (including empty ones) are accepted. Signing
       // in kicks off every section's first fetch.
@@ -316,7 +330,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           model.participations._tag === 'Idle' ? [FetchParticipations()] : [];
         return [
           evo(model, {
-            isSignedIn: () => true,
+            // Only the email crosses into the signed-in state — the password
+            // input is dropped here, not carried along.
+            session: (session) =>
+              session._tag === 'Anonymous' ? SignedIn.make({ email: session.emailInput }) : session,
             players: start,
             clubs: start,
             nationals: start,

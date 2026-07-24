@@ -14,6 +14,12 @@ import { teamColumns } from './teamsApi';
 import { Section } from './section';
 import { type DrawerState, type Entry, type Model, DrawerEditing } from './model';
 
+// The signed-in editor's display name ('editor' when the email was blank).
+export const accountName = (model: Model): string =>
+  model.session._tag === 'SignedIn' && model.session.email.length > 0
+    ? model.session.email
+    : 'editor';
+
 export const sectionRows = (model: Model, section: Section): ReadonlyArray<Entry> =>
   Option.getOrElse(AsyncData.getData(model[section]), () => []);
 
