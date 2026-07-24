@@ -1,7 +1,8 @@
+import { Effect } from 'effect';
 import { Runtime } from 'foldkit';
 import { beforeAll, expect, test } from 'vitest';
 
-import { ChangedUrl, ClickedLink, Model, init, update, view } from './main';
+import { ChangedUrl, ClickedLink, Flags, Model, init, update, view } from './main';
 import './styles.css';
 
 // Guards the map's pen-stroke draw-in: after the clubs section scrolls into
@@ -30,6 +31,9 @@ beforeAll(async () => {
   Runtime.run(
     Runtime.makeApplication({
       Model,
+      Flags,
+      // Deterministic: the guards exercise the full motion path.
+      flags: Effect.sync(() => ({ prefersReducedMotion: false })),
       init,
       update,
       view,

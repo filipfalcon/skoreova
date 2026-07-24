@@ -6,7 +6,7 @@ import { toString as urlToString } from 'foldkit/url';
 
 import type { AppRoute } from './route';
 import { urlToAppRoute } from './route';
-import type { Model } from './model';
+import type { Flags, Model } from './model';
 import type { Message } from './message';
 import { DetectActiveSection, FocusMenuToggle, Load, Navigate, SetScrollLock } from './command';
 
@@ -27,6 +27,7 @@ const initialModel: Model = {
   mapClub: Option.none(),
   isMapAreaImperial: true,
   heroPastHeader: false,
+  prefersReducedMotion: false,
 };
 
 // Applies a parsed URL to the model — used for the initial load, our own
@@ -45,8 +46,11 @@ const applyRoute = (model: Model, route: AppRoute): Model => {
   return evo(next, { mapClub: () => Option.none() });
 };
 
-export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
-  applyRoute(initialModel, urlToAppRoute(url)),
+export const init: Runtime.RoutingApplicationInit<Model, Message, Flags> = (flags, url) => [
+  applyRoute(
+    evo(initialModel, { prefersReducedMotion: () => flags.prefersReducedMotion }),
+    urlToAppRoute(url),
+  ),
   [],
 ];
 
@@ -95,7 +99,13 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           M.tagsExhaustive({
             Internal: ({ url }) => [
               applyRoute(model, urlToAppRoute(url)),
-              [Navigate({ url: urlToString(url) }), SetScrollLock({ locked: false })],
+              [
+                Navigate({
+                  url: urlToString(url),
+                  reduceMotion: model.prefersReducedMotion,
+                }),
+                SetScrollLock({ locked: false }),
+              ],
             ],
             External: ({ href }) => [model, [Load({ href })]],
           }),
@@ -122,5 +132,11 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       // The hero observer reports whether it has scrolled under the header;
       // the header CTA renders off this flag.
       DetectedHeroPastHeader: ({ past }) => [evo(model, { heroPastHeader: () => past }), []],
+      // The OS setting flipped mid-session — the keyed motion mount and the
+      // wheel subscription both follow this flag.
+      ChangedReducedMotion: ({ reduce }) => [
+        evo(model, { prefersReducedMotion: () => reduce }),
+        [],
+      ],
     }),
   );

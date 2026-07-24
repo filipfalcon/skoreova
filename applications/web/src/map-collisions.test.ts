@@ -1,8 +1,9 @@
 import { page } from 'vitest/browser';
+import { Effect } from 'effect';
 import { Runtime } from 'foldkit';
 import { afterAll, beforeAll, expect, test } from 'vitest';
 
-import { ChangedUrl, ClickedLink, Model, init, update, view } from './main';
+import { ChangedUrl, ClickedLink, Flags, Model, init, update, view } from './main';
 import './styles.css';
 
 // Geometric guard for the map's pin system: measures the real rendered
@@ -133,6 +134,9 @@ beforeAll(async () => {
   Runtime.run(
     Runtime.makeApplication({
       Model,
+      Flags,
+      // Deterministic: the guards exercise the full motion path.
+      flags: Effect.sync(() => ({ prefersReducedMotion: false })),
       init,
       update,
       view,

@@ -28,6 +28,9 @@ export const OpenedMapClub = m('OpenedMapClub', { slug: S.String });
 // Closes the open club card.
 export const ClosedMapClub = m('ClosedMapClub');
 export const ToggledAreaUnit = m('ToggledAreaUnit');
+// The OS-level `prefers-reduced-motion` setting flipped mid-session — see
+// the reducedMotion subscription.
+export const ChangedReducedMotion = m('ChangedReducedMotion', { reduce: S.Boolean });
 
 export const Message = S.Union([
   ToggledMenu,
@@ -44,6 +47,7 @@ export const Message = S.Union([
   OpenedMapClub,
   ClosedMapClub,
   ToggledAreaUnit,
+  ChangedReducedMotion,
   CompletedMountMotion,
   FailedMountMotion,
   DetectedHeroPastHeader,

@@ -49,7 +49,11 @@ export const view = (model: Model): Document => ({
       // cycles through the overlay (and header) only. The attribute is
       // added conditionally rather than set to `false` because `inert`
       // is a boolean attribute: its mere presence would disable the page.
-      h.main(
+      // Keyed on the reduced-motion flag: flipping the OS setting tears the
+      // motion mount down (symmetric release) and re-runs setup with a
+      // fresh read — no stale mount-time snapshot.
+      h.keyed('main')(
+        `motion-${model.prefersReducedMotion}`,
         [h.OnMount(MountMotion()), ...(model.isMenuOpen ? [h.Inert(true)] : [])],
         landingSections(model),
       ),

@@ -6,6 +6,13 @@ import { Schema as S } from 'effect';
 export const MapLeague = S.Literals(['All', 'First', 'Second']);
 export type MapLeague = typeof MapLeague.Type;
 
+// Boot-time flags, decoded by the runtime before init: whether the OS asks
+// for reduced motion. Seeding the Model here (instead of each consumer
+// sampling matchMedia on its own schedule) gives the wheel hijack, the
+// Navigate scroll animation, and the motion mount ONE shared value.
+export const Flags = S.Struct({ prefersReducedMotion: S.Boolean });
+export type Flags = typeof Flags.Type;
+
 export const Model = S.Struct({
   isMenuOpen: S.Boolean,
   // Id of the landing section the viewport sat in when the menu was last
@@ -26,5 +33,10 @@ export const Model = S.Struct({
   // in motion.ts) — the header owns the class in the view, so a re-render
   // can't wipe it the way an imperatively-toggled class did.
   heroPastHeader: S.Boolean,
+  // Mirrors the OS-level `prefers-reduced-motion` media query — seeded via
+  // Flags at boot, kept fresh by the reducedMotion subscription. The motion
+  // mount is keyed on it (page.ts), so flipping the OS setting mid-session
+  // re-runs the choreography setup instead of leaving a stale snapshot.
+  prefersReducedMotion: S.Boolean,
 });
 export type Model = typeof Model.Type;

@@ -10,6 +10,7 @@ export const landingModel = Model.make({
   mapClub: Option.none(),
   isMapAreaImperial: true,
   heroPastHeader: false,
+  prefersReducedMotion: false,
 });
 
 // The full-screen menu overlay open.
