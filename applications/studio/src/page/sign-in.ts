@@ -11,6 +11,10 @@ import { cardStyle, chipStyle, forgotStyle, inputStyle, submitStyle } from '../s
 const h = html<Message>();
 
 export const loginView = (model: Model): Document => {
+  // The credential inputs only exist while signed out; this view never
+  // renders otherwise, so the fallbacks are just for totality.
+  const emailInput = model.session._tag === 'Anonymous' ? model.session.emailInput : '';
+  const passwordInput = model.session._tag === 'Anonymous' ? model.session.passwordInput : '';
   return {
     title: 'Skóreová Studio — Sign in',
     body: h.div(
@@ -54,7 +58,7 @@ export const loginView = (model: Model): Document => {
                           id: 'signin-email',
                           type: 'email',
                           placeholder: 'email address',
-                          value: model.email,
+                          value: emailInput,
                           onInput: (value) => UpdatedEmail({ value }),
                           toView: (attributes) =>
                             h.div(
@@ -77,7 +81,7 @@ export const loginView = (model: Model): Document => {
                           id: 'signin-password',
                           type: 'password',
                           placeholder: 'password',
-                          value: model.password,
+                          value: passwordInput,
                           onInput: (value) => UpdatedPassword({ value }),
                           toView: (attributes) =>
                             h.div(

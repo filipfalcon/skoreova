@@ -3,6 +3,7 @@ import { Dialog, Tabs } from '@foldkit/ui';
 
 import { initialDateFilterPickers, initialFilterListboxes } from './data';
 import {
+  Anonymous,
   DRAWER_DIALOG_ID,
   DRAWER_TABS_ID,
   DrawerClosed,
@@ -11,6 +12,7 @@ import {
   Model,
   ParticipationsData,
   SectionData,
+  SignedIn,
 } from './main';
 
 // A single player record — enough columns to fill the drawer's fields and feed
@@ -54,9 +56,7 @@ export const sampleEdition: Entry = Entry.make({
 // The signed-out boot model — mirrors `initialModel` in main.ts (kept here so a
 // fixture tweak can never quietly reshape the app's real starting state).
 export const signedOutModel = Model.make({
-  email: '',
-  password: '',
-  isSignedIn: false,
+  session: Anonymous.make({ emailInput: '', passwordInput: '' }),
   section: 'players',
   isMenuOpen: false,
   search: '',
@@ -87,13 +87,17 @@ export const signedOutModel = Model.make({
   dateFilterPickers: initialDateFilterPickers({ year: 2026, month: 6, day: 1 }),
 });
 
-// Signed in, on the dashboard landing page.
-export const dashboardModel = Model.make({ ...signedOutModel, isSignedIn: true });
+// Signed in, on the dashboard landing page. A blank email signs in as the
+// generic 'editor'.
+export const dashboardModel = Model.make({
+  ...signedOutModel,
+  session: SignedIn.make({ email: '' }),
+});
 
 // Signed in, viewing the Players section list with one loaded row.
 export const playersListModel = Model.make({
   ...signedOutModel,
-  isSignedIn: true,
+  session: SignedIn.make({ email: '' }),
   isShowingDashboard: false,
   section: 'players',
   players: SectionData.Success({ data: [samplePlayer] }),
@@ -105,7 +109,7 @@ export const playersListModel = Model.make({
 // "Competition" cell must render the resolved name, not the stored id.
 export const editionsListModel = Model.make({
   ...signedOutModel,
-  isSignedIn: true,
+  session: SignedIn.make({ email: '' }),
   isShowingDashboard: false,
   section: 'editions',
   competitions: SectionData.Success({ data: [sampleCompetition] }),

@@ -9,4 +9,4 @@ import { dashboardView } from './page/section-list';
 import { loginView } from './page/sign-in';
 
 export const view = (model: Model): Document =>
-  model.isSignedIn ? dashboardView(model) : loginView(model);
+  model.session._tag === 'SignedIn' ? dashboardView(model) : loginView(model);

@@ -10,6 +10,7 @@ import { PAGE_SIZE } from '../api';
 import {
   type MenuLeaf,
   type MenuNode,
+  accountName,
   checkboxColumns,
   countryFlags,
   countryNames,
@@ -86,7 +87,7 @@ import { drawer } from './drawer';
 const h = html<Message>();
 
 export const dashboardView = (model: Model): Document => {
-  const account = model.email.length > 0 ? model.email : 'editor';
+  const account = accountName(model);
 
   return {
     title: 'Skóreová Studio — Dashboard',
@@ -176,7 +177,7 @@ const sidebar = (current: Section, open: boolean, isShowingDashboard: boolean): 
 // The default landing page right after signing in — an overview of every
 // section, each linking straight into its list.
 const dashboardHome = (model: Model): Html => {
-  const account = model.email.length > 0 ? model.email : 'editor';
+  const account = accountName(model);
 
   const countFor = (section: Section): number =>
     sectionRows(model, section).filter((row) => !row.isDeleted).length;

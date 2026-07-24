@@ -11,6 +11,17 @@ import { Section } from './section';
 // native <dialog> element and the framework's per-dialog resource accounting.
 export const DRAWER_DIALOG_ID = 'record-drawer';
 
+// Who is using the studio. A tagged union so the credential inputs only
+// exist while signing in — after sign-in the model carries the email alone,
+// and the plaintext password can't linger in state (or DevTools snapshots).
+export const Anonymous = S.TaggedStruct('Anonymous', {
+  emailInput: S.String,
+  passwordInput: S.String,
+});
+export const SignedIn = S.TaggedStruct('SignedIn', { email: S.String });
+export const Session = S.Union([Anonymous, SignedIn]);
+export type Session = typeof Session.Type;
+
 // One record. `values` line up with the section's columns (see `sectionData`).
 export const Entry = S.Struct({
   section: Section,
@@ -98,9 +109,7 @@ export type SectionData = typeof SectionData.schema.Type;
 export const ParticipationsData = AsyncData.Schema(S.Array(ParticipationResponse), S.String);
 
 export const Model = S.Struct({
-  email: S.String,
-  password: S.String,
-  isSignedIn: S.Boolean,
+  session: Session,
   section: Section,
   // Whether the nav is open. Only affects small screens; from `md:` up the
   // sidebar is always visible.

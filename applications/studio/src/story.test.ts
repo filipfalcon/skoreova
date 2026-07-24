@@ -42,6 +42,7 @@ import {
   FetchPlayers,
   Navigate,
   SavedRecordAt,
+  SignedIn,
   StampSave,
   SucceededFetchAssociations,
   SucceededFetchClubs,
@@ -61,7 +62,7 @@ import {
 // on. (`signedOutModel` starts every section Idle.)
 const loadingModel = {
   ...signedOutModel,
-  isSignedIn: true,
+  session: SignedIn.make({ email: '' }),
   players: SectionData.Loading(),
   clubs: SectionData.Loading(),
   nationals: SectionData.Loading(),
@@ -83,7 +84,7 @@ test('signing in fans out one fetch per section, and each success loads it', () 
     Story.with(signedOutModel),
     Story.message(SubmittedSignIn()),
     Story.model((model) => {
-      expect(model.isSignedIn).toBe(true);
+      expect(model.session._tag).toBe('SignedIn');
       expect(model.players._tag).toBe('Loading');
       expect(model.clubs._tag).toBe('Loading');
     }),
@@ -126,7 +127,11 @@ test('signing in fans out one fetch per section, and each success loads it', () 
 test('a successful players fetch loads its rows and records the total', () => {
   Story.story(
     update,
-    Story.with({ ...signedOutModel, isSignedIn: true, players: SectionData.Loading() }),
+    Story.with({
+      ...signedOutModel,
+      session: SignedIn.make({ email: '' }),
+      players: SectionData.Loading(),
+    }),
     Story.message(
       SucceededFetchPlayers({
         entries: [
@@ -213,7 +218,7 @@ test('a deep-linked team resolves by id, upserts the row, and opens its drawer',
     update,
     Story.with({
       ...signedOutModel,
-      isSignedIn: true,
+      session: SignedIn.make({ email: '' }),
       isShowingDashboard: false,
       section: 'clubs',
     }),
@@ -243,7 +248,7 @@ test('a team that cannot be resolved by id surfaces a link error', () => {
     update,
     Story.with({
       ...signedOutModel,
-      isSignedIn: true,
+      session: SignedIn.make({ email: '' }),
       isShowingDashboard: false,
       section: 'clubs',
     }),
