@@ -300,10 +300,9 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     M.tagsExhaustive({
       UpdatedEmail: ({ value }) => [evo(model, { email: () => value }), []],
       UpdatedPassword: ({ value }) => [evo(model, { password: () => value }), []],
-      // TODO: Replace this with real backend authentication. For now any
-      // credentials (including empty ones) are accepted.
-      // Kick off the Players/Clubs/Nationals fetches the first time we land
-      // on the dashboard.
+      // NOTE: mock sign-in — there is no backend authentication endpoint
+      // yet, so any credentials (including empty ones) are accepted. Signing
+      // in kicks off every section's first fetch.
       ClickedSignIn: () => {
         // Fan out over the section list: fetch each still-idle section and flip
         // it to Loading in the same pass. `start` leaves an already-running or
