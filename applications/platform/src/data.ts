@@ -1,7 +1,7 @@
 // The platform placeholder data layer: the domain types plus the hardcoded
 // content and the pure helpers that read it. All mock until the backend lands.
 
-import { Array, Match as M, Schema as S } from 'effect';
+import { Array, Match as M } from 'effect';
 
 import {
   AppRoute,
@@ -13,6 +13,24 @@ import {
   playersRouter,
 } from './route';
 import { Metric, Screen, ScorerScope } from './model';
+
+import {
+  type Club,
+  type Competition,
+  type CupTie,
+  type Edition,
+  type MetricSeries,
+  type Official,
+  type Player,
+  type SavedChart,
+  type Scorer,
+  type StandingsRow,
+  type TrendingEntry,
+  TableStandings,
+  TiesStandings,
+} from './domain/entities';
+
+export * from './domain/entities';
 
 import abcBranikLogo from './assets/clubs/AbcBranik.png';
 import artisBrnoLogo from './assets/clubs/ArtisBrno.png';
@@ -111,12 +129,6 @@ export const routeClubSlug = (route: AppRoute): string =>
 export const routeCompetitionSlug = (route: AppRoute): string =>
   route._tag === 'CompetitionRoute' ? route.slug : '';
 
-export interface MetricSeries {
-  readonly label: string;
-  readonly unit: string;
-  readonly values: ReadonlyArray<number>;
-}
-
 export const metricSeries: Record<Metric, MetricSeries> = {
   Goals: {
     label: 'Goals per matchday',
@@ -134,20 +146,6 @@ export const metricSeries: Record<Metric, MetricSeries> = {
     values: [9.8, 11.2, 10.1, 12.6, 11.9, 13.4, 12.2, 14.1, 13, 14.8, 13.9, 15.6, 14.7, 16.2],
   },
 };
-
-export interface TrendingEntry {
-  readonly name: string;
-  readonly kind: string;
-  // Where the row leads — every trending row is a door into the data.
-  readonly href: string;
-  // Club rows carry their crest; '' renders the person's initials instead.
-  readonly crest: string;
-  // A featured tile background ('' = plain paper card). Photo tiles go
-  // dark: cover image + ink gradient, type flips to paper. `focus` is the
-  // cover crop's object-position — where the subject's face lives.
-  readonly photo: string;
-  readonly focus: string;
-}
 
 // Anyone and ANYTHING can trend (user call) â players, clubs, coaches,
 // referees, matches, officials alike. The canonical mock list (user-
@@ -180,21 +178,6 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     focus: '50% 18%',
   },
 ];
-
-export interface Club {
-  readonly slug: string;
-  readonly name: string;
-  readonly city: string;
-  readonly logo: string;
-  readonly league: string;
-  readonly won: number;
-  readonly drawn: number;
-  readonly lost: number;
-  // Honors counts, migrated from the landing page's profile mock —
-  // placeholder until the real data lands.
-  readonly leagueTitles: number;
-  readonly cupTitles: number;
-}
 
 export const club = (
   slug: string,
@@ -365,15 +348,6 @@ export const clubs: ReadonlyArray<Club> = [
   club('teplice', 'Teplice', 'Teplice', tepliceLogo, 'Second League', 1, 1, 10, 0, 0),
 ];
 
-export interface Player {
-  readonly name: string;
-  readonly club: string;
-  readonly position: string;
-  readonly appearances: number;
-  readonly goals: number;
-  readonly assists: number;
-}
-
 export const players: ReadonlyArray<Player> = [
   {
     name: 'Kateřina Rančová',
@@ -441,12 +415,6 @@ export const players: ReadonlyArray<Player> = [
   },
 ];
 
-export interface Official {
-  readonly name: string;
-  readonly matches: number;
-  readonly cardsPerMatch: string;
-}
-
 export const officials: ReadonlyArray<Official> = [
   { name: 'Martina Šimková', matches: 86, cardsPerMatch: '3.2' },
   { name: 'Jana Adámková', matches: 74, cardsPerMatch: '2.8' },
@@ -458,52 +426,16 @@ export const officials: ReadonlyArray<Official> = [
 
 // Current state of a competition, shown on its profile page: either a
 // league table or a list of ties/participations (cups and Europe).
-export interface CompetitionTie {
-  readonly primary: string;
-  readonly secondary: string;
-}
-
-// What a competition's standings section renders: a league TABLE, or the
-// knockout TIES list. Tagged variants (the DrawerState idiom) so branch
-// sites match exhaustively instead of comparing a bare kind string.
-export const TableStandings = S.TaggedStruct('TableStandings', { league: S.String });
-export const TiesStandings = S.TaggedStruct('TiesStandings', {
-  rows: S.Array(S.Struct({ primary: S.String, secondary: S.String })),
-});
-
-export type CompetitionStandings = typeof TableStandings.Type | typeof TiesStandings.Type;
 
 // One season's running of a competition. `detail` is the one-liner the
 // archive shows — the champion for finished editions, the stage for the
 // current one.
-export interface Edition {
-  readonly label: string;
-  readonly isCurrent: boolean;
-  readonly detail: string;
-}
 
 export const edition = (label: string, isCurrent: boolean, detail: string): Edition => ({
   label,
   isCurrent,
   detail,
 });
-
-export interface Competition {
-  readonly slug: string;
-  readonly name: string;
-  readonly badge: string;
-  readonly stage: string;
-  readonly progress: number;
-  readonly tagline: string;
-  // Newest first; exactly one edition is `current`.
-  readonly editions: ReadonlyArray<Edition>;
-  // The format explainer, one rule per line. Placeholder — verify against
-  // the real regulations before publishing.
-  readonly format: ReadonlyArray<string>;
-  // History stats for the profile page. Placeholder.
-  readonly history: ReadonlyArray<{ readonly value: string; readonly label: string }>;
-  readonly standings: CompetitionStandings;
-}
 
 export const competitions: ReadonlyArray<Competition> = [
   {
@@ -676,14 +608,6 @@ export const competitions: ReadonlyArray<Competition> = [
 // Standings + cup-run + top-scorer mock, migrated from the landing page's
 // profile pages. Replace with API data when it exists.
 
-export interface StandingsRow {
-  readonly team: string;
-  readonly played: number;
-  readonly scored: number;
-  readonly conceded: number;
-  readonly points: number;
-}
-
 // Goal records are mock, but they add up: within a league the scored and
 // conceded columns sum to the same total (every goal is someone else's
 // concession) and goal difference falls monotonically with the table, so
@@ -713,22 +637,11 @@ export const secondLeagueStandings: ReadonlyArray<StandingsRow> = [
   { team: 'ABC Braník', played: 14, scored: 8, conceded: 37, points: 4 },
 ];
 
-export interface CupTie {
-  readonly round: string;
-  readonly result: string;
-  readonly isUpcoming: boolean;
-}
-
 export const cupRun: ReadonlyArray<CupTie> = [
   { round: 'Round of 16', result: 'Won 3:0', isUpcoming: false },
   { round: 'Quarters', result: 'Won 2:1', isUpcoming: false },
   { round: 'Semis', result: 'Coming up', isUpcoming: true },
 ];
-
-export interface Scorer {
-  readonly name: string;
-  readonly goals: number;
-}
 
 // Deterministic per-club placeholder scorers, so every profile shows stable
 // but obviously replaceable content.
@@ -760,14 +673,6 @@ export const scorersFor = (target: Club, scope: ScorerScope): ReadonlyArray<Scor
   }
   return generated;
 };
-
-export interface SavedChart {
-  // Stable pin id (`chart:<slug>`), so a pin survives a title edit.
-  readonly id: string;
-  readonly title: string;
-  readonly updated: string;
-  readonly spark: ReadonlyArray<number>;
-}
 
 export const savedCharts: ReadonlyArray<SavedChart> = [
   {
