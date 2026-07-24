@@ -1,6 +1,6 @@
 import { RadioGroup } from '@foldkit/ui';
 import clsx from 'clsx';
-import { Option } from 'effect';
+import { Match as M, Option } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
@@ -15,7 +15,7 @@ import {
   scorersFor,
   secondLeagueStandings,
 } from '../data';
-import type { Club } from '../data';
+import type { Club, Scorer } from '../data';
 import { SelectedScorerScope, ToggledFollow } from '../message';
 import type { Message } from '../message';
 import type { Model, ScorerScope } from '../model';
@@ -198,31 +198,53 @@ const scopeRadioGroup = (target: Club, model: Model): Html => {
   });
 };
 
+const scorerRow = (scorer: Scorer, index: number): Html =>
+  h.li(
+    [h.Class('flex items-baseline gap-5 border-t border-ink/10 px-2 py-4 first:border-t-0')],
+    [
+      h.span([h.Class('display w-8 text-lg text-ink/35')], [`${index + 1}`]),
+      h.span([h.Class('display flex-1 truncate text-2xl text-ink')], [scorer.name]),
+      h.span([h.Class('display text-4xl text-pink')], [`${scorer.goals}`]),
+    ],
+  );
+
+// One named list view per scope. Each list carries a LITERAL key — the
+// identity of that scope's board — so switching scopes swaps subtrees
+// (replaying the `.screen` slide-in) without a data-derived key.
+const SCORERS_LIST_CLASS = 'screen mt-6 flex flex-col';
+const allScorersList = (target: Club): Html =>
+  h.ol(
+    [h.Key('club-scorers-all'), h.Class(SCORERS_LIST_CLASS)],
+    scorersFor(target, 'All').map(scorerRow),
+  );
+const leagueScorersList = (target: Club): Html =>
+  h.ol(
+    [h.Key('club-scorers-league'), h.Class(SCORERS_LIST_CLASS)],
+    scorersFor(target, 'League').map(scorerRow),
+  );
+const cupScorersList = (target: Club): Html =>
+  h.ol(
+    [h.Key('club-scorers-cup'), h.Class(SCORERS_LIST_CLASS)],
+    scorersFor(target, 'Cup').map(scorerRow),
+  );
+
+const scorersListFor = (target: Club, scope: ScorerScope): Html =>
+  M.value(scope).pipe(
+    M.withReturnType<Html>(),
+    M.when('All', () => allScorersList(target)),
+    M.when('League', () => leagueScorersList(target)),
+    M.when('Cup', () => cupScorersList(target)),
+    M.exhaustive,
+  );
+
 // ONE top-scorers component, scoped by chips: all competitions, the
 // club's league, or the cup (user call).
 const clubScorersSection = (target: Club, model: Model): Html => {
-  const scorers = scorersFor(target, model.scorerScope);
   return clubSection(
     'Top scorers',
     [
       scopeRadioGroup(target, model),
-      h.ol(
-        [h.Key(`scorers-${model.scorerScope}`), h.Class('screen mt-6 flex flex-col')],
-        scorers.map((scorer, index) =>
-          h.li(
-            [
-              h.Class(
-                'flex items-baseline gap-5 border-t border-ink/10 px-2 py-4 first:border-t-0',
-              ),
-            ],
-            [
-              h.span([h.Class('display w-8 text-lg text-ink/35')], [`${index + 1}`]),
-              h.span([h.Class('display flex-1 truncate text-2xl text-ink')], [scorer.name]),
-              h.span([h.Class('display text-4xl text-pink')], [`${scorer.goals}`]),
-            ],
-          ),
-        ),
-      ),
+      scorersListFor(target, model.scorerScope),
       h.p(
         [h.Class('mt-3 px-2 text-[10px] tracking-[0.2em] text-ink/45 uppercase')],
         ['Goals — season 2025/26'],

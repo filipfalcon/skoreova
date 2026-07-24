@@ -1,5 +1,5 @@
 import { RadioGroup } from '@foldkit/ui';
-import { Option } from 'effect';
+import { Match as M, Option } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
@@ -133,6 +133,26 @@ const studioChart = (series: MetricSeries): Html => {
   );
 };
 
+// One named chart view per metric. Each subtree carries a LITERAL key —
+// the identity of that metric's chart — so switching metrics swaps whole
+// subtrees (teardown + the bars' grow-in replay) without a key ever being
+// derived from model data.
+const goalsChartView = (): Html =>
+  h.div([h.Key('studio-chart-goals')], [studioChart(metricSeries.Goals)]);
+const attendanceChartView = (): Html =>
+  h.div([h.Key('studio-chart-attendance')], [studioChart(metricSeries.Attendance)]);
+const conversionChartView = (): Html =>
+  h.div([h.Key('studio-chart-conversion')], [studioChart(metricSeries.Conversion)]);
+
+const metricChartView = (metric: Metric): Html =>
+  M.value(metric).pipe(
+    M.withReturnType<Html>(),
+    M.when('Goals', () => goalsChartView()),
+    M.when('Attendance', () => attendanceChartView()),
+    M.when('Conversion', () => conversionChartView()),
+    M.exhaustive,
+  );
+
 const chartStudioPanel = (model: Model): Html =>
   h.section(
     [h.Class(`${panel} mt-14 p-6 md:p-8`)],
@@ -166,8 +186,7 @@ const chartStudioPanel = (model: Model): Html =>
         ],
       ),
       metricRadioGroup(model),
-      // Keyed by metric so the bars replay their grow-in on every switch.
-      h.div([h.Key(model.metric)], [studioChart(metricSeries[model.metric])]),
+      metricChartView(model.metric),
     ],
   );
 
