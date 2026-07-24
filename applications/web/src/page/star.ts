@@ -196,13 +196,17 @@ export const starView = (): Html =>
                           // above, the section's pink budget belongs to the
                           // haul stamps and the CTA. (Nations-league stats
                           // set the base-color-numbers precedent.)
+                          // Aria-hidden + sr-only twin: the count-up
+                          // rewrites the visible text from 0.
                           h.span(
                             [
                               h.Class('display block text-fluid-5xl-7xl'),
+                              h.AriaHidden(true),
                               h.DataAttribute('countup', ''),
                             ],
                             [stat.value],
                           ),
+                          h.span([h.Class('sr-only')], [stat.value]),
                           h.span(
                             [h.Class('mt-3 block text-xs tracking-[0.2em] uppercase md:text-sm')],
                             [stat.label],
