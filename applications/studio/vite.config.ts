@@ -26,6 +26,12 @@ export default defineConfig({
     entries: ['src/entry.ts'],
   },
   server: {
+    // IPv4 loopback, explicitly: under `alchemy dev` all three apps' inner
+    // vite servers race for ports, and a dual-stack bind lets two of them
+    // "own" the same port (one v4, one v6) — the workerd proxy then routes
+    // one app's traffic to another. On one family the collision is real
+    // and vite increments to a free port instead.
+    host: '127.0.0.1',
     // The gateway (localhost:1340) doesn't send CORS headers, so proxy it
     // through the dev server instead of calling it cross-origin from the
     // browser. See api.ts for the corresponding relative base URL.
