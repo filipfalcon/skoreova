@@ -1,4 +1,6 @@
-import { Schema as S } from 'effect';
+import { Effect, Schema as S } from 'effect';
+import { HttpClient } from 'effect/unstable/http';
+import { Http } from 'foldkit';
 
 // In dev, go through the Vite proxy (see vite.config.ts) as a relative path —
 // same-origin, so the browser never makes a cross-origin request and CORS
@@ -19,3 +21,26 @@ export const Page = <Item extends S.Top>(item: Item) =>
 
 export const paginatedUrl = (path: string, page: number): string =>
   `${GATEWAY_BASE_URL}${path}?page=${page}&pageSize=${PAGE_SIZE}`;
+
+// The one GET → status check → JSON → schema decode pipeline every fetch
+// Command goes through (each endpoint used to hand-roll this same chain
+// around raw fetch). Requests run through Effect's HttpClient on foldkit's
+// Fetch-backed layer; every failure — transport, non-2xx status, malformed
+// JSON, schema mismatch — is normalized to a plain Error whose message the
+// Failed* messages carry as their reason.
+export const getDecoded = <Decoded>(
+  url: string,
+  schema: S.ConstraintDecoder<Decoded>,
+): Effect.Effect<Decoded, Error> =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient;
+    const response = yield* client.get(url);
+    if (response.status < 200 || response.status >= 300) {
+      return yield* Effect.fail(new Error(`Request failed with status ${response.status}.`));
+    }
+    const json = yield* response.json;
+    return yield* S.decodeUnknownEffect(schema)(json);
+  }).pipe(
+    Effect.mapError((error) => (error instanceof Error ? error : new Error(String(error)))),
+    Effect.provide(Http.layer),
+  );
