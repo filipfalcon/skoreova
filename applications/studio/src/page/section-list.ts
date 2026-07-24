@@ -1,6 +1,7 @@
-import { Input } from '@foldkit/ui';
-import { Array, Option } from 'effect';
-import { AsyncData } from 'foldkit';
+import { DatePicker, Input } from '@foldkit/ui';
+import type { Calendar as UiCalendar } from '@foldkit/ui';
+import { Array, Match as M, Option } from 'effect';
+import { AsyncData, Calendar } from 'foldkit';
 import clsx from 'clsx';
 import { html } from 'foldkit/html';
 import type { Document, Html } from 'foldkit/html';
@@ -20,8 +21,10 @@ import {
   sectionLabels,
   sectionOrder,
   sectionRows,
+  toIsoDate,
 } from '../data';
 import {
+  ClearedDateFilter,
   ClickedAddNew,
   ClickedClientPage,
   ClickedDashboard,
@@ -34,23 +37,28 @@ import {
   ClickedRetryNationals,
   ClickedRetryPlayers,
   ClickedSignOut,
+  GotDateFilterMessage,
+  GotFilterListboxMessage,
   SelectedFilter,
   SelectedSection,
-  ToggledFilterDropdown,
-  ToggledFilterValue,
   ToggledMenu,
   UpdatedSearch,
 } from '../message';
 import type { Message } from '../message';
+import { FilterListbox } from '../model';
 import type { Entry, Model } from '../model';
 import { Section } from '../section';
 import {
   addNewStyle,
   brandButtonStyle,
+  calendarHeadingStyle,
+  calendarNavButtonStyle,
   dashboardChipStyle,
+  datePickerPanelStyle,
   diodeColorStyle,
   diodeStyle,
   entryCardStyle,
+  filterClearStyle,
   filterDropdownPanelStyle,
   filterDropdownRowStyle,
   filterSelectStyle,
@@ -213,21 +221,26 @@ const content = (model: Model): Html => {
   const optionsFor = (columnIndex: number) =>
     [...new Set(entries.map(({ entry }) => entry.values[columnIndex] ?? ''))].sort();
 
-  // Date columns encode their filter as "from,to" (either side may be empty)
-  // in the same model.filters[index] slot exact-match columns use for a
-  // single selected value.
   const visible = entries.filter(({ entry }) => {
     const matchesFilters = filterColumns.every(({ column, index }) => {
+      const value = entry.values[index] ?? '';
+      // Date columns filter through the typed range in `dateFilters`; the
+      // rows' ISO date cells compare lexicographically against the bounds.
+      if (dateColumns.has(column)) {
+        const range = model.dateFilters[column];
+        if (!range) return true;
+        const isBelowFrom = Option.match(range.from, {
+          onNone: () => false,
+          onSome: (from) => value < toIsoDate(from),
+        });
+        const isAboveTo = Option.match(range.to, {
+          onNone: () => false,
+          onSome: (to) => value > toIsoDate(to),
+        });
+        return !isBelowFrom && !isAboveTo;
+      }
       const selected = model.filters[index] ?? '';
       if (selected === '') return true;
-      const value = entry.values[index] ?? '';
-      if (dateColumns.has(column)) {
-        const [from = '', to = ''] = selected.split(',');
-        if (from === '' && to === '') return true;
-        if (from !== '' && value < from) return false;
-        if (to !== '' && value > to) return false;
-        return true;
-      }
       if (checkboxColumns.has(column)) {
         // Stored value is the *excluded* (unchecked) set; a row passes unless
         // its value is in it.
@@ -285,27 +298,54 @@ const content = (model: Model): Html => {
     );
   };
 
-  const filterRange = (column: string, columnIndex: number): Html => {
-    const [from = '', to = ''] = (model.filters[columnIndex] ?? '').split(',');
+  const filterRange = (column: string): Html => {
+    const pair = model.dateFilterPickers[column];
+    if (!pair) return h.div([], []);
+    const range = model.dateFilters[column];
+    const hasRange = range !== undefined && (Option.isSome(range.from) || Option.isSome(range.to));
+
+    const picker = (bound: 'from' | 'to'): Html =>
+      h.submodel({
+        slotId: `date-filter-${column}-${bound}`,
+        model: pair[bound],
+        view: DatePicker.view,
+        viewInputs: {
+          anchor: { placement: 'bottom-start', gap: 4 },
+          maybeSelectedDate: (bound === 'from' ? range?.from : range?.to) ?? Option.none(),
+          ariaLabel: `${column} ${bound}`,
+          triggerContent: (maybeDate) =>
+            h.span(
+              [],
+              [
+                Option.match(maybeDate, {
+                  onNone: () => `${column} ${bound}`,
+                  onSome: (date) => Calendar.formatShort(date, Calendar.defaultEnglishLocale),
+                }),
+              ],
+            ),
+          triggerClassName: filterSelectStyle,
+          panelClassName: datePickerPanelStyle,
+          toCalendarView: calendarView,
+        },
+        toParentMessage: (message) => GotDateFilterMessage({ column, bound, message }),
+      });
 
     return h.div(
       [h.Class('flex items-center gap-1')],
       [
-        h.input([
-          h.Type('date'),
-          h.AriaLabel(`${column} from`),
-          h.Value(from),
-          h.OnInput((value) => SelectedFilter({ columnIndex, value: `${value},${to}` })),
-          h.Class(filterSelectStyle),
-        ]),
+        picker('from'),
         h.span([h.Class('text-sm text-neutral-400')], ['–']),
-        h.input([
-          h.Type('date'),
-          h.AriaLabel(`${column} to`),
-          h.Value(to),
-          h.OnInput((value) => SelectedFilter({ columnIndex, value: `${from},${value}` })),
-          h.Class(filterSelectStyle),
-        ]),
+        picker('to'),
+        hasRange
+          ? h.button(
+              [
+                h.OnClick(ClearedDateFilter({ column })),
+                h.AriaLabel(`Clear ${column} filter`),
+                h.Class(filterClearStyle),
+              ],
+              ['✕'],
+            )
+          : h.div([], []),
       ],
     );
   };
@@ -314,43 +354,41 @@ const content = (model: Model): Html => {
     // Stored value is the set of *excluded* (unchecked) values, comma-joined.
     // Empty = nothing excluded = every option checked, which is the default.
     const excludedValues = (model.filters[columnIndex] ?? '').split(',').filter((v) => v !== '');
-    const isOpen = Option.contains(model.openFilterColumn, columnIndex);
+    const listbox = model.filterListboxes[column];
+    if (!listbox) return h.div([], []);
+    const options = optionsFor(columnIndex);
 
-    return h.div(
-      [h.Class('relative')],
-      [
+    return h.submodel({
+      slotId: `filter-${column}`,
+      model: listbox,
+      view: FilterListbox.view,
+      viewInputs: {
+        items: options,
+        // The Listbox highlights what's *included* — the complement of the
+        // stored excluded set.
+        selectedValues: options.filter((value) => !excludedValues.includes(value)),
         // Label is always just the column name, regardless of what's selected.
-        h.button(
-          [h.OnClick(ToggledFilterDropdown({ columnIndex })), h.Class(filterSelectStyle)],
-          [column],
-        ),
-        isOpen
-          ? h.div(
-              [h.Class(filterDropdownPanelStyle)],
-              optionsFor(columnIndex).map((value) =>
-                h.label(
-                  [h.Class(filterDropdownRowStyle)],
-                  [
-                    h.input([
-                      h.Type('checkbox'),
-                      h.Checked(!excludedValues.includes(value)),
-                      h.OnClick(ToggledFilterValue({ columnIndex, value })),
-                    ]),
-                    h.span(
-                      [],
-                      [
-                        countryFlags[value]
-                          ? `${countryFlags[value]} ${countryNames[value] ?? value}`
-                          : value,
-                      ],
-                    ),
-                  ],
-                ),
+        buttonContent: h.span([], [column]),
+        buttonClassName: filterSelectStyle,
+        itemsClassName: filterDropdownPanelStyle,
+        itemToConfig: (item, { isSelected }) => ({
+          className: filterDropdownRowStyle,
+          content: h.span(
+            [h.Class('flex items-center gap-2')],
+            [
+              h.span([h.Class('w-4 text-center')], [isSelected ? '✓' : '']),
+              h.span(
+                [],
+                [countryFlags[item] ? `${countryFlags[item]} ${countryNames[item] ?? item}` : item],
               ),
-            )
-          : h.div([], []),
-      ],
-    );
+            ],
+          ),
+        }),
+        ariaLabel: `${column} filter`,
+        anchor: { placement: 'bottom-start', gap: 4 },
+      },
+      toParentMessage: (message) => GotFilterListboxMessage({ column, message }),
+    });
   };
 
   // Every section is backed by the real API; its state drives the skeleton,
@@ -559,7 +597,7 @@ const content = (model: Model): Html => {
       h.div(
         [h.Class('mt-3 flex flex-wrap gap-2')],
         filterColumns.map(({ column, index }) => {
-          if (dateColumns.has(column)) return filterRange(column, index);
+          if (dateColumns.has(column)) return filterRange(column);
           if (checkboxColumns.has(column)) return filterCheckbox(column, index);
           return filterSelect(column, index);
         }),
@@ -577,6 +615,138 @@ const content = (model: Model): Html => {
   );
 };
 
-// The profile drawer slides in from the right, on top of everything. It is
-// always mounted so the open/close transform can animate; its content renders
-// only while a record is open.
+// The profile drawer is a right-edge panel presented through the Ui.Dialog
+// submodel: the native <dialog> element, backdrop, Escape handling, focus
+// trap, and scroll lock all come from the component. The drawer's content is
+// still driven by the parent-owned DrawerState.
+
+// Lays out a DatePicker's embedded calendar from the component's attribute
+// bundles: the Days grid, plus the Months/Years drill-downs reached through
+// the heading button.
+const calendarView = (attributes: UiCalendar.CalendarAttributes): Html => {
+  const dayStyle = (cell: UiCalendar.DayCell): string =>
+    clsx(
+      'h-8 w-8 cursor-pointer rounded-md text-sm transition',
+      cell.isSelected
+        ? 'bg-neutral-900 text-white'
+        : cell.isInViewMonth
+          ? 'text-neutral-700 hover:bg-neutral-100'
+          : 'text-neutral-300 hover:bg-neutral-100',
+      !cell.isSelected && cell.isToday && 'ring-1 ring-neutral-400',
+    );
+
+  const gridCellStyle = (isSelected: boolean): string =>
+    clsx(
+      'cursor-pointer rounded-md px-2 py-2 text-center text-sm transition',
+      isSelected ? 'bg-neutral-900 text-white' : 'text-neutral-700 hover:bg-neutral-100',
+    );
+
+  return M.value(attributes).pipe(
+    M.tagsExhaustive({
+      Days: (mode) =>
+        h.div(
+          [...mode.root, h.Class('w-64 p-3')],
+          [
+            h.div(
+              [h.Class('flex items-center justify-between pb-2')],
+              [
+                h.button([...mode.previousMonthButton, h.Class(calendarNavButtonStyle)], ['‹']),
+                h.button(
+                  [...mode.headingButton, h.Class(calendarHeadingStyle)],
+                  [mode.heading.text],
+                ),
+                h.button([...mode.nextMonthButton, h.Class(calendarNavButtonStyle)], ['›']),
+              ],
+            ),
+            h.div(
+              [...mode.grid],
+              [
+                h.div(
+                  [...mode.headerRow, h.Class('grid grid-cols-7')],
+                  mode.columnHeaders.map((header) =>
+                    h.div(
+                      [...header.attributes, h.Class('py-1 text-center text-xs text-neutral-400')],
+                      [header.name],
+                    ),
+                  ),
+                ),
+                ...mode.weeks.map((week) =>
+                  h.div(
+                    [...week.attributes, h.Class('grid grid-cols-7')],
+                    week.cells.map((cell) =>
+                      h.div(
+                        [...cell.cellAttributes],
+                        [
+                          h.button(
+                            [...cell.buttonAttributes, h.Class(dayStyle(cell))],
+                            [cell.label],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      Months: (mode) =>
+        h.div(
+          [...mode.root, h.Class('w-64 p-3')],
+          [
+            h.button([...mode.headingButton, h.Class(calendarHeadingStyle)], [mode.heading.text]),
+            h.div(
+              [...mode.grid, h.Class('grid grid-cols-3 gap-1 pt-2')],
+              mode.cells.map((cell) =>
+                h.div(
+                  [...cell.cellAttributes],
+                  [
+                    h.button(
+                      [...cell.buttonAttributes, h.Class(gridCellStyle(cell.isSelected))],
+                      [cell.shortLabel],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      Years: (mode) =>
+        h.div(
+          [...mode.root, h.Class('w-64 p-3')],
+          [
+            h.div(
+              [h.Class('flex items-center justify-between')],
+              [
+                h.button([...mode.previousPageButton, h.Class(calendarNavButtonStyle)], ['‹']),
+                h.span(
+                  [
+                    h.Id(mode.heading.id),
+                    h.Class('px-2 py-1 text-sm font-medium text-neutral-900'),
+                  ],
+                  [mode.heading.text],
+                ),
+                h.button([...mode.nextPageButton, h.Class(calendarNavButtonStyle)], ['›']),
+              ],
+            ),
+            h.div(
+              [...mode.grid, h.Class('grid grid-cols-3 gap-1 pt-2')],
+              mode.cells.map((cell) =>
+                h.div(
+                  [...cell.cellAttributes],
+                  [
+                    h.button(
+                      [...cell.buttonAttributes, h.Class(gridCellStyle(cell.isSelected))],
+                      [cell.label],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+    }),
+  );
+};
+
+// STYLE

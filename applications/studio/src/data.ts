@@ -2,7 +2,8 @@
 // model's rows, plus the chart data derivations.
 
 import { Array, Option } from 'effect';
-import { AsyncData } from 'foldkit';
+import { DatePicker, Listbox } from '@foldkit/ui';
+import { AsyncData, Calendar } from 'foldkit';
 import { evo } from 'foldkit/struct';
 
 import { associationColumns } from './associationsApi';
@@ -146,6 +147,51 @@ export const checkboxColumns = new Set([
   'Competition',
   'Kind',
 ]);
+
+// DOM id for a checkbox column's filter Listbox ('Team kind' → 'filter-team-kind').
+export const filterListboxId = (column: string): string =>
+  `filter-${column.toLowerCase().replace(/ /g, '-')}`;
+
+// DOM id for one bound of a date column's filter DatePicker
+// ('Starts on' + 'from' → 'date-filter-starts-on-from').
+export const dateFilterPickerId = (column: string, bound: 'from' | 'to'): string =>
+  `date-filter-${column.toLowerCase().replace(/ /g, '-')}-${bound}`;
+
+// One from/to pair of closed DatePickers per date column. Like the filter
+// Listboxes, the set of date columns is static, so every pair is created up
+// front — but only once "today" is known (see FetchToday), since the calendar
+// grid opens onto it.
+export const initialDateFilterPickers = (
+  today: Calendar.CalendarDate,
+): Record<string, { from: DatePicker.Model; to: DatePicker.Model }> =>
+  Object.fromEntries(
+    [...dateColumns].map((column) => [
+      column,
+      {
+        from: DatePicker.init({ id: dateFilterPickerId(column, 'from'), today }),
+        to: DatePicker.init({ id: dateFilterPickerId(column, 'to'), today }),
+      },
+    ]),
+  );
+
+// ISO (YYYY-MM-DD) form of a CalendarDate, comparable lexicographically
+// against the rows' ISO date cells — the same comparison the old string
+// filter did.
+export const toIsoDate = (date: Calendar.CalendarDate): string => {
+  const pad = (part: number): string => part.toString().padStart(2, '0');
+  return `${date.year}-${pad(date.month)}-${pad(date.day)}`;
+};
+
+// One closed multi-select Listbox per checkbox column. The set of checkbox
+// columns is static, so every instance can be created up front — the view
+// then always finds a submodel for whichever columns the current section has.
+export const initialFilterListboxes = (): Record<string, Listbox.Multi.Model> =>
+  Object.fromEntries(
+    [...checkboxColumns].map((column) => [
+      column,
+      Listbox.Multi.init({ id: filterListboxId(column) }),
+    ]),
+  );
 
 export const countryFlags: Record<string, string> = {
   AUT: '🇦🇹',

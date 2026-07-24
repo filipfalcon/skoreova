@@ -3,7 +3,7 @@
 
 import * as echarts from 'echarts/core';
 import { Clock, Effect, Option, Schema as S } from 'effect';
-import { Command, Mount } from 'foldkit';
+import { Calendar, Command, Mount } from 'foldkit';
 import { load, pushUrl } from 'foldkit/navigation';
 
 import { HealthResponse, healthUrl } from './healthApi';
@@ -30,6 +30,7 @@ import {
   FailedFetchTeamById,
   FailedMountChart,
   FailedSyncChart,
+  FetchedToday,
   SavedRecordAt,
   SucceededFetchAssociations,
   SucceededFetchClubs,
@@ -365,6 +366,13 @@ export const FetchHealth = Command.define(
     Effect.catch((error) => Effect.succeed(FailedFetchHealth({ reason: error.message }))),
   ),
 );
+
+// Reads the current calendar date (through Effect's Clock, like StampSave) at
+// boot — the date filter DatePickers open their calendar grid onto it.
+export const FetchToday = Command.define(
+  'FetchToday',
+  FetchedToday,
+)(Calendar.today.local.pipe(Effect.map((today) => FetchedToday({ today }))));
 
 // Reads the wall clock (through Effect's Clock, so it's swappable in tests) and
 // hands the formatted timestamp back as SavedRecordAt — the record commit needs

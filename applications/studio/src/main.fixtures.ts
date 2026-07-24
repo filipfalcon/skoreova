@@ -1,6 +1,17 @@
 import { Option } from 'effect';
+import { Dialog, Tabs } from '@foldkit/ui';
 
-import { DrawerClosed, DrawerEditing, Entry, Model, ParticipationsData, SectionData } from './main';
+import { initialDateFilterPickers, initialFilterListboxes } from './data';
+import {
+  DRAWER_DIALOG_ID,
+  DRAWER_TABS_ID,
+  DrawerClosed,
+  DrawerEditing,
+  Entry,
+  Model,
+  ParticipationsData,
+  SectionData,
+} from './main';
 
 // A single player record — enough columns to fill the drawer's fields and feed
 // the stats chart. `values` line up with `playerColumns`; extras are ignored
@@ -51,6 +62,8 @@ export const signedOutModel = Model.make({
   search: '',
   filters: [],
   drawer: DrawerClosed.make({}),
+  dialog: Dialog.init({ id: DRAWER_DIALOG_ID }),
+  tabs: Tabs.init({ id: DRAWER_TABS_ID }),
   nextLocalId: 1,
   editLog: [],
   chartError: Option.none(),
@@ -67,7 +80,11 @@ export const signedOutModel = Model.make({
   clientPage: 1,
   linkError: '',
   isShowingDashboard: true,
-  openFilterColumn: Option.none(),
+  filterListboxes: initialFilterListboxes(),
+  dateFilters: {},
+  // A fixed "today" keeps the fixture deterministic (production seeds this
+  // from the clock via FetchToday).
+  dateFilterPickers: initialDateFilterPickers({ year: 2026, month: 6, day: 1 }),
 });
 
 // Signed in, on the dashboard landing page.
@@ -108,4 +125,6 @@ export const playerRecordModel = Model.make({
     draft: [...samplePlayer.values],
     isConfirmingDelete: false,
   }),
+  // The drawer's content only renders while its Dialog is open.
+  dialog: Dialog.init({ id: DRAWER_DIALOG_ID, isOpen: true }),
 });
