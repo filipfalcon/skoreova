@@ -1,6 +1,6 @@
 import { Schema as S } from 'effect';
 
-import { Page, paginatedUrl } from './api';
+import { Page, paginatedUrl, titleCase } from './api';
 
 export const playersUrl = (page: number): string => paginatedUrl('/players', page);
 
@@ -26,9 +26,6 @@ export const PlayerResponse = S.Struct({
 export type PlayerResponse = typeof PlayerResponse.Type;
 
 export const PlayersPage = Page(PlayerResponse);
-
-const titleCase = (value: string): string =>
-  value.length === 0 ? value : value.charAt(0) + value.slice(1).toLowerCase();
 
 // Column order shown in the Players list and drawer; keep in sync with the
 // values produced by `playerToRow` below.
