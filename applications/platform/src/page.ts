@@ -81,8 +81,6 @@ import {
 
 const h = html<Message>();
 
-// DATA and the domain types live in data.ts now.
-// VIEW HELPERS and the SHELL live in components.ts now.
 // SCREENS
 
 const screenHeader = (model: Model, subtitle: string): Html =>

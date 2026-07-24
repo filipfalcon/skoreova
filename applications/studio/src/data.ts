@@ -70,8 +70,7 @@ export const resolveEditionCell = (model: Model, entry: Entry): Entry => {
 export const displayRows = (model: Model, section: Section): ReadonlyArray<Entry> =>
   sectionRows(model, section).map((row) => resolveEditionCell(model, row));
 
-// Evolves one section's AsyncData by a runtime-chosen section. `evo` needs a
-// literal key, so a `model[section]` write goes through this switch.
+// MENU
 
 export interface MenuLeaf {
   readonly section: Section;

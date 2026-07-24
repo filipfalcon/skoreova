@@ -117,6 +117,3 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       DetectedHeroPastHeader: ({ past }) => [evo(model, { heroPastHeader: () => past }), []],
     }),
   );
-
-// CONTENT lives in data.ts now.
-// SUBSCRIPTIONS live in subscription.ts now.
