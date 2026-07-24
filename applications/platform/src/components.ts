@@ -7,7 +7,7 @@ import { html } from 'foldkit/html';
 
 import type { Model, Screen } from './model';
 import { type Message, ToggledPin } from './message';
-import { type NavEntry, navEntries, screenOf } from './data';
+import { type NavEntry, navEntries, screenOf, screenTitles } from './data';
 import { welcomeRouter } from './route';
 
 // The message-typed HTML builder for this module's views.
@@ -426,4 +426,27 @@ export const clubSection = (title: string, children: ReadonlyArray<Html>, anchor
   h.section(
     [h.Id(anchor), h.Class('mt-16 scroll-mt-28 md:mt-20 md:scroll-mt-32')],
     [h.div([h.Class('flex')], [clubChip(title, anchor)]), ...children],
+  );
+
+// The list/profile screens' standard header: the pink section chip, the
+// big display title, and a one-line subtitle.
+export const screenHeader = (model: Model, subtitle: string): Html =>
+  h.div(
+    [],
+    [
+      h.div(
+        [h.Class('flex')],
+        [
+          h.span(
+            [h.Class('display inline-block bg-pink px-3 py-1.5 text-sm tracking-[0.2em] text-ink')],
+            [screenTitles[screenOf(model.route)]],
+          ),
+        ],
+      ),
+      h.h1(
+        [h.Class('display mt-6 text-5xl text-ink md:text-7xl')],
+        [screenTitles[screenOf(model.route)]],
+      ),
+      h.p([h.Class('mt-3 max-w-2xl text-sm leading-relaxed text-ink/50')], [subtitle]),
+    ],
   );
