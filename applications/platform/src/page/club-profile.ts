@@ -668,5 +668,7 @@ export const clubProfileScreen = (target: Club, model: Model): Html => {
     ],
   );
 
-  return h.g([], [darkBand, dataBand]);
+  // A plain div, not an SVG <g> abused as a fragment — the two bands are
+  // block sections, so the wrapper is invisible to layout.
+  return h.div([], [darkBand, dataBand]);
 };
