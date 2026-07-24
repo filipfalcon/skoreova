@@ -15,7 +15,7 @@ import {
   ClickedPlayersPage,
   ClickedRetryPlayers,
   ClickedSaveRecord,
-  ClickedSignIn,
+  SubmittedSignIn,
   CompletedNavigate,
   DrawerEditing,
   ParticipationsData,
@@ -81,7 +81,7 @@ test('signing in fans out one fetch per section, and each success loads it', () 
   Story.story(
     update,
     Story.with(signedOutModel),
-    Story.message(ClickedSignIn()),
+    Story.message(SubmittedSignIn()),
     Story.model((model) => {
       expect(model.isSignedIn).toBe(true);
       expect(model.players._tag).toBe('Loading');

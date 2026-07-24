@@ -244,7 +244,7 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
   );
 
 // The browsable sections and the fetch each kicks off at sign-in. Driving the
-// fan-out from this list keeps ClickedSignIn declarative instead of an
+// fan-out from this list keeps SubmittedSignIn declarative instead of an
 // imperative push per section. (Participations isn't here — it has no section
 // UI and is fetched alongside.)
 const SIGN_IN_SECTIONS: ReadonlyArray<{
@@ -303,7 +303,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       // NOTE: mock sign-in — there is no backend authentication endpoint
       // yet, so any credentials (including empty ones) are accepted. Signing
       // in kicks off every section's first fetch.
-      ClickedSignIn: () => {
+      SubmittedSignIn: () => {
         // Fan out over the section list: fetch each still-idle section and flip
         // it to Loading in the same pass. `start` leaves an already-running or
         // loaded section untouched, so the evolve mirrors the command list.
