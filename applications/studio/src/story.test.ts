@@ -42,6 +42,7 @@ import {
   FetchPlayers,
   Navigate,
   SavedRecordAt,
+  SectionRoute,
   SignedIn,
   StampSave,
   SucceededFetchAssociations,
@@ -219,8 +220,7 @@ test('a deep-linked team resolves by id, upserts the row, and opens its drawer',
     Story.with({
       ...signedOutModel,
       session: SignedIn.make({ email: '' }),
-      isShowingDashboard: false,
-      section: 'clubs',
+      route: SectionRoute({ section: 'clubs' }),
     }),
     Story.message(SucceededFetchTeamById({ entry: sampleClub })),
     Story.model((model) => {
@@ -249,8 +249,7 @@ test('a team that cannot be resolved by id surfaces a link error', () => {
     Story.with({
       ...signedOutModel,
       session: SignedIn.make({ email: '' }),
-      isShowingDashboard: false,
-      section: 'clubs',
+      route: SectionRoute({ section: 'clubs' }),
     }),
     Story.message(FailedFetchTeamById({ reason: 'No such team' })),
     Story.model((model) => {

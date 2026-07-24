@@ -9,9 +9,11 @@ import {
   DrawerClosed,
   DrawerEditing,
   Entry,
+  HomeRoute,
   Model,
   ParticipationsData,
   SectionData,
+  SectionRoute,
   SignedIn,
 } from './main';
 
@@ -57,7 +59,7 @@ export const sampleEdition: Entry = Entry.make({
 // fixture tweak can never quietly reshape the app's real starting state).
 export const signedOutModel = Model.make({
   session: Anonymous.make({ emailInput: '', passwordInput: '' }),
-  section: 'players',
+  route: HomeRoute(),
   isMenuOpen: false,
   search: '',
   filters: {},
@@ -79,7 +81,6 @@ export const signedOutModel = Model.make({
   serverHealth: 'Unknown',
   clientPage: 1,
   linkError: '',
-  isShowingDashboard: true,
   filterListboxes: initialFilterListboxes(),
   dateFilters: {},
   // A fixed "today" keeps the fixture deterministic (production seeds this
@@ -98,8 +99,7 @@ export const dashboardModel = Model.make({
 export const playersListModel = Model.make({
   ...signedOutModel,
   session: SignedIn.make({ email: '' }),
-  isShowingDashboard: false,
-  section: 'players',
+  route: SectionRoute({ section: 'players' }),
   players: SectionData.Success({ data: [samplePlayer] }),
   playersTotal: 1,
   serverHealth: 'Ok',
@@ -110,8 +110,7 @@ export const playersListModel = Model.make({
 export const editionsListModel = Model.make({
   ...signedOutModel,
   session: SignedIn.make({ email: '' }),
-  isShowingDashboard: false,
-  section: 'editions',
+  route: SectionRoute({ section: 'editions' }),
   competitions: SectionData.Success({ data: [sampleCompetition] }),
   editions: SectionData.Success({ data: [sampleEdition] }),
   serverHealth: 'Ok',

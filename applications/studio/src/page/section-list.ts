@@ -48,6 +48,7 @@ import {
 import type { Message } from '../message';
 import { FilterListbox } from '../model';
 import type { Entry, Model } from '../model';
+import { routeSection } from '../route';
 import { Section } from '../section';
 import {
   addNewStyle,
@@ -88,6 +89,10 @@ const h = html<Message>();
 
 export const dashboardView = (model: Model): Document => {
   const account = accountName(model);
+  // The screen is derived from the stored route: a section list when one is
+  // addressed, the dashboard landing page otherwise (home and the 404
+  // fallback).
+  const maybeSection = routeSection(model.route);
 
   return {
     title: 'Skóreová Studio — Dashboard',
@@ -127,8 +132,11 @@ export const dashboardView = (model: Model): Document => {
             ),
           ],
           [
-            sidebar(model.section, model.isMenuOpen, model.isShowingDashboard),
-            model.isShowingDashboard ? dashboardHome(model) : content(model),
+            sidebar(maybeSection, model.isMenuOpen),
+            Option.match(maybeSection, {
+              onNone: () => dashboardHome(model),
+              onSome: (section) => content(model, section),
+            }),
           ],
         ),
         drawer(model),
@@ -137,14 +145,14 @@ export const dashboardView = (model: Model): Document => {
   };
 };
 
-const sidebar = (current: Section, open: boolean, isShowingDashboard: boolean): Html => {
+const sidebar = (current: Option.Option<Section>, open: boolean): Html => {
+  const currentSection = Option.getOrUndefined(current);
+
   const leafItem = (leaf: MenuLeaf): Html =>
     h.button(
       [
         h.OnClick(SelectedSection({ section: leaf.section })),
-        h.Class(
-          !isShowingDashboard && leaf.section === current ? navItemActiveStyle : navItemStyle,
-        ),
+        h.Class(leaf.section === currentSection ? navItemActiveStyle : navItemStyle),
       ],
       [leaf.label],
     );
@@ -163,7 +171,7 @@ const sidebar = (current: Section, open: boolean, isShowingDashboard: boolean): 
   const dashboardItem: Html = h.button(
     [
       h.OnClick(ClickedDashboard()),
-      h.Class(isShowingDashboard ? navItemActiveStyle : navItemStyle),
+      h.Class(Option.isNone(current) ? navItemActiveStyle : navItemStyle),
     ],
     ['Dashboard'],
   );
@@ -203,8 +211,7 @@ const dashboardHome = (model: Model): Html => {
   );
 };
 
-const content = (model: Model): Html => {
-  const current = model.section;
+const content = (model: Model, current: Section): Html => {
   const label = sectionLabels[current];
   const meta = sectionData[current];
   const columns = meta.columns;
