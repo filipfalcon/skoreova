@@ -1,6 +1,6 @@
 import { RadioGroup } from '@foldkit/ui';
 import clsx from 'clsx';
-import { Option } from 'effect';
+import { Match as M, Option } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
@@ -129,33 +129,38 @@ const standingsPanel = (
 // The per-club statement block — hand-written for the marquee clubs, a
 // season-record fallback for everyone else.
 const competitionStandingsPanel = (competition: Competition): Html =>
-  competition.standings.kind === 'table'
-    ? standingsPanel('Current standings', competition.standings.league, Option.none())
-    : h.section(
-        [h.Class(`${panel} p-6 md:p-8`)],
-        [
-          sectionLabel('Current standings'),
-          h.ol(
-            [h.Class('mt-6 flex flex-col')],
-            competition.standings.rows.map((tie) =>
-              h.li(
-                [
-                  h.Class(
-                    'flex flex-wrap items-baseline justify-between gap-x-4 border-t border-ink/10 px-2 py-3.5 first:border-t-0',
-                  ),
-                ],
-                [
-                  h.span([h.Class('display text-xl text-ink')], [tie.primary]),
-                  h.span(
-                    [h.Class('text-[10px] tracking-[0.2em] uppercase text-pink')],
-                    [tie.secondary],
-                  ),
-                ],
+  M.value(competition.standings).pipe(
+    M.withReturnType<Html>(),
+    M.tagsExhaustive({
+      TableStandings: ({ league }) => standingsPanel('Current standings', league, Option.none()),
+      TiesStandings: ({ rows }) =>
+        h.section(
+          [h.Class(`${panel} p-6 md:p-8`)],
+          [
+            sectionLabel('Current standings'),
+            h.ol(
+              [h.Class('mt-6 flex flex-col')],
+              rows.map((tie) =>
+                h.li(
+                  [
+                    h.Class(
+                      'flex flex-wrap items-baseline justify-between gap-x-4 border-t border-ink/10 px-2 py-3.5 first:border-t-0',
+                    ),
+                  ],
+                  [
+                    h.span([h.Class('display text-xl text-ink')], [tie.primary]),
+                    h.span(
+                      [h.Class('text-[10px] tracking-[0.2em] uppercase text-pink')],
+                      [tie.secondary],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      );
+          ],
+        ),
+    }),
+  );
 
 const competitionFormatPanel = (competition: Competition): Html =>
   h.section(
@@ -215,11 +220,20 @@ const competitionHistoryPanel = (competition: Competition): Html =>
 // competition + round + match); rounds past the current matchday show as
 // upcoming. The arrows page through the rounds.
 
-export const competitionMatchesPanel = (competition: Competition, model: Model): Html => {
-  if (competition.standings.kind !== 'table') return h.g([], []);
-  const teams = (
-    competition.standings.league === 'First League' ? firstLeagueStandings : secondLeagueStandings
-  ).map((row) => row.team);
+export const competitionMatchesPanel = (competition: Competition, model: Model): Html =>
+  M.value(competition.standings).pipe(
+    M.withReturnType<Html>(),
+    M.tagsExhaustive({
+      // Knockout competitions have no round-robin to page — nothing renders.
+      TiesStandings: () => h.empty,
+      TableStandings: ({ league }) => leagueMatchesPanel(competition, league, model),
+    }),
+  );
+
+const leagueMatchesPanel = (competition: Competition, league: string, model: Model): Html => {
+  const teams = (league === 'First League' ? firstLeagueStandings : secondLeagueStandings).map(
+    (row) => row.team,
+  );
   const rounds = roundRobinRounds(teams);
   const total = rounds.length;
   const open = Math.min(
