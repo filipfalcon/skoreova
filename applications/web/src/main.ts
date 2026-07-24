@@ -8,13 +8,13 @@ import type { AppRoute } from './route';
 import { urlToAppRoute } from './route';
 import type { Flags, Model } from './model';
 import type { Message } from './message';
-import { DetectActiveSection, FocusMenuToggle, Load, Navigate, SetScrollLock } from './command';
+import { detectActiveSection, focusMenuToggle, load, navigate, setScrollLock } from './command';
 
 // The app entry: init, the update reducer, and the re-exports that keep the
 // public surface (Model, messages, subscriptions, view) at ./main.
 export * from './model';
 export * from './message';
-export { DetectActiveSection, FocusMenuToggle, Load, Navigate, SetScrollLock } from './command';
+export * from './command';
 export { subscriptions } from './subscription';
 export { view } from './page';
 
@@ -73,20 +73,15 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             isMenuOpen: () => isMenuOpen,
             activeSection: (s) => (isMenuOpen ? Option.none() : s),
           }),
-          isMenuOpen
-            ? [SetScrollLock({ locked: true }), DetectActiveSection()]
-            : [SetScrollLock({ locked: false })],
+          isMenuOpen ? [setScrollLock(true), detectActiveSection()] : [setScrollLock(false)],
         ];
       },
-      ClosedMenu: () => [
-        evo(model, { isMenuOpen: () => false }),
-        [SetScrollLock({ locked: false })],
-      ],
+      ClosedMenu: () => [evo(model, { isMenuOpen: () => false }), [setScrollLock(false)]],
       // Escape closes like ClosedMenu and additionally hands focus back to
       // the toggle — the overlay it sat in is hidden now.
       PressedMenuEscape: () => [
         evo(model, { isMenuOpen: () => false }),
-        [SetScrollLock({ locked: false }), FocusMenuToggle()],
+        [setScrollLock(false), focusMenuToggle()],
       ],
       CompletedFocusMenuToggle: () => [model, []],
       DetectedActiveSection: ({ section }) => [evo(model, { activeSection: () => section }), []],
@@ -99,22 +94,13 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           M.tagsExhaustive({
             Internal: ({ url }) => [
               applyRoute(model, urlToAppRoute(url)),
-              [
-                Navigate({
-                  url: urlToString(url),
-                  reduceMotion: model.prefersReducedMotion,
-                }),
-                SetScrollLock({ locked: false }),
-              ],
+              [navigate(urlToString(url), model.prefersReducedMotion), setScrollLock(false)],
             ],
-            External: ({ href }) => [model, [Load({ href })]],
+            External: ({ href }) => [model, [load(href)]],
           }),
         ),
       // Browser back/forward — also releases the lock (the menu closes).
-      ChangedUrl: ({ url }) => [
-        applyRoute(model, urlToAppRoute(url)),
-        [SetScrollLock({ locked: false })],
-      ],
+      ChangedUrl: ({ url }) => [applyRoute(model, urlToAppRoute(url)), [setScrollLock(false)]],
       CompletedNavigate: () => [model, []],
       CompletedLoad: () => [model, []],
       CompletedSetScrollLock: () => [model, []],

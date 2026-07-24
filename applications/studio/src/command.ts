@@ -4,7 +4,7 @@
 import * as echarts from 'echarts/core';
 import { Clock, Effect, Option, Schema as S } from 'effect';
 import { Calendar, Command, Mount } from 'foldkit';
-import { load, pushUrl } from 'foldkit/navigation';
+import { load as loadUrl, pushUrl } from 'foldkit/navigation';
 
 import { getDecoded } from './api';
 import { HealthResponse, healthUrl } from './healthApi';
@@ -17,6 +17,7 @@ import { ParticipationsResponse, participationsUrl } from './participationsApi';
 import { PlayersPage, playerToRow, playersUrl } from './playersApi';
 import { TeamResponse, TeamsResponse, teamByIdUrl, teamToRow, teamsUrl } from './teamsApi';
 import { type Entry } from './model';
+import type { Message } from './message';
 import {
   CompletedLoad,
   CompletedNavigate,
@@ -333,7 +334,7 @@ export const Load = Command.define(
   'Load',
   { href: S.String },
   CompletedLoad,
-)(({ href }) => load(href).pipe(Effect.as(CompletedLoad())));
+)(({ href }) => loadUrl(href).pipe(Effect.as(CompletedLoad())));
 
 // Resolves a single team by id (GET /teams/{id}) when a shared record link
 // points at a team that isn't already in the loaded list.
@@ -360,3 +361,57 @@ export const FetchTeamById = Command.define(
     Effect.catch((error) => Effect.succeed(FailedFetchTeamById({ reason: error.message }))),
   ),
 );
+
+// CALL-SITE FACTORIES
+//
+// Verb-named wrappers over the PascalCase definitions above — `update`
+// dispatches intent (`fetchPlayers(page)`), while the definitions keep
+// their PascalCase identities for Story matchers
+// (`Story.Command.resolve(FetchPlayers, …)`).
+
+export const navigate = (url: string): Command.Command<Message> => Navigate({ url });
+
+export const load = (href: string): Command.Command<Message> => Load({ href });
+
+export const fetchPlayers = (page: number): Command.Command<Message> => FetchPlayers({ page });
+
+export const fetchClubs = (): Command.Command<Message> => FetchClubs();
+
+export const fetchNationals = (): Command.Command<Message> => FetchNationals();
+
+export const fetchCompetitions = (): Command.Command<Message> => FetchCompetitions();
+
+export const fetchEditions = (): Command.Command<Message> => FetchEditions();
+
+export const fetchParticipations = (): Command.Command<Message> => FetchParticipations();
+
+export const fetchAssociations = (): Command.Command<Message> => FetchAssociations();
+
+export const fetchHealth = (): Command.Command<Message> => FetchHealth();
+
+export const fetchTeamById = (
+  section: 'clubs' | 'nationals',
+  id: string,
+): Command.Command<Message> => FetchTeamById({ section, id });
+
+export const fetchToday = (): Command.Command<Message> => FetchToday();
+
+export const stampSave = (): Command.Command<Message> => StampSave();
+
+export const syncChart = (
+  args: Readonly<{
+    hostId: string;
+    title: string;
+    categories: ReadonlyArray<string>;
+    values: ReadonlyArray<number>;
+  }>,
+): Command.Command<Message> => SyncChart(args);
+
+export const syncPointsChart = (
+  args: Readonly<{
+    hostId: string;
+    title: string;
+    weeks: ReadonlyArray<string>;
+    points: ReadonlyArray<number>;
+  }>,
+): Command.Command<Message> => SyncPointsChart(args);

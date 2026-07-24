@@ -50,22 +50,22 @@ import {
   withDraft,
 } from './data';
 import {
-  FetchAssociations,
-  FetchClubs,
-  FetchCompetitions,
-  FetchEditions,
-  FetchHealth,
-  FetchNationals,
-  FetchParticipations,
-  FetchPlayers,
-  FetchTeamById,
-  FetchToday,
-  Load,
-  Navigate,
   POINTS_CHART_HOST_ID,
-  StampSave,
-  SyncChart,
-  SyncPointsChart,
+  fetchAssociations,
+  fetchClubs,
+  fetchCompetitions,
+  fetchEditions,
+  fetchHealth,
+  fetchNationals,
+  fetchParticipations,
+  fetchPlayers,
+  fetchTeamById,
+  fetchToday,
+  load,
+  navigate,
+  stampSave,
+  syncChart,
+  syncPointsChart,
 } from './command';
 import {
   GotDateFilterMessage,
@@ -232,7 +232,7 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
               route: () => route,
               isMenuOpen: () => false,
             }),
-            [FetchTeamById({ section, id })],
+            [fetchTeamById(section, id)],
           ];
         }
         // No single-record endpoint for this section (or it's mock-only) —
@@ -259,12 +259,12 @@ const SIGN_IN_SECTIONS: ReadonlyArray<{
   readonly section: Section;
   readonly fetch: (model: Model) => Command.Command<Message>;
 }> = [
-  { section: 'players', fetch: (model) => FetchPlayers({ page: model.playersPage }) },
-  { section: 'clubs', fetch: () => FetchClubs() },
-  { section: 'nationals', fetch: () => FetchNationals() },
-  { section: 'competitions', fetch: () => FetchCompetitions() },
-  { section: 'editions', fetch: () => FetchEditions() },
-  { section: 'associations', fetch: () => FetchAssociations() },
+  { section: 'players', fetch: (model) => fetchPlayers(model.playersPage) },
+  { section: 'clubs', fetch: () => fetchClubs() },
+  { section: 'nationals', fetch: () => fetchNationals() },
+  { section: 'competitions', fetch: () => fetchCompetitions() },
+  { section: 'editions', fetch: () => fetchEditions() },
+  { section: 'associations', fetch: () => fetchAssociations() },
 ];
 
 // A retry transitions the section to Refreshing (if it holds data) or Loading
@@ -335,7 +335,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           (entry) => model[entry.section]._tag === 'Idle',
         ).map((entry) => entry.fetch(model));
         const participationsFetch =
-          model.participations._tag === 'Idle' ? [FetchParticipations()] : [];
+          model.participations._tag === 'Idle' ? [fetchParticipations()] : [];
         return [
           evo(model, {
             // Only the email crosses into the signed-in state — the password
@@ -350,7 +350,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             associations: start,
             participations: (data) => (data._tag === 'Idle' ? ParticipationsData.Loading() : data),
           }),
-          [...idleFetches, ...participationsFetch, FetchHealth()],
+          [...idleFetches, ...participationsFetch, fetchHealth()],
         ];
       },
       // Signing out swaps in the fresh model but keeps the live dialog
@@ -383,7 +383,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             // section can't carry its open state across.
             filterListboxes: () => initialFilterListboxes(),
           }),
-          [...dialogCommands, Navigate({ url: sectionRouter({ section }) })],
+          [...dialogCommands, navigate(sectionRouter({ section }))],
         ];
       },
       // Back to the dashboard landing page.
@@ -393,7 +393,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           isMenuOpen: () => false,
           linkError: () => '',
         }),
-        [Navigate({ url: homeRouter() })],
+        [navigate(homeRouter())],
       ],
       ToggledMenu: () => [evo(model, { isMenuOpen: (open) => !open }), []],
       UpdatedSearch: ({ value }) => [evo(model, { search: () => value, clientPage: () => 1 }), []],
@@ -526,7 +526,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             chartError: () => Option.none(),
             linkError: () => '',
           }),
-          [...dialogCommands, Navigate({ url: recordRouter({ section, id }) })],
+          [...dialogCommands, navigate(recordRouter({ section, id }))],
         ];
       },
       UpdatedDraftField: ({ index, value }) => [
@@ -563,14 +563,14 @@ export const update = (model: Model, message: Message): UpdateReturn =>
               nextLocalId: (n) => n + 1,
               drawer: () => DrawerClosed.make({}),
             }),
-            [...dialogCommands, Navigate({ url: sectionRouter({ section }) })],
+            [...dialogCommands, navigate(sectionRouter({ section }))],
           ];
         }
         if (drawer._tag !== 'Editing') return [model, []];
         // Editing commits with a timestamped edit log. The timestamp comes from
         // the clock via StampSave (keeping `update` pure); SavedRecordAt then
         // does the commit with it.
-        return [model, [StampSave()]];
+        return [model, [stampSave()]];
       },
       SavedRecordAt: ({ at }) => {
         const drawer = model.drawer;
@@ -598,7 +598,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             editLog: (log) => [...changes, ...log],
             drawer: () => DrawerClosed.make({}),
           }),
-          [...dialogCommands, Navigate({ url: sectionRouter({ section }) })],
+          [...dialogCommands, navigate(sectionRouter({ section }))],
         ];
       },
       // Delegates to the Dialog submodel. Its Closed OutMessage is the user's
@@ -625,14 +625,14 @@ export const update = (model: Model, message: Message): UpdateReturn =>
                       route: () => HomeRoute(),
                       drawer: () => DrawerClosed.make({}),
                     }),
-                    [...commands, Navigate({ url: homeRouter() })],
+                    [...commands, navigate(homeRouter())],
                   ],
                   onSome: (section) => [
                     evo(withDialog, {
                       route: () => SectionRoute({ section }),
                       drawer: () => DrawerClosed.make({}),
                     }),
-                    [...commands, Navigate({ url: sectionRouter({ section }) })],
+                    [...commands, navigate(sectionRouter({ section }))],
                   ],
                 }),
             }),
@@ -689,7 +689,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             route: () => SectionRoute({ section }),
             drawer: () => DrawerClosed.make({}),
           }),
-          [...dialogCommands, Navigate({ url: sectionRouter({ section }) })],
+          [...dialogCommands, navigate(sectionRouter({ section }))],
         ];
       },
       // Once a chart's host element is mounted, push the current record's
@@ -702,12 +702,12 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         if (hostId === POINTS_CHART_HOST_ID) {
           return [
             evo(model, { chartError: () => Option.none() }),
-            [SyncPointsChart({ hostId, ...pointsFor(entry) })],
+            [syncPointsChart({ hostId, ...pointsFor(entry) })],
           ];
         }
         return [
           evo(model, { chartError: () => Option.none() }),
-          [SyncChart({ hostId, ...statsFor(entry) })],
+          [syncChart({ hostId, ...statsFor(entry) })],
         ];
       },
       FailedMountChart: ({ reason }) => [evo(model, { chartError: () => Option.some(reason) }), []],
@@ -728,13 +728,13 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         [],
       ],
       ClickedRetryPlayers: () =>
-        retrySection(model, 'players', [FetchPlayers({ page: model.playersPage }), FetchHealth()]),
+        retrySection(model, 'players', [fetchPlayers(model.playersPage), fetchHealth()]),
       ClickedPlayersPage: ({ page }) => [
         evo(model, {
           players: (data) => Option.getOrElse(AsyncData.revalidateOrLoad(data), () => data),
           playersPage: () => page,
         }),
-        [FetchPlayers({ page })],
+        [fetchPlayers(page)],
       ],
       ClickedClientPage: ({ page }) => [evo(model, { clientPage: () => page }), []],
       SucceededFetchClubs: ({ entries }) => [
@@ -745,7 +745,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         evo(model, { clubs: () => AsyncData.settle(model.clubs, Result.fail(reason)) }),
         [],
       ],
-      ClickedRetryClubs: () => retrySection(model, 'clubs', [FetchClubs(), FetchHealth()]),
+      ClickedRetryClubs: () => retrySection(model, 'clubs', [fetchClubs(), fetchHealth()]),
       SucceededFetchNationals: ({ entries }) => [
         evo(model, { nationals: () => SectionData.Success({ data: entries }) }),
         [],
@@ -755,7 +755,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         [],
       ],
       ClickedRetryNationals: () =>
-        retrySection(model, 'nationals', [FetchNationals(), FetchHealth()]),
+        retrySection(model, 'nationals', [fetchNationals(), fetchHealth()]),
       // Editions store their competition's id (in parentId); the name is
       // resolved in the view, so competitions and editions can land in either
       // order with no re-resolution here.
@@ -770,7 +770,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         [],
       ],
       ClickedRetryCompetitions: () =>
-        retrySection(model, 'competitions', [FetchCompetitions(), FetchHealth()]),
+        retrySection(model, 'competitions', [fetchCompetitions(), fetchHealth()]),
       SucceededFetchEditions: ({ editions }) => {
         const entries: ReadonlyArray<Entry> = editions.map((edition) => ({
           section: 'editions' as const,
@@ -785,7 +785,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         evo(model, { editions: () => AsyncData.settle(model.editions, Result.fail(reason)) }),
         [],
       ],
-      ClickedRetryEditions: () => retrySection(model, 'editions', [FetchEditions(), FetchHealth()]),
+      ClickedRetryEditions: () => retrySection(model, 'editions', [fetchEditions(), fetchHealth()]),
       SucceededFetchAssociations: ({ entries }) => [
         evo(model, { associations: () => SectionData.Success({ data: entries }) }),
         [],
@@ -797,7 +797,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         [],
       ],
       ClickedRetryAssociations: () =>
-        retrySection(model, 'associations', [FetchAssociations(), FetchHealth()]),
+        retrySection(model, 'associations', [fetchAssociations(), fetchHealth()]),
       SucceededFetchParticipations: ({ participations }) => [
         evo(model, { participations: () => ParticipationsData.Success({ data: participations }) }),
         [],
@@ -813,7 +813,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           onNone: () => [model, []],
           onSome: (next) => [
             evo(model, { participations: () => next }),
-            [FetchParticipations(), FetchHealth()],
+            [fetchParticipations(), fetchHealth()],
           ],
         }),
       SucceededFetchHealth: () => [evo(model, { serverHealth: () => 'Ok' }), []],
@@ -824,8 +824,8 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         M.value(request).pipe(
           withUpdateReturn,
           M.tagsExhaustive({
-            Internal: ({ url }) => [model, [Navigate({ url: urlToString(url) })]],
-            External: ({ href }) => [model, [Load({ href })]],
+            Internal: ({ url }) => [model, [navigate(urlToString(url))]],
+            External: ({ href }) => [model, [load(href)]],
           }),
         ),
       // Fires on browser back/forward (pushUrl from our own Navigate command
@@ -859,5 +859,5 @@ export const update = (model: Model, message: Message): UpdateReturn =>
 // pickers (see FetchedToday).
 export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => {
   const [model, commands] = applyRoute(initialModel(), urlToAppRoute(url));
-  return [model, [...commands, FetchToday()]];
+  return [model, [...commands, fetchToday()]];
 };
