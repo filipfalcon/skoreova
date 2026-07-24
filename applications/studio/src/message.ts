@@ -1,6 +1,8 @@
 // Every studio Message.
 
 import { Schema as S } from 'effect';
+import { DatePicker, Dialog, Listbox, Tabs } from '@foldkit/ui';
+import { Calendar } from 'foldkit';
 import { m } from 'foldkit/message';
 import { UrlRequest } from 'foldkit/navigation';
 import { Url } from 'foldkit/url';
@@ -8,7 +10,7 @@ import { Url } from 'foldkit/url';
 import { EditionResponse } from './editionsApi';
 import { ParticipationResponse } from './participationsApi';
 import { Section } from './section';
-import { DrawerTab, Entry } from './model';
+import { Entry } from './model';
 
 export const UpdatedEmail = m('UpdatedEmail', { value: S.String });
 export const UpdatedPassword = m('UpdatedPassword', { value: S.String });
@@ -25,8 +27,13 @@ export const ClickedSaveRecord = m('ClickedSaveRecord');
 // Carries the edit-log timestamp fetched from the clock by StampSave, so the
 // commit stays out of `update`'s pure path.
 export const SavedRecordAt = m('SavedRecordAt', { at: S.String });
-export const ClickedCloseDrawer = m('ClickedCloseDrawer');
-export const SelectedDrawerTab = m('SelectedDrawerTab', { tab: DrawerTab });
+// Wraps a Dialog submodel message for delegation. The drawer's close controls
+// (✕, Cancel, backdrop, Escape) all flow through here as RequestedClose; the
+// close intent comes back out as the Dialog's Closed OutMessage.
+export const GotDialogMessage = m('GotDialogMessage', { message: Dialog.Message });
+// Wraps a Tabs submodel message for delegation. A committed tab comes back out
+// as the Tabs' Selected OutMessage, folded into DrawerEditing's `tab`.
+export const GotTabsMessage = m('GotTabsMessage', { message: Tabs.Message });
 export const SucceededMountChart = m('SucceededMountChart', { hostId: S.String });
 export const FailedMountChart = m('FailedMountChart', { reason: S.String });
 export const SucceededSyncChart = m('SucceededSyncChart');
@@ -80,11 +87,28 @@ export const CompletedLoad = m('CompletedLoad');
 export const SucceededFetchTeamById = m('SucceededFetchTeamById', { entry: Entry });
 export const FailedFetchTeamById = m('FailedFetchTeamById', { reason: S.String });
 export const ClickedDashboard = m('ClickedDashboard');
-export const ToggledFilterDropdown = m('ToggledFilterDropdown', { columnIndex: S.Number });
-export const ToggledFilterValue = m('ToggledFilterValue', {
-  columnIndex: S.Number,
-  value: S.String,
+// Wraps a checkbox filter Listbox message for delegation, keyed by the
+// column the instance belongs to. A toggled value comes back out as the
+// Listbox's Selected OutMessage, folded into that column's excluded set.
+export const GotFilterListboxMessage = m('GotFilterListboxMessage', {
+  column: S.String,
+  message: Listbox.Message,
 });
+// Carries the current calendar date fetched from the clock by FetchToday at
+// boot — the date filter DatePickers open their grid onto it.
+export const FetchedToday = m('FetchedToday', { today: Calendar.CalendarDate });
+// Wraps a date filter DatePicker message for delegation, keyed by the column
+// and which bound of its range the instance edits. A committed date comes
+// back out as the DatePicker's SelectedDate OutMessage, folded into
+// `dateFilters`.
+export const GotDateFilterMessage = m('GotDateFilterMessage', {
+  column: S.String,
+  bound: S.Literals(['from', 'to']),
+  message: DatePicker.Message,
+});
+// Clears both bounds of a date column's range filter. Purely parent-side:
+// the DatePickers hold no selection state to reset.
+export const ClearedDateFilter = m('ClearedDateFilter', { column: S.String });
 
 export const Message = S.Union([
   UpdatedEmail,
@@ -100,8 +124,8 @@ export const Message = S.Union([
   UpdatedDraftField,
   ClickedSaveRecord,
   SavedRecordAt,
-  ClickedCloseDrawer,
-  SelectedDrawerTab,
+  GotDialogMessage,
+  GotTabsMessage,
   SucceededMountChart,
   FailedMountChart,
   SucceededSyncChart,
@@ -141,7 +165,9 @@ export const Message = S.Union([
   SucceededFetchTeamById,
   FailedFetchTeamById,
   ClickedDashboard,
-  ToggledFilterDropdown,
-  ToggledFilterValue,
+  GotFilterListboxMessage,
+  FetchedToday,
+  GotDateFilterMessage,
+  ClearedDateFilter,
 ]);
 export type Message = typeof Message.Type;

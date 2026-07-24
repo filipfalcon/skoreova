@@ -90,8 +90,21 @@ export const searchInputStyle =
 export const filterSelectStyle =
   'cursor-pointer rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 outline-none transition hover:border-neutral-400 focus:border-neutral-500';
 
+// Positioning comes from the Listbox's Floating UI anchor, not these classes.
 export const filterDropdownPanelStyle =
-  'absolute left-0 top-full z-10 mt-1 flex min-w-40 flex-col gap-1 rounded-lg border border-neutral-200 bg-white p-2 shadow-lg';
+  'flex min-w-40 flex-col gap-1 rounded-lg border border-neutral-200 bg-white p-2 shadow-lg';
+
+// Positioned by the DatePicker's Floating UI anchor, like the Listbox panel.
+export const datePickerPanelStyle = 'rounded-lg border border-neutral-200 bg-white shadow-lg';
+
+export const filterClearStyle =
+  'cursor-pointer rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-500 transition hover:text-neutral-900';
+
+export const calendarNavButtonStyle =
+  'cursor-pointer rounded-md px-2 py-1 text-sm text-neutral-600 transition hover:bg-neutral-100';
+
+export const calendarHeadingStyle =
+  'cursor-pointer rounded-md px-2 py-1 text-sm font-medium text-neutral-900 transition hover:bg-neutral-100';
 
 export const filterDropdownRowStyle =
   'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100';

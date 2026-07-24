@@ -1,6 +1,6 @@
+import { Dialog } from '@foldkit/ui';
 import { Match as M, Option } from 'effect';
 import { AsyncData } from 'foldkit';
-import clsx from 'clsx';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
@@ -17,16 +17,17 @@ import {
 } from '../data';
 import {
   ClickedCancelDelete,
-  ClickedCloseDrawer,
   ClickedConfirmDelete,
   ClickedDeleteRecord,
   ClickedRecord,
   ClickedRetryParticipations,
   ClickedSaveRecord,
-  SelectedDrawerTab,
+  GotDialogMessage,
+  GotTabsMessage,
   UpdatedDraftField,
 } from '../message';
 import type { Message } from '../message';
+import { DrawerTabs } from '../model';
 import type { DrawerTab, LogEntry, Model } from '../model';
 import {
   dangerButtonStyle,
@@ -45,15 +46,10 @@ import {
 
 const h = html<Message>();
 
-const drawerTabs: ReadonlyArray<{ readonly tab: DrawerTab; readonly label: string }> = [
-  { tab: 'Overview', label: 'Overview' },
-  { tab: 'Persistency', label: 'Persistency' },
-  { tab: 'History', label: 'History' },
-];
+const drawerTabs: ReadonlyArray<DrawerTab> = ['Overview', 'Persistency', 'History'];
 
 export const drawer = (model: Model): Html => {
   const drawerState = model.drawer;
-  const open = drawerState._tag !== 'Closed';
   const creating = drawerState._tag === 'Creating';
   // The record being edited, resolved by id (undefined while creating/closed
   // or if it has since gone).
@@ -318,29 +314,71 @@ export const drawer = (model: Model): Html => {
       M.exhaustive,
     );
 
-  const tabButton = ({ tab: buttonTab, label }: { tab: DrawerTab; label: string }): Html =>
-    h.button(
-      [
-        h.OnClick(SelectedDrawerTab({ tab: buttonTab })),
-        h.Class(tab === buttonTab ? drawerTabActiveStyle : drawerTabStyle),
-      ],
-      [label],
-    );
+  // The tab bar and the active panel, through the Ui.Tabs submodel (roving
+  // focus, arrow-key navigation, tab/tabpanel wiring). Only the active panel
+  // renders, so the Overview chart host remounts — and its OnMount refires —
+  // on every switch back to it.
+  const tabsView = (): Html =>
+    h.submodel({
+      slotId: 'drawer-tabs',
+      model: model.tabs,
+      view: DrawerTabs.view,
+      viewInputs: {
+        tabs: drawerTabs,
+        selectedValue: tab,
+        ariaLabel: 'Record tabs',
+        toView: (render) =>
+          h.div(
+            [h.Class('contents')],
+            [
+              h.nav(
+                [...render.tablist, h.Class('flex gap-1 border-b border-neutral-200 px-6 pt-3')],
+                render.tabs.map((tabInfo) =>
+                  h.button(
+                    [
+                      ...tabInfo.tab,
+                      h.Class(tabInfo.isActive ? drawerTabActiveStyle : drawerTabStyle),
+                    ],
+                    [tabInfo.value],
+                  ),
+                ),
+              ),
+              h.div(
+                [
+                  ...(render.tabs[render.activeIndex]?.panel ?? []),
+                  h.Class('flex min-h-0 flex-1 flex-col'),
+                ],
+                [tabContent()],
+              ),
+            ],
+          ),
+      },
+      toParentMessage: (message) => GotTabsMessage({ message }),
+    });
 
-  const panel: ReadonlyArray<Html> =
-    open && drawerSection
+  // The panel's content, laid out with the Dialog's attribute bundles: the
+  // heading carries the accessible name (`title`), the type pill the
+  // description, and the ✕/Cancel controls the component's close handler.
+  const panel = (render: Dialog.RenderInfo): ReadonlyArray<Html> =>
+    drawerSection
       ? [
           h.div(
             [h.Class('flex items-start justify-between border-b border-neutral-200 px-6 py-4')],
             [
               h.h2(
-                [h.Class('flex items-center gap-2 text-lg font-semibold text-neutral-900')],
+                [
+                  ...render.title,
+                  h.Class('flex items-center gap-2 text-lg font-semibold text-neutral-900'),
+                ],
                 [
                   creating ? `New ${sectionSingularLabels[drawerSection]}` : (draft[0] ?? ''),
-                  h.span([h.Class(drawerTypePillStyle)], [sectionSingularLabels[drawerSection]]),
+                  h.span(
+                    [...render.description, h.Class(drawerTypePillStyle)],
+                    [sectionSingularLabels[drawerSection]],
+                  ),
                 ],
               ),
-              h.button([h.OnClick(ClickedCloseDrawer()), h.Class(drawerCloseStyle)], ['✕']),
+              h.button([...render.closeButton, h.Class(drawerCloseStyle)], ['✕']),
             ],
           ),
           // Creating a new record skips Overview/History (nothing to show yet)
@@ -352,49 +390,41 @@ export const drawer = (model: Model): Html => {
                   columns.map(field),
                 ),
               ]
-            : [
-                h.nav(
-                  [h.Class('flex gap-1 border-b border-neutral-200 px-6 pt-3')],
-                  drawerTabs.map(tabButton),
-                ),
-                tabContent(),
-              ]),
+            : [tabsView()]),
           h.div(
             [h.Class('flex justify-end gap-3 border-t border-neutral-200 px-6 py-4')],
             [
-              h.button([h.OnClick(ClickedCloseDrawer()), h.Class(drawerCancelStyle)], ['Cancel']),
+              h.button([...render.closeButton, h.Class(drawerCancelStyle)], ['Cancel']),
               h.button([h.OnClick(ClickedSaveRecord()), h.Class(drawerSaveStyle)], ['Save']),
             ],
           ),
         ]
       : [];
 
-  return h.div(
-    [h.Class('contents')],
-    [
-      h.div(
-        [
-          h.OnClick(ClickedCloseDrawer()),
-          h.Class(
-            clsx(
-              'fixed inset-0 z-40 bg-black/30 transition-opacity',
-              open ? 'opacity-100' : 'pointer-events-none opacity-0',
-            ),
-          ),
-        ],
-        [],
-      ),
-      h.aside(
-        [
-          h.Class(
-            clsx(
-              'fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-2xl transition-transform',
-              open ? 'translate-x-0' : 'translate-x-full',
-            ),
-          ),
-        ],
-        panel,
-      ),
-    ],
-  );
+  return h.submodel({
+    slotId: 'record-drawer',
+    model: model.dialog,
+    view: Dialog.view,
+    viewInputs: {
+      toView: (render) =>
+        h.dialog(
+          [...render.dialog],
+          render.isVisible
+            ? [
+                h.div([...render.backdrop, h.Class('fixed inset-0 bg-black/30')], []),
+                h.aside(
+                  [
+                    ...render.panel,
+                    h.Class(
+                      'fixed right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-2xl',
+                    ),
+                  ],
+                  panel(render),
+                ),
+              ]
+            : [],
+        ),
+    },
+    toParentMessage: (message) => GotDialogMessage({ message }),
+  });
 };

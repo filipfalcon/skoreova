@@ -1,6 +1,7 @@
 import { Match as M, Option, Result } from 'effect';
+import { DatePicker, Dialog, Tabs } from '@foldkit/ui';
 import type { Runtime } from 'foldkit';
-import { AsyncData, Command } from 'foldkit';
+import { AsyncData, Calendar, Command } from 'foldkit';
 import { evo } from 'foldkit/struct';
 import { toString as urlToString } from 'foldkit/url';
 
@@ -10,9 +11,13 @@ import { editionToRow } from './editionsApi';
 import { Section } from './section';
 export { Section } from './section';
 import {
+  DRAWER_DIALOG_ID,
+  DRAWER_TABS_ID,
   DrawerClosed,
   DrawerCreating,
+  DrawerTabs,
   Entry,
+  FilterListbox,
   LogEntry,
   Model,
   ParticipationsData,
@@ -24,6 +29,8 @@ import {
   drawerRecord,
   editRecord,
   findRecord,
+  initialDateFilterPickers,
+  initialFilterListboxes,
   pointsFor,
   sectionData,
   statsFor,
@@ -39,6 +46,7 @@ import {
   FetchParticipations,
   FetchPlayers,
   FetchTeamById,
+  FetchToday,
   Load,
   Navigate,
   POINTS_CHART_HOST_ID,
@@ -46,7 +54,13 @@ import {
   SyncChart,
   SyncPointsChart,
 } from './command';
-import { Message } from './message';
+import {
+  GotDateFilterMessage,
+  GotDialogMessage,
+  GotFilterListboxMessage,
+  GotTabsMessage,
+  Message,
+} from './message';
 
 // The public surface — Model, messages, commands, and the view — re-exported
 // so fixtures and tests keep importing from the app entry.
@@ -68,6 +82,8 @@ const initialModel = (): Model => ({
   search: '',
   filters: [],
   drawer: DrawerClosed.make({}),
+  dialog: Dialog.init({ id: DRAWER_DIALOG_ID }),
+  tabs: Tabs.init({ id: DRAWER_TABS_ID }),
   nextLocalId: 1,
   editLog: [],
   chartError: Option.none(),
@@ -84,7 +100,9 @@ const initialModel = (): Model => ({
   clientPage: 1,
   linkError: '',
   isShowingDashboard: true,
-  openFilterColumn: Option.none(),
+  filterListboxes: initialFilterListboxes(),
+  dateFilters: {},
+  dateFilterPickers: {},
 });
 
 const upsertEntry = (rows: ReadonlyArray<Entry>, entry: Entry): ReadonlyArray<Entry> => [
@@ -148,37 +166,47 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
     withUpdateReturn,
     M.tagsExhaustive({
       // The dashboard landing page — the default entrypoint after signing in.
-      HomeRoute: () => [
-        evo(model, {
-          isShowingDashboard: () => true,
-          isMenuOpen: () => false,
-          drawer: () => DrawerClosed.make({}),
-        }),
-        [],
-      ],
-      NotFoundRoute: () => [
-        evo(model, {
-          isShowingDashboard: () => true,
-          isMenuOpen: () => false,
-          drawer: () => DrawerClosed.make({}),
-        }),
-        [],
-      ],
-      SectionRoute: ({ section }) => [
-        evo(model, {
-          section: () => section,
-          isShowingDashboard: () => false,
-          isMenuOpen: () => false,
-          drawer: () => DrawerClosed.make({}),
-        }),
-        [],
-      ],
+      HomeRoute: () => {
+        const [withDialog, dialogCommands] = closeDialog(model);
+        return [
+          evo(withDialog, {
+            isShowingDashboard: () => true,
+            isMenuOpen: () => false,
+            drawer: () => DrawerClosed.make({}),
+          }),
+          dialogCommands,
+        ];
+      },
+      NotFoundRoute: () => {
+        const [withDialog, dialogCommands] = closeDialog(model);
+        return [
+          evo(withDialog, {
+            isShowingDashboard: () => true,
+            isMenuOpen: () => false,
+            drawer: () => DrawerClosed.make({}),
+          }),
+          dialogCommands,
+        ];
+      },
+      SectionRoute: ({ section }) => {
+        const [withDialog, dialogCommands] = closeDialog(model);
+        return [
+          evo(withDialog, {
+            section: () => section,
+            isShowingDashboard: () => false,
+            isMenuOpen: () => false,
+            drawer: () => DrawerClosed.make({}),
+          }),
+          dialogCommands,
+        ];
+      },
       RecordRoute: ({ section, id }) => {
         const found = findRecord(model, section, id);
         const entry = found && !found.isDeleted ? found : undefined;
         if (entry) {
+          const [withDialog, dialogCommands] = openDialog(model);
           return [
-            evo(model, {
+            evo(withDialog, {
               section: () => section,
               isShowingDashboard: () => false,
               isMenuOpen: () => false,
@@ -186,7 +214,7 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
               chartError: () => Option.none(),
               linkError: () => '',
             }),
-            [],
+            dialogCommands,
           ];
         }
         if (section === 'clubs' || section === 'nationals') {
@@ -201,14 +229,15 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
         }
         // No single-record endpoint for this section (or it's mock-only) —
         // fall back to the section's list instead of a broken "open" state.
+        const [withDialog, dialogCommands] = closeDialog(model);
         return [
-          evo(model, {
+          evo(withDialog, {
             section: () => section,
             isShowingDashboard: () => false,
             isMenuOpen: () => false,
             drawer: () => DrawerClosed.make({}),
           }),
-          [],
+          dialogCommands,
         ];
       },
     }),
@@ -242,6 +271,28 @@ const retrySection = (
     onNone: () => [model, []],
     onSome: (next) => [evolveSection(model, section, () => next), commands],
   });
+
+// Programmatic Dialog open/close from the drawer's domain handlers, lifting
+// the component's Commands into the parent Message. The Dialog's OutMessage is
+// dropped here: these run from handlers that already evolve the drawer state
+// themselves (the OutMessage path is for user-initiated closes — see
+// GotDialogMessage). Both are no-ops when the dialog is already in the target
+// state, so callers can thread them unconditionally.
+const openDialog = (model: Model): UpdateReturn => {
+  const [dialog, commands] = Dialog.open(model.dialog);
+  return [
+    evo(model, { dialog: () => dialog }),
+    Command.mapMessages(commands, (message) => GotDialogMessage({ message })),
+  ];
+};
+
+const closeDialog = (model: Model): UpdateReturn => {
+  const [dialog, commands] = Dialog.close(model.dialog);
+  return [
+    evo(model, { dialog: () => dialog }),
+    Command.mapMessages(commands, (message) => GotDialogMessage({ message })),
+  ];
+};
 
 export const update = (model: Model, message: Message): UpdateReturn =>
   M.value(message).pipe(
@@ -278,22 +329,40 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           [...idleFetches, ...participationsFetch, FetchHealth()],
         ];
       },
-      ClickedSignOut: () => [initialModel(), []],
-      // Switching section closes the mobile nav and drawer, and clears filters.
-      SelectedSection: ({ section }) => [
-        evo(model, {
-          section: () => section,
-          isShowingDashboard: () => false,
-          isMenuOpen: () => false,
-          search: () => '',
-          filters: () => [],
-          drawer: () => DrawerClosed.make({}),
-          clientPage: () => 1,
-          linkError: () => '',
-          openFilterColumn: () => Option.none(),
+      // Signing out swaps in the fresh model but keeps the live dialog
+      // submodel: the login view doesn't render the dialog, so if the drawer
+      // was open its element unmounts and the component's Unmounted backstop
+      // reclaims the scroll lock and focus trap (a fresh closed dialog model
+      // would skip that release). The date filter pickers survive too — they
+      // are seeded once by FetchToday at boot.
+      ClickedSignOut: () => [
+        evo(initialModel(), {
+          dialog: () => model.dialog,
+          dateFilterPickers: () => model.dateFilterPickers,
         }),
-        [Navigate({ url: sectionRouter({ section }) })],
+        [],
       ],
+      // Switching section closes the mobile nav and drawer, and clears filters.
+      SelectedSection: ({ section }) => {
+        const [withDialog, dialogCommands] = closeDialog(model);
+        return [
+          evo(withDialog, {
+            section: () => section,
+            isShowingDashboard: () => false,
+            isMenuOpen: () => false,
+            search: () => '',
+            filters: () => [],
+            dateFilters: () => ({}),
+            drawer: () => DrawerClosed.make({}),
+            clientPage: () => 1,
+            linkError: () => '',
+            // Fresh closed instances, so a dropdown left open on the previous
+            // section can't carry its open state across.
+            filterListboxes: () => initialFilterListboxes(),
+          }),
+          [...dialogCommands, Navigate({ url: sectionRouter({ section }) })],
+        ];
+      },
       // Back to the dashboard landing page.
       ClickedDashboard: () => [
         evo(model, {
@@ -310,51 +379,111 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         filters[columnIndex] = value;
         return [evo(model, { filters: () => filters, clientPage: () => 1 }), []];
       },
-      // Opens/closes a checkbox filter's dropdown panel; picking a new one
-      // closes whatever else was open.
-      ToggledFilterDropdown: ({ columnIndex }) => [
-        evo(model, {
-          openFilterColumn: (open) =>
-            Option.contains(open, columnIndex) ? Option.none() : Option.some(columnIndex),
-        }),
-        [],
-      ],
-      // Flips one value's membership in a checkbox filter's *excluded*
+      // Delegates to a checkbox column's filter Listbox. Its Selected
+      // OutMessage flips the value's membership in that column's *excluded*
       // (unchecked) set, stored comma-joined in the same `filters[columnIndex]`
       // slot exact-match filters use for a single value. Empty = nothing
       // excluded = all checked (the default).
-      ToggledFilterValue: ({ columnIndex, value }) => {
-        const current = (model.filters[columnIndex] ?? '').split(',').filter((v) => v !== '');
-        const next = current.includes(value)
-          ? current.filter((v) => v !== value)
-          : [...current, value];
-        const filters = [...model.filters];
-        filters[columnIndex] = next.join(',');
-        return [evo(model, { filters: () => filters, clientPage: () => 1 }), []];
+      GotFilterListboxMessage: ({ column, message }) => {
+        const listbox = model.filterListboxes[column];
+        if (!listbox) return [model, []];
+        const [next, listboxCommands, maybeOutMessage] = FilterListbox.update(listbox, message);
+        const commands = Command.mapMessages(listboxCommands, (message) =>
+          GotFilterListboxMessage({ column, message }),
+        );
+        const withListbox = evo(model, {
+          filterListboxes: (boxes) => ({ ...boxes, [column]: next }),
+        });
+        return Option.match(maybeOutMessage, {
+          onNone: () => [withListbox, commands],
+          onSome: ({ value }) => {
+            const columnIndex = sectionData[model.section].columns.indexOf(column);
+            if (columnIndex < 0) return [withListbox, commands];
+            const excluded = (model.filters[columnIndex] ?? '').split(',').filter((v) => v !== '');
+            const nextExcluded = excluded.includes(value)
+              ? excluded.filter((v) => v !== value)
+              : [...excluded, value];
+            const filters = [...model.filters];
+            filters[columnIndex] = nextExcluded.join(',');
+            return [evo(withListbox, { filters: () => filters, clientPage: () => 1 }), commands];
+          },
+        });
+      },
+      // Today's date arrived from the clock at boot — seed the date filter
+      // DatePickers with it so their calendar grids open onto it.
+      FetchedToday: ({ today }) => [
+        evo(model, { dateFilterPickers: () => initialDateFilterPickers(today) }),
+        [],
+      ],
+      // Delegates to one bound of a date column's filter DatePicker. Its
+      // SelectedDate OutMessage commits that bound of the column's range;
+      // ChangedViewMonth is just the visible month moving.
+      GotDateFilterMessage: ({ column, bound, message }) => {
+        const pair = model.dateFilterPickers[column];
+        if (!pair) return [model, []];
+        const [picker, pickerCommands, maybeOutMessage] = DatePicker.update(pair[bound], message);
+        const commands = Command.mapMessages(pickerCommands, (message) =>
+          GotDateFilterMessage({ column, bound, message }),
+        );
+        const withPicker = evo(model, {
+          dateFilterPickers: (pickers) => ({ ...pickers, [column]: { ...pair, [bound]: picker } }),
+        });
+        const setBound = (date: Option.Option<typeof Calendar.CalendarDate.Type>): UpdateReturn => [
+          evo(withPicker, {
+            dateFilters: (ranges) => ({
+              ...ranges,
+              [column]: {
+                ...(ranges[column] ?? { from: Option.none(), to: Option.none() }),
+                [bound]: date,
+              },
+            }),
+            clientPage: () => 1,
+          }),
+          commands,
+        ];
+        return Option.match(maybeOutMessage, {
+          onNone: () => [withPicker, commands],
+          onSome: M.type<DatePicker.OutMessage>().pipe(
+            withUpdateReturn,
+            M.tagsExhaustive({
+              ChangedViewMonth: () => [withPicker, commands],
+              SelectedDate: ({ date }) => setBound(Option.some(date)),
+              ClearedDate: () => setBound(Option.none()),
+            }),
+          ),
+        });
+      },
+      // Drops both bounds of a date column's range. Purely parent-side — the
+      // DatePickers hold no selection state to reset.
+      ClearedDateFilter: ({ column }) => {
+        const { [column]: _removed, ...rest } = model.dateFilters;
+        return [evo(model, { dateFilters: () => rest, clientPage: () => 1 }), []];
       },
       // Open the drawer in creation mode: a blank draft, no existing record.
       ClickedAddNew: () => {
         const columns = sectionData[model.section].columns;
+        const [withDialog, dialogCommands] = openDialog(model);
         return [
-          evo(model, {
+          evo(withDialog, {
             drawer: () =>
               DrawerCreating.make({ section: model.section, draft: columns.map(() => '') }),
             chartError: () => Option.none(),
           }),
-          [],
+          dialogCommands,
         ];
       },
       // Open the profile drawer with a working copy of the record's values.
       ClickedRecord: ({ section, id }) => {
         const entry = findRecord(model, section, id);
         if (!entry) return [model, []];
+        const [withDialog, dialogCommands] = openDialog(model);
         return [
-          evo(model, {
+          evo(withDialog, {
             drawer: () => editRecord(entry),
             chartError: () => Option.none(),
             linkError: () => '',
           }),
-          [Navigate({ url: recordRouter({ section, id }) })],
+          [...dialogCommands, Navigate({ url: recordRouter({ section, id }) })],
         ];
       },
       UpdatedDraftField: ({ index, value }) => [
@@ -384,12 +513,13 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           const withRow = evolveSection(model, section, (data) =>
             mapSectionRows(data, (rows) => [...rows, entry]),
           );
+          const [withDialog, dialogCommands] = closeDialog(withRow);
           return [
-            evo(withRow, {
+            evo(withDialog, {
               nextLocalId: (n) => n + 1,
               drawer: () => DrawerClosed.make({}),
             }),
-            [Navigate({ url: sectionRouter({ section }) })],
+            [...dialogCommands, Navigate({ url: sectionRouter({ section }) })],
           ];
         }
         if (drawer._tag !== 'Editing') return [model, []];
@@ -417,25 +547,58 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             rows.map((row) => (row.id === id ? evo(row, { values: () => draft }) : row)),
           ),
         );
+        const [withDialog, dialogCommands] = closeDialog(withRows);
         return [
-          evo(withRows, {
+          evo(withDialog, {
             editLog: (log) => [...changes, ...log],
             drawer: () => DrawerClosed.make({}),
           }),
-          [Navigate({ url: sectionRouter({ section }) })],
+          [...dialogCommands, Navigate({ url: sectionRouter({ section }) })],
         ];
       },
-      ClickedCloseDrawer: () => [
-        evo(model, { drawer: () => DrawerClosed.make({}) }),
-        [Navigate({ url: sectionRouter({ section: model.section }) })],
-      ],
-      SelectedDrawerTab: ({ tab }) => [
-        evo(model, {
-          drawer: (drawer) =>
-            drawer._tag === 'Editing' ? evo(drawer, { tab: () => tab }) : drawer,
-        }),
-        [],
-      ],
+      // Delegates to the Dialog submodel. Its Closed OutMessage is the user's
+      // close intent (Escape, backdrop click, the ✕/Cancel controls) — fold it
+      // back into the drawer state and return to the section's list URL.
+      GotDialogMessage: ({ message }) => {
+        const [dialog, dialogCommands, maybeOutMessage] = Dialog.update(model.dialog, message);
+        const commands = Command.mapMessages(dialogCommands, (message) =>
+          GotDialogMessage({ message }),
+        );
+        const withDialog = evo(model, { dialog: () => dialog });
+        return Option.match(maybeOutMessage, {
+          onNone: () => [withDialog, commands],
+          onSome: M.type<Dialog.OutMessage>().pipe(
+            withUpdateReturn,
+            M.tagsExhaustive({
+              Opened: () => [withDialog, commands],
+              Closed: () => [
+                evo(withDialog, { drawer: () => DrawerClosed.make({}) }),
+                [...commands, Navigate({ url: sectionRouter({ section: model.section }) })],
+              ],
+            }),
+          ),
+        });
+      },
+      // Delegates to the Tabs submodel. Its Selected OutMessage is a committed
+      // tab switch — fold the DrawerTab value into the editing state the
+      // parent owns.
+      GotTabsMessage: ({ message }) => {
+        const [tabs, tabsCommands, maybeOutMessage] = DrawerTabs.update(model.tabs, message);
+        const commands = Command.mapMessages(tabsCommands, (message) =>
+          GotTabsMessage({ message }),
+        );
+        const withTabs = evo(model, { tabs: () => tabs });
+        return Option.match(maybeOutMessage, {
+          onNone: () => [withTabs, commands],
+          onSome: ({ value }) => [
+            evo(withTabs, {
+              drawer: (drawer) =>
+                drawer._tag === 'Editing' ? evo(drawer, { tab: () => value }) : drawer,
+            }),
+            commands,
+          ],
+        });
+      },
       ClickedDeleteRecord: () => [
         evo(model, {
           drawer: (drawer) =>
@@ -460,9 +623,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             rows.map((row) => (row.id === id ? evo(row, { isDeleted: () => true }) : row)),
           ),
         );
+        const [withDialog, dialogCommands] = closeDialog(withRows);
         return [
-          evo(withRows, { drawer: () => DrawerClosed.make({}) }),
-          [Navigate({ url: sectionRouter({ section }) })],
+          evo(withDialog, { drawer: () => DrawerClosed.make({}) }),
+          [...dialogCommands, Navigate({ url: sectionRouter({ section }) })],
         ];
       },
       // Once a chart's host element is mounted, push the current record's
@@ -609,22 +773,28 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       CompletedLoad: () => [model, []],
       // The record wasn't in the currently loaded list, so it was fetched
       // directly by id — insert it into its section and open its drawer.
-      SucceededFetchTeamById: ({ entry }) => [
-        evo(
+      SucceededFetchTeamById: ({ entry }) => {
+        const [withDialog, dialogCommands] = openDialog(
           evolveSection(model, entry.section, (data) => upsertRecord(data, entry)),
-          {
+        );
+        return [
+          evo(withDialog, {
             drawer: () => editRecord(entry),
             chartError: () => Option.none(),
             linkError: () => '',
-          },
-        ),
-        [],
-      ],
+          }),
+          dialogCommands,
+        ];
+      },
       FailedFetchTeamById: ({ reason }) => [evo(model, { linkError: () => reason }), []],
     }),
   );
 
 // INIT
 
-export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) =>
-  applyRoute(initialModel(), urlToAppRoute(url));
+// Boot applies the initial URL and fetches today's date for the date filter
+// pickers (see FetchedToday).
+export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => {
+  const [model, commands] = applyRoute(initialModel(), urlToAppRoute(url));
+  return [model, [...commands, FetchToday()]];
+};

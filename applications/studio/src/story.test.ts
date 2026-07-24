@@ -1,4 +1,5 @@
 import { Option } from 'effect';
+import { Dialog } from '@foldkit/ui';
 import { AsyncData, Story } from 'foldkit';
 import { expect, test } from 'vitest';
 
@@ -228,9 +229,12 @@ test('a deep-linked team resolves by id, upserts the row, and opens its drawer',
       if (model.drawer._tag === 'Editing') {
         expect(model.drawer.id).toBe(sampleClub.id);
       }
+      expect(model.dialog.isOpen).toBe(true);
       expect(model.linkError).toBe('');
     }),
-    Story.Command.expectNone(),
+    // Opening the drawer opens its Dialog (the native <dialog> element).
+    Story.Command.expectExact(Dialog.ShowDialog),
+    Story.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
   );
 });
 
@@ -309,11 +313,15 @@ test('saving an edited record defers to the clock, then commits with that timest
     Story.model((model) => {
       // Drawer closed, and the change logged with the injected timestamp.
       expect(model.drawer._tag).toBe('Closed');
+      expect(model.dialog.isOpen).toBe(false);
       expect(model.editLog).toHaveLength(1);
       expect(model.editLog[0]?.from).toBe('Sparta Praha');
       expect(model.editLog[0]?.to).toBe('Slavia Praha');
       expect(model.editLog[0]?.at).toBe('6/1/2026, 12:00:00 PM');
     }),
+    // The commit also closes the drawer's Dialog alongside the navigation.
+    Story.Command.expectHas(Dialog.CloseDialog),
+    Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
     Story.Command.expectHas(Navigate),
     Story.Command.resolve(Navigate, CompletedNavigate()),
   );

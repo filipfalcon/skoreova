@@ -1,10 +1,15 @@
 // The studio's Model, the record Entry, and the drawer state union.
 
 import { Schema as S } from 'effect';
-import { AsyncData } from 'foldkit';
+import { DatePicker, Dialog, Listbox, Tabs } from '@foldkit/ui';
+import { AsyncData, Calendar } from 'foldkit';
 
 import { ParticipationResponse } from './participationsApi';
 import { Section } from './section';
+
+// The one Dialog instance the app renders (the record drawer). The id keys the
+// native <dialog> element and the framework's per-dialog resource accounting.
+export const DRAWER_DIALOG_ID = 'record-drawer';
 
 // One record. `values` line up with the section's columns (see `sectionData`).
 export const Entry = S.Struct({
@@ -23,6 +28,29 @@ export type Entry = typeof Entry.Type;
 
 export const DrawerTab = S.Literals(['Overview', 'Persistency', 'History']);
 export type DrawerTab = typeof DrawerTab.Type;
+
+// The drawer's Tabs instance, Value-typed so its Selected OutMessage carries a
+// DrawerTab (not a bare string). The id keys the tab/panel DOM ids the
+// component's roving focus targets.
+export const DRAWER_TABS_ID = 'drawer-tabs';
+// The annotation keeps the declaration emit portable (the inferred type would
+// reference foldkit internals — TS2883).
+export const DrawerTabs: ReturnType<typeof Tabs.create<DrawerTab>> = Tabs.create<DrawerTab>();
+
+// The multi-select Listbox behind every checkbox column filter. One shared
+// component pair; each column gets its own Model instance in
+// `filterListboxes` (see `initialFilterListboxes` in data.ts).
+export const FilterListbox: ReturnType<typeof Listbox.Multi.create<string>> =
+  Listbox.Multi.create<string>();
+
+// A date column's from/to range filter as typed CalendarDates — replaces the
+// old comma-joined "from,to" string that rode in the `filters` slot. Either
+// side may be unset.
+export const DateRangeFilter = S.Struct({
+  from: S.Option(Calendar.CalendarDate),
+  to: S.Option(Calendar.CalendarDate),
+});
+export type DateRangeFilter = typeof DateRangeFilter.Type;
 
 // The profile drawer's state. A tagged union so its shape can't drift into an
 // impossible state (a draft with the drawer closed, a delete-confirm on a
@@ -84,6 +112,14 @@ export const Model = S.Struct({
   filters: S.Array(S.String),
   // The profile drawer: closed, creating a new record, or editing one by id.
   drawer: DrawerState,
+  // The Dialog submodel presenting the drawer: the native <dialog> element,
+  // its backdrop, focus trap, Escape handling, and scroll lock. `drawer` stays
+  // the source of truth for WHAT is open; this owns HOW it is presented, so
+  // every handler that opens/closes `drawer` threads the dialog alongside.
+  dialog: Dialog.Model,
+  // The drawer's Tabs submodel (roving focus, activation mode). The active tab
+  // itself is parent-owned: it lives on DrawerEditing's `tab`.
+  tabs: Tabs.Model,
   // Client-side id source for records created in the mock (the backend would
   // assign one). Monotonic so a created row gets a stable, unique id the
   // drawer and keyed lists can address.
@@ -122,8 +158,17 @@ export const Model = S.Struct({
   // Whether the dashboard landing page is shown instead of a section's list.
   // This is the default entrypoint right after signing in.
   isShowingDashboard: S.Boolean,
-  // Index of the column whose checkbox filter dropdown (see checkboxColumns)
-  // is currently open, or -1 if none is.
-  openFilterColumn: S.Option(S.Number),
+  // One multi-select Listbox submodel per checkbox filter column (see
+  // checkboxColumns), keyed by the column's name. Only interaction state
+  // lives here — the selection stays in `filters` as the excluded set.
+  filterListboxes: S.Record(S.String, Listbox.Multi.Model),
+  // The active from/to range per date filter column (see dateColumns), keyed
+  // by the column's name. Absent key = no range set.
+  dateFilters: S.Record(S.String, DateRangeFilter),
+  // One from/to pair of DatePicker submodels per date filter column. Only
+  // interaction state (popover, visible month) lives here — the selection is
+  // parent-owned in `dateFilters`. Empty until FetchToday resolves at boot,
+  // which is invisible: the pickers only render after sign-in.
+  dateFilterPickers: S.Record(S.String, S.Struct({ from: DatePicker.Model, to: DatePicker.Model })),
 });
 export type Model = typeof Model.Type;
