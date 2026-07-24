@@ -358,13 +358,14 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       // was open its element unmounts and the component's Unmounted backstop
       // reclaims the scroll lock and focus trap (a fresh closed dialog model
       // would skip that release). The date filter pickers survive too — they
-      // are seeded once by FetchToday at boot.
+      // are seeded once by FetchToday at boot. The URL returns home with the
+      // model (leaving /players in the bar would deep-link the next sign-in).
       ClickedSignOut: () => [
         evo(initialModel(), {
           dialog: () => model.dialog,
           dateFilterPickers: () => model.dateFilterPickers,
         }),
-        [],
+        [navigate(homeRouter())],
       ],
       // Switching section closes the mobile nav and drawer, and clears filters.
       SelectedSection: ({ section }) => {
@@ -580,10 +581,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         if (!entry) return [model, []];
 
         const columns = sectionData[section].columns;
-        const changes: ReadonlyArray<LogEntry> = columns.flatMap((field, i) => {
+        const changes: ReadonlyArray<LogEntry> = columns.flatMap((column, i) => {
           const from = entry.values[i] ?? '';
           const to = draft[i] ?? '';
-          return from === to ? [] : [{ recordId: id, field, from, to, at }];
+          return from === to ? [] : [{ recordId: id, field: column.label, from, to, at }];
         });
 
         const withRows = evolveSection(model, section, (data) =>
@@ -818,8 +819,8 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         }),
       SucceededFetchHealth: () => [evo(model, { serverHealth: () => 'Ok' }), []],
       FailedFetchHealth: () => [evo(model, { serverHealth: () => 'Down' }), []],
-      // Internal anchor clicks (e.g. the decorative "Forgot password?" link)
-      // navigate within the app; anything else is a real page load.
+      // Internal anchor clicks navigate within the app; anything else is a
+      // real page load.
       ClickedLink: ({ request }) =>
         M.value(request).pipe(
           withUpdateReturn,

@@ -10,6 +10,20 @@ export const GATEWAY_BASE_URL = import.meta.env.DEV ? '' : 'http://localhost:134
 
 export const PAGE_SIZE = 10;
 
+// One list column: the display label plus which FILTER CONTROL it gets —
+// the kind (and the flag rendering) travels WITH the label. The old
+// label-keyed Sets in data.ts meant renaming a column's copy silently
+// changed its filter behavior. 'title' is the entry-name column (always
+// index 0) — searchable, never filtered.
+export type ColumnKind = 'title' | 'select' | 'checkbox' | 'date';
+export type Column = Readonly<{
+  label: string;
+  kind: ColumnKind;
+  // Render the cell's value as a country flag (the card pill and the
+  // drawer's Overview summary) instead of the raw code.
+  flag?: true;
+}>;
+
 // The backend's ALLCAPS enum values ('FORWARD', 'CLUB', …) as display labels
 // ('Forward', 'Club') — shared by every *Api row mapper.
 export const titleCase = (value: string): string => pipe(value, Str.toLowerCase, Str.capitalize);

@@ -1,6 +1,7 @@
 import { Schema as S } from 'effect';
 
 import { GATEWAY_BASE_URL, titleCase } from './api';
+import type { Column } from './api';
 
 // Mirrors GET /competitions from the backend's OpenAPI spec (fetched
 // 2026-07-05). Not paginated — returns everything in one array.
@@ -23,7 +24,11 @@ export const competitionsUrl = (): string => `${GATEWAY_BASE_URL}/competitions`;
 
 // Column order shown in the Competitions list and drawer; keep in sync with
 // the values produced by `competitionToRow` below.
-export const competitionColumns = ['Name', 'Code', 'Team kind'];
+export const competitionColumns: ReadonlyArray<Column> = [
+  { label: 'Name', kind: 'title' },
+  { label: 'Code', kind: 'select' },
+  { label: 'Team kind', kind: 'checkbox' },
+];
 
 export const competitionToRow = (competition: CompetitionResponse): ReadonlyArray<string> => [
   competition.name,

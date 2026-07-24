@@ -18,11 +18,11 @@ export const registerEcharts = () => {
   return echarts;
 };
 
-export interface StatsOptionArgs {
-  readonly title: string;
-  readonly categories: ReadonlyArray<string>;
-  readonly values: ReadonlyArray<number>;
-}
+export type StatsOptionArgs = Readonly<{
+  title: string;
+  categories: ReadonlyArray<string>;
+  values: ReadonlyArray<number>;
+}>;
 
 export const makeStatsOption = (args: StatsOptionArgs): EChartsOption => ({
   animation: false,
@@ -52,11 +52,11 @@ export const makeStatsOption = (args: StatsOptionArgs): EChartsOption => ({
   ],
 });
 
-export interface PointsOptionArgs {
-  readonly title: string;
-  readonly weeks: ReadonlyArray<string>;
-  readonly points: ReadonlyArray<number>;
-}
+export type PointsOptionArgs = Readonly<{
+  title: string;
+  weeks: ReadonlyArray<string>;
+  points: ReadonlyArray<number>;
+}>;
 
 // A cumulative league-points-over-time line chart, for team records.
 export const makePointsOption = (args: PointsOptionArgs): EChartsOption => ({

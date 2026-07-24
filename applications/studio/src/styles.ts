@@ -15,9 +15,6 @@ export const chipStyle =
 export const inputStyle =
   'w-full rounded-full border border-white/30 bg-white/25 px-5 py-3 text-white placeholder-white/70 outline-none transition focus:border-white/60 focus:bg-white/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
 
-export const forgotStyle =
-  'mt-4 inline-block text-sm text-white/90 underline underline-offset-4 hover:text-white';
-
 export const submitStyle =
   'flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center rounded-full bg-neutral-950 text-xl text-white transition hover:bg-neutral-800 disabled:opacity-60';
 

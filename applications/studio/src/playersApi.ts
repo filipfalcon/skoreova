@@ -1,6 +1,7 @@
 import { Schema as S } from 'effect';
 
 import { Page, paginatedUrl, titleCase } from './api';
+import type { Column } from './api';
 
 export const playersUrl = (page: number): string => paginatedUrl('/players', page);
 
@@ -29,7 +30,14 @@ export const PlayersPage = Page(PlayerResponse);
 
 // Column order shown in the Players list and drawer; keep in sync with the
 // values produced by `playerToRow` below.
-export const playerColumns = ['Name', 'Club', 'Position', 'Nationality', 'Date of birth', 'Sex'];
+export const playerColumns: ReadonlyArray<Column> = [
+  { label: 'Name', kind: 'title' },
+  { label: 'Club', kind: 'checkbox' },
+  { label: 'Position', kind: 'checkbox' },
+  { label: 'Nationality', kind: 'checkbox', flag: true },
+  { label: 'Date of birth', kind: 'date' },
+  { label: 'Sex', kind: 'checkbox' },
+];
 
 export const playerToRow = (player: PlayerResponse): ReadonlyArray<string> => [
   `${player.person.givenName} ${player.person.familyName}`,

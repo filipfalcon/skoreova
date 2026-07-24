@@ -7,17 +7,15 @@ import { html } from 'foldkit/html';
 import type { Document, Html } from 'foldkit/html';
 
 import { PAGE_SIZE } from '../api';
+import type { Column } from '../api';
 import {
   type MenuLeaf,
   type MenuNode,
   accountName,
-  checkboxColumns,
   countryFlags,
   countryNames,
-  dateColumns,
   displayRows,
   findRecord,
-  flagColumns,
   menu,
   sectionData,
   sectionLabels,
@@ -257,8 +255,8 @@ const content = (model: Model, current: Section): Html => {
       const value = entry.values[index] ?? '';
       // Date columns filter through the typed range in `dateFilters`; the
       // rows' ISO date cells compare lexicographically against the bounds.
-      if (dateColumns.has(column)) {
-        const range = model.dateFilters[column];
+      if (column.kind === 'date') {
+        const range = model.dateFilters[column.label];
         if (!range) return true;
         const isBelowFrom = Option.match(range.from, {
           onNone: () => false,
@@ -270,7 +268,7 @@ const content = (model: Model, current: Section): Html => {
         });
         return !isBelowFrom && !isAboveTo;
       }
-      const filter = model.filters[column];
+      const filter = model.filters[column.label];
       if (!filter) return true;
       return M.value(filter).pipe(
         M.withReturnType<boolean>(),
@@ -289,15 +287,12 @@ const content = (model: Model, current: Section): Html => {
 
   // A two-part pill: the column label on a darker segment, then the value
   // (or its flag) on a lighter one.
-  const fieldBadge = (column: string, value: string): Html =>
+  const fieldBadge = (column: Column, value: string): Html =>
     h.span(
       [h.Class(pillWrapStyle)],
       [
-        h.span([h.Class(pillLabelStyle)], [column]),
-        h.span(
-          [h.Class(pillValueStyle)],
-          [flagColumns.has(column) ? (countryFlags[value] ?? value) : value],
-        ),
+        h.span([h.Class(pillLabelStyle)], [column.label]),
+        h.span([h.Class(pillValueStyle)], [column.flag ? (countryFlags[value] ?? value) : value]),
       ],
     );
 
@@ -652,9 +647,9 @@ const content = (model: Model, current: Section): Html => {
       h.div(
         [h.Class('mt-3 flex flex-wrap gap-2')],
         filterColumns.map(({ column, index }) => {
-          if (dateColumns.has(column)) return filterRange(column);
-          if (checkboxColumns.has(column)) return filterCheckbox(column, index);
-          return filterSelect(column, index);
+          if (column.kind === 'date') return filterRange(column.label);
+          if (column.kind === 'checkbox') return filterCheckbox(column.label, index);
+          return filterSelect(column.label, index);
         }),
       ),
       showSkeleton

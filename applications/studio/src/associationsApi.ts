@@ -1,6 +1,7 @@
 import { Schema as S } from 'effect';
 
 import { GATEWAY_BASE_URL, titleCase } from './api';
+import type { Column } from './api';
 
 // Mirrors GET /associations from the backend's OpenAPI spec (fetched
 // 2026-07-05). Not paginated — returns everything in one array.
@@ -23,7 +24,11 @@ export const associationsUrl = (): string => `${GATEWAY_BASE_URL}/associations`;
 
 // Column order shown in the Associations list and drawer; keep in sync with
 // the values produced by `associationToRow` below.
-export const associationColumns = ['Name', 'Code', 'Kind'];
+export const associationColumns: ReadonlyArray<Column> = [
+  { label: 'Name', kind: 'title' },
+  { label: 'Code', kind: 'select' },
+  { label: 'Kind', kind: 'checkbox' },
+];
 
 export const associationToRow = (association: AssociationResponse): ReadonlyArray<string> => [
   association.name,
