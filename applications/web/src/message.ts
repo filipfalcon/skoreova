@@ -3,7 +3,12 @@ import { m } from 'foldkit/message';
 import { UrlRequest } from 'foldkit/navigation';
 import { Url } from 'foldkit/url';
 
-import { CompletedMountMotion, DetectedHeroPastHeader, FailedMountMotion } from './motion';
+import {
+  ChangedReveals,
+  CompletedMountMotion,
+  DetectedHeroPastHeader,
+  FailedMountMotion,
+} from './motion';
 import { MapLeague } from './model';
 
 export const ToggledMenu = m('ToggledMenu');
@@ -51,5 +56,6 @@ export const Message = S.Union([
   CompletedMountMotion,
   FailedMountMotion,
   DetectedHeroPastHeader,
+  ChangedReveals,
 ]);
 export type Message = typeof Message.Type;

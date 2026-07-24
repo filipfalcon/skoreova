@@ -1,14 +1,17 @@
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
+import clsx from 'clsx';
+
 import knightImage from '../assets/knight-mascot.webp';
-import { container, displayArrowExternal, kicker, maskedLine } from '../components';
+import { container, displayArrowExternal, kicker, maskedLine, revealClass } from '../components';
 import { unstoppableProof, youthPhotos } from '../data';
 import type { Message } from '../message';
+import type { Model } from '../model';
 
 const h = html<Message>();
 
-export const storyView = (): Html =>
+export const storyView = (model: Model): Html =>
   h.section(
     // No `overflow-hidden`: it would clip the mascot (she's anchored to the
     // top edge and floats). Horizontal overflow is already contained globally
@@ -37,9 +40,13 @@ export const storyView = (): Html =>
             // 26% — trimmed a touch from the original 28% so all three
             // mascot doodles land on one ~510px cap height at 1280
             // (the scout grew to meet her; sizes unified, user call).
-            'pointer-events-none absolute z-0 hidden select-none md:top-12 md:right-10 md:block md:w-[26%] md:max-w-[340px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
+            clsx(
+              'pointer-events-none absolute z-0 hidden select-none md:top-12 md:right-10 md:block md:w-[26%] md:max-w-[340px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
+              revealClass(model, 'story-mascot'),
+            ),
           ),
           h.DataAttribute('reveal', 'right'),
+          h.DataAttribute('reveal-key', 'story-mascot'),
           h.Style({ '--reveal-delay': '0.1s' }),
         ],
         [
@@ -71,7 +78,7 @@ export const storyView = (): Html =>
               // `dark: true` on a paper section is deliberate (user call):
               // 01 opens the page's numbered run and the pink chip + ink
               // type reads stronger here than the ink chip variant.
-              kicker('01', 'On the rise', true, '/#on-the-rise'),
+              kicker(model, '01', 'On the rise', true, '/#on-the-rise'),
               // Slightly looser rhythm below md (mt-12/mt-10 vs the md
               // mt-16/mt-12 pattern's phone halves): the cover has vertical
               // room to give, and the extra air shrinks the dead band under
@@ -79,8 +86,14 @@ export const storyView = (): Html =>
               h.h2(
                 [h.Class('mt-12 md:mt-16')],
                 [
-                  maskedLine('Officially', 'text-fluid-6xl-9xl', 0),
-                  maskedLine('unstoppable.', 'text-fluid-6xl-9xl text-pink', 0.12),
+                  maskedLine(model, 'story-headline-1', 'Officially', 'text-fluid-6xl-9xl', 0),
+                  maskedLine(
+                    model,
+                    'story-headline-2',
+                    'unstoppable.',
+                    'text-fluid-6xl-9xl text-pink',
+                    0.12,
+                  ),
                 ],
               ),
               // One display sentence instead of paragraphs — the count-up row
@@ -93,8 +106,14 @@ export const storyView = (): Html =>
                 // the knight's band absorbs the leftover space and the button
                 // lands on the fold line.
                 [
-                  h.Class('mt-10 flex flex-1 flex-col md:mt-12 md:block'),
+                  h.Class(
+                    clsx(
+                      'mt-10 flex flex-1 flex-col md:mt-12 md:block',
+                      revealClass(model, 'story-lede'),
+                    ),
+                  ),
                   h.DataAttribute('reveal', 'up'),
+                  h.DataAttribute('reveal-key', 'story-lede'),
                 ],
                 [
                   h.p(
@@ -173,7 +192,9 @@ export const storyView = (): Html =>
             unstoppableProof.map((stat, index) =>
               h.li(
                 [
+                  h.Class(revealClass(model, `story-stat-${index}`)),
                   h.DataAttribute('reveal', 'up'),
+                  h.DataAttribute('reveal-key', `story-stat-${index}`),
                   h.Style({ '--reveal-delay': `${index * 0.15}s` }),
                 ],
                 [
@@ -236,6 +257,8 @@ export const storyView = (): Html =>
             [h.Class('mt-16 md:mt-24')],
             [
               maskedLine(
+                model,
+                'story-climax',
                 // Phones stack it in three lines with the pink word alone on
                 // the middle one — the hero's own lockup (DISCOVER / HER GAME
                 // / IN CZECHIA) replayed; the two-line balance-wrap read as
@@ -261,8 +284,14 @@ export const storyView = (): Html =>
           // lands.
           h.p(
             [
-              h.Class('mt-6 max-w-2xl text-lg leading-relaxed md:mt-8 md:text-xl'),
+              h.Class(
+                clsx(
+                  'mt-6 max-w-2xl text-lg leading-relaxed md:mt-8 md:text-xl',
+                  revealClass(model, 'story-imperative'),
+                ),
+              ),
               h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', 'story-imperative'),
               h.Style({ '--reveal-delay': '0.2s' }),
             ],
             // The imperative gets its own line — two beats, not one sentence
@@ -292,9 +321,13 @@ export const storyView = (): Html =>
               h.figure(
                 [
                   h.Class(
-                    `w-[72%] shrink-0 snap-center md:w-auto ${index === 1 ? 'md:mt-14' : ''}`,
+                    clsx(
+                      `w-[72%] shrink-0 snap-center md:w-auto ${index === 1 ? 'md:mt-14' : ''}`,
+                      revealClass(model, `story-youth-${index}`),
+                    ),
                   ),
                   h.DataAttribute('reveal', 'up'),
+                  h.DataAttribute('reveal-key', `story-youth-${index}`),
                   h.Style({ '--reveal-delay': `${index * 0.12}s` }),
                 ],
                 [
@@ -308,7 +341,9 @@ export const storyView = (): Html =>
                     [
                       h.div(
                         [
+                          h.Class(revealClass(model, `story-youth-photo-${index}`)),
                           h.DataAttribute('reveal', 'zoom'),
+                          h.DataAttribute('reveal-key', `story-youth-photo-${index}`),
                           h.Style({ '--reveal-delay': `${index * 0.12 + 0.1}s` }),
                         ],
                         [

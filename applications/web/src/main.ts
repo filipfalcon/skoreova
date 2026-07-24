@@ -6,7 +6,7 @@ import { toString as urlToString } from 'foldkit/url';
 
 import type { AppRoute } from './route';
 import { urlToAppRoute } from './route';
-import type { Flags, Model } from './model';
+import type { Flags, Model, RevealState } from './model';
 import type { Message } from './message';
 import { detectActiveSection, focusMenuToggle, load, navigate, setScrollLock } from './command';
 
@@ -28,6 +28,7 @@ const initialModel: Model = {
   isMapAreaImperial: true,
   heroPastHeader: false,
   prefersReducedMotion: false,
+  reveals: {},
 };
 
 // Applies a parsed URL to the model — used for the initial load, our own
@@ -119,9 +120,30 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       // the header CTA renders off this flag.
       DetectedHeroPastHeader: ({ past }) => [evo(model, { heroPastHeader: () => past }), []],
       // The OS setting flipped mid-session — the keyed motion mount and the
-      // wheel subscription both follow this flag.
+      // wheel subscription both follow this flag. Reveal state resets: the
+      // remounted observers re-report everything on-screen within a frame.
       ChangedReducedMotion: ({ reduce }) => [
-        evo(model, { prefersReducedMotion: () => reduce }),
+        evo(model, { prefersReducedMotion: () => reduce, reveals: () => ({}) }),
+        [],
+      ],
+      // The reveal observers' report — the single place reveal state
+      // changes. `revealed` never downgrades an already-drawn target;
+      // `drawn` only upgrades one that is on screen.
+      ChangedReveals: ({ revealed, concealed, drawn }) => [
+        evo(model, {
+          reveals: (reveals) => {
+            const gone = new Set(concealed);
+            const next: Record<string, RevealState> = {};
+            for (const [key, state] of Object.entries(reveals)) {
+              if (!gone.has(key)) next[key] = state;
+            }
+            for (const key of revealed) next[key] ??= 'entered';
+            for (const key of drawn) {
+              if (next[key] !== undefined) next[key] = 'drawn';
+            }
+            return next;
+          },
+        }),
         [],
       ],
     }),

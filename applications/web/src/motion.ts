@@ -2,14 +2,18 @@ import { Effect, Queue, Schema as S, Stream } from 'effect';
 import { Mount } from 'foldkit';
 import { m } from 'foldkit/message';
 
-// The page's scroll and pointer choreography, attached once to the app root.
-// Everything here is deliberately outside the Elm model — these effects fire
-// per frame, and routing them through `update` would re-render the page
-// constantly. One persistent requestAnimationFrame loop drives every
-// continuous effect; IntersectionObserver drives the discrete ones.
+// The page's scroll and pointer choreography, in two mounts. The PER-FRAME
+// work (MountMotion: parallax, scrubs, marquee, tilt, neon) is deliberately
+// outside the Elm model — those effects fire every frame, and routing them
+// through `update` would re-render the page constantly. The DISCRETE reveal
+// state is not: ObserveReveals only watches (IntersectionObserver) and
+// reports ChangedReveals Messages; the Model holds which keyed targets are
+// in, and the view renders `.is-in`/`.is-drawn` (revealClass in
+// components.ts) — the patcher owns those class strings again.
 //
 // Subsystems (each marked by a data attribute in the view):
-// - [data-reveal]        in/out reveal classes, replaying on every re-entry
+// - [data-reveal]        in/out reveal state, replaying on every re-entry —
+//                        keyed by [data-reveal-key], reported to the Model
 // - [data-countup]       numbers count up from 0 when their reveal enters
 // - [data-scramble]      slot-machine roll for values a count-up can't
 //                        serve ("€1B") — see the Scrambles section
@@ -41,6 +45,16 @@ export const FailedMountMotion = m('FailedMountMotion', { reason: S.String });
 // Reports whether the hero has scrolled up under the fixed header — `past`
 // drives the header's persistent CTA in the Model. See ObserveHeroPastHeader.
 export const DetectedHeroPastHeader = m('DetectedHeroPastHeader', { past: S.Boolean });
+// One reveal-observer notification, already resolved to reveal keys: which
+// targets entered the viewport (render `.is-in`), which left (back to
+// rest), and which must stand fully DRAWN — a pen that finished its lap
+// (transitionend) or a downward-only pen re-entered from below. See
+// ObserveReveals.
+export const ChangedReveals = m('ChangedReveals', {
+  revealed: S.Array(S.String),
+  concealed: S.Array(S.String),
+  drawn: S.Array(S.String),
+});
 
 const REVEAL_CLIPPED_VARIANTS = new Set(['mask', 'wipe']);
 const COUNT_UP_MILLISECONDS = 1000;
@@ -101,17 +115,20 @@ interface Tilt {
   settled: boolean;
 }
 
-const setUpMotion = (root: HTMLElement): (() => void) => {
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const finePointer = window.matchMedia('(pointer: fine)').matches;
+// The reveal subsystem: IntersectionObservers watching every keyed
+// [data-reveal] target (through proxies where clipping demands it) and
+// REPORTING entries/exits as ChangedReveals Messages — the Model holds the
+// state and the VIEW renders `.is-in`/`.is-drawn` (see revealClass in
+// components.ts). The count-up/scramble text animations still start
+// imperatively from the same observer callbacks (they are rAF work, not
+// state), and the recount watcher runs its own small loop here. Never
+// installed under reduced motion: the view force-reveals everything and
+// the numbers rest on their final values.
+const setUpReveals = (
+  root: HTMLElement,
+  emit: (message: typeof ChangedReveals.Type) => void,
+): (() => void) => {
   const cleanups: Array<() => void> = [];
-
-  // iOS Safari only engages CSS `:active` states on touch once the page has
-  // at least one touch listener registered — without this no-op, every
-  // `active:` tap style (the pink buttons flashing paper) is silently dead.
-  const enableActiveStates = (): void => {};
-  document.addEventListener('touchstart', enableActiveStates, { passive: true });
-  cleanups.push(() => document.removeEventListener('touchstart', enableActiveStates));
 
   // ----- Count-ups ---------------------------------------------------------
   // Parsed once; started/cancelled from the reveal observer below.
@@ -318,6 +335,272 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
     for (const scramble of scrambles.values()) stopScramble(scramble);
   });
 
+  // ----- Model-driven recounts ---------------------------------------------
+  // The land counters react to the league filter: the view stamps
+  // `data-recount` with the filter state plus the fresh target. Watching
+  // that attribute instead of the text fixes two things text-diffing
+  // couldn't: the spin fires even when the VALUE stays the same (every
+  // recount should visibly spin), and it can't lose a change to an
+  // in-flight animation frame overwriting the text node right after
+  // Foldkit patches it (the counter then froze on a stale value). Its own
+  // small rAF loop — the per-frame choreography lives in MountMotion, and
+  // this watcher belongs with the count-ups it drives.
+  let recountFrame = 0;
+  const recountTick = (): void => {
+    for (const countUp of countUps.values()) {
+      const recount = countUp.element.dataset['recount'];
+      if (recount !== undefined && recount !== countUp.lastRecount) {
+        countUp.lastRecount = recount;
+        countUp.target = Number(recount.split('|')[0] ?? '0');
+        window.clearTimeout(countUp.timeout);
+        animateCount(countUp, countUp.current, 700);
+      }
+    }
+    recountFrame = window.requestAnimationFrame(recountTick);
+  };
+  recountFrame = window.requestAnimationFrame(recountTick);
+  cleanups.push(() => window.cancelAnimationFrame(recountFrame));
+
+  // ----- Reveals -----------------------------------------------------------
+
+  const revealTargets = Array.from(root.querySelectorAll<HTMLElement>('[data-reveal]'));
+
+  {
+    // 'mask' targets sit fully outside their wrapper's overflow clip and
+    // 'wipe' targets are clip-pathed to zero area — either way the element
+    // itself never registers an intersection, so the reveal would never
+    // fire. Observe the parent box (a plain, visible container) instead and
+    // map the notification back to the real target. Reveals replay: leaving
+    // the viewport removes `.is-in` so the animation runs again on re-entry.
+    //
+    // Exception: targets inside a `[data-reveal-group]` container all key
+    // off the CONTAINER's visibility — one simultaneous cascade instead of
+    // per-item observation. The value picks the replay policy: 'once' never
+    // un-reveals (the swipeable photo strip — swiping must not replay it),
+    // 'replay' re-arms when the group leaves the viewport (the competitions
+    // grid). 'replay' groups are a DESKTOP formation: on phones the same
+    // cards stack into one tall column, where a single simultaneous beat
+    // fires mostly below the fold — there they fall back to per-item
+    // observation. 'once' groups stay grouped everywhere (the strip's whole
+    // point is the phone behavior).
+    //
+    // A third policy, 'late', gathers only the container's `data-reveal-late`
+    // targets and keys them off the container crossing the LATE line
+    // (mid-viewport) — one shared scroll-gated beat (the statement strike +
+    // rebuttal land together). Non-late targets inside stay per-item, so a
+    // headline can reveal early while its payoff waits. Grouped on every
+    // viewport and replays like 'replay'.
+    const desktopViewport = window.matchMedia('(min-width: 768px)').matches;
+    const targetsByProxy = new Map<Element, Array<HTMLElement>>();
+    for (const target of revealTargets) {
+      const groupElement = target.closest<HTMLElement>('[data-reveal-group]');
+      const groupPolicy = groupElement?.dataset['revealGroup'];
+      const group =
+        groupElement &&
+        (groupPolicy === 'once' ||
+          (groupPolicy === 'late' ? target.dataset['revealLate'] !== undefined : desktopViewport))
+          ? groupElement
+          : null;
+      const proxy =
+        group ??
+        (REVEAL_CLIPPED_VARIANTS.has(target.dataset['reveal'] ?? '')
+          ? (target.parentElement ?? target)
+          : target);
+      const targets = targetsByProxy.get(proxy);
+      if (targets) {
+        targets.push(target);
+      } else {
+        targetsByProxy.set(proxy, [target]);
+      }
+    }
+
+    // Draw-reveal elements get `.is-drawn` stamped when their dash transition
+    // finishes — the CSS then drops the dash entirely (see styles.css; GPU
+    // rasterizers glitched dashed non-scaling strokes at rest). Removed on
+    // exit so the replay starts dashed again.
+    for (const target of revealTargets) {
+      if (target.dataset['reveal'] !== 'draw') continue;
+      const key = target.dataset['revealKey'];
+      if (key === undefined) continue;
+      const onTransitionEnd = (event: TransitionEvent): void => {
+        if (!target.classList.contains('is-in')) return;
+        // Only the root's OWN dash transition ending counts — that is the
+        // outline pen closing its lap, and the land borders' clip wipes
+        // are timed to finish mid-lap (see LAND_BORDER_WIPES in main.ts),
+        // so the whole figure is drawn. Bubbling transitions from the
+        // region paths (their clips, the tint) must not stamp early.
+        if (event.target === target && event.propertyName === 'stroke-dashoffset') {
+          emit(ChangedReveals({ revealed: [], concealed: [], drawn: [key] }));
+        }
+      };
+      target.addEventListener('transitionend', onTransitionEnd);
+      cleanups.push(() => target.removeEventListener('transitionend', onTransitionEnd));
+    }
+
+    // Scroll direction at reveal time — some draw reveals only ANIMATE on
+    // the way down (see data-draw-replay below); coming back up they must
+    // stand complete, so the reader never watches the same pen twice.
+    // The direction is STICKY across callbacks at the same position:
+    // several observers share this handler, and the second callback of a
+    // scroll step would otherwise read "no movement" and lose the sign.
+    let lastRevealScrollY = window.scrollY;
+    let revealScrollWasUp = false;
+
+    const onReveal = (entries: ReadonlyArray<IntersectionObserverEntry>): void => {
+      if (window.scrollY !== lastRevealScrollY) {
+        revealScrollWasUp = window.scrollY < lastRevealScrollY;
+        lastRevealScrollY = window.scrollY;
+      }
+      const scrollingUp = revealScrollWasUp;
+      const revealed: Array<string> = [];
+      const concealed: Array<string> = [];
+      const drawn: Array<string> = [];
+      for (const entry of entries) {
+        const revealOnce =
+          entry.target instanceof HTMLElement && entry.target.dataset['revealGroup'] === 'once';
+        for (const target of targetsByProxy.get(entry.target) ?? []) {
+          const key = target.dataset['revealKey'];
+          if (key !== undefined) {
+            if (revealOnce) {
+              if (entry.isIntersecting) revealed.push(key);
+            } else if (entry.isIntersecting) {
+              revealed.push(key);
+              // Downward-only pens: re-entering from BELOW (scrolling up)
+              // arrive fully drawn, so the dash never comes back and the
+              // reader never watches the same pen twice.
+              if (scrollingUp && target.dataset['drawReplay'] === 'downward') {
+                drawn.push(key);
+              }
+            } else {
+              concealed.push(key);
+            }
+          }
+          for (const element of target.querySelectorAll<HTMLElement>('[data-countup]')) {
+            const countUp = countUps.get(element);
+            if (!countUp) continue;
+            if (entry.isIntersecting) {
+              startCountUp(countUp, parseRevealDelaySeconds(target));
+            } else if (!revealOnce) {
+              cancelCountUp(countUp);
+            }
+          }
+          for (const element of target.querySelectorAll<HTMLElement>('[data-scramble]')) {
+            const scramble = scrambles.get(element);
+            if (!scramble) continue;
+            if (entry.isIntersecting) {
+              startScramble(scramble, parseRevealDelaySeconds(target));
+            } else if (!revealOnce) {
+              stopScramble(scramble);
+            }
+          }
+        }
+      }
+      if (revealed.length > 0 || concealed.length > 0 || drawn.length > 0) {
+        emit(ChangedReveals({ revealed, concealed, drawn }));
+      }
+    };
+
+    // Phones get an earlier trigger: no bottom inset and a lower ratio, so
+    // elements start revealing right as they cross the fold — the desktop
+    // tuning (15% + an 8% inset) felt late on a small screen.
+    const observer = new IntersectionObserver(
+      onReveal,
+      desktopViewport
+        ? { threshold: 0.15, rootMargin: '0px 0px -8% 0px' }
+        : { threshold: 0.05, rootMargin: '0px' },
+    );
+    // Group containers can be taller than the viewport, so a ratio threshold
+    // fires far too late (15% of a 1200px grid = a sliver above the fold, or
+    // never for very tall groups). They trigger on their top edge instead:
+    // threshold 0 with only a small bottom inset, so the cascade starts
+    // early — right as the group's top clears the fold.
+    const groupObserver = new IntersectionObserver(onReveal, {
+      threshold: 0,
+      rootMargin: '0px 0px -10% 0px',
+    });
+    // Phones give draw targets their own late trigger: with the generic 5%
+    // threshold the 2.4s pen stroke started the instant a sliver crossed
+    // the fold and played out mostly below the viewport — the map read as
+    // popping in fully drawn. Waiting for HALF the figure costs moments
+    // (the map is short on a phone) but the stroke is actually watched.
+    // The un-draw still waits for a full exit, so a half-scrolled map
+    // doesn't reset mid-view.
+    const drawObserver = desktopViewport
+      ? null
+      : new IntersectionObserver(
+          (entries) => {
+            const revealed: Array<string> = [];
+            const concealed: Array<string> = [];
+            for (const entry of entries) {
+              for (const target of targetsByProxy.get(entry.target) ?? []) {
+                const key = target.dataset['revealKey'];
+                if (key === undefined) continue;
+                if (entry.isIntersecting && entry.intersectionRatio >= 0.45) {
+                  revealed.push(key);
+                } else if (!entry.isIntersecting) {
+                  concealed.push(key);
+                }
+              }
+            }
+            if (revealed.length > 0 || concealed.length > 0) {
+              emit(ChangedReveals({ revealed, concealed, drawn: [] }));
+            }
+          },
+          { threshold: [0, 0.5] },
+        );
+    // `data-reveal-late` elements wait for MID-viewport instead of first
+    // sight. The trigger is scroll POSITION, not time: a slow reader gets
+    // their pause for free (the element fires only once they scroll it to
+    // the center band), while a fast scroller still sees the sequence at
+    // their own pace. Time-based delays could be outrun — the statement
+    // stamp either landed unseen or buried its setup line, depending on
+    // how fast you scrolled.
+    const lateObserver = new IntersectionObserver(onReveal, {
+      threshold: 0,
+      rootMargin: '0px 0px -42% 0px',
+    });
+    for (const proxy of targetsByProxy.keys()) {
+      const isDraw =
+        drawObserver !== null && proxy instanceof SVGElement && proxy.dataset['reveal'] === 'draw';
+      const groupPolicy = proxy instanceof HTMLElement ? proxy.dataset['revealGroup'] : undefined;
+      const isLate = proxy instanceof HTMLElement && proxy.dataset['revealLate'] !== undefined;
+      // 'late' groups wait at the late line with their members.
+      (isDraw && drawObserver
+        ? drawObserver
+        : groupPolicy === 'late'
+          ? lateObserver
+          : groupPolicy !== undefined
+            ? groupObserver
+            : isLate
+              ? lateObserver
+              : observer
+      ).observe(proxy);
+    }
+    cleanups.push(() => {
+      observer.disconnect();
+      groupObserver.disconnect();
+      drawObserver?.disconnect();
+      lateObserver.disconnect();
+    });
+  }
+
+  return () => {
+    for (const cleanup of cleanups) cleanup();
+  };
+};
+
+const setUpMotion = (root: HTMLElement): (() => void) => {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finePointer = window.matchMedia('(pointer: fine)').matches;
+  const cleanups: Array<() => void> = [];
+
+  // iOS Safari only engages CSS `:active` states on touch once the page has
+  // at least one touch listener registered — without this no-op, every
+  // `active:` tap style (the pink buttons flashing paper) is silently dead.
+  const enableActiveStates = (): void => {};
+  document.addEventListener('touchstart', enableActiveStates, { passive: true });
+  cleanups.push(() => document.removeEventListener('touchstart', enableActiveStates));
+
   // ----- Neon flicker (the "Her game" sign) --------------------------------
   // Driven from JS with discrete opacity steps rather than a CSS animation.
   // A *running* CSS animation on opacity keeps the element on a compositing
@@ -463,224 +746,6 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
         if (lateWord) lateWord.style.opacity = '';
       });
     }
-  }
-
-  // ----- Reveals -----------------------------------------------------------
-
-  const revealTargets = Array.from(root.querySelectorAll<HTMLElement>('[data-reveal]'));
-
-  // Release symmetry: `.is-in`/`.is-drawn` are stamped outside the vdom, and
-  // the patcher never touches these class lists — tearing down without
-  // stripping them would leave the DOM diverged from the view's declared
-  // (resting) state for good. A reacquired Mount re-reveals from scratch.
-  cleanups.push(() => {
-    for (const target of revealTargets) target.classList.remove('is-in', 'is-drawn');
-  });
-
-  if (reduceMotion) {
-    for (const target of revealTargets) target.classList.add('is-in');
-  } else {
-    // 'mask' targets sit fully outside their wrapper's overflow clip and
-    // 'wipe' targets are clip-pathed to zero area — either way the element
-    // itself never registers an intersection, so the reveal would never
-    // fire. Observe the parent box (a plain, visible container) instead and
-    // map the notification back to the real target. Reveals replay: leaving
-    // the viewport removes `.is-in` so the animation runs again on re-entry.
-    //
-    // Exception: targets inside a `[data-reveal-group]` container all key
-    // off the CONTAINER's visibility — one simultaneous cascade instead of
-    // per-item observation. The value picks the replay policy: 'once' never
-    // un-reveals (the swipeable photo strip — swiping must not replay it),
-    // 'replay' re-arms when the group leaves the viewport (the competitions
-    // grid). 'replay' groups are a DESKTOP formation: on phones the same
-    // cards stack into one tall column, where a single simultaneous beat
-    // fires mostly below the fold — there they fall back to per-item
-    // observation. 'once' groups stay grouped everywhere (the strip's whole
-    // point is the phone behavior).
-    //
-    // A third policy, 'late', gathers only the container's `data-reveal-late`
-    // targets and keys them off the container crossing the LATE line
-    // (mid-viewport) — one shared scroll-gated beat (the statement strike +
-    // rebuttal land together). Non-late targets inside stay per-item, so a
-    // headline can reveal early while its payoff waits. Grouped on every
-    // viewport and replays like 'replay'.
-    const desktopViewport = window.matchMedia('(min-width: 768px)').matches;
-    const targetsByProxy = new Map<Element, Array<HTMLElement>>();
-    for (const target of revealTargets) {
-      const groupElement = target.closest<HTMLElement>('[data-reveal-group]');
-      const groupPolicy = groupElement?.dataset['revealGroup'];
-      const group =
-        groupElement &&
-        (groupPolicy === 'once' ||
-          (groupPolicy === 'late' ? target.dataset['revealLate'] !== undefined : desktopViewport))
-          ? groupElement
-          : null;
-      const proxy =
-        group ??
-        (REVEAL_CLIPPED_VARIANTS.has(target.dataset['reveal'] ?? '')
-          ? (target.parentElement ?? target)
-          : target);
-      const targets = targetsByProxy.get(proxy);
-      if (targets) {
-        targets.push(target);
-      } else {
-        targetsByProxy.set(proxy, [target]);
-      }
-    }
-
-    // Draw-reveal elements get `.is-drawn` stamped when their dash transition
-    // finishes — the CSS then drops the dash entirely (see styles.css; GPU
-    // rasterizers glitched dashed non-scaling strokes at rest). Removed on
-    // exit so the replay starts dashed again.
-    for (const target of revealTargets) {
-      if (target.dataset['reveal'] !== 'draw') continue;
-      const onTransitionEnd = (event: TransitionEvent): void => {
-        if (!target.classList.contains('is-in')) return;
-        // Only the root's OWN dash transition ending counts — that is the
-        // outline pen closing its lap, and the land borders' clip wipes
-        // are timed to finish mid-lap (see LAND_BORDER_WIPES in main.ts),
-        // so the whole figure is drawn. Bubbling transitions from the
-        // region paths (their clips, the tint) must not stamp early.
-        if (event.target === target && event.propertyName === 'stroke-dashoffset') {
-          target.classList.add('is-drawn');
-        }
-      };
-      target.addEventListener('transitionend', onTransitionEnd);
-      cleanups.push(() => target.removeEventListener('transitionend', onTransitionEnd));
-    }
-
-    // Scroll direction at reveal time — some draw reveals only ANIMATE on
-    // the way down (see data-draw-replay below); coming back up they must
-    // stand complete, so the reader never watches the same pen twice.
-    // The direction is STICKY across callbacks at the same position:
-    // several observers share this handler, and the second callback of a
-    // scroll step would otherwise read "no movement" and lose the sign.
-    let lastRevealScrollY = window.scrollY;
-    let revealScrollWasUp = false;
-
-    const onReveal = (entries: ReadonlyArray<IntersectionObserverEntry>): void => {
-      if (window.scrollY !== lastRevealScrollY) {
-        revealScrollWasUp = window.scrollY < lastRevealScrollY;
-        lastRevealScrollY = window.scrollY;
-      }
-      const scrollingUp = revealScrollWasUp;
-      for (const entry of entries) {
-        const revealOnce =
-          entry.target instanceof HTMLElement && entry.target.dataset['revealGroup'] === 'once';
-        for (const target of targetsByProxy.get(entry.target) ?? []) {
-          if (revealOnce) {
-            if (entry.isIntersecting) target.classList.add('is-in');
-          } else {
-            target.classList.toggle('is-in', entry.isIntersecting);
-            if (!entry.isIntersecting) target.classList.remove('is-drawn');
-            // Downward-only pens: re-entering from BELOW (scrolling up)
-            // stamps `.is-drawn` together with `.is-in`, so the dash never
-            // comes back and the figure is simply there, whole.
-            if (
-              entry.isIntersecting &&
-              scrollingUp &&
-              target.dataset['drawReplay'] === 'downward'
-            ) {
-              target.classList.add('is-drawn');
-            }
-          }
-          for (const element of target.querySelectorAll<HTMLElement>('[data-countup]')) {
-            const countUp = countUps.get(element);
-            if (!countUp) continue;
-            if (entry.isIntersecting) {
-              startCountUp(countUp, parseRevealDelaySeconds(target));
-            } else if (!revealOnce) {
-              cancelCountUp(countUp);
-            }
-          }
-          for (const element of target.querySelectorAll<HTMLElement>('[data-scramble]')) {
-            const scramble = scrambles.get(element);
-            if (!scramble) continue;
-            if (entry.isIntersecting) {
-              startScramble(scramble, parseRevealDelaySeconds(target));
-            } else if (!revealOnce) {
-              stopScramble(scramble);
-            }
-          }
-        }
-      }
-    };
-
-    // Phones get an earlier trigger: no bottom inset and a lower ratio, so
-    // elements start revealing right as they cross the fold — the desktop
-    // tuning (15% + an 8% inset) felt late on a small screen.
-    const observer = new IntersectionObserver(
-      onReveal,
-      desktopViewport
-        ? { threshold: 0.15, rootMargin: '0px 0px -8% 0px' }
-        : { threshold: 0.05, rootMargin: '0px' },
-    );
-    // Group containers can be taller than the viewport, so a ratio threshold
-    // fires far too late (15% of a 1200px grid = a sliver above the fold, or
-    // never for very tall groups). They trigger on their top edge instead:
-    // threshold 0 with only a small bottom inset, so the cascade starts
-    // early — right as the group's top clears the fold.
-    const groupObserver = new IntersectionObserver(onReveal, {
-      threshold: 0,
-      rootMargin: '0px 0px -10% 0px',
-    });
-    // Phones give draw targets their own late trigger: with the generic 5%
-    // threshold the 2.4s pen stroke started the instant a sliver crossed
-    // the fold and played out mostly below the viewport — the map read as
-    // popping in fully drawn. Waiting for HALF the figure costs moments
-    // (the map is short on a phone) but the stroke is actually watched.
-    // The un-draw still waits for a full exit, so a half-scrolled map
-    // doesn't reset mid-view.
-    const drawObserver = desktopViewport
-      ? null
-      : new IntersectionObserver(
-          (entries) => {
-            for (const entry of entries) {
-              for (const target of targetsByProxy.get(entry.target) ?? []) {
-                if (entry.isIntersecting && entry.intersectionRatio >= 0.45) {
-                  target.classList.add('is-in');
-                } else if (!entry.isIntersecting) {
-                  target.classList.remove('is-in', 'is-drawn');
-                }
-              }
-            }
-          },
-          { threshold: [0, 0.5] },
-        );
-    // `data-reveal-late` elements wait for MID-viewport instead of first
-    // sight. The trigger is scroll POSITION, not time: a slow reader gets
-    // their pause for free (the element fires only once they scroll it to
-    // the center band), while a fast scroller still sees the sequence at
-    // their own pace. Time-based delays could be outrun — the statement
-    // stamp either landed unseen or buried its setup line, depending on
-    // how fast you scrolled.
-    const lateObserver = new IntersectionObserver(onReveal, {
-      threshold: 0,
-      rootMargin: '0px 0px -42% 0px',
-    });
-    for (const proxy of targetsByProxy.keys()) {
-      const isDraw =
-        drawObserver !== null && proxy instanceof SVGElement && proxy.dataset['reveal'] === 'draw';
-      const groupPolicy = proxy instanceof HTMLElement ? proxy.dataset['revealGroup'] : undefined;
-      const isLate = proxy instanceof HTMLElement && proxy.dataset['revealLate'] !== undefined;
-      // 'late' groups wait at the late line with their members.
-      (isDraw && drawObserver
-        ? drawObserver
-        : groupPolicy === 'late'
-          ? lateObserver
-          : groupPolicy !== undefined
-            ? groupObserver
-            : isLate
-              ? lateObserver
-              : observer
-      ).observe(proxy);
-    }
-    cleanups.push(() => {
-      observer.disconnect();
-      groupObserver.disconnect();
-      drawObserver?.disconnect();
-      lateObserver.disconnect();
-    });
   }
 
   // The header's persistent "Enter platform" CTA used to be driven from the
@@ -856,22 +921,6 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       lastScrollY = window.scrollY;
     }
 
-    // Model-driven recounts (the land counters react to the league filter):
-    // the view stamps `data-recount` with the filter state plus the fresh
-    // target. Watching that attribute instead of the text fixes two things
-    // text-diffing couldn't: the spin fires even when the VALUE stays the
-    // same (every recount should visibly spin), and it can't lose a change
-    // to an in-flight animation frame overwriting the text node right after
-    // Foldkit patches it (the counter then froze on a stale value).
-    for (const countUp of countUps.values()) {
-      const recount = countUp.element.dataset['recount'];
-      if (recount === undefined || recount === countUp.lastRecount) continue;
-      countUp.lastRecount = recount;
-      countUp.target = Number(recount.split('|')[0] ?? '0');
-      window.clearTimeout(countUp.timeout);
-      animateCount(countUp, countUp.current, 700);
-    }
-
     const viewportCenterY = window.innerHeight / 2;
 
     for (const layer of parallaxLayers) {
@@ -1022,6 +1071,34 @@ export const MountMotion = Mount.define(
       Effect.catch((error) => Effect.succeed(FailedMountMotion({ reason: error.message }))),
     );
   }),
+);
+
+// The reveal observers as their own streaming Mount — MountMotion keeps the
+// per-frame choreography; this one only OBSERVES and reports, because
+// reveal state is discrete and belongs to the Model. `reduceMotion` rides
+// in from the Model (one OnMount per element, so this sits on the page
+// root while <main> carries MountMotion; the root is keyed on the flag, so
+// a flip re-runs this factory with the fresh value).
+export const ObserveReveals = Mount.defineStream(
+  'ObserveReveals',
+  { reduceMotion: S.Boolean },
+  ChangedReveals,
+)(
+  ({ reduceMotion }) =>
+    (element) =>
+      Stream.callback<typeof ChangedReveals.Type>((queue) =>
+        Effect.gen(function* () {
+          yield* Effect.acquireRelease(
+            Effect.sync(() =>
+              !reduceMotion && element instanceof HTMLElement
+                ? setUpReveals(element, (message) => Queue.offerUnsafe(queue, message))
+                : (): void => {},
+            ),
+            (teardown) => Effect.sync(teardown),
+          );
+          return yield* Effect.never;
+        }),
+      ),
 );
 
 // Watches the hero and reports when its bottom slips under the fixed header,

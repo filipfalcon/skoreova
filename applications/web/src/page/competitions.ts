@@ -2,16 +2,23 @@ import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
 import duoImage from '../assets/duo.webp';
-import { container, displayArrow, kicker, maskedLine } from '../components';
+import clsx from 'clsx';
+
+import { container, displayArrow, kicker, maskedLine, revealClass } from '../components';
 import { competitions, platformUrl } from '../data';
 import type { Competition } from '../data';
 import type { Message } from '../message';
+import type { Model } from '../model';
 
 const h = html<Message>();
 
-const competitionCard = (competition: Competition): Html =>
+const competitionCard = (model: Model, competition: Competition): Html =>
   h.article(
-    [h.DataAttribute('reveal', 'up')],
+    [
+      h.Class(revealClass(model, `competition-card-${competition.slug}`)),
+      h.DataAttribute('reveal', 'up'),
+      h.DataAttribute('reveal-key', `competition-card-${competition.slug}`),
+    ],
     [
       // The photo is NOT a link — only the label button below navigates, so
       // it alone carries the hover state and the arrow.
@@ -25,7 +32,12 @@ const competitionCard = (competition: Competition): Html =>
             [h.Class('overflow-hidden')],
             [
               h.div(
-                [h.DataAttribute('reveal', 'zoom'), h.Style({ '--reveal-delay': '0.1s' })],
+                [
+                  h.Class(revealClass(model, `competition-photo-${competition.slug}`)),
+                  h.DataAttribute('reveal', 'zoom'),
+                  h.DataAttribute('reveal-key', `competition-photo-${competition.slug}`),
+                  h.Style({ '--reveal-delay': '0.1s' }),
+                ],
                 [
                   h.img([
                     h.Src(competition.image),
@@ -82,7 +94,7 @@ const competitionCard = (competition: Competition): Html =>
     ],
   );
 
-export const competitionsView = (): Html =>
+export const competitionsView = (model: Model): Html =>
   h.section(
     [
       h.Id('battling-through'),
@@ -119,11 +131,13 @@ export const competitionsView = (): Html =>
       h.div(
         [h.Class(`${container} relative`)],
         [
-          kicker('02', 'Battling through', true, '/#battling-through'),
+          kicker(model, '02', 'Battling through', true, '/#battling-through'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [
               maskedLine(
+                model,
+                'competitions-headline',
                 ['How ', h.span([h.Class('text-pink')], ['she']), ' plays.'],
                 'text-fluid-6xl-9xl',
                 0,
@@ -145,10 +159,19 @@ export const competitionsView = (): Html =>
                 // in between, the cards are the headline's direct answer and
                 // follow on the same beat.
                 [h.Class('mt-10 grid gap-10 md:mt-16 md:grid-cols-3')],
-                competitions.map(competitionCard),
+                competitions.map((competition) => competitionCard(model, competition)),
               ),
               h.div(
-                [h.Class('mt-14 flex justify-center md:mt-20'), h.DataAttribute('reveal', 'up')],
+                [
+                  h.Class(
+                    clsx(
+                      'mt-14 flex justify-center md:mt-20',
+                      revealClass(model, 'competitions-cta'),
+                    ),
+                  ),
+                  h.DataAttribute('reveal', 'up'),
+                  h.DataAttribute('reveal-key', 'competitions-cta'),
+                ],
                 [
                   h.a(
                     [

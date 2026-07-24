@@ -4,19 +4,23 @@ import { describe, test } from 'vitest';
 import { landingModel, menuOpenModel } from './main.fixtures';
 import { update, view } from './main';
 import {
+  ChangedReveals,
   CompletedMountMotion,
   DetectedHeroPastHeader,
   MountMotion,
   ObserveHeroPastHeader,
+  ObserveReveals,
 } from './motion';
 
-// The landing view mounts two decorative controllers — the motion loop on the
-// root (`MountMotion`) and the hero-past-header observer on the hero
-// (`ObserveHeroPastHeader`). Every scene acknowledges both; their real effects
-// need a browser and IntersectionObserver and never run here — the
+// The landing view mounts three decorative controllers — the motion loop on
+// <main> (`MountMotion`), the reveal observers on the root
+// (`ObserveReveals`), and the hero-past-header observer on the hero
+// (`ObserveHeroPastHeader`). Every scene acknowledges all three; their real
+// effects need a browser and IntersectionObserver and never run here — the
 // motion-regression browser tests cover those paths.
 const acknowledgeMounts = [
   Scene.Mount.resolve(MountMotion, CompletedMountMotion()),
+  Scene.Mount.resolve(ObserveReveals, ChangedReveals({ revealed: [], concealed: [], drawn: [] })),
   Scene.Mount.resolve(ObserveHeroPastHeader, DetectedHeroPastHeader({ past: false })),
 ];
 

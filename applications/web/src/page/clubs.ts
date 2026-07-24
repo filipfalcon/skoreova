@@ -5,7 +5,14 @@ import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
 import landsScoutImage from '../assets/lands-scout.webp';
-import { container, displayArrow, displayArrowSolo, kicker, maskedLine } from '../components';
+import {
+  container,
+  displayArrow,
+  displayArrowSolo,
+  kicker,
+  maskedLine,
+  revealClass,
+} from '../components';
 import { CZECHIA_PATH, CZECHIA_VIEW_BOX, CZECH_REGIONS } from '../czechia';
 import { FIRST_LEAGUE, MAP_LEAGUE_LABELS, SECOND_LEAGUE, clubs, platformUrl } from '../data';
 import type { Club } from '../data';
@@ -198,9 +205,9 @@ const clubPin = (model: Model, club: Club): Html => {
   // geometry vars, the reveal target and the selection/land data.
   return h.div(
     [
-      // Selection as a data attribute, NOT a class: the root's class
-      // string must stay static or Foldkit's patch would wipe the
-      // observer-stamped `.is-in` (see the pin wrapper comment below).
+      // Selection as a data attribute — styles.css keys the selected ring
+      // and banner state off it (a class would work now that reveals are
+      // model-driven, but the attribute reads fine and the CSS is settled).
       h.DataAttribute('selected', selected ? 'true' : 'false'),
       // The z-index transition lives in styles.css (.club-pin): a fresh
       // hover rises after a 150ms hold, the drop on hover-out DECAYS over
@@ -242,12 +249,16 @@ const clubPin = (model: Model, club: Club): Html => {
       // The reveal wrapper: the reveal rules own the `transition`
       // shorthand, so opacity/transform reveals must not share an element
       // with the root's z-index transition (they silently erased it).
-      // Static (empty) class string, so Foldkit's patcher never wipes the
-      // observer-stamped `.is-in`; --reveal-delay inherits from the root.
-      // Revealed as part of the map's replay group, but only after the
-      // draw-in finishes — land by land (see pinRevealDelaySeconds).
+      // The `.is-in` class renders from the Model here like everywhere
+      // else; --reveal-delay inherits from the root. Revealed as part of
+      // the map's replay group, but only after the draw-in finishes —
+      // land by land (see pinRevealDelaySeconds).
       h.div(
-        [h.DataAttribute('reveal', 'up')],
+        [
+          h.Class(revealClass(model, `pin-${club.slug}`)),
+          h.DataAttribute('reveal', 'up'),
+          h.DataAttribute('reveal-key', `pin-${club.slug}`),
+        ],
         [
           // The connector, rotated around the dot (origin-bottom, bottom = dot).
           h.div(
@@ -421,9 +432,13 @@ const mapLeagueFilter = (model: Model): Html =>
           // Centered on phones (one row, all three side by side); right-aligned
           // to the stage from md, where it reads as a map control.
           h.Class(
-            'mx-auto mt-10 flex max-w-5xl flex-wrap justify-center gap-1.5 md:mt-14 md:justify-end md:gap-2',
+            clsx(
+              'mx-auto mt-10 flex max-w-5xl flex-wrap justify-center gap-1.5 md:mt-14 md:justify-end md:gap-2',
+              revealClass(model, 'map-filter'),
+            ),
           ),
           h.DataAttribute('reveal', 'up'),
+          h.DataAttribute('reveal-key', 'map-filter'),
         ],
         options.map((option) =>
           h.div(
@@ -465,9 +480,13 @@ export const clubsView = (model: Model): Html =>
             // 19% matches the knight's ~510px CAP HEIGHT at 1280, not her
             // width — the figure is a tall 1:2 portrait, so width parity
             // would still blow her up huge (sizes unified, user call).
-            'pointer-events-none absolute z-0 hidden select-none md:top-12 md:right-10 md:block md:w-[19%] md:max-w-[260px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
+            clsx(
+              'pointer-events-none absolute z-0 hidden select-none md:top-12 md:right-10 md:block md:w-[19%] md:max-w-[260px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
+              revealClass(model, 'clubs-scout'),
+            ),
           ),
           h.DataAttribute('reveal', 'right'),
+          h.DataAttribute('reveal-key', 'clubs-scout'),
           h.Style({ '--reveal-delay': '0.1s' }),
         ],
         [
@@ -490,11 +509,13 @@ export const clubsView = (model: Model): Html =>
       h.div(
         [h.Class(`${container} relative z-10`)],
         [
-          kicker('03', 'Across the lands', true, '/#across-the-lands'),
+          kicker(model, '03', 'Across the lands', true, '/#across-the-lands'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [
               maskedLine(
+                model,
+                'clubs-headline',
                 ['Where ', h.span([h.Class('text-pink')], ['she']), ' plays.'],
                 'text-fluid-6xl-9xl',
                 0,
@@ -508,8 +529,14 @@ export const clubsView = (model: Model): Html =>
           // a three-line factual sentence in it is cognitive load.
           h.p(
             [
-              h.Class('mt-8 max-w-2xl text-lg leading-relaxed md:mt-12 md:text-xl'),
+              h.Class(
+                clsx(
+                  'mt-8 max-w-2xl text-lg leading-relaxed md:mt-12 md:text-xl',
+                  revealClass(model, 'clubs-lede'),
+                ),
+              ),
               h.DataAttribute('reveal', 'up'),
+              h.DataAttribute('reveal-key', 'clubs-lede'),
             ],
             [
               'Quite a few clubs fit into ',
@@ -615,8 +642,9 @@ export const clubsView = (model: Model): Html =>
                   const label = `${adjective} ${count === 1 ? 'Club' : 'Clubs'}`;
                   return h.div(
                     [
-                      h.Class('select-none'),
+                      h.Class(clsx('select-none', revealClass(model, `clubs-count-${index}`))),
                       h.DataAttribute('reveal', 'up'),
+                      h.DataAttribute('reveal-key', `clubs-count-${index}`),
                       h.Style({ '--reveal-delay': `${index * 0.15}s` }),
                     ],
                     [
@@ -709,10 +737,12 @@ export const clubsView = (model: Model): Html =>
                       // The draw-in reveal lives on the SVG ROOT: stroke-dasharray
                       // and stroke-dashoffset are inherited properties, so the
                       // animated offset pen-draws the country outline. The root is
-                      // the only safe carrier: per-path reveals get their `.is-in`
-                      // wiped when the filter classes change, and WebKit's
-                      // IntersectionObserver doesn't reliably fire for inner SVG
-                      // elements like <g> (the map never drew on iPhones). Each
+                      // the only safe carrier: WebKit's IntersectionObserver
+                      // doesn't reliably fire for inner SVG elements like <g>
+                      // (the map never drew on iPhones), so the observers must
+                      // watch the root. (The old second reason — per-path
+                      // classes being wiped by filter patches — died when
+                      // reveals moved into the Model.) Each
                       // path carries pathLength=1 so the unit dash math works. The
                       // labels AND the region paths opt back out of the dash
                       // inheritance via `stroke-dasharray: none` (.region-label,
@@ -721,8 +751,9 @@ export const clubsView = (model: Model): Html =>
                         [
                           h.Xmlns('http://www.w3.org/2000/svg'),
                           h.ViewBox(CZECHIA_VIEW_BOX),
-                          h.Class('h-auto w-full'),
+                          h.Class(clsx('h-auto w-full', revealClass(model, 'map-draw'))),
                           h.DataAttribute('reveal', 'draw'),
+                          h.DataAttribute('reveal-key', 'map-draw'),
                           h.AriaHidden(true),
                         ],
                         [
