@@ -8,13 +8,13 @@ import type { AppRoute } from './route';
 import { urlToAppRoute } from './route';
 import type { Model } from './model';
 import type { Message } from './message';
-import { DetectActiveSection, Load, Navigate, SetScrollLock } from './command';
+import { DetectActiveSection, FocusMenuToggle, Load, Navigate, SetScrollLock } from './command';
 
 // The app entry: init, the update reducer, and the re-exports that keep the
 // public surface (Model, messages, subscriptions, view) at ./main.
 export * from './model';
 export * from './message';
-export { DetectActiveSection, Load, Navigate, SetScrollLock } from './command';
+export { DetectActiveSection, FocusMenuToggle, Load, Navigate, SetScrollLock } from './command';
 export { subscriptions } from './subscription';
 export { view } from './page';
 
@@ -78,6 +78,13 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         evo(model, { isMenuOpen: () => false }),
         [SetScrollLock({ locked: false })],
       ],
+      // Escape closes like ClosedMenu and additionally hands focus back to
+      // the toggle — the overlay it sat in is hidden now.
+      PressedMenuEscape: () => [
+        evo(model, { isMenuOpen: () => false }),
+        [SetScrollLock({ locked: false }), FocusMenuToggle()],
+      ],
+      CompletedFocusMenuToggle: () => [model, []],
       DetectedActiveSection: ({ section }) => [evo(model, { activeSection: () => section }), []],
       // In-app links (club pins, menu anchors, back links) apply their route
       // immediately and push the URL; external links load normally. Any

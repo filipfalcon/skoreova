@@ -10,6 +10,11 @@ export const ToggledMenu = m('ToggledMenu');
 // Sent by every anchor inside the overlay: close the menu and let navigation
 // take care of the rest.
 export const ClosedMenu = m('ClosedMenu');
+// Escape pressed while the overlay is open — closes it AND returns focus to
+// the toggle (via the FocusMenuToggle Command), like a native dialog hands
+// focus back to its opener.
+export const PressedMenuEscape = m('PressedMenuEscape');
+export const CompletedFocusMenuToggle = m('CompletedFocusMenuToggle');
 // Reports which landing section the viewport is in (None at the hero) — see
 // DetectActiveSection.
 export const DetectedActiveSection = m('DetectedActiveSection', { section: S.Option(S.String) });
@@ -27,6 +32,8 @@ export const ToggledAreaUnit = m('ToggledAreaUnit');
 export const Message = S.Union([
   ToggledMenu,
   ClosedMenu,
+  PressedMenuEscape,
+  CompletedFocusMenuToggle,
   DetectedActiveSection,
   ClickedLink,
   ChangedUrl,

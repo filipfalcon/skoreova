@@ -250,7 +250,8 @@ export const headerView = (model: Model): Html =>
               ),
               h.button(
                 [
-                  // The Escape-to-close subscription returns focus here.
+                  // The FocusMenuToggle Command returns focus here after
+                  // Escape closes the overlay.
                   h.Id('menu-toggle'),
                   h.OnClick(ToggledMenu()),
                   h.AriaLabel(model.isMenuOpen ? 'Close menu' : 'Open menu'),
