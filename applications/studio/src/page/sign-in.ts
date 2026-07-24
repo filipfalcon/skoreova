@@ -3,7 +3,7 @@ import { html } from 'foldkit/html';
 import type { Document } from 'foldkit/html';
 
 import loginBackground from '../assets/login-background.jpg';
-import { ClickedSignIn, UpdatedEmail, UpdatedPassword } from '../message';
+import { SubmittedSignIn, UpdatedEmail, UpdatedPassword } from '../message';
 import type { Message } from '../message';
 import type { Model } from '../model';
 import { cardStyle, chipStyle, forgotStyle, inputStyle, submitStyle } from '../styles';
@@ -39,65 +39,75 @@ export const loginView = (model: Model): Document => {
                   ],
                 ),
                 h.h1([h.Class('mt-8 text-3xl font-medium text-white')], ['Sign in']),
-                h.div(
-                  [h.Class('mt-6 flex flex-col gap-3')],
+                // A real form, so Enter in either field submits it — the
+                // arrow button is its type=submit control.
+                h.form(
+                  [h.OnSubmit(SubmittedSignIn())],
                   [
-                    // The fields carry only a placeholder visually; the real
-                    // <label> is sr-only so each is a properly labeled form
-                    // control without changing the card's look.
-                    Input.view({
-                      id: 'signin-email',
-                      type: 'email',
-                      placeholder: 'email address',
-                      value: model.email,
-                      onInput: (value) => UpdatedEmail({ value }),
-                      toView: (attributes) =>
-                        h.div(
-                          [],
-                          [
-                            h.label([...attributes.label, h.Class('sr-only')], ['Email address']),
-                            h.input([
-                              ...attributes.input,
-                              h.Name('email'),
-                              h.Autocomplete('email'),
-                              h.Class(inputStyle),
-                            ]),
-                          ],
-                        ),
-                    }),
-                    Input.view({
-                      id: 'signin-password',
-                      type: 'password',
-                      placeholder: 'password',
-                      value: model.password,
-                      onInput: (value) => UpdatedPassword({ value }),
-                      toView: (attributes) =>
-                        h.div(
-                          [],
-                          [
-                            h.label([...attributes.label, h.Class('sr-only')], ['Password']),
-                            h.input([
-                              ...attributes.input,
-                              h.Name('password'),
-                              h.Autocomplete('current-password'),
-                              h.Class(inputStyle),
-                            ]),
-                          ],
-                        ),
-                    }),
-                  ],
-                ),
-                h.a([h.Href('#'), h.Class(forgotStyle)], ['Forgot password?']),
-                h.div(
-                  [h.Class('mt-8 flex items-end justify-between gap-4')],
-                  [
-                    h.p(
-                      [h.Class('max-w-52 text-xs leading-relaxed text-white/80')],
+                    h.div(
+                      [h.Class('mt-6 flex flex-col gap-3')],
                       [
-                        'The Skóreová editorial workspace. Access is limited to members of the editorial team.',
+                        // The fields carry only a placeholder visually; the real
+                        // <label> is sr-only so each is a properly labeled form
+                        // control without changing the card's look.
+                        Input.view({
+                          id: 'signin-email',
+                          type: 'email',
+                          placeholder: 'email address',
+                          value: model.email,
+                          onInput: (value) => UpdatedEmail({ value }),
+                          toView: (attributes) =>
+                            h.div(
+                              [],
+                              [
+                                h.label(
+                                  [...attributes.label, h.Class('sr-only')],
+                                  ['Email address'],
+                                ),
+                                h.input([
+                                  ...attributes.input,
+                                  h.Name('email'),
+                                  h.Autocomplete('email'),
+                                  h.Class(inputStyle),
+                                ]),
+                              ],
+                            ),
+                        }),
+                        Input.view({
+                          id: 'signin-password',
+                          type: 'password',
+                          placeholder: 'password',
+                          value: model.password,
+                          onInput: (value) => UpdatedPassword({ value }),
+                          toView: (attributes) =>
+                            h.div(
+                              [],
+                              [
+                                h.label([...attributes.label, h.Class('sr-only')], ['Password']),
+                                h.input([
+                                  ...attributes.input,
+                                  h.Name('password'),
+                                  h.Autocomplete('current-password'),
+                                  h.Class(inputStyle),
+                                ]),
+                              ],
+                            ),
+                        }),
                       ],
                     ),
-                    h.button([h.OnClick(ClickedSignIn()), h.Class(submitStyle)], ['→']),
+                    h.a([h.Href('#'), h.Class(forgotStyle)], ['Forgot password?']),
+                    h.div(
+                      [h.Class('mt-8 flex items-end justify-between gap-4')],
+                      [
+                        h.p(
+                          [h.Class('max-w-52 text-xs leading-relaxed text-white/80')],
+                          [
+                            'The Skóreová editorial workspace. Access is limited to members of the editorial team.',
+                          ],
+                        ),
+                        h.button([h.Type('submit'), h.Class(submitStyle)], ['→']),
+                      ],
+                    ),
                   ],
                 ),
               ],

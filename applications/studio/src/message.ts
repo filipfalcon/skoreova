@@ -14,7 +14,9 @@ import { Entry } from './model';
 
 export const UpdatedEmail = m('UpdatedEmail', { value: S.String });
 export const UpdatedPassword = m('UpdatedPassword', { value: S.String });
-export const ClickedSignIn = m('ClickedSignIn');
+// The sign-in form's submit — fired by the arrow button and by Enter in
+// either field (the view is a real h.form with OnSubmit).
+export const SubmittedSignIn = m('SubmittedSignIn');
 export const ClickedSignOut = m('ClickedSignOut');
 export const SelectedSection = m('SelectedSection', { section: Section });
 export const ToggledMenu = m('ToggledMenu');
@@ -113,7 +115,7 @@ export const ClearedDateFilter = m('ClearedDateFilter', { column: S.String });
 export const Message = S.Union([
   UpdatedEmail,
   UpdatedPassword,
-  ClickedSignIn,
+  SubmittedSignIn,
   ClickedSignOut,
   SelectedSection,
   ToggledMenu,
