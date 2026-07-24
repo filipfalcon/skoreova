@@ -6,6 +6,7 @@ import { Clock, Effect, Option, Schema as S } from 'effect';
 import { Calendar, Command, Mount } from 'foldkit';
 import { load, pushUrl } from 'foldkit/navigation';
 
+import { getDecoded } from './api';
 import { HealthResponse, healthUrl } from './healthApi';
 import { AssociationsResponse, associationToRow, associationsUrl } from './associationsApi';
 import { getChart, removeChart, setChart } from './chartHost';
@@ -153,17 +154,7 @@ export const FetchPlayers = Command.define(
   SucceededFetchPlayers,
   FailedFetchPlayers,
 )((args) =>
-  Effect.tryPromise({
-    try: async () => {
-      const response = await fetch(playersUrl(args.page));
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}.`);
-      }
-      const json: unknown = await response.json();
-      return S.decodeUnknownSync(PlayersPage)(json);
-    },
-    catch: (error) => (error instanceof Error ? error : new Error(String(error))),
-  }).pipe(
+  getDecoded(playersUrl(args.page), PlayersPage).pipe(
     Effect.map((page) =>
       SucceededFetchPlayers({
         entries: page.items.map((player) => ({
@@ -189,17 +180,7 @@ const fetchTeamEntries = (
   kind: 'CLUB' | 'NATIONAL',
   section: 'clubs' | 'nationals',
 ): Effect.Effect<ReadonlyArray<Entry>, Error> =>
-  Effect.tryPromise({
-    try: async () => {
-      const response = await fetch(teamsUrl(kind));
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}.`);
-      }
-      const json: unknown = await response.json();
-      return S.decodeUnknownSync(TeamsResponse)(json);
-    },
-    catch: (error) => (error instanceof Error ? error : new Error(String(error))),
-  }).pipe(
+  getDecoded(teamsUrl(kind), TeamsResponse).pipe(
     Effect.map((teams) =>
       teams.map((team) => ({
         section,
@@ -239,17 +220,7 @@ export const FetchCompetitions = Command.define(
   SucceededFetchCompetitions,
   FailedFetchCompetitions,
 )(
-  Effect.tryPromise({
-    try: async () => {
-      const response = await fetch(competitionsUrl());
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}.`);
-      }
-      const json: unknown = await response.json();
-      return S.decodeUnknownSync(CompetitionsResponse)(json);
-    },
-    catch: (error) => (error instanceof Error ? error : new Error(String(error))),
-  }).pipe(
+  getDecoded(competitionsUrl(), CompetitionsResponse).pipe(
     Effect.map((competitions) =>
       SucceededFetchCompetitions({
         entries: competitions.map((competition) => ({
@@ -273,17 +244,7 @@ export const FetchEditions = Command.define(
   SucceededFetchEditions,
   FailedFetchEditions,
 )(
-  Effect.tryPromise({
-    try: async () => {
-      const response = await fetch(editionsUrl());
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}.`);
-      }
-      const json: unknown = await response.json();
-      return S.decodeUnknownSync(EditionsResponse)(json);
-    },
-    catch: (error) => (error instanceof Error ? error : new Error(String(error))),
-  }).pipe(
+  getDecoded(editionsUrl(), EditionsResponse).pipe(
     Effect.map((editions) => SucceededFetchEditions({ editions })),
     Effect.catch((error) => Effect.succeed(FailedFetchEditions({ reason: error.message }))),
   ),
@@ -296,17 +257,7 @@ export const FetchParticipations = Command.define(
   SucceededFetchParticipations,
   FailedFetchParticipations,
 )(
-  Effect.tryPromise({
-    try: async () => {
-      const response = await fetch(participationsUrl());
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}.`);
-      }
-      const json: unknown = await response.json();
-      return S.decodeUnknownSync(ParticipationsResponse)(json);
-    },
-    catch: (error) => (error instanceof Error ? error : new Error(String(error))),
-  }).pipe(
+  getDecoded(participationsUrl(), ParticipationsResponse).pipe(
     Effect.map((participations) => SucceededFetchParticipations({ participations })),
     Effect.catch((error) => Effect.succeed(FailedFetchParticipations({ reason: error.message }))),
   ),
@@ -318,17 +269,7 @@ export const FetchAssociations = Command.define(
   SucceededFetchAssociations,
   FailedFetchAssociations,
 )(
-  Effect.tryPromise({
-    try: async () => {
-      const response = await fetch(associationsUrl());
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}.`);
-      }
-      const json: unknown = await response.json();
-      return S.decodeUnknownSync(AssociationsResponse)(json);
-    },
-    catch: (error) => (error instanceof Error ? error : new Error(String(error))),
-  }).pipe(
+  getDecoded(associationsUrl(), AssociationsResponse).pipe(
     Effect.map((associations) =>
       SucceededFetchAssociations({
         entries: associations.map((association) => ({
@@ -351,17 +292,7 @@ export const FetchHealth = Command.define(
   SucceededFetchHealth,
   FailedFetchHealth,
 )(
-  Effect.tryPromise({
-    try: async () => {
-      const response = await fetch(healthUrl());
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}.`);
-      }
-      const json: unknown = await response.json();
-      S.decodeUnknownSync(HealthResponse)(json);
-    },
-    catch: (error) => (error instanceof Error ? error : new Error(String(error))),
-  }).pipe(
+  getDecoded(healthUrl(), HealthResponse).pipe(
     Effect.map(() => SucceededFetchHealth()),
     Effect.catch((error) => Effect.succeed(FailedFetchHealth({ reason: error.message }))),
   ),
@@ -412,17 +343,7 @@ export const FetchTeamById = Command.define(
   SucceededFetchTeamById,
   FailedFetchTeamById,
 )((args) =>
-  Effect.tryPromise({
-    try: async () => {
-      const response = await fetch(teamByIdUrl(args.id));
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}.`);
-      }
-      const json: unknown = await response.json();
-      return S.decodeUnknownSync(S.NullOr(TeamResponse))(json);
-    },
-    catch: (error) => (error instanceof Error ? error : new Error(String(error))),
-  }).pipe(
+  getDecoded(teamByIdUrl(args.id), S.NullOr(TeamResponse)).pipe(
     Effect.map((team) =>
       team === null
         ? FailedFetchTeamById({ reason: 'This team no longer exists.' })
