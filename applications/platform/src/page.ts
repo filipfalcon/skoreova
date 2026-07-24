@@ -25,6 +25,7 @@ import { competitionProfileScreen } from './page/competition-profile';
 import { competitionsScreen } from './page/competitions';
 import { herGameScreen } from './page/her-game';
 import { matchesScreen } from './page/matches';
+import { notFoundView } from './page/not-found';
 import { officialsScreen } from './page/officials';
 import { playersScreen } from './page/players';
 import { welcomeScreen } from './page/welcome';
@@ -49,6 +50,9 @@ const openCompetition = (model: Model): Option.Option<Competition> =>
   );
 
 const screenView = (model: Model): Html => {
+  // An unknown PATH names itself — only unknown club/competition SLUGS
+  // still fall back to their directory screen (see openClub below).
+  if (model.route._tag === 'NotFoundRoute') return notFoundView(model.route.path);
   const club = openClub(model);
   if (Option.isSome(club)) return clubProfileScreen(club.value, model);
   const competition = openCompetition(model);
@@ -123,6 +127,7 @@ const shellView = (model: Model): Html =>
 // a profile it's the screen's own title, and the welcome screen is just the
 // brand.
 const documentTitle = (model: Model): string => {
+  if (model.route._tag === 'NotFoundRoute') return 'Page not found — Skóreová Platform';
   if (screenOf(model.route) === 'Welcome') return 'Skóreová Platform';
   const name = Option.getOrElse(
     Option.orElse(
