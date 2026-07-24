@@ -139,10 +139,17 @@ const trendingTiles = (model: Model): Html =>
     [
       chipHeading('Trending'),
       // Three tiles (user call — five was a crowd): full-width strips on
-      // phones, one row of three from `sm`.
-      h.div(
+      // phones, one row of three from `sm`. A real list — each tile is an
+      // item AT can count and step through. The leader's col-span rides the
+      // li (the grid child) rather than the tile.
+      h.ul(
         [h.Class('mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:gap-6')],
-        trending.map((entry, index) => trendingTile(model, entry, index)),
+        trending.map((entry, index) =>
+          h.li(
+            [h.Class(clsx({ 'col-span-2 sm:col-span-1': index === 0 }))],
+            [trendingTile(model, entry, index)],
+          ),
+        ),
       ),
     ],
   );

@@ -118,6 +118,9 @@ const clubMatchScore = (home: number, away: number): Html =>
     [
       h.Class('relative z-10 -mx-2 flex shrink-0 items-baseline md:-mx-4'),
       // The parts are styled fragments — announce the result once, whole.
+      // Role('img') gives the label a role to hang on; an AriaLabel on a
+      // role-less div announces as nothing.
+      h.Role('img'),
       h.AriaLabel(`${home}–${away}`),
     ],
     [

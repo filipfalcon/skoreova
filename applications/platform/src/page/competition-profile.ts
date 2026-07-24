@@ -250,8 +250,10 @@ const leagueMatchesPanel = (competition: Competition, league: string, model: Mod
       [
         h.Type('button'),
         h.AriaLabel(label),
+        // AriaDisabled, not Disabled: a disabled end-stop dropping out of
+        // the tab order mid-interaction strands keyboard focus.
         ...(disabled
-          ? [h.Disabled(true)]
+          ? [h.AriaDisabled(true)]
           : [h.OnClick(SelectedCompetitionRound({ round: target }))]),
         h.Class(
           clsx(

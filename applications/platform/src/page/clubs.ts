@@ -317,7 +317,9 @@ export const clubsScreen = (model: Model): Html => {
       ...(filtered.length === 0
         ? [
             h.p(
-              [h.Class('mt-10 text-sm text-ink/50')],
+              // Role('status') announces the empty result to AT when it
+              // appears — visually it just showed up under the search box.
+              [h.Role('status'), h.Class('mt-10 text-sm text-ink/50')],
               [`No club matches “${model.clubQuery.trim()}”.`],
             ),
           ]

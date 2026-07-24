@@ -80,8 +80,11 @@ export const CHIP_CLASS =
 
 // A plain section chip. Used where the pin lives on the cards below rather
 // than the heading (the stat boards, since their leagues pin separately).
+// A REAL h2, not a styled span — the h3s on the cards underneath need an
+// ancestor in the outline, and the chip is visually the section heading
+// already.
 export const chipHeading = (title: string): Html =>
-  h.div([h.Class('flex')], [h.span([h.Class(CHIP_CLASS)], [title])]);
+  h.h2([h.Class('flex')], [h.span([h.Class(CHIP_CLASS)], [title])]);
 
 // A tiny pink polyline preview — the saved-charts cards and anywhere a
 // dataset needs a face without a full chart.
@@ -232,6 +235,7 @@ export const desktopNavLink = (model: Model, entry: NavEntry): Html => {
     return h.a(
       [
         h.Href(entry.href),
+        ...(active ? [h.AriaCurrent('page')] : []),
         h.Class(
           clsx(
             'display flex items-center self-center px-3.5 py-2 text-[min(14px,3.4vw)] tracking-[0.08em] whitespace-nowrap uppercase transition-colors md:px-4 md:py-2.5 md:text-sm lg:px-5 lg:text-base md:tracking-[0.14em]',
@@ -245,6 +249,7 @@ export const desktopNavLink = (model: Model, entry: NavEntry): Html => {
   return h.a(
     [
       h.Href(entry.href),
+      ...(active ? [h.AriaCurrent('page')] : []),
       // Below `md` the tab is an ICON (label hidden, aria-label carries
       // the name); from `md` up it's the plain uppercase label.
       h.AriaLabel(entry.label),
@@ -424,10 +429,12 @@ export const clubChip = (text: string, anchor: string): Html =>
 // scroll-mt clears the FIXED header (104–108px) plus a little air —
 // without it an anchored section lands with its own chip hidden behind
 // the chrome, which reads as having jumped to the wrong place.
+// The chip anchor rides inside a REAL h2 so each club section owns a spot
+// in the heading outline instead of a bare link posing as one.
 export const clubSection = (title: string, children: ReadonlyArray<Html>, anchor: string): Html =>
   h.section(
     [h.Id(anchor), h.Class('mt-16 scroll-mt-28 md:mt-20 md:scroll-mt-32')],
-    [h.div([h.Class('flex')], [clubChip(title, anchor)]), ...children],
+    [h.h2([h.Class('flex')], [clubChip(title, anchor)]), ...children],
   );
 
 // The list/profile screens' standard header: the pink section chip, the
