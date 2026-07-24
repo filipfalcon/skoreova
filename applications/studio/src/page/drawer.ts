@@ -98,16 +98,21 @@ export const drawer = (model: Model): Html => {
         [
           h.span([h.Class('text-sm font-medium text-neutral-700')], ['Editions']),
           editions.length > 0
-            ? h.div(
+            ? h.ul(
                 [h.Class('flex flex-col gap-2')],
                 editions.map((row) =>
-                  h.keyed('div')(
+                  h.keyed('li')(
                     row.id,
+                    [],
                     [
-                      h.OnClick(ClickedRecord({ section: row.section, id: row.id })),
-                      h.Class(entryCardStyle),
+                      h.button(
+                        [
+                          h.OnClick(ClickedRecord({ section: row.section, id: row.id })),
+                          h.Class(entryCardStyle),
+                        ],
+                        [h.span([h.Class('font-medium text-neutral-900')], [row.values[0] ?? ''])],
+                      ),
                     ],
-                    [h.span([h.Class('font-medium text-neutral-900')], [row.values[0] ?? ''])],
                   ),
                 ),
               )
@@ -127,7 +132,7 @@ export const drawer = (model: Model): Html => {
           [
             h.span([h.Class('text-sm font-medium text-neutral-700')], ['Teams']),
             h.div(
-              [h.Class('flex flex-wrap items-center gap-3 text-sm text-rose-700')],
+              [h.Role('alert'), h.Class('flex flex-wrap items-center gap-3 text-sm text-rose-700')],
               [
                 h.span([], [`Couldn't load teams: ${model.participations.error}`]),
                 h.button(
@@ -164,16 +169,21 @@ export const drawer = (model: Model): Html => {
         [
           h.span([h.Class('text-sm font-medium text-neutral-700')], ['Teams']),
           teams.length > 0
-            ? h.div(
+            ? h.ul(
                 [h.Class('flex flex-col gap-2')],
                 teams.map((row) =>
-                  h.keyed('div')(
+                  h.keyed('li')(
                     row.id,
+                    [],
                     [
-                      h.OnClick(ClickedRecord({ section: row.section, id: row.id })),
-                      h.Class(entryCardStyle),
+                      h.button(
+                        [
+                          h.OnClick(ClickedRecord({ section: row.section, id: row.id })),
+                          h.Class(entryCardStyle),
+                        ],
+                        [h.span([h.Class('font-medium text-neutral-900')], [row.values[0] ?? ''])],
+                      ),
                     ],
-                    [h.span([h.Class('font-medium text-neutral-900')], [row.values[0] ?? ''])],
                   ),
                 ),
               )
@@ -212,7 +222,7 @@ export const drawer = (model: Model): Html => {
           : h.div([], []),
         Option.match(model.chartError, {
           onNone: () => h.div([], []),
-          onSome: (error) => h.p([h.Class('text-xs text-rose-600')], [error]),
+          onSome: (error) => h.p([h.Role('alert'), h.Class('text-xs text-rose-600')], [error]),
         }),
         h.div(
           [h.Class('flex flex-col gap-2')],
@@ -281,7 +291,7 @@ export const drawer = (model: Model): Html => {
     const changes = model.editLog.filter((change) => change.recordId === editingId);
 
     const changeCard = (change: LogEntry): Html =>
-      h.div(
+      h.li(
         [h.Class('rounded-lg border border-neutral-200 px-3 py-2 text-sm')],
         [
           h.div(
@@ -299,9 +309,9 @@ export const drawer = (model: Model): Html => {
       );
 
     return h.div(
-      [h.Class('flex flex-1 flex-col gap-2 overflow-y-auto px-6 py-6')],
+      [h.Class('flex flex-1 flex-col overflow-y-auto px-6 py-6')],
       changes.length > 0
-        ? changes.map(changeCard)
+        ? [h.ul([h.Class('flex flex-col gap-2')], changes.map(changeCard))]
         : [h.p([h.Class('text-sm text-neutral-500')], ['No changes yet.'])],
     );
   };
@@ -378,7 +388,10 @@ export const drawer = (model: Model): Html => {
                   ),
                 ],
               ),
-              h.button([...render.closeButton, h.Class(drawerCloseStyle)], ['✕']),
+              h.button(
+                [...render.closeButton, h.AriaLabel('Close'), h.Class(drawerCloseStyle)],
+                ['✕'],
+              ),
             ],
           ),
           // Creating a new record skips Overview/History (nothing to show yet)

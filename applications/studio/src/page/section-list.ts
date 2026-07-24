@@ -136,7 +136,12 @@ export const dashboardView = (model: Model): Document => {
                 ),
                 h.button([h.OnClick(ClickedSignOut()), h.Class(signOutStyle)], ['Sign out']),
                 h.button(
-                  [h.OnClick(ToggledMenu()), h.Class(menuToggleStyle)],
+                  [
+                    h.OnClick(ToggledMenu()),
+                    h.AriaLabel('Menu'),
+                    h.AriaExpanded(model.isMenuOpen),
+                    h.Class(menuToggleStyle),
+                  ],
                   [model.isMenuOpen ? '✕' : '☰'],
                 ),
               ],
@@ -298,16 +303,25 @@ const content = (model: Model, current: Section): Html => {
 
   // Keyed by record id so re-sorting under search/filter/pagination patches by
   // identity, not position — otherwise a card's OnClick(ClickedRecord) can end
-  // up over a different row.
+  // up over a different row. Each card is a real <button> in a list item, so
+  // it's focusable and announced as one of N records.
   const entryCard = ({ entry }: { entry: Entry }): Html =>
-    h.keyed('div')(
+    h.keyed('li')(
       entry.id,
-      [h.OnClick(ClickedRecord({ section: entry.section, id: entry.id })), h.Class(entryCardStyle)],
+      [],
       [
-        h.span([h.Class('font-medium text-neutral-900')], [entry.values[0] ?? '']),
-        h.div(
-          [h.Class('mt-1 flex flex-wrap items-center gap-2')],
-          columns.slice(1).map((column, i) => fieldBadge(column, entry.values[i + 1] ?? '')),
+        h.button(
+          [
+            h.OnClick(ClickedRecord({ section: entry.section, id: entry.id })),
+            h.Class(entryCardStyle),
+          ],
+          [
+            h.span([h.Class('font-medium text-neutral-900')], [entry.values[0] ?? '']),
+            h.div(
+              [h.Class('mt-1 flex flex-wrap items-center gap-2')],
+              columns.slice(1).map((column, i) => fieldBadge(column, entry.values[i + 1] ?? '')),
+            ),
+          ],
         ),
       ],
     );
@@ -526,6 +540,7 @@ const content = (model: Model, current: Section): Html => {
     if (sectionState._tag !== 'Failure') return h.div([], []);
     return h.div(
       [
+        h.Role('alert'),
         h.Class(
           'mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3',
         ),
@@ -546,6 +561,7 @@ const content = (model: Model, current: Section): Html => {
     if (model.linkError === '') return h.div([], []);
     return h.div(
       [
+        h.Role('alert'),
         h.Class(
           'mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3',
         ),
@@ -586,8 +602,11 @@ const content = (model: Model, current: Section): Html => {
               h.div(
                 [h.Class(refreshControlStyle)],
                 [
+                  // Role('status') makes the diode a live region, so a health
+                  // flip is announced, not just recolored.
                   h.span(
                     [
+                      h.Role('status'),
                       h.AriaLabel(
                         model.serverHealth === 'Down' ? 'Server unreachable' : 'Server reachable',
                       ),
@@ -596,7 +615,12 @@ const content = (model: Model, current: Section): Html => {
                     [],
                   ),
                   h.button(
-                    [h.OnClick(retry), h.Disabled(pending), h.Class(refreshButtonStyle)],
+                    [
+                      h.OnClick(retry),
+                      h.Disabled(pending),
+                      h.AriaLive('polite'),
+                      h.Class(refreshButtonStyle),
+                    ],
                     [pending ? 'Refreshing…' : model.serverHealth === 'Down' ? 'Retry' : 'Refresh'],
                   ),
                 ],
@@ -639,8 +663,8 @@ const content = (model: Model, current: Section): Html => {
             Array.makeBy(5, () => skeletonCard()),
           )
         : pageItems.length > 0
-          ? h.div([h.Class('mt-6 flex flex-col gap-2')], pageItems.map(entryCard))
-          : h.p([h.Class('mt-6 text-sm text-neutral-500')], ['No matches.']),
+          ? h.ul([h.Class('mt-6 flex flex-col gap-2')], pageItems.map(entryCard))
+          : h.p([h.Role('status'), h.Class('mt-6 text-sm text-neutral-500')], ['No matches.']),
       pagination(),
     ],
   );

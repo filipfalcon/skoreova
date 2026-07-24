@@ -109,7 +109,10 @@ export const loginView = (model: Model): Document => {
                             'The Skóreová editorial workspace. Access is limited to members of the editorial team.',
                           ],
                         ),
-                        h.button([h.Type('submit'), h.Class(submitStyle)], ['→']),
+                        h.button(
+                          [h.Type('submit'), h.AriaLabel('Sign in'), h.Class(submitStyle)],
+                          ['→'],
+                        ),
                       ],
                     ),
                   ],
