@@ -8,13 +8,7 @@ import spartaHeroPhoto from '../assets/clubs-hero/sparta-praha.webp';
 import commentaryAvatar from '../assets/commentary-avatar.png';
 import { clubMatchesSections } from '../club-matches';
 import { clubSection, timesCount } from '../components';
-import {
-  cupRun,
-  firstLeagueStandings,
-  leagueRounds,
-  scorersFor,
-  secondLeagueStandings,
-} from '../data';
+import { cupRun, standingsFor, leagueRounds, scorersFor } from '../data';
 import type { Club, Scorer } from '../data';
 import { SelectedScorerScope, ToggledFollow } from '../message';
 import type { Message } from '../message';
@@ -95,7 +89,7 @@ const clubHeroPhotos: Record<string, { readonly photo: string; readonly focus: s
 // dates line up and nothing depends on today's date.
 
 const clubStandingsSection = (target: Club): Html => {
-  const rows = target.league === 'First League' ? firstLeagueStandings : secondLeagueStandings;
+  const rows = standingsFor(target.league);
   const totalRounds = leagueRounds[target.league] ?? rows[0]?.played ?? 0;
   return clubSection(
     'Standings',

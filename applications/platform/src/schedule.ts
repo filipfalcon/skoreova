@@ -1,4 +1,7 @@
-import { hashSlug } from './data';
+import { Match as M } from 'effect';
+
+import type { Competition } from './data';
+import { hashSlug, standingsFor } from './data';
 
 // Fixture generation: a round-robin season generator plus the seeded
 // scoreline mock. Shared by the matches screen and both profile screens.
@@ -81,3 +84,17 @@ export const mockScore = (seed: string): readonly [number, number] => {
   const hash = hashSlug(seed);
   return [hash % 5, (hash >> 3) % 4];
 };
+
+// How many rounds a competition's picker can address: a league season's
+// full double round-robin, or a single "round" for knockout competitions
+// (which render no picker). SelectedCompetitionRound clamps against this in
+// `update`, so the Model never holds an out-of-range round.
+export const competitionRoundCount = (competition: Competition): number =>
+  M.value(competition.standings).pipe(
+    M.withReturnType<number>(),
+    M.tagsExhaustive({
+      TableStandings: ({ league }) =>
+        roundRobinRounds(standingsFor(league).map((row) => row.team)).length,
+      TiesStandings: () => 1,
+    }),
+  );

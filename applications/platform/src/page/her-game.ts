@@ -1,5 +1,5 @@
 import { RadioGroup } from '@foldkit/ui';
-import { Match as M, Option } from 'effect';
+import { Match as M, Number, Option } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
@@ -52,14 +52,28 @@ const metricRadioGroup = (model: Model): Html =>
 
 // The studio chart: 14 matchday bars, three faint gridlines, and a dashed
 // season-average line. Pure SVG — the real chart engine replaces this.
+
+// Fixed geometry, in viewBox units: bars rise CHART_PLOT_HEIGHT above the
+// CHART_BASELINE_Y axis line, one bar per BAR_STEP with the axis labels a
+// hair under the baseline.
+const CHART_WIDTH = 560;
+const CHART_HEIGHT = 244;
+const CHART_BASELINE_Y = 220;
+const CHART_PLOT_HEIGHT = 190;
+const BAR_STEP = 40;
+const BAR_INSET = 8;
+const BAR_WIDTH = 24;
+const AXIS_LABEL_Y = 238;
+const BAR_DELAY_STEP_SECONDS = 0.035;
+
 const studioChart = (series: MetricSeries): Html => {
   const max = Math.max(...series.values);
-  const average = series.values.reduce((sum, value) => sum + value, 0) / series.values.length;
-  const averageY = 220 - (average / max) * 190;
+  const average = Number.sumAll(series.values) / series.values.length;
+  const averageY = CHART_BASELINE_Y - (average / max) * CHART_PLOT_HEIGHT;
   return h.svg(
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
-      h.ViewBox('0 0 560 244'),
+      h.ViewBox(`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`),
       h.Class('mt-8 w-full'),
       h.AriaHidden(true),
     ],
@@ -68,9 +82,9 @@ const studioChart = (series: MetricSeries): Html => {
         h.line(
           [
             h.X1('0'),
-            h.X2('560'),
-            h.Y1(`${220 - fraction * 190}`),
-            h.Y2(`${220 - fraction * 190}`),
+            h.X2(`${CHART_WIDTH}`),
+            h.Y1(`${CHART_BASELINE_Y - fraction * CHART_PLOT_HEIGHT}`),
+            h.Y2(`${CHART_BASELINE_Y - fraction * CHART_PLOT_HEIGHT}`),
             h.Stroke('rgba(13, 12, 12, 0.08)'),
             h.StrokeWidth('1'),
           ],
@@ -80,12 +94,12 @@ const studioChart = (series: MetricSeries): Html => {
       ...series.values.map((value, index) =>
         h.rect(
           [
-            h.X(`${index * 40 + 8}`),
-            h.Y(`${220 - (value / max) * 190}`),
-            h.Width('24'),
-            h.Height(`${(value / max) * 190}`),
+            h.X(`${index * BAR_STEP + BAR_INSET}`),
+            h.Y(`${CHART_BASELINE_Y - (value / max) * CHART_PLOT_HEIGHT}`),
+            h.Width(`${BAR_WIDTH}`),
+            h.Height(`${(value / max) * CHART_PLOT_HEIGHT}`),
             h.Class('bar fill-pink/75 transition-colors hover:fill-pink'),
-            h.Style({ '--bar-delay': `${index * 0.035}s` }),
+            h.Style({ '--bar-delay': `${index * BAR_DELAY_STEP_SECONDS}s` }),
           ],
           [],
         ),
@@ -93,7 +107,7 @@ const studioChart = (series: MetricSeries): Html => {
       h.line(
         [
           h.X1('0'),
-          h.X2('560'),
+          h.X2(`${CHART_WIDTH}`),
           h.Y1(`${averageY}`),
           h.Y2(`${averageY}`),
           h.Stroke('var(--color-ink)'),
@@ -106,9 +120,9 @@ const studioChart = (series: MetricSeries): Html => {
       h.line(
         [
           h.X1('0'),
-          h.X2('560'),
-          h.Y1('220'),
-          h.Y2('220'),
+          h.X2(`${CHART_WIDTH}`),
+          h.Y1(`${CHART_BASELINE_Y}`),
+          h.Y2(`${CHART_BASELINE_Y}`),
           h.Stroke('rgba(13, 12, 12, 0.25)'),
           h.StrokeWidth('1'),
         ],
@@ -121,8 +135,8 @@ const studioChart = (series: MetricSeries): Html => {
           ? [
               h.text(
                 [
-                  h.X(`${index * 40 + 20}`),
-                  h.Y('238'),
+                  h.X(`${index * BAR_STEP + BAR_STEP / 2}`),
+                  h.Y(`${AXIS_LABEL_Y}`),
                   // No dedicated helper for text-anchor — it's a styleable SVG
                   // property, so the inline style does the same job.
                   h.Class('fill-ink/30 text-[10px]'),

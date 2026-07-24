@@ -5,7 +5,7 @@ import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
 import { panel, pinkTick, sectionLabel } from '../components';
-import { firstLeagueStandings, secondLeagueStandings } from '../data';
+import { standingsFor } from '../data';
 import type { Competition, Edition } from '../data';
 import { SelectedCompetitionEdition, SelectedCompetitionRound } from '../message';
 import type { Message } from '../message';
@@ -74,7 +74,7 @@ const standingsPanel = (
   league: string,
   highlightTeam: Option.Option<string>,
 ): Html => {
-  const rows = league === 'First League' ? firstLeagueStandings : secondLeagueStandings;
+  const rows = standingsFor(league);
   return h.section(
     [h.Class(`${panel} p-6 md:p-8`)],
     [
@@ -231,18 +231,12 @@ export const competitionMatchesPanel = (competition: Competition, model: Model):
   );
 
 const leagueMatchesPanel = (competition: Competition, league: string, model: Model): Html => {
-  const teams = (league === 'First League' ? firstLeagueStandings : secondLeagueStandings).map(
-    (row) => row.team,
-  );
+  const teams = standingsFor(league).map((row) => row.team);
   const rounds = roundRobinRounds(teams);
   const total = rounds.length;
-  const open = Math.min(
-    total,
-    Math.max(
-      1,
-      Option.getOrElse(model.competitionRound, () => MATCHDAYS_PLAYED),
-    ),
-  );
+  // Always in range — SelectedCompetitionRound clamps in `update` (None =
+  // the current matchday).
+  const open = Option.getOrElse(model.competitionRound, () => MATCHDAYS_PLAYED);
   const matches = rounds[open - 1] ?? [];
   const arrow = (target: number, glyph: string, label: string): Html => {
     const disabled = target < 1 || target > total;

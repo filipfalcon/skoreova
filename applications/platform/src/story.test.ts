@@ -5,6 +5,7 @@ import { fromString } from 'foldkit/url';
 import { expect, test } from 'vitest';
 
 import { clubsModel, welcomeModel } from './main.fixtures';
+import { CompetitionRoute } from './route';
 import {
   ChangedUrl,
   ClickedLink,
@@ -43,7 +44,10 @@ test('selecting a chart metric records it and fires no command', () => {
 test('scope is a field write; edition and round fold their current sentinel to None', () => {
   Story.story(
     update,
-    Story.with(welcomeModel),
+    // The round picker only exists on a competition profile — the clamp in
+    // `update` bounds rounds against THAT competition's schedule, so the
+    // fixture must have one open.
+    Story.with({ ...welcomeModel, route: CompetitionRoute({ slug: 'first-league' }) }),
     Story.message(SelectedScorerScope({ scope: 'League' })),
     Story.message(SelectedCompetitionEdition({ label: '2023/24' })),
     Story.message(SelectedCompetitionRound({ round: 7 })),

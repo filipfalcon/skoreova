@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { Array, Number, Option } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
@@ -221,11 +222,14 @@ export const statCard = (
   pinId: string,
   label: string,
 ): Html => {
-  const current = entry.rounds[entry.rounds.length - 1] ?? 0;
-  const previous = entry.rounds[entry.rounds.length - 2] ?? current;
+  const current = Option.getOrElse(Array.last(entry.rounds), () => 0);
+  const previous = Option.getOrElse(
+    Array.get(entry.rounds, entry.rounds.length - 2),
+    () => current,
+  );
   const up = current >= previous;
   const deltaPct = previous === 0 ? 0 : (Math.abs(current - previous) / previous) * 100;
-  const season = entry.rounds.reduce((sum, value) => sum + value, 0);
+  const season = Number.sumAll(entry.rounds);
   return h.div(
     [h.Class('relative')],
     [
