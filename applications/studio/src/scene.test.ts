@@ -25,7 +25,8 @@ describe('view', () => {
       Scene.with(signedOutModel),
       Scene.expect(Scene.role('heading', { name: 'Sign in' })).toExist(),
       Scene.expect(Scene.placeholder('email address')).toExist(),
-      Scene.expect(Scene.role('button', { name: '→' })).toExist(),
+      // The arrow submit button's accessible name comes from its AriaLabel.
+      Scene.expect(Scene.role('button', { name: 'Sign in' })).toExist(),
     );
   });
 

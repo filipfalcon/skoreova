@@ -9,8 +9,11 @@ export const cardStyle =
 export const chipStyle =
   'rounded-full border border-white/30 bg-white/20 px-4 py-1.5 text-sm text-white';
 
+// The text inputs replace the browser's default outline with their own
+// focus-visible one (outline-none alone would leave keyboard focus with only
+// a subtle border shift — invisible at a glance).
 export const inputStyle =
-  'w-full rounded-full border border-white/30 bg-white/25 px-5 py-3 text-white placeholder-white/70 outline-none transition focus:border-white/60 focus:bg-white/35';
+  'w-full rounded-full border border-white/30 bg-white/25 px-5 py-3 text-white placeholder-white/70 outline-none transition focus:border-white/60 focus:bg-white/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
 
 export const forgotStyle =
   'mt-4 inline-block text-sm text-white/90 underline underline-offset-4 hover:text-white';
@@ -48,8 +51,10 @@ export const homeCardCountStyle = 'text-3xl font-semibold text-neutral-900';
 
 export const homeCardLabelStyle = 'text-sm text-neutral-500';
 
+// Rendered on real <button>s inside ul/li record lists, so the block layout
+// and left alignment the old div cards got for free are explicit.
 export const entryCardStyle =
-  'cursor-pointer rounded-xl border border-neutral-200 bg-white px-4 py-3 transition hover:border-neutral-400';
+  'block w-full cursor-pointer rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left transition hover:border-neutral-400';
 
 export const pillWrapStyle = 'inline-flex items-stretch overflow-hidden rounded-full text-xs';
 
@@ -85,10 +90,10 @@ export const paginationButtonStyle =
   'cursor-pointer rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50';
 
 export const searchInputStyle =
-  'w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900 placeholder-neutral-400 outline-none transition focus:border-neutral-500';
+  'w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900 placeholder-neutral-400 outline-none transition focus:border-neutral-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
 
 export const filterSelectStyle =
-  'cursor-pointer rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 outline-none transition hover:border-neutral-400 focus:border-neutral-500';
+  'cursor-pointer rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 outline-none transition hover:border-neutral-400 focus:border-neutral-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
 
 // Positioning comes from the Listbox's Floating UI anchor, not these classes.
 export const filterDropdownPanelStyle =
@@ -110,7 +115,7 @@ export const filterDropdownRowStyle =
   'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100';
 
 export const drawerInputStyle =
-  'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500';
+  'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
 
 export const drawerCloseStyle =
   'cursor-pointer rounded-full px-2 text-lg leading-none text-neutral-500 transition hover:text-neutral-900';
