@@ -2,7 +2,8 @@ import { Schema as S } from 'effect';
 
 // In dev, go through the Vite proxy (see vite.config.ts) as a relative path —
 // same-origin, so the browser never makes a cross-origin request and CORS
-// doesn't apply. TODO: point at the deployed API's real URL once it exists.
+// doesn't apply. There is no deployed API yet, so production builds still
+// target the local gateway; this constant is where its real origin lands.
 export const GATEWAY_BASE_URL = import.meta.env.DEV ? '' : 'http://localhost:1340';
 
 export const PAGE_SIZE = 10;
