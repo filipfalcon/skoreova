@@ -3,7 +3,7 @@
 
 import { Array, Effect, Option, Schema as S, pipe } from 'effect';
 import { Command, Dom } from 'foldkit';
-import { load, pushUrl } from 'foldkit/navigation';
+import { load as loadUrl, pushUrl } from 'foldkit/navigation';
 
 import {
   CompletedFocusMenuToggle,
@@ -12,6 +12,7 @@ import {
   CompletedSetScrollLock,
   DetectedActiveSection,
 } from './message';
+import type { Message } from './message';
 import { menuEntries } from './data';
 
 // COMMAND
@@ -106,7 +107,7 @@ export const Load = Command.define(
   'Load',
   { href: S.String },
   CompletedLoad,
-)(({ href }) => load(href).pipe(Effect.as(CompletedLoad())));
+)(({ href }) => loadUrl(href).pipe(Effect.as(CompletedLoad())));
 
 // Locks/unlocks page scrolling while the menu overlay is open. Delegates to
 // Foldkit's Dom.lockScroll/unlockScroll: they lock via `overflow: hidden`
@@ -165,3 +166,21 @@ export const DetectActiveSection = Command.define(
     return DetectedActiveSection({ section });
   }),
 );
+
+// CALL-SITE FACTORIES
+//
+// Verb-named wrappers over the PascalCase definitions above — `update`
+// dispatches intent (`navigate(url, …)`), while the definitions keep their
+// PascalCase identities for Story matchers (`Story.Command.resolve(Navigate…)`).
+
+export const navigate = (url: string, reduceMotion: boolean): Command.Command<Message> =>
+  Navigate({ url, reduceMotion });
+
+export const load = (href: string): Command.Command<Message> => Load({ href });
+
+export const setScrollLock = (locked: boolean): Command.Command<Message> =>
+  SetScrollLock({ locked });
+
+export const detectActiveSection = (): Command.Command<Message> => DetectActiveSection();
+
+export const focusMenuToggle = (): Command.Command<Message> => FocusMenuToggle();
