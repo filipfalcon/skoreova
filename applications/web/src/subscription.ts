@@ -1,11 +1,11 @@
 // Landing page subscriptions: smooth wheel scrolling (a model-gated,
 // no-emission DOM effect) and Escape-to-close for the menu overlay.
 
-import { Effect, Schema as S, Stream } from 'effect';
+import { Effect, Option, Schema as S, Stream } from 'effect';
 import { Subscription } from 'foldkit';
 
 import type { Model } from './model';
-import { type Message, ChangedReducedMotion, PressedMenuEscape } from './message';
+import { type Message, ChangedReducedMotion, ClosedMapClub, PressedMenuEscape } from './message';
 
 // SUBSCRIPTIONS
 
@@ -75,24 +75,28 @@ const smoothWheelScroll: Stream.Stream<never> = Stream.callback<never>((_queue) 
   }),
 );
 
-// Escape closes the open menu — the standard keyboard contract for a
-// full-screen overlay. A document-level stream (not `OnKeyDown` on the
-// overlay) because focus usually sits on the header toggle right after
+// Escape closes whatever overlay is up — the standard keyboard contract.
+// The full-screen menu wins when open (it covers the page); otherwise an
+// open map club card closes. A document-level stream (not `OnKeyDown` on
+// the overlay) because focus usually sits on the header toggle right after
 // opening, so the overlay itself never sees the keydown. The subscription
-// only exists while the menu is open; closing tears it down.
+// only exists while something is dismissible; closing tears it down.
 export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
-  menuEscape: entry(
-    { isMenuOpen: S.Boolean },
+  escapeDismiss: entry(
+    { isMenuOpen: S.Boolean, hasMapClub: S.Boolean },
     {
-      modelToDependencies: (model) => ({ isMenuOpen: model.isMenuOpen }),
-      dependenciesToStream: ({ isMenuOpen }) =>
-        isMenuOpen
+      modelToDependencies: (model) => ({
+        isMenuOpen: model.isMenuOpen,
+        hasMapClub: Option.isSome(model.mapClub),
+      }),
+      dependenciesToStream: ({ isMenuOpen, hasMapClub }) =>
+        isMenuOpen || hasMapClub
           ? Stream.fromEventListener<KeyboardEvent>(document, 'keydown').pipe(
               Stream.filter((event) => event.key === 'Escape'),
-              // Just the Message — the focus hand-back to the toggle runs as
-              // a Command from the update handler (FocusMenuToggle), not as
-              // a DOM side effect smuggled into the stream.
-              Stream.map(() => PressedMenuEscape()),
+              // Just the Message — the menu path's focus hand-back to the
+              // toggle runs as a Command from the update handler
+              // (FocusMenuToggle), not as a DOM side effect in the stream.
+              Stream.map(() => (isMenuOpen ? PressedMenuEscape() : ClosedMapClub())),
             )
           : Stream.empty,
     },
