@@ -1,4 +1,4 @@
-import { Effect, Schema as S } from 'effect';
+import { Effect, Schema as S, String as Str, pipe } from 'effect';
 import { HttpClient } from 'effect/unstable/http';
 import { Http } from 'foldkit';
 
@@ -9,6 +9,10 @@ import { Http } from 'foldkit';
 export const GATEWAY_BASE_URL = import.meta.env.DEV ? '' : 'http://localhost:1340';
 
 export const PAGE_SIZE = 10;
+
+// The backend's ALLCAPS enum values ('FORWARD', 'CLUB', …) as display labels
+// ('Forward', 'Club') — shared by every *Api row mapper.
+export const titleCase = (value: string): string => pipe(value, Str.toLowerCase, Str.capitalize);
 
 // Every list endpoint returns this envelope around its items.
 export const Page = <Item extends S.Top>(item: Item) =>
