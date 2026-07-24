@@ -15,9 +15,9 @@ import type { MapLeague, Model } from '../model';
 
 const h = html<Message>();
 
-// A pin filtered out by the league toggle stays on the map but recedes —
-// dimmed and desaturated rather than removed, so the country never empties
-// and switching back feels instant.
+// A pin filtered out by the league toggle is hidden outright (display:none
+// on its wrapper — see the pin wrapper below), never removed from the DOM,
+// so switching back is instant and the reveal system keeps its targets.
 // Which historical land each club belongs to — everything not listed is
 // Bohemian. Drives the region checkboxes: unchecking a land removes its
 // pins from the map entirely. Jihlava counts as Moravian: the map draws
@@ -670,8 +670,8 @@ export const clubsView = (model: Model): Html =>
           h.div(
             [h.DataAttribute('reveal-group', 'replay')],
             [
-              // League filter — 'all' keeps both flights lit, a league dims
-              // the other one's pins. It sits ON the map's beat, right-aligned
+              // League filter — 'all' keeps both flights on the map, a league
+              // hides the other one's pins. It sits ON the map's beat, right-aligned
               // to the stage: it is a MAP control, and up in the headline band
               // it floated orphaned in the section's landing frame (the menu
               // jump shows the head of the section while the map it controls
