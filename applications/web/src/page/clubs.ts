@@ -272,6 +272,9 @@ const clubPin = (model: Model, club: Club): Html => {
               h.Type('button'),
               h.OnClick(selected ? ClosedMapClub() : OpenedMapClub({ slug: club.slug })),
               h.AriaLabel(`${club.name} — ${club.city}, ${club.league}`),
+              // The pin toggles its club card open/closed — say so, instead
+              // of signalling selection by ring color alone.
+              h.AriaExpanded(selected),
               h.Class(
                 clsx(
                   'club-pin-chip absolute flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-[scale,box-shadow] delay-[250ms] duration-300 group-hover:scale-110 group-hover:delay-0 group-hover:duration-150 sm:h-10 sm:w-10 sm:p-2 md:h-16 md:w-16 md:p-3',
@@ -618,9 +621,14 @@ export const clubsView = (model: Model): Html =>
                     ],
                     [
                       h.div([h.Class('mb-4 h-1 w-12 bg-pink')], []),
+                      // Aria-hidden: the count-up/recount rewrites this
+                      // text mid-flight — the sr-only twin (model-driven,
+                      // so it follows the league filter too) carries the
+                      // real value for screen readers.
                       h.div(
                         [
                           h.Class('display text-fluid-6xl-7xl text-pink'),
+                          h.AriaHidden(true),
                           h.DataAttribute('countup', ''),
                           // EVERY league-filter interaction spins the
                           // counter, value change or not — motion.ts
@@ -630,6 +638,7 @@ export const clubsView = (model: Model): Html =>
                         ],
                         [value],
                       ),
+                      h.span([h.Class('sr-only')], [value]),
                       h.div(
                         [
                           h.Class(

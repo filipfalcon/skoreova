@@ -256,6 +256,7 @@ export const headerView = (model: Model): Html =>
                   h.OnClick(ToggledMenu()),
                   h.AriaLabel(model.isMenuOpen ? 'Close menu' : 'Open menu'),
                   h.AriaExpanded(model.isMenuOpen),
+                  h.AriaControls('menu-overlay'),
                   // The text size exists for the glyph alone (the button has
                   // no text): menuGlyph is 0.875em tall, so tracking the
                   // wordmark's text-xl/2xl keeps the two the same height.
@@ -274,9 +275,18 @@ export const headerView = (model: Model): Html =>
     ],
   );
 
+// NOTE: this overlay deliberately hand-rolls what Ui.Dialog would provide.
+// The full-screen menu is a brand moment (staggered anchors, the sliding
+// pink underlays, its own scroll), not a boxed dialog — and the dialog
+// contract is already covered by hand: the page behind goes `inert`
+// (page.ts), Escape closes via the menuEscape subscription, focus returns
+// to the toggle (FocusMenuToggle), and the toggle carries
+// AriaExpanded/AriaControls. If Ui.Dialog ever grows a fullscreen variant,
+// this is the first candidate to fold in.
 export const menuOverlayView = (model: Model): Html =>
   h.nav(
     [
+      h.Id('menu-overlay'),
       h.Class(
         clsx(
           'menu-overlay fixed inset-0 z-40 flex flex-col justify-between gap-y-8 overflow-y-auto bg-ink pt-24 pb-10',

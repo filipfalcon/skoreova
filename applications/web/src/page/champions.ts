@@ -211,8 +211,11 @@ const seasonReceiptsGrid = (): Html =>
               // scramble instead (same device as the "unstoppable"
               // stats in section 01). On an INNER span: the reveal
               // handler only scans a target's DESCENDANTS for
-              // [data-scramble].
-              h.span([h.DataAttribute('scramble', '')], ['7:0']),
+              // [data-scramble]. The animated node is aria-hidden (its
+              // text is mid-roll garbage to a screen reader) — the
+              // sr-only twin carries the real value.
+              h.span([h.AriaHidden(true), h.DataAttribute('scramble', '')], ['7:0']),
+              h.span([h.Class('sr-only')], ['7:0']),
             ],
           ),
           h.p(
@@ -575,13 +578,17 @@ const honorsBoard = (): Html =>
                   h.Style({ '--reveal-delay': `${index * 0.12}s` }),
                 ],
                 [
+                  // Aria-hidden: the count-up rewrites this text from 0 —
+                  // the sr-only twin holds the real value throughout.
                   h.span(
                     [
                       h.Class('display text-fluid-5xl-7xl leading-none text-pink'),
+                      h.AriaHidden(true),
                       h.DataAttribute('countup', ''),
                     ],
                     [honor.count],
                   ),
+                  h.span([h.Class('sr-only')], [honor.count]),
                   // Label + stamp share one sub-row: the flex
                   // container's baseline is the label's (so the
                   // count still baseline-aligns), and items-center

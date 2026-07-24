@@ -178,9 +178,12 @@ export const storyView = (): Html =>
                 ],
                 [
                   h.div([h.Class('mb-4 h-1 w-12 bg-ink')], []),
+                  // Aria-hidden + sr-only twin: mid-animation the visible
+                  // text is a rolling intermediate, not the stat.
                   h.span(
                     [
                       h.Class('display block text-fluid-7xl-8xl text-pink'),
+                      h.AriaHidden(true),
                       // Values a count-up can't serve get the slot-machine
                       // scramble instead (motion.ts) — same tempo, so the
                       // three stats still land together.
@@ -190,6 +193,7 @@ export const storyView = (): Html =>
                     ],
                     [stat.value],
                   ),
+                  h.span([h.Class('sr-only')], [stat.value]),
                   h.span(
                     [
                       h.Class(
