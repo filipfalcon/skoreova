@@ -100,14 +100,14 @@ export const update = (model: Model, message: Message): UpdateReturn =>
   M.value(message).pipe(
     withUpdateReturn,
     M.tagsExhaustive({
+      // Internal links only PUSH the url — the runtime answers with
+      // ChangedUrl, which is the single place a route is applied to the
+      // model (applying here too double-applied every navigation).
       ClickedLink: ({ request }) =>
         M.value(request).pipe(
           withUpdateReturn,
           M.tagsExhaustive({
-            Internal: ({ url }) => [
-              applyRoute(model, urlToAppRoute(url)),
-              [Navigate({ url: urlToString(url) })],
-            ],
+            Internal: ({ url }) => [model, [Navigate({ url: urlToString(url) })]],
             External: ({ href }) => [model, [Load({ href })]],
           }),
         ),
