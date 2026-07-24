@@ -1,8 +1,10 @@
+import { Array, Option } from 'effect';
+import { Calendar } from 'foldkit';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
 import { clubSection, drawnRightArrow } from './components';
-import { clubs, firstLeagueStandings, hashSlug, leagueRounds, secondLeagueStandings } from './data';
+import { clubs, hashSlug, leagueRounds, standingsFor } from './data';
 import type { Club } from './data';
 import type { Message } from './message';
 import { matchesRouter } from './route';
@@ -10,8 +12,9 @@ import { leagueSchedule, mockScore } from './schedule';
 
 const h = html<Message>();
 
-const SEASON_OPENING = Date.UTC(2025, 7, 16); // 16 Aug 2025, a Saturday
-const DAY_MS = 86400000;
+// The season opens Sat 16 Aug 2025; league rounds land a week apart.
+const SEASON_OPENING = Calendar.make(2025, 8, 16);
+const DAYS_PER_ROUND = 7;
 
 const KICKOFFS = ['14:00', '16:00', '17:30', '19:00'] as const;
 
@@ -25,7 +28,7 @@ interface ClubMatch {
 
 // Every round this club actually plays, in order.
 const clubMatches = (target: Club): ReadonlyArray<ClubMatch> => {
-  const rows = target.league === 'First League' ? firstLeagueStandings : secondLeagueStandings;
+  const rows = standingsFor(target.league);
   const totalRounds = leagueRounds[target.league] ?? rows.length;
   return leagueSchedule(
     rows.map((row) => row.team),
@@ -39,12 +42,9 @@ const clubMatches = (target: Club): ReadonlyArray<ClubMatch> => {
 // The date is SECONDARY here (user call), so it is one quiet line rather
 // than the big stacked numeral the strip used to lead with.
 const roundDate = (round: number): string =>
-  new Date(SEASON_OPENING + (round - 1) * 7 * DAY_MS).toLocaleDateString('en-US', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    timeZone: 'UTC',
-  });
+  Calendar.toDateLocal(
+    Calendar.addDays(SEASON_OPENING, (round - 1) * DAYS_PER_ROUND),
+  ).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
 
 interface PlayedMatch {
   readonly match: ClubMatch;
@@ -253,13 +253,13 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
 // labelling the cards used to do for themselves. Side by side from md
 // (user call), stacked below it.
 export const clubMatchesSections = (target: Club): Html => {
-  const rows = target.league === 'First League' ? firstLeagueStandings : secondLeagueStandings;
+  const rows = standingsFor(target.league);
   const playedRounds = rows[0]?.played ?? 0;
   const entries = clubMatches(target).map((match, index) =>
     describeMatch(target, match, index, match.round <= playedRounds),
   );
   const played = entries.filter((entry) => entry.isPlayed);
-  const last = played[played.length - 1];
+  const last = Option.getOrUndefined(Array.last(played));
   const next = entries.find((entry) => !entry.isPlayed);
   // Start of the season has no result yet, the end has no fixture left —
   // each section simply drops out on its own, and the survivor takes the

@@ -24,6 +24,8 @@ import {
   UpdatedClubQuery,
 } from './message';
 import { Load, Navigate, ReadPins, WritePins } from './command';
+import { competitions, featuredClubs } from './data';
+import { competitionRoundCount } from './schedule';
 
 // The Model, Messages, Commands, data, shared components, and the screens each
 // live in their own module (model.ts, message.ts, command.ts, data.ts,
@@ -49,9 +51,6 @@ export {
   ToggledPin,
   UpdatedClubQuery,
 };
-
-// COMMAND — see command.ts.
-export { Load, Navigate, ReadPins, WritePins };
 
 // UPDATE
 
@@ -90,6 +89,14 @@ export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
   [ReadPins()],
 ];
 
+// The round picker's bound for the competition the route has open — 1 when
+// no competition profile is showing (nothing sends rounds from elsewhere).
+const openCompetitionRoundCount = (model: Model): number => {
+  const slug = model.route._tag === 'CompetitionRoute' ? model.route.slug : undefined;
+  const competition = competitions.find((candidate) => candidate.slug === slug);
+  return competition === undefined ? 1 : competitionRoundCount(competition);
+};
+
 // The pair returned by `update` (and by the nested match on link requests):
 // the next model and the commands to run. Extracted so the shape is named
 // once rather than spelled out at every `withReturnType`.
@@ -125,14 +132,28 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         }),
         [],
       ],
+      // Clamped HERE against the open competition's schedule — the Model
+      // never holds an out-of-range round (0 stays the "current" sentinel,
+      // stored as None).
       SelectedCompetitionRound: ({ round }) => [
         evo(model, {
-          competitionRound: () => (round === 0 ? Option.none() : Option.some(round)),
+          competitionRound: () =>
+            round === 0
+              ? Option.none()
+              : Option.some(Math.min(openCompetitionRoundCount(model), Math.max(1, round))),
         }),
         [],
       ],
       UpdatedClubQuery: ({ query }) => [evo(model, { clubQuery: () => query }), []],
-      SelectedFeaturedClub: ({ index }) => [evo(model, { featuredClub: () => index }), []],
+      // Wrapped HERE, not in the view — `featuredClub` is always a valid
+      // index into featuredClubs, so consumers read it straight.
+      SelectedFeaturedClub: ({ index }) => [
+        evo(model, {
+          featuredClub: () =>
+            ((index % featuredClubs.length) + featuredClubs.length) % featuredClubs.length,
+        }),
+        [],
+      ],
       ToggledFollow: ({ slug }) => [
         evo(model, {
           followed: (followed) =>
@@ -154,6 +175,9 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       CompletedWritePins: () => [model, []],
     }),
   );
+
+// COMMAND — see command.ts.
+export { Load, Navigate, ReadPins, WritePins };
 
 // DATA — all placeholder while the platform wires up.
 

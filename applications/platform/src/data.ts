@@ -637,6 +637,29 @@ export const secondLeagueStandings: ReadonlyArray<StandingsRow> = [
   { team: 'ABC Braník', played: 14, scored: 8, conceded: 37, points: 4 },
 ];
 
+// The standings table backing a league — the one place the league-name
+// dispatch lives (five call sites used to repeat this ternary).
+export const standingsFor = (league: string): ReadonlyArray<StandingsRow> =>
+  league === 'First League' ? firstLeagueStandings : secondLeagueStandings;
+
+// EUROPEAN CONTENDERS (clubs screen) — the featured-club carousel entries.
+// Lives here (not in the view) so `update` can wrap SelectedFeaturedClub
+// against the list's length.
+export type FeaturedClub = Readonly<{
+  slug: string;
+  // The Universe-style kicker line above the name.
+  epithet: string;
+  // '' until the user supplies the artwork — the crest carries the slot.
+  photo: string;
+  focus: string;
+}>;
+
+export const featuredClubs: ReadonlyArray<FeaturedClub> = [
+  { slug: 'sparta-praha', epithet: 'The record champions', photo: spartaPhoto, focus: '50% 30%' },
+  { slug: 'slavia-praha', epithet: 'The eternal rivals', photo: '', focus: '50% 30%' },
+  { slug: 'slovan-liberec', epithet: 'The pride of the north', photo: '', focus: '50% 30%' },
+];
+
 export const cupRun: ReadonlyArray<CupTie> = [
   { round: 'Round of 16', result: 'Won 3:0', isUpcoming: false },
   { round: 'Quarters', result: 'Won 2:1', isUpcoming: false },

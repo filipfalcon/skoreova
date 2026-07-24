@@ -2,31 +2,15 @@ import { Input } from '@foldkit/ui';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
-import spartaPhoto from '../assets/trending/sparta.jpg';
 import { panel, tickerSpark } from '../components';
-import { clubs } from '../data';
-import type { Club } from '../data';
+import { clubs, featuredClubs } from '../data';
+import type { Club, FeaturedClub } from '../data';
 import { SelectedFeaturedClub, UpdatedClubQuery } from '../message';
 import type { Message } from '../message';
 import type { Model } from '../model';
 import { clubRouter } from '../route';
 
 const h = html<Message>();
-
-interface FeaturedClub {
-  readonly slug: string;
-  // The Universe-style kicker line above the name.
-  readonly epithet: string;
-  // '' until the user supplies the artwork — the crest carries the slot.
-  readonly photo: string;
-  readonly focus: string;
-}
-
-const featuredClubs: ReadonlyArray<FeaturedClub> = [
-  { slug: 'sparta-praha', epithet: 'The record champions', photo: spartaPhoto, focus: '50% 30%' },
-  { slug: 'slavia-praha', epithet: 'The eternal rivals', photo: '', focus: '50% 30%' },
-  { slug: 'slovan-liberec', epithet: 'The pride of the north', photo: '', focus: '50% 30%' },
-];
 
 const featuredArtwork = (entry: FeaturedClub, club: Club | undefined): Html =>
   entry.photo === ''
@@ -64,7 +48,8 @@ const carouselArrow = (target: number, glyph: string, label: string): Html =>
 
 const europeanContenders = (model: Model): Html => {
   const count = featuredClubs.length;
-  const active = ((model.featuredClub % count) + count) % count;
+  // Always in range — SelectedFeaturedClub wraps in `update`.
+  const active = model.featuredClub;
   const previous = (active + count - 1) % count;
   const next = (active + 1) % count;
   const entryAt = (index: number): FeaturedClub =>
