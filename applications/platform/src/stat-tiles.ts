@@ -412,7 +412,7 @@ export const bestRecord = (model: Model, record: BestRecord, standalone: boolean
         ],
         [
           h.div([h.Class('h-1 w-10 bg-pink')], []),
-          pinned ? pinGlyph('h-3.5 w-3.5 text-pink') : h.g([], []),
+          pinned ? pinGlyph('h-3.5 w-3.5 text-pink') : h.empty,
         ],
       ),
       h.p(

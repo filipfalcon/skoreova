@@ -114,20 +114,24 @@ const studioChart = (series: MetricSeries): Html => {
         ],
         [],
       ),
-      ...series.values.map((_, index) =>
+      // Only even matchdays get an axis label — flatMap emits nothing for
+      // the odd ones instead of an empty placeholder element.
+      ...series.values.flatMap((_, index) =>
         index % 2 === 0
-          ? h.text(
-              [
-                h.X(`${index * 40 + 20}`),
-                h.Y('238'),
-                // No dedicated helper for text-anchor — it's a styleable SVG
-                // property, so the inline style does the same job.
-                h.Class('fill-ink/30 text-[10px]'),
-                h.Style({ 'text-anchor': 'middle' }),
-              ],
-              [`${index + 1}`],
-            )
-          : h.g([], []),
+          ? [
+              h.text(
+                [
+                  h.X(`${index * 40 + 20}`),
+                  h.Y('238'),
+                  // No dedicated helper for text-anchor — it's a styleable SVG
+                  // property, so the inline style does the same job.
+                  h.Class('fill-ink/30 text-[10px]'),
+                  h.Style({ 'text-anchor': 'middle' }),
+                ],
+                [`${index + 1}`],
+              ),
+            ]
+          : [],
       ),
     ],
   );
