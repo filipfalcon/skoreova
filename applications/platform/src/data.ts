@@ -1,7 +1,7 @@
 // The platform placeholder data layer: the domain types plus the hardcoded
 // content and the pure helpers that read it. All mock until the backend lands.
 
-import { Array, Match as M } from 'effect';
+import { Array, Match as M, Schema as S } from 'effect';
 
 import {
   AppRoute,
@@ -463,9 +463,15 @@ export interface CompetitionTie {
   readonly secondary: string;
 }
 
-export type CompetitionStandings =
-  | { readonly kind: 'table'; readonly league: string }
-  | { readonly kind: 'ties'; readonly rows: ReadonlyArray<CompetitionTie> };
+// What a competition's standings section renders: a league TABLE, or the
+// knockout TIES list. Tagged variants (the DrawerState idiom) so branch
+// sites match exhaustively instead of comparing a bare kind string.
+export const TableStandings = S.TaggedStruct('TableStandings', { league: S.String });
+export const TiesStandings = S.TaggedStruct('TiesStandings', {
+  rows: S.Array(S.Struct({ primary: S.String, secondary: S.String })),
+});
+
+export type CompetitionStandings = typeof TableStandings.Type | typeof TiesStandings.Type;
 
 // One season's running of a competition. `detail` is the one-liner the
 // archive shows — the champion for finished editions, the stage for the
@@ -524,7 +530,7 @@ export const competitions: ReadonlyArray<Competition> = [
       { value: '30', label: 'Seasons played since the league formed' },
       { value: '412', label: 'Goals scored last season' },
     ],
-    standings: { kind: 'table', league: 'First League' },
+    standings: TableStandings.make({ league: 'First League' }),
   },
   {
     slug: 'second-league',
@@ -549,7 +555,7 @@ export const competitions: ReadonlyArray<Competition> = [
       { value: '18', label: 'Average age of last season’s champions' },
       { value: '368', label: 'Goals scored last season' },
     ],
-    standings: { kind: 'table', league: 'Second League' },
+    standings: TableStandings.make({ league: 'Second League' }),
   },
   {
     slug: 'domestic-cup',
@@ -574,14 +580,13 @@ export const competitions: ReadonlyArray<Competition> = [
       { value: '5', label: 'Titles for Sparta Praha, the record' },
       { value: '3', label: 'Finals decided on penalties' },
     ],
-    standings: {
-      kind: 'ties',
+    standings: TiesStandings.make({
       rows: [
         { primary: 'Semis — Sparta Praha vs Slovácko', secondary: 'Apr 12' },
         { primary: 'Semis — Slavia Praha vs Baník Ostrava', secondary: 'Apr 13' },
         { primary: 'Finals — Prague, Letná', secondary: 'May 8' },
       ],
-    },
+    }),
   },
   {
     slug: 'uwcl',
@@ -605,13 +610,12 @@ export const competitions: ReadonlyArray<Competition> = [
       { value: '9', label: 'Czech UWCL campaigns so far' },
       { value: '23', label: 'European nights played in Prague' },
     ],
-    standings: {
-      kind: 'ties',
+    standings: TiesStandings.make({
       rows: [
         { primary: 'Slavia Praha — League phase', secondary: '9th — Matchday 3 of 6' },
         { primary: 'Sparta Praha — League phase', secondary: '12th — Matchday 3 of 6' },
       ],
-    },
+    }),
   },
   {
     slug: 'uwec',
@@ -634,10 +638,9 @@ export const competitions: ReadonlyArray<Competition> = [
       { value: '4', label: 'Czech campaigns in the competition' },
       { value: '12', label: 'Wins on European away trips' },
     ],
-    standings: {
-      kind: 'ties',
+    standings: TiesStandings.make({
       rows: [{ primary: 'Sparta Praha — Quarters vs Young Boys', secondary: 'First leg Mar 18' }],
-    },
+    }),
   },
   {
     slug: 'national-team',
@@ -661,13 +664,12 @@ export const competitions: ReadonlyArray<Competition> = [
       { value: '9', label: 'International matches a year we cover' },
       { value: '4', label: 'Qualifying campaigns on our feeds' },
     ],
-    standings: {
-      kind: 'ties',
+    standings: TiesStandings.make({
       rows: [
         { primary: 'League B — Group stage', secondary: 'Matchday 4 of 6' },
         { primary: 'Promotion playoff', secondary: 'To be confirmed' },
       ],
-    },
+    }),
   },
 ];
 
