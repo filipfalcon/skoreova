@@ -1,7 +1,8 @@
 import { Schema as S } from 'effect';
 
-// The map's league filter. 'all' shows both flights; picking a league dims
-// the other one's pins.
+// The map's league filter. 'all' shows both flights; picking a league hides
+// the other one's pins outright (display:none on a wrapper — see the pin
+// wrapper comment in page/clubs.ts).
 export const MapLeague = S.Literals(['All', 'First', 'Second']);
 export type MapLeague = typeof MapLeague.Type;
 
@@ -15,8 +16,6 @@ export const Model = S.Struct({
   // Slug of the club whose card is open over the map (None = closed). Pins
   // open the card; navigation to the profile happens via the card's button.
   mapClub: S.Option(S.String),
-  // Team cards individually dismissed (via their ✕) since the pin opened —
-  // lets one of a pair close while the other stays.
   // Whether the country-area figure shows imperial units (the RESTING
   // unit — the site speaks American English). A tap toggle on touch;
   // desktop hover previews the other unit via CSS, no model round-trip.
