@@ -24,6 +24,18 @@ import { menuEntries } from './data';
 //   that grows gently with distance so a long trip is felt.
 // `behavior: 'instant'` per frame keeps the CSS `scroll-behavior: smooth`
 // from fighting the animation.
+
+// Trips shorter than this snap outright — animating a few dozen pixels
+// reads as jitter, not travel.
+const SCROLL_SNAP_DISTANCE_PX = 48;
+// Tolerance above the target that still counts as "already there".
+const SCROLL_AT_TARGET_PX = 8;
+// Duration = base + per-viewport growth, capped: ~0.7s for a one-screen
+// hop, and a hero-to-footer ride still arrives inside a second and a half.
+const SCROLL_BASE_MS = 500;
+const SCROLL_PER_VIEWPORT_MS = 160;
+const SCROLL_MAX_MS = 1500;
+
 const animateScrollTo = (target: HTMLElement, reduceMotion: boolean): void => {
   const startY = window.scrollY;
   const rect = target.getBoundingClientRect();
@@ -37,15 +49,16 @@ const animateScrollTo = (target: HTMLElement, reduceMotion: boolean): void => {
   const viewport = window.innerHeight;
   const distance = targetY - startY;
   const insideSection =
-    startY >= targetY - 8 && startY <= targetY + rect.height - Math.min(viewport / 2, rect.height);
-  if (reduceMotion || insideSection || Math.abs(distance) < 48) {
+    startY >= targetY - SCROLL_AT_TARGET_PX &&
+    startY <= targetY + rect.height - Math.min(viewport / 2, rect.height);
+  if (reduceMotion || insideSection || Math.abs(distance) < SCROLL_SNAP_DISTANCE_PX) {
     window.scrollTo({ top: targetY, behavior: 'instant' });
     return;
   }
-  // Unhurried on purpose: ~0.7s for a one-screen hop, growing with the
-  // trip and easing at both ends, capped so a hero-to-footer ride still
-  // arrives inside a second and a half.
-  const duration = Math.min(1500, 500 + (Math.abs(distance) / viewport) * 160);
+  const duration = Math.min(
+    SCROLL_MAX_MS,
+    SCROLL_BASE_MS + (Math.abs(distance) / viewport) * SCROLL_PER_VIEWPORT_MS,
+  );
   const startedAt = performance.now();
   // The user's own scrolling wins instantly — a navigation animation that
   // fights the wheel feels broken.

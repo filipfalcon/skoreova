@@ -14,7 +14,9 @@ import {
   revealClass,
 } from '../components';
 import { CZECHIA_PATH, CZECHIA_VIEW_BOX, CZECH_REGIONS } from '../czechia';
+import type { Land } from '../czechia';
 import { FIRST_LEAGUE, MAP_LEAGUE_LABELS, SECOND_LEAGUE, clubs, platformUrl } from '../data';
+import type { ClubSlug } from '../data';
 import type { Club } from '../data';
 import { ClosedMapClub, OpenedMapClub, SelectedMapLeague, ToggledAreaUnit } from '../message';
 import type { Message } from '../message';
@@ -30,16 +32,16 @@ const h = html<Message>();
 // pins from the map entirely. Jihlava counts as Moravian: the map draws
 // the REAL land border (czechia.ts), and the city sits on its Moravian
 // side — the kraj Vysočina grouping doesn't apply here.
-const MORAVIAN_CLUBS = new Set([
+const MORAVIAN_CLUBS = new Set<ClubSlug>([
   'lokomotiva-brno',
   'artis-brno',
   'sigma-olomouc',
   'slovacko',
   'vysocina-jihlava',
 ]);
-const SILESIAN_CLUBS = new Set(['banik-ostrava']);
+const SILESIAN_CLUBS = new Set<ClubSlug>(['banik-ostrava']);
 
-const clubLand = (club: Club): string =>
+const clubLand = (club: Club): Land =>
   MORAVIAN_CLUBS.has(club.slug) ? 'Moravia' : SILESIAN_CLUBS.has(club.slug) ? 'Silesia' : 'Bohemia';
 
 // A pin OPENS the club's card over the map (clicking it again closes it) —
@@ -80,7 +82,7 @@ const fanFromAngle = (degrees: number, length: number): Fan => ({
   dy: Math.cos((degrees * Math.PI) / 180) * length,
 });
 
-const PIN_ANGLE: Record<string, number> = {
+const PIN_ANGLE: Partial<Record<ClubSlug, number>> = {
   'sparta-praha': -45,
   'slavia-praha': 50,
   'prague-raptors': -130,
@@ -100,7 +102,7 @@ const PIN_ANGLE: Record<string, number> = {
 // south, Teplice's dot the northwest). Values tuned against the geometric
 // collision probe in map-collisions.test.ts — don't eyeball-edit these;
 // re-run that test.
-const PIN_ANCHOR_PHONE: Record<string, { readonly x: number; readonly y: number }> = {
+const PIN_ANCHOR_PHONE: Partial<Record<ClubSlug, { readonly x: number; readonly y: number }>> = {
   'sparta-praha': { x: 34.5, y: 39.6 },
   'slavia-praha': { x: 34.5, y: 39.6 },
   'prague-raptors': { x: 34.5, y: 39.6 },
@@ -113,7 +115,7 @@ const PIN_ANCHOR_PHONE: Record<string, { readonly x: number; readonly y: number 
 // and the neighbourhoods differ at a third of the size. Solved by the
 // uniform-length solver (deviation-penalized, so only pins that must
 // rotate differ from their desktop selves).
-const PIN_ANGLE_PHONE: Record<string, number> = {
+const PIN_ANGLE_PHONE: Partial<Record<ClubSlug, number>> = {
   'sparta-praha': -125,
   'slavia-praha': 5,
   'prague-raptors': 75,
@@ -149,7 +151,7 @@ const MAP_DRAWN_SECONDS = 0.7;
 // Moravia carries nothing — both its borders are drawn by its neighbours,
 // and one front could never match two junction schedules; its stroke is
 // hidden below. Regenerate these when the map geometry changes.
-const LAND_BORDER_WIPES: Record<string, { delay: number; duration: number }> = {
+const LAND_BORDER_WIPES: Partial<Record<Land, { delay: number; duration: number }>> = {
   Bohemia: { delay: 0.18, duration: 0.335 },
   Silesia: { delay: 0.303, duration: 0.075 },
 };
@@ -176,7 +178,7 @@ const pinRevealDelaySeconds = (club: Club): string => {
 
 // Crest artwork with more built-in transparent padding than its peers
 // reads smaller inside the shared chip circle — scale it back up.
-const CREST_SCALE: Record<string, number> = {
+const CREST_SCALE: Partial<Record<ClubSlug, number>> = {
   'sparta-praha': 1.1,
   'hradec-kralove': 1.1,
 };
