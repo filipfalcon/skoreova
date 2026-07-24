@@ -6,7 +6,16 @@ import { evo } from 'foldkit/struct';
 import { toString as urlToString } from 'foldkit/url';
 
 import type { AppRoute } from './route';
-import { homeRouter, recordRouter, sectionRouter, urlToAppRoute } from './route';
+import {
+  HomeRoute,
+  RecordRoute,
+  SectionRoute,
+  homeRouter,
+  recordRouter,
+  routeSection,
+  sectionRouter,
+  urlToAppRoute,
+} from './route';
 import { editionToRow } from './editionsApi';
 import { Section } from './section';
 export { Section } from './section';
@@ -66,11 +75,12 @@ import {
   Message,
 } from './message';
 
-// The public surface — Model, messages, commands, and the view — re-exported
-// so fixtures and tests keep importing from the app entry.
+// The public surface — Model, messages, commands, routes, and the view —
+// re-exported so fixtures and tests keep importing from the app entry.
 export * from './model';
 export * from './message';
 export * from './command';
+export * from './route';
 export { view } from './page';
 
 // UPDATE
@@ -79,7 +89,7 @@ export { view } from './page';
 // until sign-in, and there's no mock seed data.
 const initialModel = (): Model => ({
   session: Anonymous.make({ emailInput: '', passwordInput: '' }),
-  section: 'players',
+  route: HomeRoute(),
   isMenuOpen: false,
   search: '',
   filters: {},
@@ -101,7 +111,6 @@ const initialModel = (): Model => ({
   serverHealth: 'Unknown',
   clientPage: 1,
   linkError: '',
-  isShowingDashboard: true,
   filterListboxes: initialFilterListboxes(),
   dateFilters: {},
   dateFilterPickers: {},
@@ -172,7 +181,7 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
         const [withDialog, dialogCommands] = closeDialog(model);
         return [
           evo(withDialog, {
-            isShowingDashboard: () => true,
+            route: () => route,
             isMenuOpen: () => false,
             drawer: () => DrawerClosed.make({}),
           }),
@@ -183,19 +192,18 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
         const [withDialog, dialogCommands] = closeDialog(model);
         return [
           evo(withDialog, {
-            isShowingDashboard: () => true,
+            route: () => route,
             isMenuOpen: () => false,
             drawer: () => DrawerClosed.make({}),
           }),
           dialogCommands,
         ];
       },
-      SectionRoute: ({ section }) => {
+      SectionRoute: () => {
         const [withDialog, dialogCommands] = closeDialog(model);
         return [
           evo(withDialog, {
-            section: () => section,
-            isShowingDashboard: () => false,
+            route: () => route,
             isMenuOpen: () => false,
             drawer: () => DrawerClosed.make({}),
           }),
@@ -209,8 +217,7 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
           const [withDialog, dialogCommands] = openDialog(model);
           return [
             evo(withDialog, {
-              section: () => section,
-              isShowingDashboard: () => false,
+              route: () => route,
               isMenuOpen: () => false,
               drawer: () => editRecord(entry),
               chartError: () => Option.none(),
@@ -222,20 +229,19 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
         if (section === 'clubs' || section === 'nationals') {
           return [
             evo(model, {
-              section: () => section,
-              isShowingDashboard: () => false,
+              route: () => route,
               isMenuOpen: () => false,
             }),
             [FetchTeamById({ section, id })],
           ];
         }
         // No single-record endpoint for this section (or it's mock-only) —
-        // fall back to the section's list instead of a broken "open" state.
+        // fall back to the section's list instead of a broken "open" state
+        // (routeSection still selects the list to show).
         const [withDialog, dialogCommands] = closeDialog(model);
         return [
           evo(withDialog, {
-            section: () => section,
-            isShowingDashboard: () => false,
+            route: () => route,
             isMenuOpen: () => false,
             drawer: () => DrawerClosed.make({}),
           }),
@@ -365,8 +371,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         const [withDialog, dialogCommands] = closeDialog(model);
         return [
           evo(withDialog, {
-            section: () => section,
-            isShowingDashboard: () => false,
+            route: () => SectionRoute({ section }),
             isMenuOpen: () => false,
             search: () => '',
             filters: () => ({}),
@@ -384,7 +389,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       // Back to the dashboard landing page.
       ClickedDashboard: () => [
         evo(model, {
-          isShowingDashboard: () => true,
+          route: () => HomeRoute(),
           isMenuOpen: () => false,
           linkError: () => '',
         }),
@@ -492,18 +497,23 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         return [evo(model, { dateFilters: () => rest, clientPage: () => 1 }), []];
       },
       // Open the drawer in creation mode: a blank draft, no existing record.
-      ClickedAddNew: () => {
-        const columns = sectionData[model.section].columns;
-        const [withDialog, dialogCommands] = openDialog(model);
-        return [
-          evo(withDialog, {
-            drawer: () =>
-              DrawerCreating.make({ section: model.section, draft: columns.map(() => '') }),
-            chartError: () => Option.none(),
-          }),
-          dialogCommands,
-        ];
-      },
+      // Only reachable from a section list — on the dashboard there is no
+      // section to create into.
+      ClickedAddNew: () =>
+        Option.match(routeSection(model.route), {
+          onNone: () => [model, []],
+          onSome: (section) => {
+            const columns = sectionData[section].columns;
+            const [withDialog, dialogCommands] = openDialog(model);
+            return [
+              evo(withDialog, {
+                drawer: () => DrawerCreating.make({ section, draft: columns.map(() => '') }),
+                chartError: () => Option.none(),
+              }),
+              dialogCommands,
+            ];
+          },
+        }),
       // Open the profile drawer with a working copy of the record's values.
       ClickedRecord: ({ section, id }) => {
         const entry = findRecord(model, section, id);
@@ -511,6 +521,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         const [withDialog, dialogCommands] = openDialog(model);
         return [
           evo(withDialog, {
+            route: () => RecordRoute({ section, id }),
             drawer: () => editRecord(entry),
             chartError: () => Option.none(),
             linkError: () => '',
@@ -548,6 +559,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           const [withDialog, dialogCommands] = closeDialog(withRow);
           return [
             evo(withDialog, {
+              route: () => SectionRoute({ section }),
               nextLocalId: (n) => n + 1,
               drawer: () => DrawerClosed.make({}),
             }),
@@ -582,6 +594,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         const [withDialog, dialogCommands] = closeDialog(withRows);
         return [
           evo(withDialog, {
+            route: () => SectionRoute({ section }),
             editLog: (log) => [...changes, ...log],
             drawer: () => DrawerClosed.make({}),
           }),
@@ -603,10 +616,25 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             withUpdateReturn,
             M.tagsExhaustive({
               Opened: () => [withDialog, commands],
-              Closed: () => [
-                evo(withDialog, { drawer: () => DrawerClosed.make({}) }),
-                [...commands, Navigate({ url: sectionRouter({ section: model.section }) })],
-              ],
+              // Closing returns to the current section's list URL — or the
+              // dashboard if no section route is active.
+              Closed: () =>
+                Option.match(routeSection(model.route), {
+                  onNone: () => [
+                    evo(withDialog, {
+                      route: () => HomeRoute(),
+                      drawer: () => DrawerClosed.make({}),
+                    }),
+                    [...commands, Navigate({ url: homeRouter() })],
+                  ],
+                  onSome: (section) => [
+                    evo(withDialog, {
+                      route: () => SectionRoute({ section }),
+                      drawer: () => DrawerClosed.make({}),
+                    }),
+                    [...commands, Navigate({ url: sectionRouter({ section }) })],
+                  ],
+                }),
             }),
           ),
         });
@@ -657,7 +685,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         );
         const [withDialog, dialogCommands] = closeDialog(withRows);
         return [
-          evo(withDialog, { drawer: () => DrawerClosed.make({}) }),
+          evo(withDialog, {
+            route: () => SectionRoute({ section }),
+            drawer: () => DrawerClosed.make({}),
+          }),
           [...dialogCommands, Navigate({ url: sectionRouter({ section }) })],
         ];
       },

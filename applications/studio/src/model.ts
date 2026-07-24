@@ -5,6 +5,7 @@ import { DatePicker, Dialog, Listbox, Tabs } from '@foldkit/ui';
 import { AsyncData, Calendar } from 'foldkit';
 
 import { ParticipationResponse } from './participationsApi';
+import { AppRoute } from './route';
 import { Section } from './section';
 
 // The one Dialog instance the app renders (the record drawer). The id keys the
@@ -121,7 +122,11 @@ export const ParticipationsData = AsyncData.Schema(S.Array(ParticipationResponse
 
 export const Model = S.Struct({
   session: Session,
-  section: Section,
+  // The current route is the source of truth for what's on screen — the
+  // section list (or the dashboard landing page) is derived from it via
+  // routeSection, so no separate section/dashboard flags can drift out of
+  // sync with the URL.
+  route: AppRoute,
   // Whether the nav is open. Only affects small screens; from `md:` up the
   // sidebar is always visible.
   isMenuOpen: S.Boolean,
@@ -174,9 +179,6 @@ export const Model = S.Struct({
   // Set when a shared record link couldn't be resolved (e.g. a deleted team,
   // or a player not on the currently loaded page — see FetchTeamById).
   linkError: S.String,
-  // Whether the dashboard landing page is shown instead of a section's list.
-  // This is the default entrypoint right after signing in.
-  isShowingDashboard: S.Boolean,
   // One multi-select Listbox submodel per checkbox filter column (see
   // checkboxColumns), keyed by the column's name. Only interaction state
   // lives here — the selection stays in `filters` as the excluded set.

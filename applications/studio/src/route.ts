@@ -1,4 +1,4 @@
-import { Schema as S, pipe } from 'effect';
+import { Option, Schema as S, pipe } from 'effect';
 import {
   mapTo,
   oneOf,
@@ -39,3 +39,12 @@ export const recordRouter = pipe(
 const routeParser = oneOf(recordRouter, sectionRouter, homeRouter);
 
 export const urlToAppRoute = parseUrlWithFallback(routeParser, NotFoundRoute);
+
+// The section a route addresses, or None on the dashboard landing page (and
+// the 404 fallback, which renders it). What's on screen is derived from the
+// stored route through this — there is no separate section/dashboard flag to
+// keep in sync.
+export const routeSection = (route: AppRoute): Option.Option<Section> =>
+  route._tag === 'SectionRoute' || route._tag === 'RecordRoute'
+    ? Option.some(route.section)
+    : Option.none();
