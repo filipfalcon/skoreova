@@ -20,7 +20,9 @@ export const officialsScreen = (model: Model): Html =>
         [h.Class('mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3')],
         officials.map((official) =>
           h.article(
-            [h.Class(`${panel} group cursor-pointer p-6 transition-colors hover:border-pink`)],
+            // No cursor-pointer: the cards have no click handler yet — the
+            // hover border stays as a scanning aid only.
+            [h.Class(`${panel} group p-6 transition-colors hover:border-pink`)],
             [
               h.div(
                 [
