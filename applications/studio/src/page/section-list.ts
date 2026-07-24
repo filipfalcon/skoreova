@@ -16,6 +16,7 @@ import {
   countryNames,
   dateColumns,
   displayRows,
+  findRecord,
   flagColumns,
   menu,
   sectionData,
@@ -94,8 +95,25 @@ export const dashboardView = (model: Model): Document => {
   // fallback).
   const maybeSection = routeSection(model.route);
 
+  // The document title follows the route: a section's name on its list, the
+  // open record's own title when one is addressed, 'Dashboard' otherwise.
+  const documentTitle = M.value(model.route).pipe(
+    M.withReturnType<string>(),
+    M.tagsExhaustive({
+      HomeRoute: () => 'Dashboard',
+      NotFoundRoute: () => 'Dashboard',
+      SectionRoute: ({ section }) => sectionLabels[section],
+      RecordRoute: ({ section, id }) => {
+        const recordTitle = findRecord(model, section, id)?.values[0] ?? '';
+        return recordTitle === ''
+          ? sectionLabels[section]
+          : `${recordTitle} — ${sectionLabels[section]}`;
+      },
+    }),
+  );
+
   return {
-    title: 'Skóreová Studio — Dashboard',
+    title: `Skóreová Studio — ${documentTitle}`,
     body: h.div(
       [h.Class('min-h-screen bg-neutral-100 text-neutral-900')],
       [
