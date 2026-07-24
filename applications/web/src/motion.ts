@@ -469,6 +469,14 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
 
   const revealTargets = Array.from(root.querySelectorAll<HTMLElement>('[data-reveal]'));
 
+  // Release symmetry: `.is-in`/`.is-drawn` are stamped outside the vdom, and
+  // the patcher never touches these class lists — tearing down without
+  // stripping them would leave the DOM diverged from the view's declared
+  // (resting) state for good. A reacquired Mount re-reveals from scratch.
+  cleanups.push(() => {
+    for (const target of revealTargets) target.classList.remove('is-in', 'is-drawn');
+  });
+
   if (reduceMotion) {
     for (const target of revealTargets) target.classList.add('is-in');
   } else {
@@ -526,7 +534,7 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
     // exit so the replay starts dashed again.
     for (const target of revealTargets) {
       if (target.dataset['reveal'] !== 'draw') continue;
-      target.addEventListener('transitionend', (event) => {
+      const onTransitionEnd = (event: TransitionEvent): void => {
         if (!target.classList.contains('is-in')) return;
         // Only the root's OWN dash transition ending counts — that is the
         // outline pen closing its lap, and the land borders' clip wipes
@@ -536,7 +544,9 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
         if (event.target === target && event.propertyName === 'stroke-dashoffset') {
           target.classList.add('is-drawn');
         }
-      });
+      };
+      target.addEventListener('transitionend', onTransitionEnd);
+      cleanups.push(() => target.removeEventListener('transitionend', onTransitionEnd));
     }
 
     // Scroll direction at reveal time — some draw reveals only ANIMATE on
@@ -695,6 +705,9 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
     host: element.parentElement ?? element,
     speed: Number(element.dataset['parallax']) || 0.2,
   }));
+  cleanups.push(() => {
+    for (const layer of parallaxLayers) layer.element.style.transform = '';
+  });
 
   // ----- Scroll-scrubbed alignment -------------------------------------------
   // The element's own top margin IS the stagger being cancelled — measured
@@ -712,6 +725,12 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
   const scrubAlignLayers: ReadonlyArray<HTMLElement> = Array.from(
     root.querySelectorAll<HTMLElement>('[data-scrub-align]'),
   );
+  cleanups.push(() => {
+    for (const layer of scrubAlignLayers) {
+      layer.style.transform = '';
+      (layer.parentElement ?? layer).classList.remove('is-assembled');
+    }
+  });
 
   // ----- Scroll-scrubbed docking ---------------------------------------------
   // The queen's portrait (section 05): on the section's landing frame it
@@ -724,6 +743,9 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
   const scrubDockLayers: ReadonlyArray<HTMLElement> = Array.from(
     root.querySelectorAll<HTMLElement>('[data-scrub-dock]'),
   );
+  cleanups.push(() => {
+    for (const layer of scrubDockLayers) layer.style.transform = '';
+  });
   const dockViewport = window.matchMedia('(min-width: 48rem)');
 
   // ----- Scroll-pinned bracket build ----------------------------------------
@@ -748,6 +770,11 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       stepCount: steps.reduce((max, step) => Math.max(max, step.index + 1), 1),
     };
   });
+  cleanups.push(() => {
+    for (const scrub of bracketScrubs) {
+      for (const step of scrub.steps) step.element.classList.remove('is-on');
+    }
+  });
 
   // ----- Scroll-velocity-reactive marquees ---------------------------------
 
@@ -758,6 +785,13 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
     // animation would override the inline transform written each frame.
     element.style.animation = 'none';
     return { element, offset: 0 };
+  });
+  cleanups.push(() => {
+    for (const marquee of marquees) {
+      // Hand the belt back to the CSS keyframe fallback.
+      marquee.element.style.animation = '';
+      marquee.element.style.transform = '';
+    }
   });
 
   // ----- Tilt cards ---------------------------------------------------------
@@ -791,6 +825,7 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
         cleanups.push(() => {
           element.removeEventListener('mousemove', onMove);
           element.removeEventListener('mouseleave', onLeave);
+          element.style.transform = '';
         });
         return tilt;
       })
