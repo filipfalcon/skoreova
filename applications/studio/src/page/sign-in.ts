@@ -6,7 +6,7 @@ import loginBackground from '../assets/login-background.jpg';
 import { SubmittedSignIn, UpdatedEmail, UpdatedPassword } from '../message';
 import type { Message } from '../message';
 import type { Model } from '../model';
-import { cardStyle, chipStyle, forgotStyle, inputStyle, submitStyle } from '../styles';
+import { cardStyle, chipStyle, inputStyle, submitStyle } from '../styles';
 
 const h = html<Message>();
 
@@ -99,7 +99,6 @@ export const loginView = (model: Model): Document => {
                         }),
                       ],
                     ),
-                    h.a([h.Href('#'), h.Class(forgotStyle)], ['Forgot password?']),
                     h.div(
                       [h.Class('mt-8 flex items-end justify-between gap-4')],
                       [

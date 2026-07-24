@@ -5,11 +5,11 @@ import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
 import { CHART_HOST_ID, MountChart, POINTS_CHART_HOST_ID } from '../command';
+import type { Column } from '../api';
 import {
   countryFlags,
   draftOf,
   drawerRecord,
-  flagColumns,
   resolveEditionCell,
   sectionData,
   sectionRows,
@@ -64,11 +64,11 @@ export const drawer = (model: Model): Html => {
   const drawerSection = drawerState._tag === 'Closed' ? undefined : drawerState.section;
   const columns = drawerSection ? sectionData[drawerSection].columns : [];
 
-  const field = (column: string, index: number): Html =>
+  const field = (column: Column, index: number): Html =>
     h.label(
       [h.Class('flex flex-col gap-1')],
       [
-        h.span([h.Class('text-sm font-medium text-neutral-700')], [column]),
+        h.span([h.Class('text-sm font-medium text-neutral-700')], [column.label]),
         h.input([
           h.Type('text'),
           h.Value(draft[index] ?? ''),
@@ -235,10 +235,10 @@ export const drawer = (model: Model): Html => {
                 ),
               ],
               [
-                h.span([h.Class('text-neutral-500')], [column]),
+                h.span([h.Class('text-neutral-500')], [column.label]),
                 h.span(
                   [h.Class('font-medium text-neutral-900')],
-                  [flagColumns.has(column) ? (countryFlags[value] ?? value) : value],
+                  [column.flag ? (countryFlags[value] ?? value) : value],
                 ),
               ],
             );

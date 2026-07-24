@@ -6,6 +6,7 @@ import { DatePicker, Listbox } from '@foldkit/ui';
 import { AsyncData, Calendar } from 'foldkit';
 import { evo } from 'foldkit/struct';
 
+import type { Column, ColumnKind } from './api';
 import { associationColumns } from './associationsApi';
 import { competitionColumns } from './competitionsApi';
 import { editionColumns } from './editionsApi';
@@ -79,15 +80,15 @@ export const displayRows = (model: Model, section: Section): ReadonlyArray<Entry
 
 // MENU
 
-export interface MenuLeaf {
-  readonly section: Section;
-  readonly label: string;
-}
+export type MenuLeaf = Readonly<{
+  section: Section;
+  label: string;
+}>;
 
-export interface MenuGroup {
-  readonly label: string;
-  readonly items: ReadonlyArray<MenuLeaf>;
-}
+export type MenuGroup = Readonly<{
+  label: string;
+  items: ReadonlyArray<MenuLeaf>;
+}>;
 
 export type MenuNode = { readonly group: MenuGroup } | { readonly leaf: MenuLeaf };
 
@@ -133,27 +134,6 @@ export const sectionSingularLabels: Record<Section, string> = {
   associations: 'Association',
 };
 
-// Country/Nationality render their value as a flag (in the card pill and the
-// drawer's Overview summary) rather than the raw code.
-export const flagColumns = new Set(['Country', 'Nationality']);
-
-// These get a From/To date-range filter instead of an exact-match dropdown —
-// filtering an ISO date by exact value isn't useful.
-export const dateColumns = new Set(['Established', 'Date of birth', 'Starts on', 'Ends on']);
-
-// These get a checkbox dropdown (multiple values at once) instead of the
-// default single-value exact-match dropdown.
-export const checkboxColumns = new Set([
-  'Country',
-  'Nationality',
-  'Team kind',
-  'Club',
-  'Position',
-  'Sex',
-  'Competition',
-  'Kind',
-]);
-
 // DOM id for a checkbox column's filter Listbox ('Team kind' → 'filter-team-kind').
 export const filterListboxId = (column: string): string =>
   `filter-${column.toLowerCase().replace(/ /g, '-')}`;
@@ -171,7 +151,7 @@ export const initialDateFilterPickers = (
   today: Calendar.CalendarDate,
 ): Record<string, { from: DatePicker.Model; to: DatePicker.Model }> =>
   Object.fromEntries(
-    [...dateColumns].map((column) => [
+    dateColumnLabels.map((column) => [
       column,
       {
         from: DatePicker.init({ id: dateFilterPickerId(column, 'from'), today }),
@@ -193,7 +173,7 @@ export const toIsoDate = (date: Calendar.CalendarDate): string => {
 // then always finds a submodel for whichever columns the current section has.
 export const initialFilterListboxes = (): Record<string, Listbox.Multi.Model> =>
   Object.fromEntries(
-    [...checkboxColumns].map((column) => [
+    checkboxColumnLabels.map((column) => [
       column,
       Listbox.Multi.init({ id: filterListboxId(column) }),
     ]),
@@ -216,10 +196,11 @@ export const countryNames: Record<string, string> = {
   SVK: 'Slovakia',
 };
 
-export interface Table {
-  // columns[0] is the entry title; columns[1..] each get their own dropdown filter.
-  readonly columns: ReadonlyArray<string>;
-}
+export type Table = Readonly<{
+  // columns[0] is the entry title; columns[1..] each get their own filter
+  // control, picked by the column's `kind` (see Column in api.ts).
+  columns: ReadonlyArray<Column>;
+}>;
 
 // Every section is backed by the real API — see the FetchX commands below.
 // Data starts empty and is fetched at sign-in; only column layout lives here.
@@ -241,6 +222,22 @@ export const sectionOrder: ReadonlyArray<Section> = [
   'associations',
 ];
 
+// Every distinct column label of a kind across the sections — the static
+// universes the per-column filter submodels are created from at boot. Kind
+// lives ON the column (api.ts), so renaming a label cannot silently change
+// its filter behavior anymore.
+const columnLabelsOfKind = (kind: ColumnKind): ReadonlyArray<string> => [
+  ...new Set(
+    sectionOrder.flatMap((section) =>
+      sectionData[section].columns
+        .filter((column) => column.kind === kind)
+        .map((column) => column.label),
+    ),
+  ),
+];
+export const checkboxColumnLabels = columnLabelsOfKind('checkbox');
+export const dateColumnLabels = columnLabelsOfKind('date');
+
 // CHART
 //
 // A small bar chart of mock "season stats" for the Overview tab. Values are
@@ -256,19 +253,40 @@ export const metricsBySection: Record<Section, ReadonlyArray<string>> = {
   associations: ['Members', 'Competitions', 'Years active'],
 };
 
+// Classic polynomial string hash (Java's 31 multiplier) — spread only, no
+// crypto intent.
+const HASH_MULTIPLIER = 31;
+
 export const hashString = (value: string): number =>
-  Math.abs(Array.reduce([...value], 0, (hash, char) => (hash * 31 + char.charCodeAt(0)) | 0));
+  Math.abs(
+    Array.reduce([...value], 0, (hash, char) => (hash * HASH_MULTIPLIER + char.charCodeAt(0)) | 0),
+  );
+
+// Each metric reads its own 4-bit slice of the seed and lands in
+// [STAT_FLOOR, STAT_FLOOR + STAT_SPREAD) — nonzero bars of plausible size.
+const STAT_FLOOR = 5;
+const STAT_SPREAD = 40;
+const STAT_SEED_BITS = 4;
 
 export const statsFor = (
   entry: Entry,
 ): { title: string; categories: ReadonlyArray<string>; values: ReadonlyArray<number> } => {
   const seed = hashString(entry.values.join('|'));
   const categories = metricsBySection[entry.section];
-  const values = categories.map((_, index) => 5 + ((seed >> (index * 4)) % 40));
+  const values = categories.map(
+    (_, index) => STAT_FLOOR + ((seed >> (index * STAT_SEED_BITS)) % STAT_SPREAD),
+  );
   return { title: 'Season stats', categories, values };
 };
 
 export const MATCHDAYS = 10;
+
+const RESULT_SEED_BITS = 3;
+const RESULT_ROLL_SIDES = 10;
+const WIN_ROLLS = 4;
+const DRAW_ROLLS = 3;
+const POINTS_WIN = 3;
+const POINTS_DRAW = 1;
 
 // A cumulative points-over-time series for team records (Clubs/Nationals),
 // derived deterministically from the entry — same win/draw/loss shape every
@@ -279,8 +297,9 @@ export const pointsFor = (
   const seed = hashString(`points:${entry.values.join('|')}`);
   const weeks = Array.makeBy(MATCHDAYS, (matchday) => `MD${matchday + 1}`);
   const results = Array.makeBy(MATCHDAYS, (matchday) => {
-    const roll = (seed >> (matchday * 3)) % 10;
-    return roll < 4 ? 3 : roll < 7 ? 1 : 0; // win : draw : loss
+    // 3-bit slice per matchday, rolled into a d10: 40% win, 30% draw.
+    const roll = (seed >> (matchday * RESULT_SEED_BITS)) % RESULT_ROLL_SIDES;
+    return roll < WIN_ROLLS ? POINTS_WIN : roll < WIN_ROLLS + DRAW_ROLLS ? POINTS_DRAW : 0;
   });
   // Cumulative points after each matchday — the scan keeps every running
   // total; drop its leading 0 (the pre-season starting point).

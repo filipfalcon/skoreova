@@ -1,6 +1,7 @@
 import { Schema as S } from 'effect';
 
 import { GATEWAY_BASE_URL } from './api';
+import type { Column } from './api';
 
 // Mirrors GET /editions from the backend's OpenAPI spec (fetched 2026-07-05).
 // An edition is one running (one season) of a competition — no name of its
@@ -25,7 +26,12 @@ export const editionsUrl = (competitionId?: string): string =>
 // values produced by `editionToRow` below. "Competition" is resolved from the
 // already-loaded Competitions list at fetch time (see SucceededFetchEditions
 // in main.ts) — the response only gives a bare competitionId.
-export const editionColumns = ['Edition', 'Competition', 'Starts on', 'Ends on'];
+export const editionColumns: ReadonlyArray<Column> = [
+  { label: 'Edition', kind: 'title' },
+  { label: 'Competition', kind: 'checkbox' },
+  { label: 'Starts on', kind: 'date' },
+  { label: 'Ends on', kind: 'date' },
+];
 
 // e.g. "2026/2027", or just "2026" when the edition starts and ends within
 // the same calendar year.
