@@ -471,3 +471,16 @@ export const tickerSpark: Html = h.svg(
     ),
   ],
 );
+
+// The tape/stat-delta arrow — a solid up or down triangle.
+export const tapeArrow = (up: boolean): Html =>
+  h.svg(
+    [
+      h.Xmlns('http://www.w3.org/2000/svg'),
+      h.ViewBox('0 0 12 10'),
+      h.Class('inline-block h-[0.5em] w-auto shrink-0'),
+      h.AriaHidden(true),
+      h.Fill('currentColor'),
+    ],
+    [h.path([h.D(up ? 'M6 0 L12 10 H0 Z' : 'M0 0 H12 L6 10 Z')], [])],
+  );
