@@ -340,3 +340,90 @@ export const headerView = (model: Model): Html =>
       ),
     ],
   );
+
+// ——— Shared drawn glyphs and the club-profile section wrapper. ———
+
+export const drawnRightArrow = (classes: string): Html =>
+  h.svg(
+    [
+      h.Xmlns('http://www.w3.org/2000/svg'),
+      h.ViewBox('0 0 32 24'),
+      h.Class(`drawn-arrow ${classes}`),
+      h.Fill('currentColor'),
+      h.AriaHidden(true),
+    ],
+    [h.path([h.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')], [])],
+  );
+
+// The multiplication mark, DRAWN for the same reason (user call: next to
+// Anton's caps the text × all but disappeared — it is a light maths glyph
+// in a face whose letters are anything but, so it reads as a smudge
+// between the number and the word). Built to Anton's weight instead:
+// arms a fifth of the box thick, cut at 45°.
+//
+// Sized against Anton's MEASURED figures, not against a generic em. The
+// face runs abnormally large on the body — x-height 0.73em, figures
+// 0.86em — which is exactly why the text × vanished: a maths glyph drawn
+// for a normal face is far too small beside characters this big. At
+// 0.52em the mark is a little over half the figure height, which holds
+// its own without reading as a letter.
+//
+// Centred on the FIGURE axis rather than the usual x-height one, because
+// this mark only ever lands between digits and caps ("22× LEAGUE") and
+// never beside lowercase — on the x-height axis it sat a visible pixel
+// low against the numerals. An inline-block baselines on its BOTTOM
+// MARGIN EDGE, so the margin is the control: mb + height/2 ≈ half the
+// figure height. Both are em, so it holds at any size it inherits — it
+// renders at 18px in the honours chip and 36px in the history grid.
+export const drawnTimes = (classes = ''): Html =>
+  h.svg(
+    [
+      h.Xmlns('http://www.w3.org/2000/svg'),
+      h.ViewBox('0 0 24 24'),
+      h.Class(`mb-[0.11em] inline-block h-[0.52em] w-auto ${classes}`),
+      h.Fill('currentColor'),
+      h.AriaHidden(true),
+    ],
+    [
+      h.path(
+        [
+          h.D(
+            'M3.4 0 L12 8.6 L20.6 0 L24 3.4 L15.4 12 L24 20.6 L20.6 24 L12 15.4 L3.4 24 L0 20.6 L8.6 12 L0 3.4 Z',
+          ),
+        ],
+        [],
+      ),
+    ],
+  );
+
+// A COUNT reads "22 times champions", so the mark hugs the number and
+// takes a word space after it.
+export const timesCount = (count: number): ReadonlyArray<Html | string> => [
+  `${count}`,
+  drawnTimes('ml-[0.04em] mr-[0.26em]'),
+];
+
+export const CLUB_CHIP =
+  'display inline-flex items-center gap-2.5 bg-pink px-4 py-2 text-xl tracking-[0.2em] text-ink md:px-5 md:text-2xl';
+
+// A chip anchors its OWN section (user call) — it does not leave the
+// profile. Clicking one jumps to that block and puts #<anchor> in the
+// address bar, so any part of a club page is linkable. No drawn arrow:
+// the arrow is the landing page's "go somewhere else" gesture, and these
+// go nowhere else. The hover carries the affordance instead — pink to ink,
+// rather than the landing's pink to paper, which on this paper surface
+// would have dissolved the chip into the page.
+export const clubChip = (text: string, anchor: string): Html =>
+  h.a(
+    [h.Href(`#${anchor}`), h.Class(`${CLUB_CHIP} transition-colors hover:bg-ink hover:text-paper`)],
+    [text],
+  );
+
+// scroll-mt clears the FIXED header (104–108px) plus a little air —
+// without it an anchored section lands with its own chip hidden behind
+// the chrome, which reads as having jumped to the wrong place.
+export const clubSection = (title: string, children: ReadonlyArray<Html>, anchor: string): Html =>
+  h.section(
+    [h.Id(anchor), h.Class('mt-16 scroll-mt-28 md:mt-20 md:scroll-mt-32')],
+    [h.div([h.Class('flex')], [clubChip(title, anchor)]), ...children],
+  );

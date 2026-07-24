@@ -793,3 +793,10 @@ export const savedCharts: ReadonlyArray<SavedChart> = [
     spark: [8, 7, 9, 6, 7, 5, 6, 4],
   },
 ];
+
+// How many league rounds each division plays in a season — eight First
+// League clubs meet three times (21), eleven Second League clubs twice (20).
+export const leagueRounds: Record<string, number> = {
+  'First League': 21,
+  'Second League': 20,
+};
