@@ -25,10 +25,10 @@ import {
 } from './message';
 import { Load, Navigate, ReadPins, WritePins } from './command';
 
-// MODEL, MESSAGE, COMMAND, DATA, and the SCREENS live in their own modules
-// now (model.ts, message.ts, command.ts, domain/, data/, components.ts,
-// page/*); this file wires them into init/update/view. Re-export the public
-// surface so fixtures and tests can keep importing from the app entry.
+// The Model, Messages, Commands, data, shared components, and the screens each
+// live in their own module (model.ts, message.ts, command.ts, data.ts,
+// components.ts, page.ts); this file wires them into init/update/view and
+// re-exports the public surface so fixtures and tests import from the entry.
 export { Metric, Model, Screen, ScorerScope };
 
 // MESSAGE — see message.ts.

@@ -46,18 +46,15 @@ import {
   SyncChart,
   SyncPointsChart,
 } from './command';
-
-// MODEL lives in model.ts — re-exported so fixtures and tests keep importing
-// from the app entry.
-export * from './model';
 import { Message } from './message';
 
-// MESSAGE re-exported for fixtures and tests.
+// The public surface — Model, messages, commands, and the view — re-exported
+// so fixtures and tests keep importing from the app entry.
+export * from './model';
 export * from './message';
+export * from './command';
+export { view } from './page';
 
-// MESSAGE
-
-// MESSAGE lives in message.ts now.
 // UPDATE
 
 // A fresh signed-out model. Every section starts Idle — nothing is fetched
@@ -631,10 +628,3 @@ export const update = (model: Model, message: Message): UpdateReturn =>
 
 export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) =>
   applyRoute(initialModel(), urlToAppRoute(url));
-
-// MENU
-
-// Re-exported for fixtures and tests.
-export * from './command';
-// VIEW lives in page.ts.
-export { view } from './page';
