@@ -18,6 +18,8 @@ import {
   DrawerCreating,
   DrawerTabs,
   Entry,
+  ExactFilter,
+  ExcludedFilter,
   FilterListbox,
   LogEntry,
   Model,
@@ -80,7 +82,7 @@ const initialModel = (): Model => ({
   section: 'players',
   isMenuOpen: false,
   search: '',
-  filters: [],
+  filters: {},
   drawer: DrawerClosed.make({}),
   dialog: Dialog.init({ id: DRAWER_DIALOG_ID }),
   tabs: Tabs.init({ id: DRAWER_TABS_ID }),
@@ -367,7 +369,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             isShowingDashboard: () => false,
             isMenuOpen: () => false,
             search: () => '',
-            filters: () => [],
+            filters: () => ({}),
             dateFilters: () => ({}),
             drawer: () => DrawerClosed.make({}),
             clientPage: () => 1,
@@ -390,15 +392,22 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ],
       ToggledMenu: () => [evo(model, { isMenuOpen: (open) => !open }), []],
       UpdatedSearch: ({ value }) => [evo(model, { search: () => value, clientPage: () => 1 }), []],
-      SelectedFilter: ({ columnIndex, value }) => {
-        const filters = [...model.filters];
-        filters[columnIndex] = value;
-        return [evo(model, { filters: () => filters, clientPage: () => 1 }), []];
+      // A dropdown column's exact-match choice; '' (the "All" option) drops
+      // the column's filter entirely.
+      SelectedFilter: ({ column, value }) => {
+        const { [column]: _removed, ...rest } = model.filters;
+        return [
+          evo(model, {
+            filters: () =>
+              value === '' ? rest : { ...rest, [column]: ExactFilter.make({ value }) },
+            clientPage: () => 1,
+          }),
+          [],
+        ];
       },
       // Delegates to a checkbox column's filter Listbox. Its Selected
       // OutMessage flips the value's membership in that column's *excluded*
-      // (unchecked) set, stored comma-joined in the same `filters[columnIndex]`
-      // slot exact-match filters use for a single value. Empty = nothing
+      // (unchecked) set. An emptied set drops the column's filter — nothing
       // excluded = all checked (the default).
       GotFilterListboxMessage: ({ column, message }) => {
         const listbox = model.filterListboxes[column];
@@ -413,15 +422,22 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         return Option.match(maybeOutMessage, {
           onNone: () => [withListbox, commands],
           onSome: ({ value }) => {
-            const columnIndex = sectionData[model.section].columns.indexOf(column);
-            if (columnIndex < 0) return [withListbox, commands];
-            const excluded = (model.filters[columnIndex] ?? '').split(',').filter((v) => v !== '');
+            const current = model.filters[column];
+            const excluded = current?._tag === 'ExcludedFilter' ? current.excluded : [];
             const nextExcluded = excluded.includes(value)
               ? excluded.filter((v) => v !== value)
               : [...excluded, value];
-            const filters = [...model.filters];
-            filters[columnIndex] = nextExcluded.join(',');
-            return [evo(withListbox, { filters: () => filters, clientPage: () => 1 }), commands];
+            const { [column]: _removed, ...rest } = model.filters;
+            return [
+              evo(withListbox, {
+                filters: () =>
+                  nextExcluded.length === 0
+                    ? rest
+                    : { ...rest, [column]: ExcludedFilter.make({ excluded: nextExcluded }) },
+                clientPage: () => 1,
+              }),
+              commands,
+            ];
           },
         });
       },

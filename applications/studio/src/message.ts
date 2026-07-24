@@ -21,7 +21,8 @@ export const ClickedSignOut = m('ClickedSignOut');
 export const SelectedSection = m('SelectedSection', { section: Section });
 export const ToggledMenu = m('ToggledMenu');
 export const UpdatedSearch = m('UpdatedSearch', { value: S.String });
-export const SelectedFilter = m('SelectedFilter', { columnIndex: S.Number, value: S.String });
+// A dropdown column's exact-match choice ('' clears it back to "All").
+export const SelectedFilter = m('SelectedFilter', { column: S.String, value: S.String });
 export const ClickedAddNew = m('ClickedAddNew');
 export const ClickedRecord = m('ClickedRecord', { section: Section, id: S.String });
 export const UpdatedDraftField = m('UpdatedDraftField', { index: S.Number, value: S.String });
