@@ -3,8 +3,16 @@ import tailwindcss from '@tailwindcss/vite';
 import { playwright } from 'vite-plus/test/browser-playwright';
 import { defineConfig } from 'vite-plus';
 
-// The Foldkit dev plugin (HMR + a DevTools MCP port) is only for `vp dev`; it
-// isn't needed to run tests and its port would clash across browser workers.
+// NOTE: no Foldkit plugin under test in THIS app. Elsewhere (platform, studio)
+// it runs portless in tests, because the plugin also brands view-function
+// identity — in dev and in build alike — and dropping it leaves tests exercising
+// the differ's positional fallback while production runs branded. Here it can't:
+// under `vp test`'s browser runner every test file fails to import with the
+// transform in place ("Failed to fetch dynamically imported module"), on both
+// chromium and webkit. So web's view tests do run against the fallback differ;
+// the motion-regression tests below are the guard that the real DOM behaves.
+// The DevTools MCP port is dev-only regardless — it clashed across browser
+// workers.
 const testing = process.env['VITEST'] === 'true';
 
 export default defineConfig({
