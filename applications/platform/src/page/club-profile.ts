@@ -9,7 +9,7 @@ import commentaryAvatar from '../assets/commentary-avatar.png';
 import { clubMatchesSections } from '../club-matches';
 import { clubSection, timesCount } from '../components';
 import { cupRun, standingsFor, scorersFor } from '../data';
-import { leagueRoundCount } from '../schedule';
+import { MATCHDAYS_PLAYED, leagueRoundCount } from '../schedule';
 import type { Club, Scorer } from '../data';
 import { SelectedScorerScope, ToggledFollow } from '../message';
 import type { Message } from '../message';
@@ -96,7 +96,10 @@ const clubStandingsSection = (target: Club): Html => {
     'Standings',
     [
       standingsHeadline(target.league),
-      seasonProgress(rows[0]?.played ?? 0, totalRounds),
+      // The canon's matchday, not the leader's played count — in a league with
+      // an odd club count the leader can be a bye or two behind the season, and
+      // this bar then disagreed with the competition screen's own stage line.
+      seasonProgress(MATCHDAYS_PLAYED, totalRounds),
       ...standingsTable(rows, target.name, (position) =>
         zoneFor(target.league, position, rows.length),
       ),
