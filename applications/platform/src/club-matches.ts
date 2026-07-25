@@ -4,11 +4,11 @@ import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
 import { clubSection, drawnRightArrow } from './components';
-import { clubs, hashSlug, standingsFor } from './data';
+import { clubs, hashSlug } from './data';
 import type { Club } from './data';
 import type { Message } from './message';
 import { matchesRouter } from './route';
-import { fixtureSeed, leagueRounds, mockScore } from './schedule';
+import { MATCHDAYS_PLAYED, fixtureSeed, leagueRounds, mockScore } from './schedule';
 
 const h = html<Message>();
 
@@ -247,10 +247,14 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
 // labelling the cards used to do for themselves. Side by side from md
 // (user call), stacked below it.
 export const clubMatchesSections = (target: Club): Html => {
-  const rows = standingsFor(target.league);
-  const playedRounds = rows[0]?.played ?? 0;
-  const entries = clubMatches(target).map((match, index) =>
-    describeMatch(target, match, index, match.round <= playedRounds),
+  // MATCHDAYS_PLAYED, not the leader's played count. Reading the season's
+  // position off `standingsFor(league)[0].played` looked equivalent and isn't:
+  // the Second League's eleven clubs mean one sits out each round, so its
+  // leader has ten games to everyone else's twelve, and rounds 11–12 came back
+  // here as unplayed "VS" cards while the competition screen showed the same
+  // fixtures with final scores. The canon has exactly one current matchday.
+  const entries = clubMatches(target).map((match) =>
+    describeMatch(target, match, match.round <= MATCHDAYS_PLAYED),
   );
   const played = entries.filter((entry) => entry.isPlayed);
   const last = Option.getOrUndefined(Array.last(played));
