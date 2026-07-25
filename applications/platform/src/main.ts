@@ -1,4 +1,4 @@
-import { Match as M, Option } from 'effect';
+import { Match as M, Option, Record } from 'effect';
 import type { Runtime } from 'foldkit';
 import { Command } from 'foldkit';
 import { evo } from 'foldkit/struct';
@@ -24,7 +24,7 @@ import {
   UpdatedClubQuery,
 } from './message';
 import { Load, Navigate, ReadPins, WritePins } from './command';
-import { competitions, featuredClubs } from './data';
+import { competitionBySlug, featuredClubs } from './data';
 import { competitionRoundCount } from './schedule';
 
 // The Model, Messages, Commands, data, shared components, and the screens each
@@ -57,7 +57,7 @@ export {
 const initialModel: Model = {
   route: WelcomeRoute(),
   competitionEdition: Option.none(),
-  competitionRound: Option.none(),
+  competitionRounds: {},
   clubQuery: '',
   featuredClub: 0,
   followed: [],
@@ -74,7 +74,7 @@ const applyRoute = (model: Model, route: AppRoute): Model =>
   evo(model, {
     route: () => route,
     competitionEdition: () => Option.none(),
-    competitionRound: () => Option.none(),
+    competitionRounds: () => ({}),
     clubQuery: () => '',
     featuredClub: () => 0,
     scorerScope: (current) => (route._tag === 'ClubRoute' ? 'All' : current),
@@ -89,13 +89,11 @@ export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
   [ReadPins()],
 ];
 
-// The round picker's bound for the competition the route has open — 1 when
-// no competition profile is showing (nothing sends rounds from elsewhere).
-const openCompetitionRoundCount = (model: Model): number => {
-  const slug = model.route._tag === 'CompetitionRoute' ? model.route.slug : undefined;
-  const competition = competitions.find((candidate) => candidate.slug === slug);
-  return competition === undefined ? 1 : competitionRoundCount(competition);
-};
+// The round picker's bound, resolved from the competition the pick CAME
+// FROM (the message carries its slug) rather than from the open route:
+// /matches pages two leagues at once and has no competition route at all.
+const roundBound = (slug: string): number =>
+  Option.match(competitionBySlug(slug), { onNone: () => 1, onSome: competitionRoundCount });
 
 // The pair returned by `update` (and by the nested match on link requests):
 // the next model and the commands to run. Extracted so the shape is named
@@ -132,15 +130,15 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         }),
         [],
       ],
-      // Clamped HERE against the open competition's schedule — the Model
+      // Clamped HERE against that competition's own schedule — the Model
       // never holds an out-of-range round (0 stays the "current" sentinel,
-      // stored as None).
-      SelectedCompetitionRound: ({ round }) => [
+      // stored as a missing key so each panel keeps its own matchday).
+      SelectedCompetitionRound: ({ slug, round }) => [
         evo(model, {
-          competitionRound: () =>
+          competitionRounds: (rounds) =>
             round === 0
-              ? Option.none()
-              : Option.some(Math.min(openCompetitionRoundCount(model), Math.max(1, round))),
+              ? Record.remove(rounds, slug)
+              : Record.set(rounds, slug, Math.min(roundBound(slug), Math.max(1, round))),
         }),
         [],
       ],
