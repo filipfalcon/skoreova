@@ -1,4 +1,4 @@
-import { html } from 'foldkit/html';
+import { createKeyedLazy, html } from 'foldkit/html';
 import type { Document, Html } from 'foldkit/html';
 
 import { footerView, headerView, menuOverlayView } from './components';
@@ -18,8 +18,25 @@ import { storyView } from './page/story';
 
 const h = html<Message>();
 
-const landingSections = (model: Model): ReadonlyArray<Html> => [
-  heroView(),
+// MEMOIZED SECTIONS. Two of the landing sections take no Model at all, so
+// their markup is identical on every render — and this view re-runs on every
+// scroll step, because ChangedReveals writes to the Model constantly. A memo
+// slot hands back the same VNode reference, which the patcher short-circuits
+// on, skipping both construction and the subtree diff. (Foldkit's own devtools
+// flagged this view and patch as over budget on init.) The rest of the
+// sections all read `model.reveals` through revealClass, so there is nothing
+// stable to memoize them on.
+//
+// Keyed rather than plain createLazy, and keyed on the SAME string as the root
+// below: a cached VNode may only be rendered at one position, and flipping
+// reduced motion re-keys the root, which tears this subtree down and builds a
+// new one. Sharing the key means that rebuild gets its own slot instead of
+// reusing a VNode still pointing at the removed DOM.
+const heroLazy = createKeyedLazy();
+const marqueeLazy = createKeyedLazy();
+
+const landingSections = (model: Model, rootKey: string): ReadonlyArray<Html> => [
+  heroLazy(rootKey, heroView, []),
   storyView(model),
   competitionsView(model),
   // The map right after the competitions — first WHAT we cover, then WHERE
@@ -33,36 +50,39 @@ const landingSections = (model: Model): ReadonlyArray<Html> => [
   // The competitions ticker answers the statement's closing line — "Watch
   // it rise to the top." and every competition name rolls past (user call;
   // it used to close the competitions section instead).
-  marqueeView(),
+  marqueeLazy(rootKey, marqueeView, []),
   followView(model),
 ];
 
-export const view = (model: Model): Document => ({
-  title: 'Skóreová — Czech Women’s Football',
-  // The root is keyed on the reduced-motion flag: flipping the OS setting
-  // tears both motion mounts down (symmetric release) and re-runs their
-  // setup with the fresh value — no stale mount-time snapshot. The reveal
-  // observers sit HERE (one OnMount per element; <main> below carries the
-  // per-frame choreography's MountMotion).
-  body: h.keyed('div')(
-    `motion-${model.prefersReducedMotion}`,
-    [
-      h.Class('bg-ink font-body text-paper antialiased'),
-      h.OnMount(ObserveReveals({ reduceMotion: model.prefersReducedMotion })),
-    ],
-    [
-      headerView(model),
-      menuOverlayView(model),
-      // While the menu overlay is open, the page content behind it goes
-      // `inert` — unfocusable and invisible to assistive tech, so Tab
-      // cycles through the overlay (and header) only. The attribute is
-      // added conditionally rather than set to `false` because `inert`
-      // is a boolean attribute: its mere presence would disable the page.
-      h.main(
-        [h.OnMount(MountMotion()), ...(model.isMenuOpen ? [h.Inert(true)] : [])],
-        landingSections(model),
-      ),
-      footerView(model.isMenuOpen),
-    ],
-  ),
-});
+export const view = (model: Model): Document => {
+  const rootKey = `motion-${model.prefersReducedMotion}`;
+  return {
+    title: 'Skóreová — Czech Women’s Football',
+    // The root is keyed on the reduced-motion flag: flipping the OS setting
+    // tears both motion mounts down (symmetric release) and re-runs their
+    // setup with the fresh value — no stale mount-time snapshot. The reveal
+    // observers sit HERE (one OnMount per element; <main> below carries the
+    // per-frame choreography's MountMotion).
+    body: h.keyed('div')(
+      rootKey,
+      [
+        h.Class('bg-ink font-body text-paper antialiased'),
+        h.OnMount(ObserveReveals({ reduceMotion: model.prefersReducedMotion })),
+      ],
+      [
+        headerView(model),
+        menuOverlayView(model),
+        // While the menu overlay is open, the page content behind it goes
+        // `inert` — unfocusable and invisible to assistive tech, so Tab
+        // cycles through the overlay (and header) only. The attribute is
+        // added conditionally rather than set to `false` because `inert`
+        // is a boolean attribute: its mere presence would disable the page.
+        h.main(
+          [h.OnMount(MountMotion()), ...(model.isMenuOpen ? [h.Inert(true)] : [])],
+          landingSections(model, rootKey),
+        ),
+        footerView(model.isMenuOpen),
+      ],
+    ),
+  };
+};
