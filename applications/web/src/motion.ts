@@ -446,6 +446,12 @@ const setUpReveals = (
     let lastRevealScrollY = window.scrollY;
     let revealScrollWasUp = false;
 
+    // A `once` group asks a different question from every other proxy: not
+    // "is it on screen" but "has it ever been", so its reveal never comes back
+    // off (see revealOnce below).
+    const isOnceGroup = (proxy: Element): boolean =>
+      proxy instanceof HTMLElement && proxy.dataset['revealGroup'] === 'once';
+
     // ONE callback can carry SEVERAL entries for the same proxy — scroll a
     // section past the fold fast enough and the observer reports the entry and
     // the exit together. Only the last of them is the current state. Keeping
@@ -453,11 +459,19 @@ const setUpReveals = (
     // applies concealed first, so an off-screen target came back marked
     // `.is-in` with no further entry coming to correct it (its replay never
     // re-armed either). Entries arrive in time order, so last wins.
+    //
+    // EXCEPT for a once-group, where the answer is the FIRST intersecting
+    // entry: it has been seen, and that is permanent. Collapsing to the last
+    // entry there dropped the reveal entirely on a fast scroll-past — the exit
+    // won, and `revealOnce` has nothing to say about an exit — which quietly
+    // turned "once" into "not at all".
     const latestPerProxy = (
       entries: ReadonlyArray<IntersectionObserverEntry>,
     ): ReadonlyArray<IntersectionObserverEntry> => {
       const byProxy = new Map<Element, IntersectionObserverEntry>();
       for (const entry of entries) {
+        const kept = byProxy.get(entry.target);
+        if (kept?.isIntersecting === true && isOnceGroup(entry.target)) continue;
         byProxy.set(entry.target, entry);
       }
       return [...byProxy.values()];
@@ -473,8 +487,7 @@ const setUpReveals = (
       const concealed: Array<string> = [];
       const drawn: Array<string> = [];
       for (const entry of latestPerProxy(entries)) {
-        const revealOnce =
-          entry.target instanceof HTMLElement && entry.target.dataset['revealGroup'] === 'once';
+        const revealOnce = isOnceGroup(entry.target);
         for (const target of targetsByProxy.get(entry.target) ?? []) {
           const key = target.dataset['revealKey'];
           if (key !== undefined) {
