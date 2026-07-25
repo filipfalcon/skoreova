@@ -22,6 +22,12 @@ export type Column = Readonly<{
   // Render the cell's value as a country flag (the card pill and the
   // drawer's Overview summary) instead of the raw code.
   flag?: true;
+  // The cell holds a REFERENCE (the record's parentId), not text of its own,
+  // and the display name is resolved from the referenced section at render
+  // time. The drawer shows such a cell read-only: it belongs to the parent
+  // record, and editing it wrote a "<uuid> → <text>" entry into the edit log
+  // that the next render then resolved away.
+  derived?: true;
 }>;
 
 // The backend's ALLCAPS enum values ('FORWARD', 'CLUB', …) as display labels

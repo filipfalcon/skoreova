@@ -28,7 +28,7 @@ export const editionsUrl = (competitionId?: string): string =>
 // in main.ts) — the response only gives a bare competitionId.
 export const editionColumns: ReadonlyArray<Column> = [
   { label: 'Edition', kind: 'title' },
-  { label: 'Competition', kind: 'checkbox' },
+  { label: 'Competition', kind: 'checkbox', derived: true },
   { label: 'Starts on', kind: 'date' },
   { label: 'Ends on', kind: 'date' },
 ];
