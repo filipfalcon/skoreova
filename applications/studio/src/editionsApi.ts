@@ -16,19 +16,18 @@ export type EditionResponse = typeof EditionResponse.Type;
 
 export const EditionsResponse = S.Array(EditionResponse);
 
-// Omit `competitionId` to fetch every edition across all competitions.
-export const editionsUrl = (competitionId?: string): string =>
-  competitionId === undefined
-    ? `${GATEWAY_BASE_URL}/editions`
-    : `${GATEWAY_BASE_URL}/editions?competitionId=${competitionId}`;
+// Every edition across all competitions — the drawer resolves a competition's
+// own editions from the loaded list, so nothing asks the endpoint to filter.
+export const editionsUrl = (): string => `${GATEWAY_BASE_URL}/editions`;
 
 // Column order shown in the Editions list and drawer; keep in sync with the
-// values produced by `editionToRow` below. "Competition" is resolved from the
-// already-loaded Competitions list at fetch time (see SucceededFetchEditions
-// in main.ts) — the response only gives a bare competitionId.
+// values produced by `editionToRow` below. "Competition" holds the bare
+// competitionId the response gives — a `derived` column, resolved to the
+// competition's name at RENDER time (see resolveEditionCell in data.ts), so
+// editions and competitions can arrive in either order.
 export const editionColumns: ReadonlyArray<Column> = [
   { label: 'Edition', kind: 'title' },
-  { label: 'Competition', kind: 'checkbox', derived: true },
+  { label: 'Competition', kind: 'checkbox', derived: 'competitions' },
   { label: 'Starts on', kind: 'date' },
   { label: 'Ends on', kind: 'date' },
 ];

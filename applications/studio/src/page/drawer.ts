@@ -29,6 +29,7 @@ import {
 import type { Message } from '../message';
 import { DrawerTabs } from '../model';
 import type { DrawerTab, LogEntry, Model } from '../model';
+import type { Section } from '../section';
 import {
   dangerButtonStyle,
   dangerCancelStyle,
@@ -64,31 +65,59 @@ export const drawer = (model: Model): Html => {
   const drawerSection = drawerState._tag === 'Closed' ? undefined : drawerState.section;
   const columns = drawerSection ? sectionData[drawerSection].columns : [];
 
-  // A derived cell (an edition's Competition) stores the parent's id and is
-  // resolved to a name for display, so the editor shows the RESOLVED value
-  // and refuses input: typing there used to commit a "<uuid> → <text>" edit
-  // that the next render resolved away — the change looked discarded, but the
-  // History tab kept it.
+  // A derived cell (an edition's Competition) stores the parent's ID and is
+  // resolved to a name for display, so it is never a free-text box: typing
+  // there used to commit a "<uuid> → <text>" edit that the next render
+  // resolved away — the change looked discarded, but the History tab kept it.
+  //
+  // Which control it gets depends on the mode, and that split is the point.
+  // EDITING shows the resolved name read-only — re-parenting a record isn't
+  // this drawer's job. CREATING has to offer the choice: a new edition with
+  // no competition is a record you can never fix, since the cell it needs is
+  // the one that goes read-only the moment it exists. So creating gets a
+  // picker over the referenced section's own rows, and the draft carries the
+  // chosen id — exactly what a fetched row holds in that cell (see
+  // ClickedSaveRecord, which lifts it into parentId).
+  const referencePicker = (section: Section, index: number): Html => {
+    const chosen = draft[index] ?? '';
+    const option = (value: string, label: string): Html =>
+      h.option([h.Value(value), h.Selected(value === chosen)], [label]);
+    return h.select(
+      [
+        h.OnChange((value) => UpdatedDraftField({ index, value })),
+        h.Class(`${drawerInputStyle} cursor-pointer`),
+      ],
+      [
+        option('', `Select a ${sectionSingularLabels[section].toLowerCase()}…`),
+        ...sectionRows(model, section)
+          .filter((row) => !row.isDeleted)
+          .map((row) => option(row.id, row.values[0] ?? row.id)),
+      ],
+    );
+  };
+
   const field = (column: Column, index: number): Html =>
     h.label(
       [h.Class('flex flex-col gap-1')],
       [
         h.span([h.Class('text-sm font-medium text-neutral-700')], [column.label]),
-        column.derived
+        column.derived === undefined
           ? h.input([
-              h.Type('text'),
-              h.Value(entry ? (resolveEditionCell(model, entry).values[index] ?? '') : ''),
-              h.Readonly(true),
-              h.AriaDescribedBy(`drawer-field-${index}-note`),
-              h.Class(`${drawerInputStyle} cursor-not-allowed bg-neutral-100 text-neutral-500`),
-            ])
-          : h.input([
               h.Type('text'),
               h.Value(draft[index] ?? ''),
               h.OnInput((value) => UpdatedDraftField({ index, value })),
               h.Class(drawerInputStyle),
-            ]),
-        column.derived
+            ])
+          : creating
+            ? referencePicker(column.derived, index)
+            : h.input([
+                h.Type('text'),
+                h.Value(entry ? (resolveEditionCell(model, entry).values[index] ?? '') : ''),
+                h.Readonly(true),
+                h.AriaDescribedBy(`drawer-field-${index}-note`),
+                h.Class(`${drawerInputStyle} cursor-not-allowed bg-neutral-100 text-neutral-500`),
+              ]),
+        column.derived !== undefined && !creating
           ? h.span(
               [h.Id(`drawer-field-${index}-note`), h.Class('text-xs text-neutral-500')],
               ['Set by the parent record.'],
