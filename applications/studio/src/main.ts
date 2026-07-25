@@ -17,7 +17,6 @@ import {
   urlToAppRoute,
 } from './route';
 import { PAGE_SIZE } from './api';
-import { editionToRow } from './editionsApi';
 import { Section } from './section';
 export { Section } from './section';
 import {
@@ -816,9 +815,6 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ],
       ClickedRetryNationals: () =>
         retrySection(model, 'nationals', [fetchNationals(), fetchHealth()]),
-      // Editions store their competition's id (in parentId); the name is
-      // resolved in the view, so competitions and editions can land in either
-      // order with no re-resolution here.
       SucceededFetchCompetitions: ({ entries }) => [
         evo(model, { competitions: () => SectionData.Success({ data: entries }) }),
         [],
@@ -831,16 +827,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ],
       ClickedRetryCompetitions: () =>
         retrySection(model, 'competitions', [fetchCompetitions(), fetchHealth()]),
-      SucceededFetchEditions: ({ editions }) => {
-        const entries: ReadonlyArray<Entry> = editions.map((edition) => ({
-          section: 'editions' as const,
-          id: edition.id,
-          isDeleted: false,
-          parentId: edition.competitionId,
-          values: editionToRow(edition, edition.competitionId),
-        }));
-        return [evo(model, { editions: () => SectionData.Success({ data: entries }) }), []];
-      },
+      SucceededFetchEditions: ({ entries }) => [
+        evo(model, { editions: () => SectionData.Success({ data: entries }) }),
+        [],
+      ],
       FailedFetchEditions: ({ reason }) => [
         evo(model, { editions: () => AsyncData.settle(model.editions, Result.fail(reason)) }),
         [],

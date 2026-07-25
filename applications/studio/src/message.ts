@@ -7,7 +7,6 @@ import { m } from 'foldkit/message';
 import { UrlRequest } from 'foldkit/navigation';
 import { Url } from 'foldkit/url';
 
-import { EditionResponse } from './editionsApi';
 import { ParticipationResponse } from './participationsApi';
 import { Section } from './section';
 import { Entry } from './model';
@@ -63,12 +62,7 @@ export const SucceededFetchCompetitions = m('SucceededFetchCompetitions', {
 });
 export const FailedFetchCompetitions = m('FailedFetchCompetitions', { reason: S.String });
 export const ClickedRetryCompetitions = m('ClickedRetryCompetitions');
-// Carries the raw parsed editions (not yet Entry-mapped) — the update handler
-// resolves each one's competition name using the already-loaded Competitions
-// list, which a Command's isolated effect can't see.
-export const SucceededFetchEditions = m('SucceededFetchEditions', {
-  editions: S.Array(EditionResponse),
-});
+export const SucceededFetchEditions = m('SucceededFetchEditions', { entries: S.Array(Entry) });
 export const FailedFetchEditions = m('FailedFetchEditions', { reason: S.String });
 export const ClickedRetryEditions = m('ClickedRetryEditions');
 export const SucceededFetchAssociations = m('SucceededFetchAssociations', {

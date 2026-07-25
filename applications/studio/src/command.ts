@@ -12,7 +12,7 @@ import { AssociationsResponse, associationToRow, associationsUrl } from './assoc
 import { getChart, releaseChart, setChart } from './chartHost';
 import { CompetitionsResponse, competitionToRow, competitionsUrl } from './competitionsApi';
 import { makePointsOption, makeStatsOption } from './echarts';
-import { EditionsResponse, editionsUrl } from './editionsApi';
+import { EditionsResponse, editionToRow, editionsUrl } from './editionsApi';
 import { ParticipationsResponse, participationsUrl } from './participationsApi';
 import { PlayersPage, playerToRow, playersUrl } from './playersApi';
 import { TeamResponse, TeamsResponse, teamByIdUrl, teamToRow, teamsUrl } from './teamsApi';
@@ -241,15 +241,26 @@ export const FetchCompetitions = Command.define(
 );
 
 // Fetches every edition across all competitions in one request (this
-// endpoint isn't paginated). Returns the raw parsed editions rather than
-// Entry rows — see SucceededFetchEditions for why.
+// endpoint isn't paginated). An edition's Competition cell carries the bare
+// competitionId; the view resolves it to a name (see resolveEditionCell), so
+// this maps to Entry rows exactly like every other section.
 export const FetchEditions = Command.define(
   'FetchEditions',
   SucceededFetchEditions,
   FailedFetchEditions,
 )(
   getDecoded(editionsUrl(), EditionsResponse).pipe(
-    Effect.map((editions) => SucceededFetchEditions({ editions })),
+    Effect.map((editions) =>
+      SucceededFetchEditions({
+        entries: editions.map((edition) => ({
+          section: 'editions' as const,
+          id: edition.id,
+          isDeleted: false,
+          parentId: edition.competitionId,
+          values: editionToRow(edition),
+        })),
+      }),
+    ),
     Effect.catch((error) => Effect.succeed(FailedFetchEditions({ reason: error.message }))),
   ),
 );

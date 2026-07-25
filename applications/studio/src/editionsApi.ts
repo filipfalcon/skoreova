@@ -40,12 +40,9 @@ export const editionLabel = (edition: EditionResponse): string => {
   return startYear === endYear ? startYear : `${startYear}/${endYear}`;
 };
 
-export const editionToRow = (
-  edition: EditionResponse,
-  competitionName: string,
-): ReadonlyArray<string> => [
+export const editionToRow = (edition: EditionResponse): ReadonlyArray<string> => [
   editionLabel(edition),
-  competitionName,
+  edition.competitionId,
   edition.startsOn,
   edition.endsOn,
 ];
