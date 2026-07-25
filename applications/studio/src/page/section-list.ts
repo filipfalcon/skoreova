@@ -208,8 +208,12 @@ const sidebar = (current: Option.Option<Section>, open: boolean): Html => {
 const dashboardHome = (model: Model): Html => {
   const account = accountName(model);
 
+  // Players is server-paginated, so its loaded rows are one page of ten —
+  // the card shows the server's total instead (0 until the first page lands).
   const countFor = (section: Section): number =>
-    sectionRows(model, section).filter((row) => !row.isDeleted).length;
+    section === 'players'
+      ? model.playersTotal
+      : sectionRows(model, section).filter((row) => !row.isDeleted).length;
 
   const card = (section: Section): Html => {
     const count = countFor(section);
@@ -284,6 +288,23 @@ const content = (model: Model, current: Section): Html => {
       query === '' || entry.values.some((cell) => cell.toLowerCase().includes(query));
     return matchesFilters && matchesQuery;
   });
+
+  // Players is the one server-paginated section, and GET /players takes no
+  // query parameters yet — so its search and filters can only narrow the ONE
+  // page that's loaded. The count line, the empty state, and a note under the
+  // controls all say so; left unsaid, a "0 entries" on page 1 read as "this
+  // record isn't in the table" when it was simply on another page.
+  const isServerPaged = current === 'players';
+  const isNarrowed =
+    query !== '' ||
+    filterColumns.some(({ column }) => {
+      if (column.kind !== 'date') return model.filters[column.label] !== undefined;
+      const range = model.dateFilters[column.label];
+      return range !== undefined && (Option.isSome(range.from) || Option.isSome(range.to));
+    });
+  const entryCount = (count: number): string => `${count} ${count === 1 ? 'entry' : 'entries'}`;
+  const countLine =
+    isServerPaged && !isNarrowed ? entryCount(model.playersTotal) : entryCount(visible.length);
 
   // A two-part pill: the column label on a darker segment, then the value
   // (or its flag) on a lighter one.
@@ -582,10 +603,7 @@ const content = (model: Model, current: Section): Html => {
               h.h1([h.Class('text-2xl font-medium md:text-3xl')], [label]),
               showSkeleton
                 ? h.div([h.Class('mt-2 h-4 w-20 rounded bg-neutral-200')], [])
-                : h.p(
-                    [h.Class('mt-1 text-sm text-neutral-500')],
-                    [`${visible.length} ${visible.length === 1 ? 'entry' : 'entries'}`],
-                  ),
+                : h.p([h.Class('mt-1 text-sm text-neutral-500')], [countLine]),
             ],
           ),
           h.div(
@@ -652,14 +670,25 @@ const content = (model: Model, current: Section): Html => {
           return filterSelect(column.label, index);
         }),
       ),
+      isServerPaged && isNarrowed
+        ? h.p(
+            [h.Role('status'), h.Class('mt-3 text-xs text-neutral-500')],
+            [
+              `Searching page ${model.playersPage} only — the players list is paginated by the server, so records on other pages are not included.`,
+            ],
+          )
+        : h.div([], []),
       showSkeleton
         ? h.div(
             [h.Class('mt-6 flex flex-col gap-2')],
             Array.makeBy(5, () => skeletonCard()),
           )
-        : pageItems.length > 0
+        : Array.isReadonlyArrayNonEmpty(pageItems)
           ? h.ul([h.Class('mt-6 flex flex-col gap-2')], pageItems.map(entryCard))
-          : h.p([h.Role('status'), h.Class('mt-6 text-sm text-neutral-500')], ['No matches.']),
+          : h.p(
+              [h.Role('status'), h.Class('mt-6 text-sm text-neutral-500')],
+              [isServerPaged && isNarrowed ? 'No matches on this page.' : 'No matches.'],
+            ),
       pagination(),
     ],
   );

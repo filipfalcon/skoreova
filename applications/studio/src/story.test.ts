@@ -237,15 +237,31 @@ test('paging the players list revalidates while keeping the current page', () =>
   Story.story(
     update,
     // playersListModel holds a loaded page, so paging goes to Refreshing
-    // (stale-while-revalidate) rather than discarding the rows.
-    Story.with(playersListModel),
+    // (stale-while-revalidate) rather than discarding the rows. 42 records at
+    // ten a page is five pages, so page 3 is a real one.
+    Story.with({ ...playersListModel, playersTotal: 42 }),
     Story.message(ClickedPlayersPage({ page: 3 })),
     Story.model((model) => {
       expect(model.playersPage).toBe(3);
       expect(model.players._tag).toBe('Refreshing');
     }),
     Story.Command.expectHas(FetchPlayers),
-    Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 0 })),
+    Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 42 })),
+  );
+});
+
+test('a players page past the end clamps to the last page', () => {
+  Story.story(
+    update,
+    // 42 records = five pages; the arrows disable at the end-stop, but a
+    // double click can still send a sixth.
+    Story.with({ ...playersListModel, playersTotal: 42 }),
+    Story.message(ClickedPlayersPage({ page: 6 })),
+    Story.model((model) => {
+      expect(model.playersPage).toBe(5);
+    }),
+    Story.Command.expectHas(FetchPlayers),
+    Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 42 })),
   );
 });
 

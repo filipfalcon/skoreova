@@ -16,6 +16,7 @@ import {
   sectionRouter,
   urlToAppRoute,
 } from './route';
+import { PAGE_SIZE } from './api';
 import { editionToRow } from './editionsApi';
 import { Section } from './section';
 export { Section } from './section';
@@ -755,13 +756,21 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ],
       ClickedRetryPlayers: () =>
         retrySection(model, 'players', [fetchPlayers(model.playersPage), fetchHealth()]),
-      ClickedPlayersPage: ({ page }) => [
-        evo(model, {
-          players: (data) => Option.getOrElse(AsyncData.revalidateOrLoad(data), () => data),
-          playersPage: () => page,
-        }),
-        [fetchPlayers(page)],
-      ],
+      // Clamped against the advertised page count, and a no-op while a page
+      // fetch is already in flight (revalidateOrLoad answers None) — the
+      // arrows disable themselves, but a double click or a held key can still
+      // land two messages before the view catches up.
+      ClickedPlayersPage: ({ page }) => {
+        const totalPages = Math.max(1, Math.ceil(model.playersTotal / PAGE_SIZE));
+        const target = Math.min(totalPages, Math.max(1, page));
+        return Option.match(AsyncData.revalidateOrLoad(model.players), {
+          onNone: () => [model, []],
+          onSome: (players) => [
+            evo(model, { players: () => players, playersPage: () => target }),
+            [fetchPlayers(target)],
+          ],
+        });
+      },
       ClickedClientPage: ({ page }) => [evo(model, { clientPage: () => page }), []],
       SucceededFetchClubs: ({ entries }) => [
         evo(model, { clubs: () => SectionData.Success({ data: entries }) }),
