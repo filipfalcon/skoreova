@@ -2,6 +2,8 @@ import { Effect, Schema as S, String as Str, pipe } from 'effect';
 import { HttpClient } from 'effect/unstable/http';
 import { Http } from 'foldkit';
 
+import type { Section } from './section';
+
 // In dev, go through the Vite proxy (see vite.config.ts) as a relative path —
 // same-origin, so the browser never makes a cross-origin request and CORS
 // doesn't apply. There is no deployed API yet, so production builds still
@@ -22,12 +24,14 @@ export type Column = Readonly<{
   // Render the cell's value as a country flag (the card pill and the
   // drawer's Overview summary) instead of the raw code.
   flag?: true;
-  // The cell holds a REFERENCE (the record's parentId), not text of its own,
-  // and the display name is resolved from the referenced section at render
-  // time. The drawer shows such a cell read-only: it belongs to the parent
-  // record, and editing it wrote a "<uuid> → <text>" entry into the edit log
-  // that the next render then resolved away.
-  derived?: true;
+  // The cell holds a REFERENCE (the record's parentId) into the named
+  // section, not text of its own; the display name is resolved from that
+  // section at render time. Editing such a cell as free text wrote a
+  // "<uuid> → <text>" entry into the edit log that the next render resolved
+  // away, so the drawer shows it read-only on an existing record — but a NEW
+  // record has to be able to name its parent, and there it becomes a picker
+  // over this section's rows (see `field` in page/drawer.ts).
+  derived?: Section;
 }>;
 
 // The backend's ALLCAPS enum values ('FORWARD', 'CLUB', …) as display labels

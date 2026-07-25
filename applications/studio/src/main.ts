@@ -1,4 +1,4 @@
-import { Array, Match as M, Option, Result } from 'effect';
+import { Array, Match as M, Option, Result, pipe } from 'effect';
 import { DatePicker, Dialog, Tabs } from '@foldkit/ui';
 import type { Runtime } from 'foldkit';
 import { AsyncData, Calendar, Command } from 'foldkit';
@@ -571,12 +571,26 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         const drawer = model.drawer;
         if (drawer._tag === 'Creating') {
           const { section } = drawer;
+          // A derived column's draft cell holds the PARENT'S ID — creating is
+          // the one mode where it's editable, and the drawer renders it as a
+          // picker over the referenced section. Lifting it into parentId is
+          // what actually files the record under its parent: a new edition
+          // used to be born with parentId '' and no way to fix it, since the
+          // cell goes read-only the moment the record exists.
+          const parentId = pipe(
+            Array.findFirstIndex(
+              sectionData[section].columns,
+              (column) => column.derived !== undefined,
+            ),
+            Option.flatMap((index) => Array.get(drawer.draft, index)),
+            Option.getOrElse(() => ''),
+          );
           const entry: Entry = {
             section,
             values: drawer.draft,
             isDeleted: false,
             id: `local-${model.nextLocalId}`,
-            parentId: '',
+            parentId,
           };
           // Forced in rather than mapped over the loaded rows: AsyncData.map
           // is a no-op on Idle/Loading/Failure, so saving a new record after a
