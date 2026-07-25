@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Array } from 'effect';
+import { Array, Number } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
@@ -318,6 +318,13 @@ const CREST_ORDER: ReadonlyArray<string> = [
   'vysocina-jihlava',
 ];
 
+// The honeycomb's row widths, alternating so the rows interlock — the last
+// row takes whatever is left (5-4-5-2 across the sixteen crests). Slicing by
+// these sizes replaces the old take-flipping loop and its running cell
+// counter: each row's first cell index IS the sum of the rows before it, so
+// the stagger delays stay consecutive across rows.
+const CREST_ROW_SIZES: ReadonlyArray<number> = [5, 4, 5, 4];
+
 const crestRail = (): Html => {
   const bySlug = (slug: string): Club | undefined => clubs.find((entry) => entry.slug === slug);
   const aSides = CREST_ORDER.flatMap((slug) => {
@@ -325,12 +332,12 @@ const crestRail = (): Html => {
     return found ? [found] : [];
   });
   const delay = (index: number): number => 0.15 + index * 0.04;
-  // Alternating 5/4 chunks — 5-4-5-2.
-  const rows: Array<ReadonlyArray<Html>> = [];
-  let cell = 0;
-  for (let i = 0, take = 5; i < aSides.length; i += take, take = take === 5 ? 4 : 5) {
-    rows.push(aSides.slice(i, i + take).map((entry) => crestChip(entry, delay(cell++))));
-  }
+  const rows = CREST_ROW_SIZES.map((size, rowIndex) => {
+    const start = Number.sumAll(CREST_ROW_SIZES.slice(0, rowIndex));
+    return aSides
+      .slice(start, start + size)
+      .map((entry, cell) => crestChip(entry, delay(start + cell)));
+  }).filter(Array.isReadonlyArrayNonEmpty);
   // No label (user call) — the crests speak for themselves, sitting first
   // with just a little air under the ticker.
   return h.div(

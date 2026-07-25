@@ -1,4 +1,5 @@
 import { Input } from '@foldkit/ui';
+import { Array } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
@@ -299,7 +300,7 @@ export const clubsScreen = (model: Model): Html => {
             ],
           ),
       }),
-      ...(filtered.length === 0
+      ...(Array.isReadonlyArrayEmpty(filtered)
         ? [
             h.p(
               // Role('status') announces the empty result to AT when it

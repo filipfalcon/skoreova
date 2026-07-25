@@ -1,4 +1,4 @@
-import { Match as M } from 'effect';
+import { Array, Match as M } from 'effect';
 
 import type { Competition } from './data';
 import { hashSlug, standingsFor } from './data';
@@ -8,41 +8,46 @@ import { hashSlug, standingsFor } from './data';
 
 export const MATCHDAYS_PLAYED = 12;
 
-// One full cycle: every team meets every other once.
-const singleRoundRobin = (
-  teams: ReadonlyArray<string>,
-): ReadonlyArray<ReadonlyArray<readonly [string, string]>> => {
-  // Odd team counts get a BYE slot; its pairings are dropped per round.
-  const pool = teams.length % 2 === 0 ? [...teams] : [...teams, ''];
-  const half = pool.length / 2;
-  const singles: Array<Array<readonly [string, string]>> = [];
-  const rotating = pool.slice(1);
-  for (let round = 0; round < pool.length - 1; round += 1) {
-    const lineup = [pool[0] ?? '', ...rotating];
-    const matches: Array<readonly [string, string]> = [];
-    for (let i = 0; i < half; i += 1) {
-      const home = lineup[i] ?? '';
-      const away = lineup[pool.length - 1 - i] ?? '';
-      if (home !== '' && away !== '') {
-        // Alternate venues by round so nobody hosts a whole half-season.
-        matches.push(round % 2 === 0 ? [home, away] : [away, home]);
-      }
-    }
-    singles.push(matches);
-    const moved = rotating.pop();
-    if (moved !== undefined) rotating.unshift(moved);
-  }
-  return singles;
+// One matchday's pairings, and a season as a list of them.
+type Fixture = readonly [string, string];
+type Round = ReadonlyArray<Fixture>;
+
+// The circle method's rotation: team 0 stays put and the rest shift by one
+// seat per round. Expressed as an index rotation rather than the old
+// pop/unshift on a mutable copy.
+const rotateRight = (seats: ReadonlyArray<string>, by: number): ReadonlyArray<string> => {
+  const pivot = seats.length - (by % Math.max(1, seats.length));
+  return [...seats.slice(pivot), ...seats.slice(0, pivot)];
 };
 
-const swapVenues = (
-  rounds: ReadonlyArray<ReadonlyArray<readonly [string, string]>>,
-): ReadonlyArray<ReadonlyArray<readonly [string, string]>> =>
-  rounds.map((round) => round.map(([home, away]) => [away, home] as const));
+// One full cycle: every team meets every other once.
+const singleRoundRobin = (teams: ReadonlyArray<string>): ReadonlyArray<Round> => {
+  // Odd team counts get a BYE slot; its pairings are dropped per round.
+  const pool = teams.length % 2 === 0 ? teams : [...teams, ''];
+  if (pool.length < 2) return [];
+  const half = pool.length / 2;
+  const fixed = pool[0] ?? '';
+  const rotating = pool.slice(1);
+  return Array.makeBy(pool.length - 1, (round) => {
+    const lineup = [fixed, ...rotateRight(rotating, round)];
+    return Array.range(0, half - 1).flatMap((seat): ReadonlyArray<Fixture> => {
+      const home = lineup[seat] ?? '';
+      const away = lineup[pool.length - 1 - seat] ?? '';
+      // The BYE seat's pairing is the one that drops out.
+      if (home === '' || away === '') return [];
+      // Alternate venues by round so nobody hosts a whole half-season.
+      return [round % 2 === 0 ? [home, away] : [away, home]];
+    });
+  });
+};
 
-export const roundRobinRounds = (
-  teams: ReadonlyArray<string>,
-): ReadonlyArray<ReadonlyArray<readonly [string, string]>> => {
+const swapVenuesInRound = (round: Round): Round =>
+  round.map(([home, away]) => [away, home] as const);
+
+const swapVenues = (rounds: ReadonlyArray<Round>): ReadonlyArray<Round> =>
+  rounds.map(swapVenuesInRound);
+
+export const roundRobinRounds = (teams: ReadonlyArray<string>): ReadonlyArray<Round> => {
   const singles = singleRoundRobin(teams);
   // Second half of the season mirrors the first with venues swapped.
   return [...singles, ...swapVenues(singles)];
@@ -55,18 +60,17 @@ export const roundRobinRounds = (
 export const leagueSchedule = (
   teams: ReadonlyArray<string>,
   totalRounds: number,
-): ReadonlyArray<ReadonlyArray<readonly [string, string]>> => {
+): ReadonlyArray<Round> => {
   const singles = singleRoundRobin(teams);
-  if (singles.length === 0) return [];
-  const season: Array<ReadonlyArray<readonly [string, string]>> = [];
-  for (let cycle = 0; season.length < totalRounds; cycle += 1) {
-    const rounds = cycle % 2 === 0 ? singles : swapVenues(singles);
-    for (const round of rounds) {
-      if (season.length === totalRounds) break;
-      season.push(round);
-    }
-  }
-  return season;
+  if (Array.isReadonlyArrayEmpty(singles)) return [];
+  // Round n comes from cycle ⌊n / cycleLength⌋ of the same pairings, with
+  // venues swapped on every other cycle — indexing straight into that
+  // instead of pushing rounds until the season is long enough.
+  return Array.makeBy(totalRounds, (index) => {
+    const round = singles[index % singles.length] ?? [];
+    const isReturnCycle = Math.floor(index / singles.length) % 2 === 1;
+    return isReturnCycle ? swapVenuesInRound(round) : round;
+  });
 };
 
 // Hand-set results, keyed by the same seed the generator uses. The seeded

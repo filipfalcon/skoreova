@@ -10,6 +10,7 @@ import type { Competition, Edition } from '../data';
 import { SelectedCompetitionEdition, SelectedCompetitionRound } from '../message';
 import type { Message } from '../message';
 import type { Model } from '../model';
+import { competitionsRouter } from '../route';
 import { MATCHDAYS_PLAYED, mockScore, roundRobinRounds } from '../schedule';
 
 const h = html<Message>();
@@ -367,7 +368,7 @@ export const competitionProfileScreen = (competition: Competition, model: Model)
     [],
     [
       profileHeader(
-        '/competitions',
+        competitionsRouter(),
         'All competitions',
         h.img([
           h.Src(competition.badge),
