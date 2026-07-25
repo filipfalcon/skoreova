@@ -21,8 +21,11 @@ const h = html<Message>();
 // stat cards. `id` is `trending:<name>`.
 export const trendingTile = (model: Model, entry: TrendingEntry, index: number): Html => {
   const featured = entry.photo !== '';
+  // No col-span here: the leader's double width belongs to the grid CHILD,
+  // and that's the <li> this tile sits inside (see trendingTiles) — a span on
+  // the tile itself was inert.
   return h.div(
-    [h.Class(clsx('relative', { 'col-span-2 sm:col-span-1': index === 0 }))],
+    [h.Class('relative')],
     [
       pinOverlay(model, `trending:${slugify(entry.name)}`, entry.name),
       h.a(

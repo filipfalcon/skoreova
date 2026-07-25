@@ -10,9 +10,16 @@
 // - `scheduled` — the daily ticker refresh (cron in alchemy.run.ts):
 //   rewrites the single `ticker:clubs` KV key.
 //
-// TODO(prod): replace BASE with a fetch from the stats API and a real
-// percentage computation. Until then every cron run rewrites the same
-// clubs with a small random offset, so the tape visibly moves day to day.
+// The endpoint ships AHEAD of its consumer: the home page's tape still
+// renders the local `tape` array in page/welcome.ts, so nothing fetches
+// /api/ticker yet. It exists so the KV key, the cron, and the edge-cache
+// headers are proven in production before the tape depends on them —
+// switching the hero over is one fetch Command, and the endpoint already
+// answers with the base data before the first cron fire.
+//
+// BASE stands in for the stats API: every cron run rewrites the same clubs
+// with a small random offset, so the tape visibly moves day to day. Real
+// percentages replace it when that API exists.
 
 export const TICKER_KEY = 'ticker:clubs';
 
