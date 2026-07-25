@@ -159,6 +159,14 @@ test('the reveal fold enters, keeps drawn state, drops stale drawn reports, and 
     Story.model((model) => {
       expect(model.reveals).toEqual({ stat: 'entered' });
     }),
+    // The fourth case, and the one motion.ts actually emits most often: the
+    // same key arriving as revealed AND drawn in one message — a downward-only
+    // pen re-entered from below, which has to land fully drawn rather than
+    // replaying its lap under the reader.
+    Story.message(ChangedReveals({ revealed: ['map'], concealed: [], drawn: ['map'] })),
+    Story.model((model) => {
+      expect(model.reveals['map']).toBe('drawn');
+    }),
     Story.Command.expectNone(),
   );
 });
