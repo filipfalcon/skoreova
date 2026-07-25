@@ -88,12 +88,12 @@ export { view } from './page';
 // A fresh signed-out model. Every section starts Idle — nothing is fetched
 // until sign-in, and there's no mock seed data.
 const initialModel = (): Model => ({
-  session: Anonymous.make({ emailInput: '', passwordInput: '' }),
+  session: Anonymous({ emailInput: '', passwordInput: '' }),
   route: HomeRoute(),
   isMenuOpen: false,
   search: '',
   filters: {},
-  drawer: DrawerClosed.make({}),
+  drawer: DrawerClosed(),
   dialog: Dialog.init({ id: DRAWER_DIALOG_ID }),
   tabs: Tabs.init({ id: DRAWER_TABS_ID }),
   nextLocalId: 1,
@@ -411,7 +411,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             search: () => '',
             filters: () => ({}),
             dateFilters: () => ({}),
-            drawer: () => DrawerClosed.make({}),
+            drawer: () => DrawerClosed(),
             clientPage: () => 1,
             linkError: () => '',
             // Fresh closed instances, so a dropdown left open on the previous
@@ -438,8 +438,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         const { [column]: _removed, ...rest } = model.filters;
         return [
           evo(model, {
-            filters: () =>
-              value === '' ? rest : { ...rest, [column]: ExactFilter.make({ value }) },
+            filters: () => (value === '' ? rest : { ...rest, [column]: ExactFilter({ value }) }),
             clientPage: () => 1,
           }),
           [],
@@ -473,7 +472,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
                 filters: () =>
                   Array.isReadonlyArrayEmpty(nextExcluded)
                     ? rest
-                    : { ...rest, [column]: ExcludedFilter.make({ excluded: nextExcluded }) },
+                    : { ...rest, [column]: ExcludedFilter({ excluded: nextExcluded }) },
                 clientPage: () => 1,
               }),
               commands,
@@ -542,7 +541,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             const [withDialog, dialogCommands] = openDialog(model);
             return [
               evo(withDialog, {
-                drawer: () => DrawerCreating.make({ section, draft: columns.map(() => '') }),
+                drawer: () => DrawerCreating({ section, draft: columns.map(() => '') }),
                 chartError: () => Option.none(),
               }),
               dialogCommands,
@@ -612,7 +611,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             evo(withDialog, {
               route: () => SectionRoute({ section }),
               nextLocalId: (n) => n + 1,
-              drawer: () => DrawerClosed.make({}),
+              drawer: () => DrawerClosed(),
             }),
             [...dialogCommands, navigate(sectionRouter({ section }))],
           ];
@@ -647,7 +646,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           evo(withDialog, {
             route: () => SectionRoute({ section }),
             editLog: (log) => [...changes, ...log],
-            drawer: () => DrawerClosed.make({}),
+            drawer: () => DrawerClosed(),
           }),
           [...dialogCommands, navigate(sectionRouter({ section }))],
         ];
@@ -674,14 +673,14 @@ export const update = (model: Model, message: Message): UpdateReturn =>
                   onNone: () => [
                     evo(withDialog, {
                       route: () => HomeRoute(),
-                      drawer: () => DrawerClosed.make({}),
+                      drawer: () => DrawerClosed(),
                     }),
                     [...commands, navigate(homeRouter())],
                   ],
                   onSome: (section) => [
                     evo(withDialog, {
                       route: () => SectionRoute({ section }),
-                      drawer: () => DrawerClosed.make({}),
+                      drawer: () => DrawerClosed(),
                     }),
                     [...commands, navigate(sectionRouter({ section }))],
                   ],
@@ -738,7 +737,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         return [
           evo(withDialog, {
             route: () => SectionRoute({ section }),
-            drawer: () => DrawerClosed.make({}),
+            drawer: () => DrawerClosed(),
           }),
           [...dialogCommands, navigate(sectionRouter({ section }))],
         ];

@@ -58,12 +58,12 @@ export const sampleEdition: Entry = Entry.make({
 // The signed-out boot model — mirrors `initialModel` in main.ts (kept here so a
 // fixture tweak can never quietly reshape the app's real starting state).
 export const signedOutModel = Model.make({
-  session: Anonymous.make({ emailInput: '', passwordInput: '' }),
+  session: Anonymous({ emailInput: '', passwordInput: '' }),
   route: HomeRoute(),
   isMenuOpen: false,
   search: '',
   filters: {},
-  drawer: DrawerClosed.make({}),
+  drawer: DrawerClosed(),
   dialog: Dialog.init({ id: DRAWER_DIALOG_ID }),
   tabs: Tabs.init({ id: DRAWER_TABS_ID }),
   nextLocalId: 1,
@@ -92,13 +92,13 @@ export const signedOutModel = Model.make({
 // generic 'editor'.
 export const dashboardModel = Model.make({
   ...signedOutModel,
-  session: SignedIn.make({ email: '' }),
+  session: SignedIn({ email: '' }),
 });
 
 // Signed in, viewing the Players section list with one loaded row.
 export const playersListModel = Model.make({
   ...signedOutModel,
-  session: SignedIn.make({ email: '' }),
+  session: SignedIn({ email: '' }),
   route: SectionRoute({ section: 'players' }),
   players: SectionData.Success({ data: [samplePlayer] }),
   playersTotal: 1,
