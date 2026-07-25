@@ -109,11 +109,30 @@ export const playersListModel = Model.make({
 // "Competition" cell must render the resolved name, not the stored id.
 export const editionsListModel = Model.make({
   ...signedOutModel,
-  session: SignedIn.make({ email: '' }),
+  session: SignedIn({ email: '' }),
   route: SectionRoute({ section: 'editions' }),
   competitions: SectionData.Success({ data: [sampleCompetition] }),
   editions: SectionData.Success({ data: [sampleEdition] }),
   serverHealth: 'Ok',
+});
+
+// Signed in on the Clubs list with its one row open in the drawer. A club is a
+// TEAM record, so its Overview mounts the points-over-time host as well as the
+// stats one — the only state that exercises SyncPointsChart.
+export const clubRecordModel = Model.make({
+  ...signedOutModel,
+  session: SignedIn({ email: '' }),
+  route: SectionRoute({ section: 'clubs' }),
+  clubs: SectionData.Success({ data: [sampleClub] }),
+  serverHealth: 'Ok',
+  drawer: DrawerEditing({
+    section: 'clubs',
+    id: sampleClub.id,
+    tab: 'Overview',
+    draft: [...sampleClub.values],
+    isConfirmingDelete: false,
+  }),
+  dialog: Dialog.init({ id: DRAWER_DIALOG_ID, isOpen: true }),
 });
 
 // Signed in with a player record open in the drawer's Overview tab — the state
@@ -121,7 +140,7 @@ export const editionsListModel = Model.make({
 // drawer addresses the record by id, resolved against the players section.
 export const playerRecordModel = Model.make({
   ...playersListModel,
-  drawer: DrawerEditing.make({
+  drawer: DrawerEditing({
     section: 'players',
     id: samplePlayer.id,
     tab: 'Overview',

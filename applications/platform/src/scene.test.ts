@@ -47,4 +47,21 @@ describe('view', () => {
       Scene.expect(Scene.label('Search clubs')).toExist(),
     );
   });
+
+  // The one INTERACTION scene: everything above renders a fixed model, which
+  // proves the view but not the loop. Typing goes through UpdatedClubQuery and
+  // back out as a re-rendered grid, so this covers input → update → view.
+  test('typing in the search box filters the grid down to the match', () => {
+    Scene.scene(
+      { update, view },
+      Scene.with(clubsModel),
+      // Each card carries its crest, so the alt text is the grid's identity.
+      Scene.expect(Scene.altText('Sparta Praha crest')).toExist(),
+      Scene.type(Scene.label('Search clubs'), 'slovacko'),
+      // Diacritics-insensitive, so an ASCII query still finds Slovácko —
+      // and every club it doesn't name leaves the grid.
+      Scene.expect(Scene.altText('Slovácko crest')).toExist(),
+      Scene.expect(Scene.altText('Sparta Praha crest')).toBeAbsent(),
+    );
+  });
 });

@@ -4,7 +4,7 @@ import { External, Internal } from 'foldkit/navigation';
 import { fromString } from 'foldkit/url';
 import { expect, test } from 'vitest';
 
-import { DetectedHeroPastHeader } from './motion';
+import { ChangedReveals, DetectedHeroPastHeader } from './motion';
 import { landingModel, menuOpenModel, secondLeagueMapModel } from './main.fixtures';
 import {
   ChangedUrl,
@@ -124,6 +124,40 @@ test('the hero observer drives the header CTA flag', () => {
     Story.message(DetectedHeroPastHeader({ past: false })),
     Story.model((model) => {
       expect(model.heroPastHeader).toBe(false);
+    }),
+    Story.Command.expectNone(),
+  );
+});
+
+test('the reveal fold enters, keeps drawn state, drops stale drawn reports, and exits', () => {
+  Story.story(
+    update,
+    Story.with(landingModel),
+    Story.message(ChangedReveals({ revealed: ['map', 'stat'], concealed: [], drawn: [] })),
+    Story.model((model) => {
+      expect(model.reveals).toEqual({ map: 'entered', stat: 'entered' });
+    }),
+    // The draw finishing promotes that one key; the others are untouched.
+    Story.message(ChangedReveals({ revealed: [], concealed: [], drawn: ['map'] })),
+    Story.model((model) => {
+      expect(model.reveals).toEqual({ map: 'drawn', stat: 'entered' });
+    }),
+    // NO DOWNGRADE: a re-entry report for an already-drawn target must not
+    // send it back to 'entered' — the pen would replay under the reader.
+    Story.message(ChangedReveals({ revealed: ['map'], concealed: [], drawn: [] })),
+    Story.model((model) => {
+      expect(model.reveals['map']).toBe('drawn');
+    }),
+    // Concealed drops the key outright, so nothing renders is-in for it…
+    Story.message(ChangedReveals({ revealed: [], concealed: ['map'], drawn: [] })),
+    Story.model((model) => {
+      expect(model.reveals).toEqual({ stat: 'entered' });
+    }),
+    // …and a late 'drawn' for a target that has since left cannot resurrect
+    // it: the fold only maps over keys that are present.
+    Story.message(ChangedReveals({ revealed: [], concealed: [], drawn: ['map'] })),
+    Story.model((model) => {
+      expect(model.reveals).toEqual({ stat: 'entered' });
     }),
     Story.Command.expectNone(),
   );

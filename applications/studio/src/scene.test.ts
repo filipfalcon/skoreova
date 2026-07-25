@@ -1,3 +1,4 @@
+import { Dialog } from '@foldkit/ui';
 import { Scene } from 'foldkit';
 import { describe, test } from 'vitest';
 
@@ -10,8 +11,10 @@ import {
 } from './main.fixtures';
 import {
   CHART_HOST_ID,
+  CompletedNavigate,
   SucceededSyncChart,
   MountChart,
+  Navigate,
   SucceededMountChart,
   SyncChart,
   update,
@@ -24,7 +27,10 @@ describe('view', () => {
       { update, view },
       Scene.with(signedOutModel),
       Scene.expect(Scene.role('heading', { name: 'Sign in' })).toExist(),
-      Scene.expect(Scene.placeholder('email address')).toExist(),
+      // By LABEL, not placeholder: the field's accessible name is what a
+      // screen reader announces, and a placeholder is only a hint the browser
+      // clears the moment anything is typed.
+      Scene.expect(Scene.label('Email address')).toExist(),
       // The arrow submit button's accessible name comes from its AriaLabel.
       Scene.expect(Scene.role('button', { name: 'Sign in' })).toExist(),
     );
@@ -56,6 +62,27 @@ describe('view', () => {
       // resolved name from the competitions section instead.
       Scene.expect(Scene.text('First League')).toExist(),
       Scene.expect(Scene.text('comp-1')).toBeAbsent(),
+    );
+  });
+
+  // The one INTERACTION scene: the tests above render fixed models, which
+  // proves the view but not the loop. Clicking a card runs ClickedRecord
+  // through update — dialog opened, route rewritten, drawer rendered — and
+  // the chart host it puts on screen mounts as a consequence.
+  test('clicking a record card opens that record in the drawer', () => {
+    Scene.scene(
+      { update, view },
+      Scene.with(playersListModel),
+      Scene.expect(Scene.role('button', { name: 'Save' })).toBeAbsent(),
+      // The name span has no handler of its own — the click bubbles to the
+      // card <button>, exactly as it does in a browser.
+      Scene.click(Scene.text('Sierra Pennock')),
+      Scene.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
+      Scene.Command.resolve(Navigate, CompletedNavigate()),
+      Scene.Mount.resolve(MountChart, SucceededMountChart({ hostId: CHART_HOST_ID })),
+      Scene.Command.resolve(SyncChart, SucceededSyncChart()),
+      // The drawer's own footer control — it exists only with a record open.
+      Scene.expect(Scene.role('button', { name: 'Save' })).toExist(),
     );
   });
 
