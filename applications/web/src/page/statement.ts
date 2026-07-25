@@ -116,7 +116,7 @@ const equationLine = (
 
 // An unnumbered full-bleed interlude — the site's attitude in three beats:
 // the tired take, the stamp slammed over it, and the deadpan analogy.
-export const statementView = (model: Model): Html =>
+export const view = (model: Model): Html =>
   h.section(
     [h.Class('overflow-hidden bg-ink py-20 text-paper md:py-32')],
     [

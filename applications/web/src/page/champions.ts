@@ -850,7 +850,7 @@ const honorsBoard = (model: Model): Html =>
     ],
   );
 
-export const championsView = (model: Model): Html =>
+export const view = (model: Model): Html =>
   h.section(
     [h.Id('meet-our-champion'), h.Class('relative bg-paper py-16 text-ink md:py-24')],
     [

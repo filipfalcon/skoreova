@@ -125,7 +125,7 @@ const nationalIdCard = (model: Model, classes: string, cellReveals: boolean): Ht
     ),
   );
 
-export const nationalTeamView = (model: Model): Html =>
+export const view = (model: Model): Html =>
   h.section(
     [h.Id('roar-as-one'), h.Class('relative bg-pink py-16 text-ink md:py-24')],
     [

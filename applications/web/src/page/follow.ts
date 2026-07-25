@@ -10,7 +10,7 @@ import type { Model } from '../model';
 
 const h = html<Message>();
 
-export const followView = (model: Model): Html =>
+export const view = (model: Model): Html =>
   h.section(
     [h.Id('follow'), h.Class('bg-ink py-16 text-paper md:py-24')],
     [

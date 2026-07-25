@@ -307,7 +307,7 @@ export const headerView = (model: Model): Html =>
 // The full-screen menu is a brand moment (staggered anchors, the sliding
 // pink underlays, its own scroll), not a boxed dialog — and the dialog
 // contract is already covered by hand: the page behind goes `inert`
-// (page.ts), Escape closes via the menuEscape subscription, focus returns
+// (view.ts), Escape closes via the menuEscape subscription, focus returns
 // to the toggle (FocusMenuToggle), and the toggle carries
 // AriaExpanded/AriaControls. If Ui.Dialog ever grows a fullscreen variant,
 // this is the first candidate to fold in.

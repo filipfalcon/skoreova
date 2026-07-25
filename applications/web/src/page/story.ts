@@ -11,7 +11,7 @@ import type { Model } from '../model';
 
 const h = html<Message>();
 
-export const storyView = (model: Model): Html =>
+export const view = (model: Model): Html =>
   h.section(
     // No `overflow-hidden`: it would clip the mascot (she's anchored to the
     // top edge and floats). Horizontal overflow is already contained globally
