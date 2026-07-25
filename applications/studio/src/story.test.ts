@@ -63,7 +63,7 @@ import {
 // on. (`signedOutModel` starts every section Idle.)
 const loadingModel = {
   ...signedOutModel,
-  session: SignedIn.make({ email: '' }),
+  session: SignedIn({ email: '' }),
   players: SectionData.Loading(),
   clubs: SectionData.Loading(),
   nationals: SectionData.Loading(),
@@ -165,7 +165,7 @@ test('a successful players fetch loads its rows and records the total', () => {
     update,
     Story.with({
       ...signedOutModel,
-      session: SignedIn.make({ email: '' }),
+      session: SignedIn({ email: '' }),
       players: SectionData.Loading(),
     }),
     Story.message(
@@ -270,7 +270,7 @@ test('a deep-linked team resolves by id, upserts the row, and opens its drawer',
     update,
     Story.with({
       ...signedOutModel,
-      session: SignedIn.make({ email: '' }),
+      session: SignedIn({ email: '' }),
       route: SectionRoute({ section: 'clubs' }),
     }),
     Story.message(SucceededFetchTeamById({ entry: sampleClub })),
@@ -299,7 +299,7 @@ test('a team that cannot be resolved by id surfaces a link error', () => {
     update,
     Story.with({
       ...signedOutModel,
-      session: SignedIn.make({ email: '' }),
+      session: SignedIn({ email: '' }),
       route: SectionRoute({ section: 'clubs' }),
     }),
     Story.message(FailedFetchTeamById({ reason: 'No such team' })),
@@ -353,7 +353,7 @@ test('saving an edited record defers to the clock, then commits with that timest
     // A player record open with one field edited in the draft (index 1).
     Story.with({
       ...playerRecordModel,
-      drawer: DrawerEditing.make({
+      drawer: DrawerEditing({
         section: 'players',
         id: samplePlayer.id,
         tab: 'Overview',

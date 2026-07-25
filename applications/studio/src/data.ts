@@ -49,7 +49,7 @@ export const withDraft = (drawer: DrawerState, draft: ReadonlyArray<string>): Dr
 
 // Opens the drawer on an existing record, populating the edit buffer from it.
 export const editRecord = (entry: Entry): DrawerState =>
-  DrawerEditing.make({
+  DrawerEditing({
     section: entry.section,
     id: entry.id,
     tab: 'Overview',

@@ -3,6 +3,7 @@
 import { Schema as S } from 'effect';
 import { DatePicker, Dialog, Listbox, Tabs } from '@foldkit/ui';
 import { AsyncData, Calendar } from 'foldkit';
+import { ts } from 'foldkit/schema';
 
 import { ParticipationResponse } from './participationsApi';
 import { AppRoute } from './route';
@@ -15,11 +16,11 @@ export const DRAWER_DIALOG_ID = 'record-drawer';
 // Who is using the studio. A tagged union so the credential inputs only
 // exist while signing in — after sign-in the model carries the email alone,
 // and the plaintext password can't linger in state (or DevTools snapshots).
-export const Anonymous = S.TaggedStruct('Anonymous', {
+export const Anonymous = ts('Anonymous', {
   emailInput: S.String,
   passwordInput: S.String,
 });
-export const SignedIn = S.TaggedStruct('SignedIn', { email: S.String });
+export const SignedIn = ts('SignedIn', { email: S.String });
 export const Session = S.Union([Anonymous, SignedIn]);
 export type Session = typeof Session.Type;
 
@@ -61,8 +62,8 @@ export const FilterListbox: ReturnType<typeof Listbox.Multi.create<string>> =
 // value is in it. Tagged variants replace the old per-index string slot that
 // multiplexed both encodings comma-joined (a value containing a comma
 // corrupted the excluded set).
-export const ExactFilter = S.TaggedStruct('ExactFilter', { value: S.String });
-export const ExcludedFilter = S.TaggedStruct('ExcludedFilter', { excluded: S.Array(S.String) });
+export const ExactFilter = ts('ExactFilter', { value: S.String });
+export const ExcludedFilter = ts('ExcludedFilter', { excluded: S.Array(S.String) });
 export const ColumnFilter = S.Union([ExactFilter, ExcludedFilter]);
 export type ColumnFilter = typeof ColumnFilter.Type;
 
@@ -80,12 +81,12 @@ export type DateRangeFilter = typeof DateRangeFilter.Type;
 // record that isn't open). An open record is addressed by its stable
 // section+id, NOT a row index, so a background refetch that rebuilds `rows`
 // can't repoint the drawer at a different record.
-export const DrawerClosed = S.TaggedStruct('Closed', {});
-export const DrawerCreating = S.TaggedStruct('Creating', {
+export const DrawerClosed = ts('Closed');
+export const DrawerCreating = ts('Creating', {
   section: Section,
   draft: S.Array(S.String),
 });
-export const DrawerEditing = S.TaggedStruct('Editing', {
+export const DrawerEditing = ts('Editing', {
   section: Section,
   id: S.String,
   tab: DrawerTab,
