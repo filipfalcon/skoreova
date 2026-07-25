@@ -21,6 +21,7 @@ import {
   sectionLabels,
   sectionOrder,
   sectionRows,
+  retryBySection,
   toIsoDate,
 } from '../data';
 import {
@@ -30,12 +31,6 @@ import {
   ClickedDashboard,
   ClickedPlayersPage,
   ClickedRecord,
-  ClickedRetryAssociations,
-  ClickedRetryClubs,
-  ClickedRetryCompetitions,
-  ClickedRetryEditions,
-  ClickedRetryNationals,
-  ClickedRetryPlayers,
   ClickedSignOut,
   GotDateFilterMessage,
   GotFilterListboxMessage,
@@ -454,14 +449,6 @@ const content = (model: Model, current: Section): Html => {
 
   // Every section is backed by the real API; its state drives the skeleton,
   // the failure banner, and the Refresh control.
-  const retryBySection: Record<Section, Message> = {
-    players: ClickedRetryPlayers(),
-    clubs: ClickedRetryClubs(),
-    nationals: ClickedRetryNationals(),
-    competitions: ClickedRetryCompetitions(),
-    editions: ClickedRetryEditions(),
-    associations: ClickedRetryAssociations(),
-  };
   const sectionState = model[current];
   const retry = retryBySection[current];
   const pending = AsyncData.isPending(sectionState);

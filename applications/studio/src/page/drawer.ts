@@ -80,21 +80,77 @@ export const view = (model: Model): Html => {
   // ClickedSaveRecord, which lifts it into parentId).
   const referencePicker = (section: Section, index: number): Html => {
     const chosen = draft[index] ?? '';
+    const singular = sectionSingularLabels[section].toLowerCase();
+    const data = model[section];
     const option = (value: string, label: string): Html =>
       h.option([h.Value(value), h.Selected(value === chosen)], [label]);
+
+    // Nothing to choose from YET is a state of its own. `sectionRows` answers
+    // [] for Idle, Loading and Failure alike, so a drawer opened while the
+    // referenced section was still loading (or after its fetch failed) used to
+    // render an empty, silent select — no word that the list was coming, and no
+    // way back from a failure. The teams list further down this same drawer
+    // says both, so this says both too.
+    if (!AsyncData.hasData(data)) {
+      const isFailed = data._tag === 'Failure';
+      return h.div(
+        [h.Class('flex flex-col gap-2')],
+        [
+          h.select(
+            [h.Disabled(true), h.Class(`${drawerInputStyle} cursor-not-allowed bg-neutral-100`)],
+            [
+              option(
+                '',
+                isFailed
+                  ? `Couldn't load ${sectionLabels[section].toLowerCase()}`
+                  : `Loading ${sectionLabels[section].toLowerCase()}…`,
+              ),
+            ],
+          ),
+          isFailed
+            ? h.div(
+                [
+                  h.Role('alert'),
+                  h.Class('flex flex-wrap items-center gap-3 text-sm text-rose-700'),
+                ],
+                [
+                  h.span([], [data.error]),
+                  h.button(
+                    [h.OnClick(retryBySection[section]), h.Class(retryButtonStyle)],
+                    ['Retry'],
+                  ),
+                ],
+              )
+            : h.empty,
+        ],
+      );
+    }
+
     return h.select(
       [
         h.OnChange((value) => UpdatedDraftField({ index, value })),
         h.Class(`${drawerInputStyle} cursor-pointer`),
       ],
       [
-        option('', `Select a ${sectionSingularLabels[section].toLowerCase()}…`),
+        // The placeholder stays selected until the editor picks: a new record
+        // has no parent to preselect, and quietly defaulting to the first row
+        // would file a parent nobody chose. Save is the gate instead — see
+        // `missingReferences`.
+        option('', `Select a ${singular}…`),
         ...sectionRows(model, section)
           .filter((row) => !row.isDeleted)
           .map((row) => option(row.id, row.values[0] ?? row.id)),
       ],
     );
   };
+
+  // Creating with a derived cell left blank would file `parentId: ''` — and
+  // Editing renders that cell read-only ("Set by the parent record"), so the
+  // record could never be repaired afterwards. Making it merely avoidable
+  // wasn't the fix; Save refuses while one is unset, and says which.
+  const missingReferences = creating
+    ? columns.filter((column, index) => column.derived !== undefined && (draft[index] ?? '') === '')
+    : [];
 
   const field = (column: Column, index: number): Html =>
     h.label(
@@ -453,10 +509,33 @@ export const view = (model: Model): Html => {
               ]
             : [tabsView()]),
           h.div(
-            [h.Class('flex justify-end gap-3 border-t border-neutral-200 px-6 py-4')],
             [
+              h.Class(
+                'flex flex-wrap items-center justify-end gap-3 border-t border-neutral-200 px-6 py-4',
+              ),
+            ],
+            [
+              Array.isReadonlyArrayNonEmpty(missingReferences)
+                ? h.p(
+                    [h.Id('drawer-save-note'), h.Class('mr-auto text-xs text-neutral-500')],
+                    [
+                      `Choose a ${missingReferences
+                        .map((column) => column.label.toLowerCase())
+                        .join(' and a ')} to save this record.`,
+                    ],
+                  )
+                : h.empty,
               h.button([...render.closeButton, h.Class(drawerCancelStyle)], ['Cancel']),
-              h.button([h.OnClick(ClickedSaveRecord()), h.Class(drawerSaveStyle)], ['Save']),
+              h.button(
+                [
+                  h.OnClick(ClickedSaveRecord()),
+                  ...(Array.isReadonlyArrayNonEmpty(missingReferences)
+                    ? [h.Disabled(true), h.AriaDescribedBy('drawer-save-note')]
+                    : []),
+                  h.Class(drawerSaveStyle),
+                ],
+                ['Save'],
+              ),
             ],
           ),
         ]

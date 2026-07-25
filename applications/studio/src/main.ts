@@ -570,14 +570,20 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           // what actually files the record under its parent: a new edition
           // used to be born with parentId '' and no way to fix it, since the
           // cell goes read-only the moment the record exists.
+          const referenceIndex = Array.findFirstIndex(
+            sectionData[section].columns,
+            (column) => column.derived !== undefined,
+          );
           const parentId = pipe(
-            Array.findFirstIndex(
-              sectionData[section].columns,
-              (column) => column.derived !== undefined,
-            ),
+            referenceIndex,
             Option.flatMap((index) => Array.get(drawer.draft, index)),
             Option.getOrElse(() => ''),
           );
+          // The drawer disables Save while a reference is unset, and this is
+          // the same rule on the update side: a held Enter or a replayed
+          // message must not file a record whose parent cell every later
+          // render shows read-only.
+          if (Option.isSome(referenceIndex) && parentId === '') return [model, []];
           const entry: Entry = {
             section,
             values: drawer.draft,

@@ -410,6 +410,27 @@ test('a new edition names its competition through the picker, and is filed under
   );
 });
 
+test('a new edition with no competition chosen is refused, not filed', () => {
+  Story.story(
+    update,
+    Story.with(editionsListModel),
+    Story.message(ClickedAddNew()),
+    Story.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
+    // Everything but the reference filled in. The drawer disables Save here;
+    // `update` refuses the same way, so a held Enter can't slip a record
+    // through with parentId '' — the cell it would need goes read-only the
+    // moment the record exists.
+    Story.message(UpdatedDraftField({ index: 0, value: '2026/2027' })),
+    Story.message(ClickedSaveRecord()),
+    Story.model((model) => {
+      expect(model.drawer._tag).toBe('Creating');
+      // Still just the one fetched edition — nothing was created.
+      expect(Option.getOrElse(AsyncData.getData(model.editions), () => [])).toHaveLength(1);
+    }),
+    Story.Command.expectNone(),
+  );
+});
+
 test('a failed chart mount records the reason as a chart error', () => {
   Story.story(
     update,
