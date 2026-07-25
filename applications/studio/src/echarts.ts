@@ -6,7 +6,7 @@ import type { EChartsOption } from 'echarts/types/dist/shared';
 
 // Registers the trimmed-down subset of ECharts this app needs: bar and line
 // charts with a title and a tooltip. Call once at startup.
-export const registerEcharts = () => {
+export const registerEcharts = (): void => {
   echarts.use([
     BarChart,
     LineChart,
@@ -15,7 +15,6 @@ export const registerEcharts = () => {
     TitleComponent,
     TooltipComponent,
   ]);
-  return echarts;
 };
 
 export type StatsOptionArgs = Readonly<{

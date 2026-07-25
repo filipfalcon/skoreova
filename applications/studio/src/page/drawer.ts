@@ -127,7 +127,7 @@ export const drawer = (model: Model): Html => {
     );
 
   const overviewTab = (): Html => {
-    if (!entry) return h.div([], []);
+    if (!entry) return h.empty;
     const isTeam = entry.section === 'clubs' || entry.section === 'nationals';
     const isCompetition = entry.section === 'competitions';
     const isEdition = entry.section === 'editions';
@@ -136,7 +136,7 @@ export const drawer = (model: Model): Html => {
 
     // A competition's own editions, each opening its own drawer on click.
     const editionsList = (): Html => {
-      if (!isCompetition) return h.div([], []);
+      if (!isCompetition) return h.empty;
       const editions = sectionRows(model, 'editions').filter(
         (row) => row.parentId === entry.id && !row.isDeleted,
       );
@@ -172,7 +172,7 @@ export const drawer = (model: Model): Html => {
     // An edition's participating teams (Clubs/Nationals), resolved via
     // GET /participations — a join with no display fields of its own.
     const participatingTeamsList = (): Html => {
-      if (!isEdition) return h.div([], []);
+      if (!isEdition) return h.empty;
 
       if (model.participations._tag === 'Failure') {
         return h.div(
@@ -267,9 +267,9 @@ export const drawer = (model: Model): Html => {
               ],
               [],
             )
-          : h.div([], []),
+          : h.empty,
         Option.match(model.chartError, {
-          onNone: () => h.div([], []),
+          onNone: () => h.empty,
           onSome: (error) => h.p([h.Role('alert'), h.Class('text-xs text-rose-600')], [error]),
         }),
         h.div(

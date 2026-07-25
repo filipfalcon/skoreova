@@ -162,56 +162,43 @@ const mapSectionRows = (
   f: (rows: ReadonlyArray<Entry>) => ReadonlyArray<Entry>,
 ): SectionData => AsyncData.map(data, f);
 
-// Applies a parsed URL to the model — used both for the initial load and for
-// browser back/forward (ChangedUrl). Deep-linking to a specific record is
-// fully reliable for Clubs/Nationals (fetched by id via GET /teams/{id} if
-// not already loaded); other sections have no single-record endpoint, so a
-// link only opens the record if it's already in the currently loaded list —
-// otherwise it falls back to that section's list.
 // The pair returned by `update` and the helpers it delegates to: the next
 // model and the commands to run. Named once rather than spelled out at every
 // signature and withReturnType.
 type UpdateReturn = readonly [Model, ReadonlyArray<Command.Command<Message>>];
 const withUpdateReturn = M.withReturnType<UpdateReturn>();
 
+// Every route that shows a LIST lands on the same state: the route stored, the
+// nav closed, and the drawer shut for real — the Dialog submodel included, so
+// a back button out of an open record releases the scroll lock and focus trap
+// rather than leaving them behind. Home, NotFound, Section and the
+// record-that-can't-be-opened fallback are all this.
+const showList = (model: Model, route: AppRoute): UpdateReturn => {
+  const [withDialog, dialogCommands] = closeDialog(model);
+  return [
+    evo(withDialog, {
+      route: () => route,
+      isMenuOpen: () => false,
+      drawer: () => DrawerClosed(),
+    }),
+    dialogCommands,
+  ];
+};
+
+// Applies a parsed URL to the model — used both for the initial load and for
+// browser back/forward (ChangedUrl). Deep-linking to a specific record is
+// fully reliable for Clubs/Nationals (fetched by id via GET /teams/{id} if
+// not already loaded); other sections have no single-record endpoint, so a
+// link only opens the record if it's already in the currently loaded list —
+// otherwise it falls back to that section's list.
 const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
   M.value(route).pipe(
     withUpdateReturn,
     M.tagsExhaustive({
       // The dashboard landing page — the default entrypoint after signing in.
-      HomeRoute: () => {
-        const [withDialog, dialogCommands] = closeDialog(model);
-        return [
-          evo(withDialog, {
-            route: () => route,
-            isMenuOpen: () => false,
-            drawer: () => DrawerClosed.make({}),
-          }),
-          dialogCommands,
-        ];
-      },
-      NotFoundRoute: () => {
-        const [withDialog, dialogCommands] = closeDialog(model);
-        return [
-          evo(withDialog, {
-            route: () => route,
-            isMenuOpen: () => false,
-            drawer: () => DrawerClosed.make({}),
-          }),
-          dialogCommands,
-        ];
-      },
-      SectionRoute: () => {
-        const [withDialog, dialogCommands] = closeDialog(model);
-        return [
-          evo(withDialog, {
-            route: () => route,
-            isMenuOpen: () => false,
-            drawer: () => DrawerClosed.make({}),
-          }),
-          dialogCommands,
-        ];
-      },
+      HomeRoute: () => showList(model, route),
+      NotFoundRoute: () => showList(model, route),
+      SectionRoute: () => showList(model, route),
       RecordRoute: ({ section, id }) => {
         const found = findRecord(model, section, id);
         const entry = found && !found.isDeleted ? found : undefined;
@@ -234,21 +221,16 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
               route: () => route,
               isMenuOpen: () => false,
             }),
-            [fetchTeamById(section, id)],
+            // Not while signed out: the shell isn't on screen to show the
+            // record, and sign-in re-applies this very route — which fetched
+            // the same team a second time for nothing.
+            model.session._tag === 'Anonymous' ? [] : [fetchTeamById(section, id)],
           ];
         }
         // No single-record endpoint for this section (or it's mock-only) —
         // fall back to the section's list instead of a broken "open" state
         // (routeSection still selects the list to show).
-        const [withDialog, dialogCommands] = closeDialog(model);
-        return [
-          evo(withDialog, {
-            route: () => route,
-            isMenuOpen: () => false,
-            drawer: () => DrawerClosed.make({}),
-          }),
-          dialogCommands,
-        ];
+        return showList(model, route);
       },
     }),
   );
