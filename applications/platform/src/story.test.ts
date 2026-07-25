@@ -21,12 +21,23 @@ import {
   ToggledFollow,
   ToggledPin,
   WritePins,
+  init,
   update,
 } from './main';
 
 // Builds a parsed Url from a path, the way the runtime hands one to
 // ClickedLink/ChangedUrl. An absolute URL guarantees a well-formed pathname.
 const url = (path: string) => Option.getOrThrow(fromString(`https://skoreova.example${path}`));
+
+// main.fixtures' welcomeModel is hand-written to mirror `initialModel`, and
+// every other fixture spreads over it — so a field added to the Model and
+// forgotten there would quietly test a state the app never boots into.
+test('the boot fixture still mirrors what init actually produces', () => {
+  const [booted, commands] = init(url('/'));
+  expect(booted).toEqual(welcomeModel);
+  // Boot hydrates the pins from storage and nothing else.
+  expect(commands).toHaveLength(1);
+});
 
 test('selecting a chart metric records it and fires no command', () => {
   Story.story(
@@ -78,6 +89,41 @@ test('each competition keeps its own round, clamped against its own schedule', (
     Story.model((model) => {
       expect(model.competitionRounds['first-league']).toBe(11);
       expect(model.competitionRounds['second-league']).toBe(22);
+    }),
+    Story.Command.expectNone(),
+  );
+});
+
+test('a route change clears the per-screen pickers and keeps the durable lists', () => {
+  Story.story(
+    update,
+    Story.with({
+      ...clubsModel,
+      clubQuery: 'sparta',
+      featuredClub: 2,
+      competitionRounds: { 'first-league': 5 },
+      competitionEdition: Option.some('2023/24'),
+      scorerScope: 'Cup',
+      followed: ['sparta-praha'],
+      pinned: ['trending:sparta-praha'],
+    }),
+    Story.message(ChangedUrl({ url: url('/competitions/second-league') })),
+    Story.model((model) => {
+      // Transient — these belong to the screen you just left.
+      expect(model.clubQuery).toBe('');
+      expect(model.featuredClub).toBe(0);
+      expect(model.competitionRounds).toEqual({});
+      expect(model.competitionEdition).toEqual(Option.none());
+      // The scorers scope survives anything but opening a club profile.
+      expect(model.scorerScope).toBe('Cup');
+      // Durable — a visitor's own lists outlive navigation.
+      expect(model.followed).toEqual(['sparta-praha']);
+      expect(model.pinned).toEqual(['trending:sparta-praha']);
+    }),
+    // …and opening a club profile is the one route that resets the scope.
+    Story.message(ChangedUrl({ url: url('/clubs/slavia-praha') })),
+    Story.model((model) => {
+      expect(model.scorerScope).toBe('All');
     }),
     Story.Command.expectNone(),
   );

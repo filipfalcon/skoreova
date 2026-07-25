@@ -4,14 +4,18 @@ import { AsyncData, Story } from 'foldkit';
 import { expect, test } from 'vitest';
 
 import {
+  clubRecordModel,
+  editionsListModel,
   playerRecordModel,
   playersListModel,
   sampleClub,
+  sampleCompetition,
   samplePlayer,
   signedOutModel,
 } from './main.fixtures';
 import {
   CHART_HOST_ID,
+  ClickedAddNew,
   ClickedPlayersPage,
   ClickedRetryPlayers,
   ClickedSaveRecord,
@@ -41,6 +45,7 @@ import {
   FetchParticipations,
   FetchPlayers,
   Navigate,
+  POINTS_CHART_HOST_ID,
   SavedRecordAt,
   SectionRoute,
   SignedIn,
@@ -56,6 +61,8 @@ import {
   SucceededFetchTeamById,
   SucceededMountChart,
   SyncChart,
+  SyncPointsChart,
+  UpdatedDraftField,
   update,
 } from './main';
 
@@ -320,6 +327,86 @@ test('once the chart host mounts, the current record is synced into it', () => {
     }),
     Story.Command.expectHas(SyncChart),
     Story.Command.resolve(SyncChart, SucceededSyncChart()),
+  );
+});
+
+test("a team record's points host syncs through SyncPointsChart, and reports its failures", () => {
+  Story.story(
+    update,
+    Story.with(clubRecordModel),
+    // Two hosts share SucceededMountChart — the hostId is what picks the
+    // series. The points chart is team-only (see POINTS_CHART_HOST_ID).
+    Story.message(SucceededMountChart({ hostId: POINTS_CHART_HOST_ID })),
+    Story.Command.expectHas(SyncPointsChart),
+    Story.Command.resolve(SyncPointsChart, SucceededSyncChart()),
+    Story.model((model) => {
+      expect(model.chartError).toEqual(Option.none());
+    }),
+    // …and the same Command's failure path lands in chartError.
+    Story.message(SucceededMountChart({ hostId: POINTS_CHART_HOST_ID })),
+    Story.Command.resolve(SyncPointsChart, FailedSyncChart({ reason: 'no live chart' })),
+    Story.model((model) => {
+      expect(model.chartError).toEqual(Option.some('no live chart'));
+    }),
+  );
+});
+
+test('a fetch failure arrives through its own Command, not just its message', () => {
+  Story.story(
+    update,
+    Story.with(signedOutModel),
+    Story.message(SubmittedSignIn()),
+    // Dispatching FailedFetchPlayers by hand (as the failure sweep above does)
+    // proves the handler. Resolving the COMMAND with it is what proves the
+    // wiring — that FetchPlayers can actually deliver this message.
+    Story.Command.resolve(FetchPlayers, FailedFetchPlayers({ reason: 'players down' })),
+    Story.model((model) => {
+      expectFailure(model.players, 'players down');
+    }),
+    // The rest of the fan-out still has to be answered for the story to close.
+    Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [] })),
+    Story.Command.resolve(FetchNationals, SucceededFetchNationals({ entries: [] })),
+    Story.Command.resolve(FetchCompetitions, SucceededFetchCompetitions({ entries: [] })),
+    Story.Command.resolve(FetchEditions, SucceededFetchEditions({ entries: [] })),
+    Story.Command.resolve(FetchAssociations, SucceededFetchAssociations({ entries: [] })),
+    Story.Command.resolve(
+      FetchParticipations,
+      SucceededFetchParticipations({ participations: [] }),
+    ),
+    Story.Command.resolve(FetchHealth, FailedFetchHealth({ reason: 'health down' })),
+    Story.model((model) => {
+      expect(model.serverHealth).toBe('Down');
+    }),
+  );
+});
+
+test('a new edition names its competition through the picker, and is filed under it', () => {
+  Story.story(
+    update,
+    // On the Editions list with the competitions loaded — what the picker
+    // offers. Creating opens a blank draft over the section's columns.
+    Story.with(editionsListModel),
+    Story.message(ClickedAddNew()),
+    Story.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
+    Story.model((model) => {
+      expect(model.drawer._tag).toBe('Creating');
+    }),
+    // Column 1 is the derived Competition cell; the picker writes the chosen
+    // competition's ID into the draft.
+    Story.message(UpdatedDraftField({ index: 0, value: '2026/2027' })),
+    Story.message(UpdatedDraftField({ index: 1, value: sampleCompetition.id })),
+    Story.message(ClickedSaveRecord()),
+    Story.model((model) => {
+      const editions = Option.getOrElse(AsyncData.getData(model.editions), () => []);
+      const created = editions.find((row) => row.id === 'local-1');
+      expect(created).toBeDefined();
+      // The id lands in parentId — the reference every consumer reads — and
+      // stays in the cell, where the view resolves it to the name.
+      expect(created?.parentId).toBe(sampleCompetition.id);
+      expect(created?.values[1]).toBe(sampleCompetition.id);
+    }),
+    Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
+    Story.Command.resolve(Navigate, CompletedNavigate()),
   );
 });
 

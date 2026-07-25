@@ -1,8 +1,16 @@
+import { Option } from 'effect';
 import { Scene } from 'foldkit';
 import { describe, test } from 'vitest';
 
 import { landingModel, menuOpenModel } from './main.fixtures';
-import { update, view } from './main';
+import {
+  CompletedSetScrollLock,
+  DetectActiveSection,
+  DetectedActiveSection,
+  SetScrollLock,
+  update,
+  view,
+} from './main';
 import {
   ChangedReveals,
   CompletedMountMotion,
@@ -50,6 +58,24 @@ describe('view', () => {
       { update, view },
       Scene.with(menuOpenModel),
       ...acknowledgeMounts,
+      Scene.expect(Scene.role('button', { name: 'Close menu' })).toExist(),
+      Scene.expect(Scene.role('link', { name: 'On the rise' })).toExist(),
+    );
+  });
+
+  // The one INTERACTION scene: the tests above render fixed models, which
+  // proves the view but not the loop. Clicking the toggle runs ToggledMenu
+  // through update and re-renders the header from the new Model — including
+  // the accessible name and aria-expanded the icon-only button relies on.
+  test('clicking the menu toggle opens the overlay', () => {
+    Scene.scene(
+      { update, view },
+      Scene.with(landingModel),
+      ...acknowledgeMounts,
+      Scene.click(Scene.role('button', { name: 'Open menu' })),
+      // Opening locks the page scroll and asks which section the reader is in.
+      Scene.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
+      Scene.Command.resolve(DetectActiveSection, DetectedActiveSection({ section: Option.none() })),
       Scene.expect(Scene.role('button', { name: 'Close menu' })).toExist(),
       Scene.expect(Scene.role('link', { name: 'On the rise' })).toExist(),
     );
