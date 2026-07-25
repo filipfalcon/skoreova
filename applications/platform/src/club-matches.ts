@@ -162,9 +162,10 @@ const clubMatchVersus = (): Html =>
 const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
   const homeGoals = entry.isHome ? entry.forGoals : entry.againstGoals;
   const awayGoals = entry.isHome ? entry.againstGoals : entry.forGoals;
-  // Through fixtureSeed like the scoreline: a hand-built seed here left the
-  // league out, which is the drift schedule.ts documents — two leagues with a
-  // same-named B side would have shared a kickoff by accident.
+  // Through fixtureSeed like the scoreline: ONE seed per fixture is the rule
+  // schedule.ts states, and a hand-built seed here quietly opted out of it —
+  // the same fixture could then be reseeded from one place and not the other.
+  // (Not a live collision today: every B side is Second League only.)
   const kickoff = kickoffFor(
     fixtureSeed(target.league, entry.match.round, entry.match.home, entry.match.away),
   );
@@ -253,9 +254,10 @@ export const clubMatchesSections = (target: Club): Html => {
   // MATCHDAYS_PLAYED, not the leader's played count. Reading the season's
   // position off `standingsFor(league)[0].played` looked equivalent and isn't:
   // the Second League's eleven clubs mean one sits out each round, so its
-  // leader has ten games to everyone else's twelve, and rounds 11–12 came back
-  // here as unplayed "VS" cards while the competition screen showed the same
-  // fixtures with final scores. The canon has exactly one current matchday.
+  // leader has ten games to the other clubs' eleven, and rounds 11–12 came
+  // back here as unplayed "VS" cards while the competition screen showed the
+  // same fixtures with final scores. The canon has exactly one current
+  // matchday, and this is it.
   const entries = clubMatches(target).map((match) =>
     describeMatch(target, match, match.round <= MATCHDAYS_PLAYED),
   );

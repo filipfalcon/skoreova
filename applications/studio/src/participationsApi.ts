@@ -5,7 +5,7 @@ import { GATEWAY_BASE_URL } from './api';
 // Mirrors GET /participations from the backend's OpenAPI spec (fetched
 // 2026-07-05). A pure join row — which team played in which edition. No
 // section/list UI of its own; used only to resolve an edition's teams (see
-// the Overview tab in main.ts).
+// the Overview tab in page/drawer.ts).
 export const ParticipationResponse = S.Struct({
   id: S.String,
   editionId: S.String,

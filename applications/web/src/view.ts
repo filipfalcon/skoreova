@@ -24,10 +24,13 @@ const h = html<Message>();
 // their markup is identical on every render — and this view re-runs on every
 // scroll step, because ChangedReveals writes to the Model constantly. A memo
 // slot hands back the same VNode reference, which the patcher short-circuits
-// on, skipping both construction and the subtree diff. (Foldkit's own devtools
-// flagged this view and patch as over budget on init.) The rest of the
-// sections all read `model.reveals` through revealClass, so there is nothing
-// stable to memoize them on.
+// on, skipping both construction and the subtree diff. The win is the SCROLL,
+// not the boot: the first render has to build both sections anyway (and that is
+// the render foldkit's devtools flags as over budget — memoization can do
+// nothing for it), while a reader scrolling the page re-runs this view dozens
+// of times and now rebuilds neither. The rest of the sections all read
+// `model.reveals` through revealClass, so there is nothing stable to memoize
+// them on.
 //
 // Keyed rather than plain createLazy, and keyed on the SAME string as the root
 // below: a cached VNode may only be rendered at one position, and flipping

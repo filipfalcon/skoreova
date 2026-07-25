@@ -16,8 +16,9 @@ export const HomeRoute = r('HomeRoute');
 // `/<section>` — a section's list, e.g. /players or /clubs.
 export const SectionRoute = r('SectionRoute', { section: Section });
 // `/<section>/<id>` — one record's drawer open, addressed by its server id.
-// Only Players/Clubs/Nationals have real ids; other sections' records can't
-// be deep-linked yet (see FetchTeamById and its comment in main.ts).
+// Only Clubs/Nationals can be resolved by id when they aren't loaded yet
+// (GET /teams/{id}); every other section's deep link falls back to the
+// section list — see applyRoute's RecordRoute branch in main.ts.
 export const RecordRoute = r('RecordRoute', { section: Section, id: S.String });
 export const NotFoundRoute = r('NotFoundRoute', { path: S.String });
 

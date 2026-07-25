@@ -245,8 +245,8 @@ body {
 /* Pin fans: on phones the map is a third of its desktop size but the rem
    offsets aren't — full-length target lines dwarfed the country. Half reach
    below `md`, full reach above. Each geometry var has an optional `-phone`
-   variant (set inline per pin in main.ts): below `md` it wins over the base
-   value, which lets crowded cities collapse onto shared anchors and re-fan
+   variant (set inline per pin in page/clubs.ts): below `md` it wins over the
+   base value, which lets crowded cities collapse onto shared anchors and re-fan
    their crests into free space on small maps.
 
    The z-index transition is defined here rather than via utilities because
@@ -487,7 +487,7 @@ body {
 /* The lands' INTERNAL borders don't pen-draw: each land's stroke wipes in
    top-to-bottom behind its own clip WHILE the outline pen runs its lap,
    timed (--border-delay/--border-duration, inline from LAND_BORDER_WIPES
-   in main.ts) so the front crosses the two points where that border meets
+   in page/clubs.ts) so the front crosses the two points where that border meets
    the outline at the exact moment the pen passes them — the strokes meet
    at the junctions. The front is LINEAR on purpose: the meeting math
    assumes constant speed. The paths opt out of the root's inherited dash

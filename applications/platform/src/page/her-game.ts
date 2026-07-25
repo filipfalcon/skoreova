@@ -129,8 +129,10 @@ const studioChart = (series: MetricSeries): Html => {
         ],
         [],
       ),
-      // Only even matchdays get an axis label — flatMap emits nothing for
-      // the odd ones instead of an empty placeholder element.
+      // Every OTHER matchday gets an axis label, starting at 1 (so 1, 3, 5…
+      // — the labels are `index + 1`, and it is the even INDEXES that carry
+      // them). flatMap emits nothing for the rest rather than an empty
+      // placeholder element.
       ...series.values.flatMap((_, index) =>
         index % 2 === 0
           ? [

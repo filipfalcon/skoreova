@@ -681,11 +681,6 @@ const content = (model: Model, current: Section): Html => {
   );
 };
 
-// The profile drawer is a right-edge panel presented through the Ui.Dialog
-// submodel: the native <dialog> element, backdrop, Escape handling, focus
-// trap, and scroll lock all come from the component. The drawer's content is
-// still driven by the parent-owned DrawerState.
-
 // Lays out a DatePicker's embedded calendar from the component's attribute
 // bundles: the Days grid, plus the Months/Years drill-downs reached through
 // the heading button.
