@@ -710,21 +710,36 @@ body {
    renders `.is-visible` off it. Unlayered so the transition beats Tailwind's,
    and it carries the hover color change too since we dropped
    `transition-colors` from the element. */
+/* Visibility rides the fade the same way the menu overlay's does (delay =
+   the fade's duration, so the slide-out is still seen, then hides). Opacity
+   and pointer-events alone left the invisible link in the TAB ORDER and in
+   the accessibility tree: on the hero, tabbing past the wordmark landed on
+   an "Enter platform" link nobody could see, and a screen reader read it out
+   while the hero's own CTA sat right there. */
 .header-cta {
   opacity: 0;
+  visibility: hidden;
   transform: translateY(-0.5rem);
   pointer-events: none;
   transition:
     opacity 0.4s ease,
     transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
     background-color 0.3s ease,
-    color 0.3s ease;
+    color 0.3s ease,
+    visibility 0s linear 0.4s;
 }
 
 .header-cta.is-visible {
   opacity: 1;
+  visibility: visible;
   transform: none;
   pointer-events: auto;
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.3s ease,
+    color 0.3s ease,
+    visibility 0s linear 0s;
 }
 
 /* The "why care" mascot's idle float — a slow, subtle bob upward so she feels
