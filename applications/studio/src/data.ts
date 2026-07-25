@@ -10,6 +10,15 @@ import type { Column, ColumnKind } from './api';
 import { associationColumns } from './associationsApi';
 import { competitionColumns } from './competitionsApi';
 import { editionColumns } from './editionsApi';
+import {
+  ClickedRetryAssociations,
+  ClickedRetryClubs,
+  ClickedRetryCompetitions,
+  ClickedRetryEditions,
+  ClickedRetryNationals,
+  ClickedRetryPlayers,
+} from './message';
+import type { Message } from './message';
 import { playerColumns } from './playersApi';
 import { teamColumns } from './teamsApi';
 import { Section } from './section';
@@ -204,6 +213,18 @@ export type Table = Readonly<{
 
 // Every section is backed by the real API — see the FetchX commands below.
 // Data starts empty and is fetched at sign-in; only column layout lives here.
+// The retry each section's failure banner dispatches. Lives here rather than
+// in the section list, because the drawer's reference picker needs the same
+// escape hatch when the section it reads from is the one that failed.
+export const retryBySection: Record<Section, Message> = {
+  players: ClickedRetryPlayers(),
+  clubs: ClickedRetryClubs(),
+  nationals: ClickedRetryNationals(),
+  competitions: ClickedRetryCompetitions(),
+  editions: ClickedRetryEditions(),
+  associations: ClickedRetryAssociations(),
+};
+
 export const sectionData: Record<Section, Table> = {
   players: { columns: playerColumns },
   clubs: { columns: teamColumns },
