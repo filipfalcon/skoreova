@@ -144,8 +144,10 @@ const evolveSection = (
   }
 };
 
-// Upserts a record into a section's rows, forcing the section to Success (a
-// deep-linked record can arrive before the section's list has been fetched).
+// Upserts a record into a section's rows, forcing the section to Success —
+// the row has to be there whatever state the list is in. Both callers need
+// that: a deep-linked record can arrive before the section's list has been
+// fetched, and a newly created one can be saved after that fetch failed.
 const upsertRecord = (data: SectionData, entry: Entry): SectionData =>
   SectionData.Success({
     data: upsertEntry(
@@ -287,6 +289,11 @@ const retrySection = (
 // GotDialogMessage). Both are no-ops when the dialog is already in the target
 // state, so callers can thread them unconditionally.
 const openDialog = (model: Model): UpdateReturn => {
+  // Signed out there is no drawer in the DOM at all — the login view replaces
+  // the whole shell — so a show command would target a missing <dialog>. A
+  // pre-auth deep link still records what should be open in `drawer`; sign-in
+  // re-applies the route and opens it for real then.
+  if (model.session._tag === 'Anonymous') return [model, []];
   const [dialog, commands] = Dialog.open(model.dialog);
   return [
     evo(model, { dialog: () => dialog }),
@@ -326,31 +333,47 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       // yet, so any credentials (including empty ones) are accepted. Signing
       // in kicks off every section's first fetch.
       SubmittedSignIn: () => {
-        // Fan out over the section list: fetch each still-idle section and flip
-        // it to Loading in the same pass. `start` leaves an already-running or
-        // loaded section untouched, so the evolve mirrors the command list.
+        // Fan out over the section list: every section that isn't already in
+        // flight gets fetched, flipping to Loading — or to Refreshing, which
+        // keeps what it holds on screen meanwhile. Fetching only the IDLE
+        // sections stranded any section a pre-sign-in deep link had already
+        // force-populated with its single record (upsertRecord makes that a
+        // Success): it stayed a one-row list until a manual Refresh.
+        const isInFlight = (data: SectionData): boolean =>
+          data._tag === 'Loading' || data._tag === 'Refreshing';
         const start = (data: SectionData): SectionData =>
-          data._tag === 'Idle' ? SectionData.Loading() : data;
-        const idleFetches = SIGN_IN_SECTIONS.filter(
-          (entry) => model[entry.section]._tag === 'Idle',
+          isInFlight(data)
+            ? data
+            : Option.match(AsyncData.getData(data), {
+                onNone: () => SectionData.Loading(),
+                onSome: (rows) => SectionData.Refreshing({ data: rows }),
+              });
+        const sectionFetches = SIGN_IN_SECTIONS.filter(
+          (entry) => !isInFlight(model[entry.section]),
         ).map((entry) => entry.fetch(model));
         const participationsFetch =
           model.participations._tag === 'Idle' ? [fetchParticipations()] : [];
+        const signedIn = evo(model, {
+          // Only the email crosses into the signed-in state — the password
+          // input is dropped here, not carried along.
+          session: (session) =>
+            session._tag === 'Anonymous' ? SignedIn.make({ email: session.emailInput }) : session,
+          players: start,
+          clubs: start,
+          nationals: start,
+          competitions: start,
+          editions: start,
+          associations: start,
+          participations: (data) => (data._tag === 'Idle' ? ParticipationsData.Loading() : data),
+        });
+        // Re-apply the route now that the shell is on screen: a deep link that
+        // arrived before sign-in parked its RecordRoute in the model, but the
+        // drawer couldn't be presented from behind the login view (openDialog
+        // no-ops while Anonymous). This is what finally opens it.
+        const [routed, routeCommands] = applyRoute(signedIn, signedIn.route);
         return [
-          evo(model, {
-            // Only the email crosses into the signed-in state — the password
-            // input is dropped here, not carried along.
-            session: (session) =>
-              session._tag === 'Anonymous' ? SignedIn.make({ email: session.emailInput }) : session,
-            players: start,
-            clubs: start,
-            nationals: start,
-            competitions: start,
-            editions: start,
-            associations: start,
-            participations: (data) => (data._tag === 'Idle' ? ParticipationsData.Loading() : data),
-          }),
-          [...idleFetches, ...participationsFetch, fetchHealth()],
+          routed,
+          [...routeCommands, ...sectionFetches, ...participationsFetch, fetchHealth()],
         ];
       },
       // Signing out swaps in the fresh model but keeps the live dialog
@@ -554,9 +577,11 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             id: `local-${model.nextLocalId}`,
             parentId: '',
           };
-          const withRow = evolveSection(model, section, (data) =>
-            mapSectionRows(data, (rows) => [...rows, entry]),
-          );
+          // Forced in rather than mapped over the loaded rows: AsyncData.map
+          // is a no-op on Idle/Loading/Failure, so saving a new record after a
+          // failed section fetch used to discard it silently while the drawer
+          // closed as though it had saved.
+          const withRow = evolveSection(model, section, (data) => upsertRecord(data, entry));
           const [withDialog, dialogCommands] = closeDialog(withRow);
           return [
             evo(withDialog, {
