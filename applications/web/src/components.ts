@@ -261,6 +261,9 @@ export const headerView = (model: Model): Html =>
               // `is-visible` rides `model.heroPastHeader`, which the hero
               // observer feeds (see ObserveHeroPastHeader); rendering it from
               // the Model means a header re-render can't wipe it. Phone-hidden.
+              // The hidden state is a real `visibility: hidden` (see
+              // .header-cta in styles.css), so it leaves the tab order and the
+              // accessibility tree instead of lurking invisibly in both.
               h.a(
                 [
                   h.Href(platformUrl),
