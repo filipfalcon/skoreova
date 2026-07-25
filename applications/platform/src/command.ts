@@ -63,7 +63,7 @@ const pinsStore = {
 export const ReadPins = Command.define(
   'ReadPins',
   LoadedPins,
-)(pinsStore.load.pipe(Effect.map((ids) => LoadedPins({ ids: [...ids] }))));
+)(pinsStore.load.pipe(Effect.map((ids) => LoadedPins({ ids }))));
 
 export const WritePins = Command.define(
   'WritePins',

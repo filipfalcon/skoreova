@@ -726,6 +726,14 @@ export const competitions: ReadonlyArray<Competition> = [
 export const competitionBySlug = (slug: string): Option.Option<Competition> =>
   Array.findFirst(competitions, (competition) => competition.slug === slug);
 
+// The competitions with a league season behind them — a table and a
+// round-robin, so a round pager means something. Derived rather than a list of
+// slugs, so /matches shows every league the canon has instead of the two it
+// used to name in the view.
+export const leagueCompetitions: ReadonlyArray<Competition> = competitions.filter(
+  (competition) => competition.standings._tag === 'TableStandings',
+);
+
 // Standings + cup-run + top-scorer mock, migrated from the landing page's
 // profile pages. Replace with API data when it exists.
 

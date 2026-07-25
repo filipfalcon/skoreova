@@ -1,4 +1,4 @@
-import { Match as M, Option, Record } from 'effect';
+import { Array, Match as M, Option, Record } from 'effect';
 import type { Runtime } from 'foldkit';
 import { Command } from 'foldkit';
 import { evo } from 'foldkit/struct';
@@ -95,6 +95,13 @@ export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
 const roundBound = (slug: string): number =>
   Option.match(competitionBySlug(slug), { onNone: () => 1, onSome: competitionRoundCount });
 
+// Membership toggle over a list of ids. Both lists the visitor builds by
+// tapping — the clubs they follow and the boards they pin — are the same fold.
+const toggleEntry = (entries: ReadonlyArray<string>, entry: string): ReadonlyArray<string> =>
+  Array.contains(entries, entry)
+    ? Array.filter(entries, (candidate) => candidate !== entry)
+    : Array.append(entries, entry);
+
 // The pair returned by `update` (and by the nested match on link requests):
 // the next model and the commands to run. Extracted so the shape is named
 // once rather than spelled out at every `withReturnType`.
@@ -153,19 +160,12 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         [],
       ],
       ToggledFollow: ({ slug }) => [
-        evo(model, {
-          followed: (followed) =>
-            followed.includes(slug)
-              ? followed.filter((entry) => entry !== slug)
-              : [...followed, slug],
-        }),
+        evo(model, { followed: (followed) => toggleEntry(followed, slug) }),
         [],
       ],
-      LoadedPins: ({ ids }) => [evo(model, { pinned: () => [...ids] }), []],
+      LoadedPins: ({ ids }) => [evo(model, { pinned: () => ids }), []],
       ToggledPin: ({ id }) => {
-        const pinned = model.pinned.includes(id)
-          ? model.pinned.filter((entry) => entry !== id)
-          : [...model.pinned, id];
+        const pinned = toggleEntry(model.pinned, id);
         // Update the model AND mirror it out in one step — the write is a
         // command so the reducer stays pure and testable.
         return [evo(model, { pinned: () => pinned }), [WritePins({ ids: pinned })]];
