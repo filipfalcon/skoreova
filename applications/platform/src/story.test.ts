@@ -5,7 +5,6 @@ import { fromString } from 'foldkit/url';
 import { expect, test } from 'vitest';
 
 import { clubsModel, welcomeModel } from './main.fixtures';
-import { CompetitionRoute } from './route';
 import {
   ChangedUrl,
   ClickedLink,
@@ -44,25 +43,41 @@ test('selecting a chart metric records it and fires no command', () => {
 test('scope is a field write; edition and round fold their current sentinel to None', () => {
   Story.story(
     update,
-    // The round picker only exists on a competition profile — the clamp in
-    // `update` bounds rounds against THAT competition's schedule, so the
-    // fixture must have one open.
-    Story.with({ ...welcomeModel, route: CompetitionRoute({ slug: 'first-league' }) }),
+    Story.with(welcomeModel),
     Story.message(SelectedScorerScope({ scope: 'League' })),
     Story.message(SelectedCompetitionEdition({ label: '2023/24' })),
-    Story.message(SelectedCompetitionRound({ round: 7 })),
+    // The round is clamped against the competition the message names, not
+    // the open route — /matches pages two leagues with no profile open.
+    Story.message(SelectedCompetitionRound({ slug: 'first-league', round: 7 })),
     Story.model((model) => {
       expect(model.scorerScope).toBe('League');
       expect(model.competitionEdition).toEqual(Option.some('2023/24'));
-      expect(model.competitionRound).toEqual(Option.some(7));
+      expect(model.competitionRounds).toEqual({ 'first-league': 7 });
     }),
     // The chip sends '' / 0 for the current edition / matchday; the Model holds
-    // None so the sentinel never lives in the state.
+    // None and a missing key so neither sentinel lives in the state.
     Story.message(SelectedCompetitionEdition({ label: '' })),
-    Story.message(SelectedCompetitionRound({ round: 0 })),
+    Story.message(SelectedCompetitionRound({ slug: 'first-league', round: 0 })),
     Story.model((model) => {
       expect(model.competitionEdition).toEqual(Option.none());
-      expect(model.competitionRound).toEqual(Option.none());
+      expect(model.competitionRounds).toEqual({});
+    }),
+    Story.Command.expectNone(),
+  );
+});
+
+test('each competition keeps its own round, clamped against its own schedule', () => {
+  Story.story(
+    update,
+    Story.with(welcomeModel),
+    // Both league panels are on screen at once on /matches: a pick past one
+    // league's end-stop clamps to THAT league's last round, and neither
+    // pick moves the other panel.
+    Story.message(SelectedCompetitionRound({ slug: 'first-league', round: 11 })),
+    Story.message(SelectedCompetitionRound({ slug: 'second-league', round: 99 })),
+    Story.model((model) => {
+      expect(model.competitionRounds['first-league']).toBe(11);
+      expect(model.competitionRounds['second-league']).toBe(22);
     }),
     Story.Command.expectNone(),
   );

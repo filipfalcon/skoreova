@@ -1,8 +1,9 @@
+import { Option } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
 import { screenHeader } from '../components';
-import { competitions } from '../data';
+import { competitionBySlug } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';
 import { competitionMatchesPanel } from './competition-profile';
@@ -18,19 +19,22 @@ export const matchesScreen = (model: Model): Html =>
       screenHeader(model, 'Round by round across both leagues — refreshed after every matchday.'),
       h.div(
         [h.Class('mt-12 flex flex-col gap-12')],
-        ['first-league', 'second-league'].flatMap((slug) => {
-          const competition = competitions.find((entry) => entry.slug === slug);
-          if (!competition) return [];
-          return [
-            h.section(
-              [],
-              [
-                h.h2([h.Class('display text-2xl text-ink md:text-3xl')], [competition.name]),
-                h.div([h.Class('mt-4')], [competitionMatchesPanel(competition, model)]),
-              ],
-            ),
-          ];
-        }),
+        // Both panels page independently — each reads and writes its round
+        // under its own slug (see Model.competitionRounds).
+        ['first-league', 'second-league'].flatMap((slug) =>
+          Option.match(competitionBySlug(slug), {
+            onNone: () => [],
+            onSome: (competition) => [
+              h.section(
+                [],
+                [
+                  h.h2([h.Class('display text-2xl text-ink md:text-3xl')], [competition.name]),
+                  h.div([h.Class('mt-4')], [competitionMatchesPanel(competition, model)]),
+                ],
+              ),
+            ],
+          }),
+        ),
       ),
     ],
   );

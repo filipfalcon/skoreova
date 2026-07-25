@@ -10,7 +10,7 @@ import { ClubsRoute, HerGameRoute, WelcomeRoute } from './route';
 export const welcomeModel = Model.make({
   route: WelcomeRoute(),
   competitionEdition: Option.none(),
-  competitionRound: Option.none(),
+  competitionRounds: {},
   clubQuery: '',
   featuredClub: 0,
   followed: [],

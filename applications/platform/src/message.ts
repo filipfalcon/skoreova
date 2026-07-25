@@ -12,7 +12,12 @@ export const CompletedLoad = m('CompletedLoad');
 export const SelectedMetric = m('SelectedMetric', { metric: Metric });
 export const SelectedScorerScope = m('SelectedScorerScope', { scope: ScorerScope });
 export const SelectedCompetitionEdition = m('SelectedCompetitionEdition', { label: S.String });
-export const SelectedCompetitionRound = m('SelectedCompetitionRound', { round: S.Number });
+// The pager carries the competition it belongs to: two panels can be on
+// screen at once (/matches), so a round means nothing without its league.
+export const SelectedCompetitionRound = m('SelectedCompetitionRound', {
+  slug: S.String,
+  round: S.Number,
+});
 export const UpdatedClubQuery = m('UpdatedClubQuery', { query: S.String });
 export const SelectedFeaturedClub = m('SelectedFeaturedClub', { index: S.Number });
 export const ToggledFollow = m('ToggledFollow', { slug: S.String });

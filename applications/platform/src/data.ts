@@ -1,7 +1,7 @@
 // The platform placeholder data layer: the domain types plus the hardcoded
 // content and the pure helpers that read it. All mock until the backend lands.
 
-import { Array, Match as M } from 'effect';
+import { Array, Match as M, Option } from 'effect';
 
 import {
   AppRoute,
@@ -604,6 +604,11 @@ export const competitions: ReadonlyArray<Competition> = [
     }),
   },
 ];
+
+// The competition a slug names, if any — the one lookup the matches screen
+// and the round clamp share.
+export const competitionBySlug = (slug: string): Option.Option<Competition> =>
+  Array.findFirst(competitions, (competition) => competition.slug === slug);
 
 // Standings + cup-run + top-scorer mock, migrated from the landing page's
 // profile pages. Replace with API data when it exists.

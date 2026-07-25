@@ -1,6 +1,6 @@
 import { RadioGroup } from '@foldkit/ui';
 import clsx from 'clsx';
-import { Match as M, Option } from 'effect';
+import { Match as M, Option, Record } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
@@ -234,9 +234,14 @@ const leagueMatchesPanel = (competition: Competition, league: string, model: Mod
   const teams = standingsFor(league).map((row) => row.team);
   const rounds = roundRobinRounds(teams);
   const total = rounds.length;
-  // Always in range — SelectedCompetitionRound clamps in `update` (None =
-  // the current matchday).
-  const open = Option.getOrElse(model.competitionRound, () => MATCHDAYS_PLAYED);
+  // Always in range — SelectedCompetitionRound clamps in `update` (no entry
+  // for this competition = its current matchday). Reading the round under
+  // the competition's own slug is what lets the two panels on /matches page
+  // independently.
+  const open = Option.getOrElse(
+    Record.get(model.competitionRounds, competition.slug),
+    () => MATCHDAYS_PLAYED,
+  );
   const matches = rounds[open - 1] ?? [];
   const arrow = (target: number, glyph: string, label: string): Html => {
     const disabled = target < 1 || target > total;
@@ -248,7 +253,7 @@ const leagueMatchesPanel = (competition: Competition, league: string, model: Mod
         // the tab order mid-interaction strands keyboard focus.
         ...(disabled
           ? [h.AriaDisabled(true)]
-          : [h.OnClick(SelectedCompetitionRound({ round: target }))]),
+          : [h.OnClick(SelectedCompetitionRound({ slug: competition.slug, round: target }))]),
         h.Class(
           clsx(
             'display border px-3.5 py-1.5 text-base transition-colors',

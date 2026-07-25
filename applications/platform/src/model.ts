@@ -40,9 +40,13 @@ export const Model = S.Struct({
   // the profile carries a picker; the backend exposes them via
   // /editions?competitionId= once real data lands.
   competitionEdition: S.Option(S.String),
-  // Which matchday the competition profile's matches panel shows (None = the
-  // current one).
-  competitionRound: S.Option(S.Number),
+  // Which matchday each competition's matches panel shows, keyed by the
+  // competition slug (a missing key = that competition's current matchday).
+  // Keyed rather than one shared field because /matches renders BOTH league
+  // panels at once: a single round made them page in lockstep, and it could
+  // only ever be clamped against whatever competition the route had open —
+  // which on /matches is none, so every pick collapsed to round 1.
+  competitionRounds: S.Record(S.String, S.Number),
   // The clubs directory's search box ('' = show everything).
   clubQuery: S.String,
   // Which of the featured EUROPEAN CONTENDERS the clubs carousel shows.
