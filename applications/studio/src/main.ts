@@ -81,7 +81,7 @@ export * from './model';
 export * from './message';
 export * from './command';
 export * from './route';
-export { view } from './page';
+export { view } from './view';
 
 // UPDATE
 

@@ -10,7 +10,7 @@ import { cardStyle, chipStyle, inputStyle, submitStyle } from '../styles';
 
 const h = html<Message>();
 
-export const loginView = (model: Model): Document => {
+export const view = (model: Model): Document => {
   // The credential inputs only exist while signed out; this view never
   // renders otherwise, so the fallbacks are just for totality.
   const emailInput = model.session._tag === 'Anonymous' ? model.session.emailInput : '';
