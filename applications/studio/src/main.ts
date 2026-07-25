@@ -324,8 +324,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         // force-populated with its single record (upsertRecord makes that a
         // Success): it stayed a one-row list until a manual Refresh.
         // Sections and participations are different AsyncData instances but
-        // the same six tags, so the in-flight question is asked once.
-        const isInFlight = (data: { readonly _tag: string }): boolean =>
+        // the same six tags, so the in-flight question is asked once — over the
+        // union of the two, not over a bare `{_tag: string}` that would accept
+        // any struct and let a misspelled tag through.
+        const isInFlight = (data: SectionData | ParticipationsData): boolean =>
           data._tag === 'Loading' || data._tag === 'Refreshing';
         const start = (data: SectionData): SectionData =>
           isInFlight(data)
@@ -764,7 +766,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         [],
       ],
       FailedFetchPlayers: ({ reason }) => [
-        evo(model, { players: () => AsyncData.settle(model.players, Result.fail(reason)) }),
+        evo(model, { players: (data) => AsyncData.settle(data, Result.fail(reason)) }),
         [],
       ],
       ClickedRetryPlayers: () =>
@@ -790,7 +792,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         [],
       ],
       FailedFetchClubs: ({ reason }) => [
-        evo(model, { clubs: () => AsyncData.settle(model.clubs, Result.fail(reason)) }),
+        evo(model, { clubs: (data) => AsyncData.settle(data, Result.fail(reason)) }),
         [],
       ],
       ClickedRetryClubs: () => retrySection(model, 'clubs', [fetchClubs(), fetchHealth()]),
@@ -799,7 +801,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         [],
       ],
       FailedFetchNationals: ({ reason }) => [
-        evo(model, { nationals: () => AsyncData.settle(model.nationals, Result.fail(reason)) }),
+        evo(model, { nationals: (data) => AsyncData.settle(data, Result.fail(reason)) }),
         [],
       ],
       ClickedRetryNationals: () =>
@@ -810,7 +812,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ],
       FailedFetchCompetitions: ({ reason }) => [
         evo(model, {
-          competitions: () => AsyncData.settle(model.competitions, Result.fail(reason)),
+          competitions: (data) => AsyncData.settle(data, Result.fail(reason)),
         }),
         [],
       ],
@@ -821,7 +823,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         [],
       ],
       FailedFetchEditions: ({ reason }) => [
-        evo(model, { editions: () => AsyncData.settle(model.editions, Result.fail(reason)) }),
+        evo(model, { editions: (data) => AsyncData.settle(data, Result.fail(reason)) }),
         [],
       ],
       ClickedRetryEditions: () => retrySection(model, 'editions', [fetchEditions(), fetchHealth()]),
@@ -831,7 +833,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ],
       FailedFetchAssociations: ({ reason }) => [
         evo(model, {
-          associations: () => AsyncData.settle(model.associations, Result.fail(reason)),
+          associations: (data) => AsyncData.settle(data, Result.fail(reason)),
         }),
         [],
       ],
@@ -843,7 +845,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ],
       FailedFetchParticipations: ({ reason }) => [
         evo(model, {
-          participations: () => AsyncData.settle(model.participations, Result.fail(reason)),
+          participations: (data) => AsyncData.settle(data, Result.fail(reason)),
         }),
         [],
       ],
