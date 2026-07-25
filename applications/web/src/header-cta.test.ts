@@ -8,11 +8,14 @@ import './styles.css';
 // Regression test for the header "Enter platform" CTA: it must stay hidden
 // while the hero (which carries the primary CTA) is on screen, slide in once
 // the hero disappears under the fixed header, and hide again on the way back
-// up. The sync runs inside motion.ts's rAF loop and resolves the header node
-// lazily — a mount-time snapshot pinned `null` forever whenever the header
-// wasn't in the DOM yet (it lives outside the mount root), so the button
-// never appeared. Asserted via the `is-visible` class rather than computed
-// display: the CTA is desktop-only, the class is the behavioral contract.
+// up. The contract under test is the whole round trip — the hero observer
+// (ObserveHeroPastHeader) reporting into `model.heroPastHeader`, and the
+// header view rendering `is-visible` from it. That is what a real scroll
+// exercises and what the earlier rAF-loop version got wrong twice over: it
+// re-asserted the class every frame against the vdom, and its mount-time
+// header lookup pinned `null` whenever the header wasn't in the DOM yet.
+// Asserted via the class rather than computed display: the CTA is
+// desktop-only, so the class is the behavioral contract.
 
 const headerCta = (): HTMLElement => {
   const element = document.querySelector<HTMLElement>('.header-cta');
