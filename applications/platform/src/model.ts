@@ -6,8 +6,9 @@ import { AppRoute } from './route';
 // real Foldkit views, but all data is hardcoded placeholder. There is NO
 // account gate — the platform's free plan is open to everyone, so every
 // deep link from the landing page drops straight onto content. The model
-// only tracks what the mock genuinely needs — the open screen, the open
-// profile (if any), the mobile menu, and the chart studio's selected metric.
+// carries the route and nothing but the state the route can't express: the
+// per-screen pickers, the clubs search, and the two lists a visitor builds
+// by tapping (followed clubs, pinned boards).
 
 export const Screen = S.Literals([
   'Welcome',

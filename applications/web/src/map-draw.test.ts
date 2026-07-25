@@ -83,9 +83,10 @@ test('the draw survives a model re-render mid-flight', async () => {
   if (!svg) throw new Error('draw-reveal svg not rendered');
 
   // Flip the league filter there and back — this re-renders the map subtree
-  // (pin wrappers toggle) while the reveal classes live imperatively on the
-  // svg. The borders must stay fully drawn afterwards. (This used to toggle
-  // a land checkbox; the region-toggle mechanism was removed.)
+  // (pin wrappers toggle) while the reveal state sits in the Model and the
+  // patcher owns the `is-in`/`is-drawn` classes. The borders must stay fully
+  // drawn afterwards: a re-render must not read as a fresh reveal. (This used
+  // to toggle a land checkbox; the region-toggle mechanism was removed.)
   const chip = (label: string): HTMLElement => {
     const found = [
       ...document.querySelectorAll<HTMLElement>('#across-the-lands [role="radio"]'),

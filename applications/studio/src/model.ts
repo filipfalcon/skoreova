@@ -30,8 +30,10 @@ export const Entry = S.Struct({
   values: S.Array(S.String),
   // Soft-deleted rather than removed, so its index stays stable for `editLog`.
   isDeleted: S.Boolean,
-  // Server-assigned UUID once this record is backed by the API, '' for
-  // records that only exist locally (mock rows, or a record not yet saved).
+  // Server-assigned UUID for a record backed by the API; a record created in
+  // the studio gets a local `local-<n>` id from `nextLocalId` until a save
+  // endpoint exists to hand out a real one. Either way it is never blank —
+  // the drawer and the keyed lists address a record by it.
   id: S.String,
   // Generic "belongs to" reference, e.g. an edition's owning competition.
   // '' when not applicable.
@@ -152,7 +154,7 @@ export const Model = S.Struct({
   nextLocalId: S.Number,
   // History of committed field edits, across all records.
   editLog: S.Array(LogEntry),
-  // Message from the last chart mount/sync attempt, or '' if it's fine.
+  // Why the last chart mount/sync failed; None when there is nothing wrong.
   chartError: S.Option(S.String),
   // Each section's fetch state, holding its own rows in Success. Field names
   // match the Section literals, so `model[section]` selects a section's state.
