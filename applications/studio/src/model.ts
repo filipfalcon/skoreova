@@ -119,6 +119,7 @@ export type SectionData = typeof SectionData.schema.Type;
 // Participations are a pure join (no list UI), so they carry their own decoded
 // rows rather than Entry rows.
 export const ParticipationsData = AsyncData.Schema(S.Array(ParticipationResponse), S.String);
+export type ParticipationsData = typeof ParticipationsData.schema.Type;
 
 export const Model = S.Struct({
   session: Session,

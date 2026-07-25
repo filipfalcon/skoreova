@@ -340,7 +340,9 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         // sections stranded any section a pre-sign-in deep link had already
         // force-populated with its single record (upsertRecord makes that a
         // Success): it stayed a one-row list until a manual Refresh.
-        const isInFlight = (data: SectionData): boolean =>
+        // Sections and participations are different AsyncData instances but
+        // the same six tags, so the in-flight question is asked once.
+        const isInFlight = (data: { readonly _tag: string }): boolean =>
           data._tag === 'Loading' || data._tag === 'Refreshing';
         const start = (data: SectionData): SectionData =>
           isInFlight(data)
@@ -349,23 +351,32 @@ export const update = (model: Model, message: Message): UpdateReturn =>
                 onNone: () => SectionData.Loading(),
                 onSome: (rows) => SectionData.Refreshing({ data: rows }),
               });
+        const startParticipations = (data: ParticipationsData): ParticipationsData =>
+          isInFlight(data)
+            ? data
+            : Option.match(AsyncData.getData(data), {
+                onNone: () => ParticipationsData.Loading(),
+                onSome: (rows) => ParticipationsData.Refreshing({ data: rows }),
+              });
         const sectionFetches = SIGN_IN_SECTIONS.filter(
           (entry) => !isInFlight(model[entry.section]),
         ).map((entry) => entry.fetch(model));
-        const participationsFetch =
-          model.participations._tag === 'Idle' ? [fetchParticipations()] : [];
+        // Participations gets the same treatment for the same reason: an
+        // Idle-only guard stranded a Failure (or a pre-auth deep link's
+        // forced Success) until someone hit Retry by hand.
+        const participationsFetch = isInFlight(model.participations) ? [] : [fetchParticipations()];
         const signedIn = evo(model, {
           // Only the email crosses into the signed-in state — the password
           // input is dropped here, not carried along.
           session: (session) =>
-            session._tag === 'Anonymous' ? SignedIn.make({ email: session.emailInput }) : session,
+            session._tag === 'Anonymous' ? SignedIn({ email: session.emailInput }) : session,
           players: start,
           clubs: start,
           nationals: start,
           competitions: start,
           editions: start,
           associations: start,
-          participations: (data) => (data._tag === 'Idle' ? ParticipationsData.Loading() : data),
+          participations: startParticipations,
         });
         // Re-apply the route now that the shell is on screen: a deep link that
         // arrived before sign-in parked its RecordRoute in the model, but the
