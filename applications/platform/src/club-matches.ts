@@ -16,9 +16,13 @@ const h = html<Message>();
 const SEASON_OPENING = Calendar.make(2025, 8, 16);
 const DAYS_PER_ROUND = 7;
 
+// A modulo of a non-empty tuple always lands in range, so the fallback is
+// unreachable — and it is the first kickoff rather than an off-canon time,
+// so a future edit to KICKOFFS can't leak one either.
 const KICKOFFS = ['14:00', '16:00', '17:30', '19:00'] as const;
 
-const kickoffFor = (seed: string): string => KICKOFFS[hashSlug(seed) % KICKOFFS.length] ?? '17:00';
+const kickoffFor = (seed: string): string =>
+  KICKOFFS[hashSlug(seed) % KICKOFFS.length] ?? KICKOFFS[0];
 
 interface ClubMatch {
   readonly round: number;
