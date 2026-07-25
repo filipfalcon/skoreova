@@ -8,7 +8,8 @@ import spartaHeroPhoto from '../assets/clubs-hero/sparta-praha.webp';
 import commentaryAvatar from '../assets/commentary-avatar.png';
 import { clubMatchesSections } from '../club-matches';
 import { clubSection, timesCount } from '../components';
-import { cupRun, standingsFor, leagueRounds, scorersFor } from '../data';
+import { cupRun, standingsFor, scorersFor } from '../data';
+import { leagueRoundCount } from '../schedule';
 import type { Club, Scorer } from '../data';
 import { SelectedScorerScope, ToggledFollow } from '../message';
 import type { Message } from '../message';
@@ -90,7 +91,7 @@ const clubHeroPhotos: Record<string, { readonly photo: string; readonly focus: s
 
 const clubStandingsSection = (target: Club): Html => {
   const rows = standingsFor(target.league);
-  const totalRounds = leagueRounds[target.league] ?? rows[0]?.played ?? 0;
+  const totalRounds = leagueRoundCount(target.league);
   return clubSection(
     'Standings',
     [

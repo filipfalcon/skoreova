@@ -1,7 +1,7 @@
 // The platform placeholder data layer: the domain types plus the hardcoded
 // content and the pure helpers that read it. All mock until the backend lands.
 
-import { Array, Match as M, Option } from 'effect';
+import { Array, Match as M, Option, Order, pipe } from 'effect';
 
 import {
   AppRoute,
@@ -179,173 +179,289 @@ export const trending: ReadonlyArray<TrendingEntry> = [
   },
 ];
 
-export const club = (
-  slug: string,
-  name: string,
-  city: string,
-  logo: string,
-  league: string,
-  won: number,
-  drawn: number,
-  lost: number,
-  leagueTitles: number,
-  cupTitles: number,
-): Club => ({ slug, name, city, logo, league, won, drawn, lost, leagueTitles, cupTitles });
-
+// THE SEASON CANON. Every league number on every screen comes from this
+// table: the standings (played and points are arithmetic on the record —
+// see standingsFor), the clubs screen's form bars, the club profile's
+// statement line, and the round-robin the fixtures are generated from.
+// Written as plain literals rather than through a ten-argument factory, so
+// a club's record is readable at the point it is authored.
+//
+// The records are mock but LEAGUE-CONSISTENT: within a league the wins and
+// losses balance (every win is somebody's defeat), the draw counts sum even
+// (a draw is two clubs' draw), the goals scored and conceded sum to the same
+// total, and each club's games add up to the matchdays it has actually
+// played — twelve in the First League, and eleven in the Second, where
+// eleven clubs mean one club sits out each matchday (Sparta Praha B has
+// taken two byes so far, hence its ten).
 export const clubs: ReadonlyArray<Club> = [
   // Honors track the ALL-TIME BESTS canon: Sparta holds both records
   // (22× league, 11× cup).
-  club('sparta-praha', 'Sparta Praha', 'Prague', spartaPrahaLogo, 'First League', 10, 1, 1, 22, 11),
-  club('slavia-praha', 'Slavia Praha', 'Prague', slaviaPrahaLogo, 'First League', 9, 2, 1, 9, 9),
-  club('slovacko', 'Slovácko', 'Uherské Hradiště', slovackoLogo, 'First League', 7, 3, 2, 0, 2),
-  club(
-    'sparta-praha-b',
-    'Sparta Praha B',
-    'Prague',
-    spartaPrahaLogo,
-    'Second League',
-    9,
-    1,
-    2,
-    0,
-    0,
-  ),
-  club(
-    'vysocina-jihlava',
-    'Vysočina Jihlava',
-    'Jihlava',
-    vysocinaJihlavaLogo,
-    'Second League',
-    6,
-    2,
-    4,
-    0,
-    0,
-  ),
-  club(
-    'banik-ostrava',
-    'Baník Ostrava',
-    'Ostrava',
-    banikOstravaLogo,
-    'First League',
-    5,
-    3,
-    4,
-    2,
-    3,
-  ),
-  club(
-    'viktoria-plzen',
-    'Viktoria Plzeň',
-    'Plzeň',
-    viktoriaPlzenLogo,
-    'First League',
-    4,
-    3,
-    5,
-    0,
-    1,
-  ),
-  club(
-    'slovan-liberec',
-    'Slovan Liberec',
-    'Liberec',
-    slovanLiberecLogo,
-    'First League',
-    3,
-    2,
-    7,
-    0,
-    0,
-  ),
-  club(
-    'hradec-kralove',
-    'Hradec Králové',
-    'Hradec Králové',
-    hradecKraloveLogo,
-    'Second League',
-    1,
-    2,
-    9,
-    0,
-    0,
-  ),
-  club('pardubice', 'Pardubice', 'Pardubice', pardubiceLogo, 'Second League', 9, 2, 1, 0, 0),
-  club(
-    'sigma-olomouc',
-    'Sigma Olomouc',
-    'Olomouc',
-    sigmaOlomoucLogo,
-    'Second League',
-    8,
-    1,
-    3,
-    0,
-    0,
-  ),
-  club(
-    'lokomotiva-brno',
-    'Lokomotiva Brno',
-    'Brno',
-    lokomotivaBrnoLogo,
-    'First League',
-    7,
-    2,
-    3,
-    0,
-    0,
-  ),
-  club('artis-brno', 'Artis Brno', 'Brno', artisBrnoLogo, 'Second League', 6, 3, 3, 0, 0),
-  club(
-    'dynamo-ceske-budejovice',
-    'Dynamo Č. Budějovice',
-    'České Budějovice',
-    dynamoBudejoviceLogo,
-    'Second League',
-    5,
-    2,
-    5,
-    0,
-    0,
-  ),
-  club('abc-branik', 'ABC Braník', 'Prague', abcBranikLogo, 'Second League', 1, 1, 10, 0, 0),
-  club(
-    'slovan-liberec-b',
-    'Slovan Liberec B',
-    'Liberec',
-    slovanLiberecLogo,
-    'Second League',
-    4,
-    2,
-    6,
-    0,
-    0,
-  ),
-  club(
-    'viktoria-plzen-b',
-    'Viktoria Plzeň B',
-    'Plzeň',
-    viktoriaPlzenLogo,
-    'Second League',
-    5,
-    3,
-    4,
-    0,
-    0,
-  ),
-  club(
-    'prague-raptors',
-    'Prague Raptors',
-    'Prague',
-    pragueRaptorsLogo,
-    'First League',
-    2,
-    3,
-    7,
-    0,
-    0,
-  ),
-  club('teplice', 'Teplice', 'Teplice', tepliceLogo, 'Second League', 1, 1, 10, 0, 0),
+  {
+    slug: 'sparta-praha',
+    name: 'Sparta Praha',
+    city: 'Prague',
+    logo: spartaPrahaLogo,
+    league: 'First League',
+    won: 9,
+    drawn: 2,
+    lost: 1,
+    scored: 31,
+    conceded: 9,
+    leagueTitles: 22,
+    cupTitles: 11,
+  },
+  {
+    slug: 'slavia-praha',
+    name: 'Slavia Praha',
+    city: 'Prague',
+    logo: slaviaPrahaLogo,
+    league: 'First League',
+    won: 8,
+    drawn: 2,
+    lost: 2,
+    scored: 27,
+    conceded: 12,
+    leagueTitles: 9,
+    cupTitles: 9,
+  },
+  {
+    slug: 'slovacko',
+    name: 'Slovácko',
+    city: 'Uherské Hradiště',
+    logo: slovackoLogo,
+    league: 'First League',
+    won: 7,
+    drawn: 2,
+    lost: 3,
+    scored: 22,
+    conceded: 15,
+    leagueTitles: 0,
+    cupTitles: 2,
+  },
+  {
+    slug: 'sparta-praha-b',
+    name: 'Sparta Praha B',
+    city: 'Prague',
+    logo: spartaPrahaLogo,
+    league: 'Second League',
+    won: 7,
+    drawn: 2,
+    lost: 1,
+    scored: 32,
+    conceded: 10,
+    leagueTitles: 0,
+    cupTitles: 0,
+  },
+  {
+    slug: 'vysocina-jihlava',
+    name: 'Vysočina Jihlava',
+    city: 'Jihlava',
+    logo: vysocinaJihlavaLogo,
+    league: 'Second League',
+    won: 5,
+    drawn: 3,
+    lost: 3,
+    scored: 19,
+    conceded: 16,
+    leagueTitles: 0,
+    cupTitles: 0,
+  },
+  {
+    slug: 'banik-ostrava',
+    name: 'Baník Ostrava',
+    city: 'Ostrava',
+    logo: banikOstravaLogo,
+    league: 'First League',
+    won: 5,
+    drawn: 2,
+    lost: 5,
+    scored: 17,
+    conceded: 18,
+    leagueTitles: 2,
+    cupTitles: 3,
+  },
+  {
+    slug: 'viktoria-plzen',
+    name: 'Viktoria Plzeň',
+    city: 'Plzeň',
+    logo: viktoriaPlzenLogo,
+    league: 'First League',
+    won: 2,
+    drawn: 3,
+    lost: 7,
+    scored: 12,
+    conceded: 22,
+    leagueTitles: 0,
+    cupTitles: 1,
+  },
+  {
+    slug: 'slovan-liberec',
+    name: 'Slovan Liberec',
+    city: 'Liberec',
+    logo: slovanLiberecLogo,
+    league: 'First League',
+    won: 2,
+    drawn: 2,
+    lost: 8,
+    scored: 11,
+    conceded: 25,
+    leagueTitles: 0,
+    cupTitles: 0,
+  },
+  {
+    slug: 'hradec-kralove',
+    name: 'Hradec Králové',
+    city: 'Hradec Králové',
+    logo: hradecKraloveLogo,
+    league: 'Second League',
+    won: 6,
+    drawn: 2,
+    lost: 3,
+    scored: 24,
+    conceded: 13,
+    leagueTitles: 0,
+    cupTitles: 0,
+  },
+  {
+    slug: 'pardubice',
+    name: 'Pardubice',
+    city: 'Pardubice',
+    logo: pardubiceLogo,
+    league: 'Second League',
+    won: 5,
+    drawn: 2,
+    lost: 4,
+    scored: 18,
+    conceded: 17,
+    leagueTitles: 0,
+    cupTitles: 0,
+  },
+  {
+    slug: 'sigma-olomouc',
+    name: 'Sigma Olomouc',
+    city: 'Olomouc',
+    logo: sigmaOlomoucLogo,
+    league: 'Second League',
+    won: 7,
+    drawn: 1,
+    lost: 3,
+    scored: 29,
+    conceded: 11,
+    leagueTitles: 0,
+    cupTitles: 0,
+  },
+  {
+    slug: 'lokomotiva-brno',
+    name: 'Lokomotiva Brno',
+    city: 'Brno',
+    logo: lokomotivaBrnoLogo,
+    league: 'First League',
+    won: 6,
+    drawn: 1,
+    lost: 5,
+    scored: 19,
+    conceded: 17,
+    leagueTitles: 0,
+    cupTitles: 0,
+  },
+  {
+    slug: 'artis-brno',
+    name: 'Artis Brno',
+    city: 'Brno',
+    logo: artisBrnoLogo,
+    league: 'Second League',
+    won: 5,
+    drawn: 1,
+    lost: 5,
+    scored: 16,
+    conceded: 18,
+    leagueTitles: 0,
+    cupTitles: 0,
+  },
+  {
+    slug: 'dynamo-ceske-budejovice',
+    name: 'Dynamo Č. Budějovice',
+    city: 'České Budějovice',
+    logo: dynamoBudejoviceLogo,
+    league: 'Second League',
+    won: 2,
+    drawn: 1,
+    lost: 8,
+    scored: 9,
+    conceded: 25,
+    leagueTitles: 0,
+    cupTitles: 0,
+  },
+  {
+    slug: 'abc-branik',
+    name: 'ABC Braník',
+    city: 'Prague',
+    logo: abcBranikLogo,
+    league: 'Second League',
+    won: 1,
+    drawn: 1,
+    lost: 9,
+    scored: 7,
+    conceded: 31,
+    leagueTitles: 0,
+    cupTitles: 0,
+  },
+  {
+    slug: 'slovan-liberec-b',
+    name: 'Slovan Liberec B',
+    city: 'Liberec',
+    logo: slovanLiberecLogo,
+    league: 'Second League',
+    won: 3,
+    drawn: 2,
+    lost: 6,
+    scored: 12,
+    conceded: 22,
+    leagueTitles: 0,
+    cupTitles: 0,
+  },
+  {
+    slug: 'viktoria-plzen-b',
+    name: 'Viktoria Plzeň B',
+    city: 'Plzeň',
+    logo: viktoriaPlzenLogo,
+    league: 'Second League',
+    won: 6,
+    drawn: 2,
+    lost: 3,
+    scored: 20,
+    conceded: 15,
+    leagueTitles: 0,
+    cupTitles: 0,
+  },
+  {
+    slug: 'prague-raptors',
+    name: 'Prague Raptors',
+    city: 'Prague',
+    logo: pragueRaptorsLogo,
+    league: 'First League',
+    won: 1,
+    drawn: 2,
+    lost: 9,
+    scored: 8,
+    conceded: 29,
+    leagueTitles: 0,
+    cupTitles: 0,
+  },
+  {
+    slug: 'teplice',
+    name: 'Teplice',
+    city: 'Teplice',
+    logo: tepliceLogo,
+    league: 'Second League',
+    won: 3,
+    drawn: 3,
+    lost: 5,
+    scored: 13,
+    conceded: 21,
+    leagueTitles: 0,
+    cupTitles: 0,
+  },
 ];
 
 export const players: ReadonlyArray<Player> = [
@@ -458,7 +574,7 @@ export const competitions: ReadonlyArray<Competition> = [
       'The bottom club faces a relegation playoff against the Second League winner.',
     ],
     history: [
-      { value: '14', label: 'Titles for Sparta Praha, the record' },
+      { value: '22', label: 'Titles for Sparta Praha, the record' },
       { value: '30', label: 'Seasons played since the league formed' },
       { value: '412', label: 'Goals scored last season' },
     ],
@@ -467,18 +583,18 @@ export const competitions: ReadonlyArray<Competition> = [
   {
     slug: 'second-league',
     editions: [
-      edition('2025/26', true, 'Matchday 12 of 14'),
+      edition('2025/26', true, 'Matchday 12 of 22'),
       edition('2024/25', false, 'Champions: Baník Ostrava'),
       edition('2023/24', false, 'Champions: Prague Raptors'),
       edition('2022/23', false, 'Champions: Lokomotiva Brno'),
     ],
     name: 'Second League',
     badge: secondLeagueBadge,
-    stage: 'Matchday 12 of 14',
-    progress: 86,
+    stage: 'Matchday 12 of 22',
+    progress: 55,
     tagline: 'The second tier — the road up',
     format: [
-      'Eight clubs, home and away — 14 rounds of promotion fights.',
+      'Eleven clubs, home and away — 22 rounds, one club idle each matchday.',
       'The winner meets the First League’s bottom club in a playoff for the top flight.',
       'No relegation pressure — the league is the country’s proving ground.',
     ],
@@ -509,7 +625,7 @@ export const competitions: ReadonlyArray<Competition> = [
     ],
     history: [
       { value: '11', label: 'Different winners in the cup’s history' },
-      { value: '5', label: 'Titles for Sparta Praha, the record' },
+      { value: '11', label: 'Titles for Sparta Praha, the record' },
       { value: '3', label: 'Finals decided on penalties' },
     ],
     standings: TiesStandings.make({
@@ -613,39 +729,44 @@ export const competitionBySlug = (slug: string): Option.Option<Competition> =>
 // Standings + cup-run + top-scorer mock, migrated from the landing page's
 // profile pages. Replace with API data when it exists.
 
-// Goal records are mock, but they add up: within a league the scored and
-// conceded columns sum to the same total (every goal is someone else's
-// concession) and goal difference falls monotonically with the table, so
-// nothing reads as impossible next to the points.
-export const firstLeagueStandings: ReadonlyArray<StandingsRow> = [
-  { team: 'Sparta Praha', played: 14, scored: 42, conceded: 9, points: 36 },
-  { team: 'Slavia Praha', played: 14, scored: 38, conceded: 12, points: 33 },
-  { team: 'Baník Ostrava', played: 14, scored: 29, conceded: 17, points: 27 },
-  { team: 'Slovácko', played: 14, scored: 24, conceded: 20, points: 23 },
-  { team: 'Viktoria Plzeň', played: 14, scored: 21, conceded: 24, points: 19 },
-  { team: 'Lokomotiva Brno', played: 14, scored: 17, conceded: 30, points: 15 },
-  { team: 'Slovan Liberec', played: 14, scored: 13, conceded: 36, points: 11 },
-  { team: 'Prague Raptors', played: 14, scored: 8, conceded: 44, points: 6 },
-];
+export const POINTS_WIN = 3;
+export const POINTS_DRAW = 1;
 
-export const secondLeagueStandings: ReadonlyArray<StandingsRow> = [
-  { team: 'Sparta Praha B', played: 14, scored: 42, conceded: 13, points: 34 },
-  { team: 'Sigma Olomouc', played: 14, scored: 37, conceded: 15, points: 30 },
-  { team: 'Hradec Králové', played: 14, scored: 33, conceded: 17, points: 27 },
-  { team: 'Viktoria Plzeň B', played: 14, scored: 30, conceded: 19, points: 24 },
-  { team: 'Pardubice', played: 14, scored: 27, conceded: 21, points: 22 },
-  { team: 'Vysočina Jihlava', played: 14, scored: 24, conceded: 23, points: 19 },
-  { team: 'Artis Brno', played: 14, scored: 21, conceded: 26, points: 17 },
-  { team: 'Slovan Liberec B', played: 14, scored: 17, conceded: 29, points: 13 },
-  { team: 'Teplice', played: 14, scored: 14, conceded: 31, points: 10 },
-  { team: 'Dynamo Č. Budějovice', played: 14, scored: 12, conceded: 34, points: 8 },
-  { team: 'ABC Braník', played: 14, scored: 8, conceded: 37, points: 4 },
-];
+// Biggest first — league tables rank downwards on every column they sort by.
+const descendingBy = (key: (row: StandingsRow) => number): Order.Order<StandingsRow> =>
+  Order.mapInput(Order.Number, (row: StandingsRow) => -key(row));
 
-// The standings table backing a league — the one place the league-name
-// dispatch lives (five call sites used to repeat this ternary).
+// A league's clubs in AUTHORING order — the seeding the round-robin
+// generator pairs off (see leagueRounds). Deliberately not the table order:
+// a club climbing the standings must not reshuffle the season's fixtures.
+export const leagueTeams = (league: string): ReadonlyArray<string> =>
+  clubs.filter((club) => club.league === league).map((club) => club.name);
+
+// The standings table backing a league, COMPUTED from the club records
+// above: played and points are arithmetic, so the table can't drift from the
+// form bars, and a hand-typed points column can't quietly exceed what the
+// fixtures allow (the old one did — 170 points across eight clubs when
+// fourteen rounds can only pay out 168).
 export const standingsFor = (league: string): ReadonlyArray<StandingsRow> =>
-  league === 'First League' ? firstLeagueStandings : secondLeagueStandings;
+  pipe(
+    clubs.filter((club) => club.league === league),
+    Array.map(
+      (club): StandingsRow => ({
+        team: club.name,
+        played: club.won + club.drawn + club.lost,
+        scored: club.scored,
+        conceded: club.conceded,
+        points: club.won * POINTS_WIN + club.drawn * POINTS_DRAW,
+      }),
+    ),
+    // Points, then goal difference, then goals scored — how every league
+    // table in the country is ordered.
+    Array.sortBy(
+      descendingBy((row) => row.points),
+      descendingBy((row) => row.scored - row.conceded),
+      descendingBy((row) => row.scored),
+    ),
+  );
 
 // EUROPEAN CONTENDERS (clubs screen) — the featured-club carousel entries.
 // Lives here (not in the view) so `update` can wrap SelectedFeaturedClub
@@ -691,7 +812,10 @@ export const hashSlug = (slug: string): number =>
 // leader is the canonical Rancová.
 export const scorersFor = (target: Club, scope: ScorerScope): ReadonlyArray<Scorer> => {
   const seed = hashSlug(`${scope}:${target.slug}`);
-  const ceiling = scope === 'Cup' ? 6 : scope === 'League' ? 13 : 17;
+  // A league tally can't exceed what the club scored in the league (the
+  // table's own number); the cup and all-comps ceilings sit above it because
+  // those goals aren't in the table.
+  const ceiling = scope === 'Cup' ? 6 : scope === 'League' ? Math.min(13, target.scored) : 17;
   const generated = [0, 1, 2].map((rank) => ({
     name: scorerPool[(seed + rank * 5) % scorerPool.length] ?? '—',
     goals: Math.max(1, ceiling - (seed % 3) - rank * (2 + (seed % 2))),
@@ -728,10 +852,3 @@ export const savedCharts: ReadonlyArray<SavedChart> = [
     spark: [8, 7, 9, 6, 7, 5, 6, 4],
   },
 ];
-
-// How many league rounds each division plays in a season — eight First
-// League clubs meet three times (21), eleven Second League clubs twice (20).
-export const leagueRounds: Record<string, number> = {
-  'First League': 21,
-  'Second League': 20,
-};

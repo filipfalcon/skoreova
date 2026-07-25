@@ -11,7 +11,7 @@ import { SelectedCompetitionEdition, SelectedCompetitionRound } from '../message
 import type { Message } from '../message';
 import type { Model } from '../model';
 import { competitionsRouter } from '../route';
-import { MATCHDAYS_PLAYED, mockScore, roundRobinRounds } from '../schedule';
+import { MATCHDAYS_PLAYED, fixtureSeed, leagueRounds, mockScore } from '../schedule';
 
 const h = html<Message>();
 
@@ -232,8 +232,7 @@ export const competitionMatchesPanel = (competition: Competition, model: Model):
   );
 
 const leagueMatchesPanel = (competition: Competition, league: string, model: Model): Html => {
-  const teams = standingsFor(league).map((row) => row.team);
-  const rounds = roundRobinRounds(teams);
+  const rounds = leagueRounds(league);
   const total = rounds.length;
   // Always in range — SelectedCompetitionRound clamps in `update` (no entry
   // for this competition = its current matchday). Reading the round under
@@ -282,9 +281,9 @@ const leagueMatchesPanel = (competition: Competition, league: string, model: Mod
       ),
       h.ul(
         [h.Class('mt-6 flex flex-col')],
-        matches.map(([home, away], index) => {
+        matches.map(([home, away]) => {
           const played = open <= MATCHDAYS_PLAYED;
-          const [homeGoals, awayGoals] = mockScore(`${competition.slug}:${open}:${index}`);
+          const [homeGoals, awayGoals] = mockScore(fixtureSeed(league, open, home, away));
           return h.li(
             [
               h.Class(
