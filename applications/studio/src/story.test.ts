@@ -125,6 +125,41 @@ test('signing in fans out one fetch per section, and each success loads it', () 
   );
 });
 
+test('signing in refetches a section a pre-auth deep link had force-populated', () => {
+  Story.story(
+    update,
+    // A deep link resolved one club by id before sign-in, which forces that
+    // section to Success holding the single row (upsertRecord). Fetching only
+    // the IDLE sections would leave Clubs as a one-row list.
+    Story.with({
+      ...signedOutModel,
+      clubs: SectionData.Success({ data: [sampleClub] }),
+    }),
+    Story.message(SubmittedSignIn()),
+    Story.model((model) => {
+      // Refreshing, not Loading: the deep-linked row stays on screen while the
+      // full list loads.
+      expect(model.clubs._tag).toBe('Refreshing');
+    }),
+    Story.Command.expectHas(FetchClubs),
+    Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [sampleClub] })),
+    Story.model((model) => {
+      expect(model.clubs._tag).toBe('Success');
+    }),
+    // The rest of the fan-out still has to be answered for the story to close.
+    Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 0 })),
+    Story.Command.resolve(FetchNationals, SucceededFetchNationals({ entries: [] })),
+    Story.Command.resolve(FetchCompetitions, SucceededFetchCompetitions({ entries: [] })),
+    Story.Command.resolve(FetchEditions, SucceededFetchEditions({ editions: [] })),
+    Story.Command.resolve(FetchAssociations, SucceededFetchAssociations({ entries: [] })),
+    Story.Command.resolve(
+      FetchParticipations,
+      SucceededFetchParticipations({ participations: [] }),
+    ),
+    Story.Command.resolve(FetchHealth, SucceededFetchHealth()),
+  );
+});
+
 test('a successful players fetch loads its rows and records the total', () => {
   Story.story(
     update,
