@@ -360,7 +360,7 @@ const content = (model: Model, current: Section): Html => {
 
   const filterRange = (column: string): Html => {
     const pair = model.dateFilterPickers[column];
-    if (!pair) return h.div([], []);
+    if (!pair) return h.empty;
     const range = model.dateFilters[column];
     const hasRange = range !== undefined && (Option.isSome(range.from) || Option.isSome(range.to));
 
@@ -405,7 +405,7 @@ const content = (model: Model, current: Section): Html => {
               ],
               ['✕'],
             )
-          : h.div([], []),
+          : h.empty,
       ],
     );
   };
@@ -416,7 +416,7 @@ const content = (model: Model, current: Section): Html => {
     const active = model.filters[column];
     const excludedValues = active?._tag === 'ExcludedFilter' ? active.excluded : [];
     const listbox = model.filterListboxes[column];
-    if (!listbox) return h.div([], []);
+    if (!listbox) return h.empty;
     const options = optionsFor(columnIndex);
 
     return h.submodel({
@@ -501,7 +501,7 @@ const content = (model: Model, current: Section): Html => {
 
   const pagination = (): Html => {
     if (current === 'players') {
-      if (model.players._tag === 'Idle') return h.div([], []);
+      if (model.players._tag === 'Idle') return h.empty;
       const totalPages = Math.max(1, Math.ceil(model.playersTotal / PAGE_SIZE));
       const page = model.playersPage;
       const busy = AsyncData.isPending(model.players);
@@ -528,7 +528,7 @@ const content = (model: Model, current: Section): Html => {
       );
     }
 
-    if (visible.length <= PAGE_SIZE) return h.div([], []);
+    if (visible.length <= PAGE_SIZE) return h.empty;
 
     return h.div(
       [h.Class('mt-6 flex items-center justify-between border-t border-neutral-200 pt-4')],
@@ -553,7 +553,7 @@ const content = (model: Model, current: Section): Html => {
   };
 
   const sectionStatusBanner = (): Html => {
-    if (sectionState._tag !== 'Failure') return h.div([], []);
+    if (sectionState._tag !== 'Failure') return h.empty;
     return h.div(
       [
         h.Role('alert'),
@@ -574,7 +574,7 @@ const content = (model: Model, current: Section): Html => {
   // A shared link couldn't resolve its record (e.g. a deleted team, or a
   // player not on the currently loaded page).
   const linkErrorBanner = (): Html => {
-    if (model.linkError === '') return h.div([], []);
+    if (model.linkError === '') return h.empty;
     return h.div(
       [
         h.Role('alert'),
@@ -677,7 +677,7 @@ const content = (model: Model, current: Section): Html => {
               `Searching page ${model.playersPage} only — the players list is paginated by the server, so records on other pages are not included.`,
             ],
           )
-        : h.div([], []),
+        : h.empty,
       showSkeleton
         ? h.div(
             [h.Class('mt-6 flex flex-col gap-2')],
@@ -827,5 +827,3 @@ const calendarView = (attributes: UiCalendar.CalendarAttributes): Html => {
     }),
   );
 };
-
-// STYLE
