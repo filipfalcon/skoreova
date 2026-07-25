@@ -64,17 +64,36 @@ export const drawer = (model: Model): Html => {
   const drawerSection = drawerState._tag === 'Closed' ? undefined : drawerState.section;
   const columns = drawerSection ? sectionData[drawerSection].columns : [];
 
+  // A derived cell (an edition's Competition) stores the parent's id and is
+  // resolved to a name for display, so the editor shows the RESOLVED value
+  // and refuses input: typing there used to commit a "<uuid> → <text>" edit
+  // that the next render resolved away — the change looked discarded, but the
+  // History tab kept it.
   const field = (column: Column, index: number): Html =>
     h.label(
       [h.Class('flex flex-col gap-1')],
       [
         h.span([h.Class('text-sm font-medium text-neutral-700')], [column.label]),
-        h.input([
-          h.Type('text'),
-          h.Value(draft[index] ?? ''),
-          h.OnInput((value) => UpdatedDraftField({ index, value })),
-          h.Class(drawerInputStyle),
-        ]),
+        column.derived
+          ? h.input([
+              h.Type('text'),
+              h.Value(entry ? (resolveEditionCell(model, entry).values[index] ?? '') : ''),
+              h.Readonly(true),
+              h.AriaDescribedBy(`drawer-field-${index}-note`),
+              h.Class(`${drawerInputStyle} cursor-not-allowed bg-neutral-100 text-neutral-500`),
+            ])
+          : h.input([
+              h.Type('text'),
+              h.Value(draft[index] ?? ''),
+              h.OnInput((value) => UpdatedDraftField({ index, value })),
+              h.Class(drawerInputStyle),
+            ]),
+        column.derived
+          ? h.span(
+              [h.Id(`drawer-field-${index}-note`), h.Class('text-xs text-neutral-500')],
+              ['Set by the parent record.'],
+            )
+          : h.empty,
       ],
     );
 
