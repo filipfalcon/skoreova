@@ -9,7 +9,7 @@ import { load as loadUrl, pushUrl } from 'foldkit/navigation';
 import { getDecoded } from './api';
 import { HealthResponse, healthUrl } from './healthApi';
 import { AssociationsResponse, associationToRow, associationsUrl } from './associationsApi';
-import { getChart, removeChart, setChart } from './chartHost';
+import { getChart, releaseChart, setChart } from './chartHost';
 import { CompetitionsResponse, competitionToRow, competitionsUrl } from './competitionsApi';
 import { makePointsOption, makeStatsOption } from './echarts';
 import { EditionsResponse, editionsUrl } from './editionsApi';
@@ -72,15 +72,18 @@ export const MountChart = Mount.define(
               const resizeObserver = new ResizeObserver(() => chart.resize());
               resizeObserver.observe(element);
               setChart(hostId, chart);
-              return resizeObserver;
+              // The release carries the instance it created, so a remount
+              // that already claimed this hostId can't be torn down by the
+              // mount it replaced (see releaseChart).
+              return { chart, resizeObserver };
             },
             catch: (error) =>
               error instanceof Error ? error : new Error(`Failed to mount chart: ${error}`),
           }),
-          (resizeObserver) =>
+          ({ chart, resizeObserver }) =>
             Effect.sync(() => {
               resizeObserver.disconnect();
-              removeChart(hostId);
+              releaseChart(hostId, chart);
             }),
         ).pipe(
           Effect.map(() => SucceededMountChart({ hostId })),
