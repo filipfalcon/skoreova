@@ -29,8 +29,9 @@ import { competitionRoundCount } from './schedule';
 
 // The Model, Messages, Commands, data, shared components, and the screens each
 // live in their own module (model.ts, message.ts, command.ts, data.ts,
-// components.ts, page.ts); this file wires them into init/update/view and
-// re-exports the public surface so fixtures and tests import from the entry.
+// components.ts, and one module per screen under page/); this file wires them
+// into init/update/view and re-exports the public surface so fixtures and
+// tests import from the entry.
 export { Metric, Model, Screen, ScorerScope };
 
 // MESSAGE — see message.ts.
@@ -177,5 +178,6 @@ export const update = (model: Model, message: Message): UpdateReturn =>
 // COMMAND — see command.ts.
 export { Load, Navigate, ReadPins, WritePins };
 
-// SCREENS and the view composition live in page.ts.
-export { view } from './page';
+// The view composition lives in view.ts; each screen in its own module under
+// page/, reached through that directory's barrel.
+export { view } from './view';

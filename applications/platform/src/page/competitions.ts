@@ -9,7 +9,7 @@ import { competitionRouter } from '../route';
 
 const h = html<Message>();
 
-export const competitionsScreen = (model: Model): Html =>
+export const view = (model: Model): Html =>
   h.div(
     [],
     [

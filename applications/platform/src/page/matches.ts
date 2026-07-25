@@ -5,13 +5,13 @@ import { screenHeader } from '../components';
 import { leagueCompetitions } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';
-import { competitionMatchesPanel } from './competition-profile';
+import { matchesPanel } from './competition-profile';
 
 const h = html<Message>();
 
 // MATCHES — the standalone section: the round-by-round schedule of every
 // league, reusing the competition profile's matches panel.
-export const matchesScreen = (model: Model): Html =>
+export const view = (model: Model): Html =>
   h.div(
     [],
     [
@@ -27,7 +27,7 @@ export const matchesScreen = (model: Model): Html =>
             [],
             [
               h.h2([h.Class('display text-2xl text-ink md:text-3xl')], [competition.name]),
-              h.div([h.Class('mt-4')], [competitionMatchesPanel(competition, model)]),
+              h.div([h.Class('mt-4')], [matchesPanel(competition, model)]),
             ],
           ),
         ),
