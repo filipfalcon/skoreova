@@ -935,7 +935,7 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
   // window.scrollTo is a window event source, not element-scoped Mount work —
   // and moving the live viewport from a Mount is unsafe under DevTools
   // time-travel, which re-runs the factory. It is now a Subscription gated on
-  // the menu being closed (see `subscriptions` in main.ts).
+  // the menu being closed (see `subscriptions` in subscription.ts).
 
   // ----- The loop ------------------------------------------------------------
 

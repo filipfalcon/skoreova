@@ -69,7 +69,7 @@ const segmentToSegment = (a: Point, b: Point, c: Point, d: Point): number => {
 };
 
 // The pins REVEAL through an inner wrapper (the root keeps its z-index
-// transition; see clubPin in main.ts): until it intersects the viewport
+// transition; see clubPin in page/clubs.ts): until it intersects the viewport
 // the wrapper holds its entrance offset (translateY), so measuring at an
 // arbitrary scroll position compares settled pins against still-offset
 // ones and reports phantom overlaps. Center the map, wait for every pin's

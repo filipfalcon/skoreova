@@ -184,11 +184,11 @@ export const Model = S.Struct({
   // or a player not on the currently loaded page — see FetchTeamById).
   linkError: S.String,
   // One multi-select Listbox submodel per checkbox filter column (see
-  // checkboxColumns), keyed by the column's name. Only interaction state
+  // checkboxColumnLabels in data.ts), keyed by the column's name. Only interaction state
   // lives here — the selection stays in `filters` as the excluded set.
   filterListboxes: S.Record(S.String, Listbox.Multi.Model),
-  // The active from/to range per date filter column (see dateColumns), keyed
-  // by the column's name. Absent key = no range set.
+  // The active from/to range per date filter column (see dateColumnLabels in
+  // data.ts), keyed by the column's name. Absent key = no range set.
   dateFilters: S.Record(S.String, DateRangeFilter),
   // One from/to pair of DatePicker submodels per date filter column. Only
   // interaction state (popover, visible month) lives here — the selection is

@@ -15,7 +15,9 @@ export const view = (model: Model): Html =>
   h.div(
     [],
     [
-      screenHeader(model, 'Round by round across both leagues — refreshed after every matchday.'),
+      // "every league", not "both": the panels below are derived from the
+      // canon, so a third league would have made this line a lie.
+      screenHeader(model, 'Round by round across every league — refreshed after every matchday.'),
       h.div(
         [h.Class('mt-12 flex flex-col gap-12')],
         // One panel per league competition, straight off the canon rather than
