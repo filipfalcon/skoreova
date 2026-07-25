@@ -129,21 +129,26 @@ export const routeClubSlug = (route: AppRoute): string =>
 export const routeCompetitionSlug = (route: AppRoute): string =>
   route._tag === 'CompetitionRoute' ? route.slug : '';
 
+// ONE POINT PER MATCHDAY PLAYED — the chart's x axis is the season canon, so
+// the series run to MATCHDAYS_PLAYED and no further. They used to carry
+// fourteen points each, which drew two bars for matchdays that have not been
+// played and labelled them 13 and 14 while every competition screen said
+// "Matchday 12 of 14". data.test.ts asserts the length now.
 export const metricSeries: Record<Metric, MetricSeries> = {
   Goals: {
     label: 'Goals per matchday',
     unit: 'goals across both leagues',
-    values: [19, 26, 22, 31, 24, 28, 35, 23, 27, 30, 25, 33, 29, 36],
+    values: [19, 26, 22, 31, 24, 28, 35, 23, 27, 30, 25, 33],
   },
   Attendance: {
     label: 'Average attendance',
     unit: 'fans per match',
-    values: [640, 720, 690, 810, 760, 900, 840, 880, 930, 1010, 970, 1120, 1080, 1240],
+    values: [640, 720, 690, 810, 760, 900, 840, 880, 930, 1010, 970, 1120],
   },
   Conversion: {
     label: 'Shot conversion',
     unit: 'percent of shots scored',
-    values: [9.8, 11.2, 10.1, 12.6, 11.9, 13.4, 12.2, 14.1, 13, 14.8, 13.9, 15.6, 14.7, 16.2],
+    values: [9.8, 11.2, 10.1, 12.6, 11.9, 13.4, 12.2, 14.1, 13, 14.8, 13.9, 15.6],
   },
 };
 

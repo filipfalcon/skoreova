@@ -7,6 +7,7 @@ import {
   clubs,
   leagueCompetitions,
   leagueTeams,
+  metricSeries,
   standingsFor,
 } from './data';
 import { MATCHDAYS_PLAYED, leagueRoundCount, leagueRounds } from './schedule';
@@ -111,6 +112,16 @@ test.each(LEAGUES)('%s: the stage, progress and format copy match the schedule',
   expect(CLUB_COUNT_WORDS[clubCount]).toBeDefined();
   expect(competition.format[0]).toContain(`${CLUB_COUNT_WORDS[clubCount]} clubs`);
   expect(competition.format[0]).toContain(`${rounds} rounds`);
+});
+
+test('every metric series carries exactly one point per matchday played', () => {
+  // The Her Game chart draws one bar per value and labels it with its index,
+  // so a series longer than the canon invents matchdays: it used to carry
+  // fourteen points and label bars 13 and 14 under a "Matchday 12 of 14"
+  // header.
+  for (const series of Object.values(metricSeries)) {
+    expect(series.values).toHaveLength(MATCHDAYS_PLAYED);
+  }
 });
 
 test('every club sits in a league the schedule generator knows', () => {
