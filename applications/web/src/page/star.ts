@@ -19,7 +19,7 @@ import { tabularScore } from './champions';
 
 const h = html<Message>();
 
-export const starView = (model: Model): Html =>
+export const view = (model: Model): Html =>
   h.section(
     [
       h.Id('hail-to-the-queen'),

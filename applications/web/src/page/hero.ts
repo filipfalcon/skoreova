@@ -16,7 +16,7 @@ const heroText = 'text-[20vw] md:text-[10vw]';
 // for the (removed) Mexican-wave letters jumping above the line.
 const heroMask = `overflow-hidden ${heroText}`;
 
-export const heroView = (): Html =>
+export const view = (): Html =>
   h.section(
     [
       h.Id('top'),

@@ -5,16 +5,18 @@ import { footerView, headerView, menuOverlayView } from './components';
 import type { Message } from './message';
 import type { Model } from './model';
 import { MountMotion, ObserveReveals } from './motion';
-import { championsView } from './page/champions';
-import { clubsView } from './page/clubs';
-import { competitionsView } from './page/competitions';
-import { followView } from './page/follow';
-import { heroView } from './page/hero';
-import { marqueeView } from './page/marquee';
-import { nationalTeamView } from './page/national';
-import { starView } from './page/star';
-import { statementView } from './page/statement';
-import { storyView } from './page/story';
+import {
+  Champions,
+  Clubs,
+  Competitions,
+  Follow,
+  Hero,
+  Marquee,
+  National,
+  Star,
+  Statement,
+  Story,
+} from './page';
 
 const h = html<Message>();
 
@@ -36,22 +38,22 @@ const heroLazy = createKeyedLazy();
 const marqueeLazy = createKeyedLazy();
 
 const landingSections = (model: Model, rootKey: string): ReadonlyArray<Html> => [
-  heroLazy(rootKey, heroView, []),
-  storyView(model),
-  competitionsView(model),
+  heroLazy(rootKey, Hero.view, []),
+  Story.view(model),
+  Competitions.view(model),
   // The map right after the competitions — first WHAT we cover, then WHERE
   // it all happens, before zooming into individual protagonists.
-  clubsView(model),
-  championsView(model),
+  Clubs.view(model),
+  Champions.view(model),
   // Champion → her star player, then out to the national team.
-  starView(model),
-  nationalTeamView(model),
-  statementView(model),
+  Star.view(model),
+  National.view(model),
+  Statement.view(model),
   // The competitions ticker answers the statement's closing line — "Watch
   // it rise to the top." and every competition name rolls past (user call;
   // it used to close the competitions section instead).
-  marqueeLazy(rootKey, marqueeView, []),
-  followView(model),
+  marqueeLazy(rootKey, Marquee.view, []),
+  Follow.view(model),
 ];
 
 export const view = (model: Model): Document => {

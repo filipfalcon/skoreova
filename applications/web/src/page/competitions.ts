@@ -94,7 +94,7 @@ const competitionCard = (model: Model, competition: Competition): Html =>
     ],
   );
 
-export const competitionsView = (model: Model): Html =>
+export const view = (model: Model): Html =>
   h.section(
     [
       h.Id('battling-through'),

@@ -460,7 +460,7 @@ const mapLeagueFilter = (model: Model): Html =>
       ),
   });
 
-export const clubsView = (model: Model): Html =>
+export const view = (model: Model): Html =>
   h.section(
     // Ink, not paper: the white map line work is the section's hero, and the
     // dark ground restores the light/dark rhythm around it (competitions is

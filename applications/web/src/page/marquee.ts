@@ -34,7 +34,7 @@ const drawnSpark: Html = h.svg(
   ],
 );
 
-export const marqueeView = (): Html =>
+export const view = (): Html =>
   h.div(
     [h.Class('overflow-hidden bg-pink py-3'), h.AriaHidden(true)],
     [

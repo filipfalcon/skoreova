@@ -41,7 +41,7 @@ export const Model = S.Struct({
   heroPastHeader: S.Boolean,
   // Mirrors the OS-level `prefers-reduced-motion` media query — seeded via
   // Flags at boot, kept fresh by the reducedMotion subscription. The motion
-  // mount is keyed on it (page.ts), so flipping the OS setting mid-session
+  // mount is keyed on it (view.ts), so flipping the OS setting mid-session
   // re-runs the choreography setup instead of leaving a stale snapshot.
   prefersReducedMotion: S.Boolean,
   // The reveal system's discrete state, keyed by each target's
