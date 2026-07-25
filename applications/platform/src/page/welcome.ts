@@ -119,15 +119,6 @@ const newContentPanel = (): Html =>
 // card, what's new, and the platform's numbers. There is no account gate —
 // every visitor lands straight in the data.
 
-// The hero puts HER in the middle of the space (user call) — the portrait
-// is a plain rectangle: the photo's corners are true #000, so the WELCOME
-// page swaps its background to black (see `view`) and the rectangle simply
-// continues the page. The crop wrapper eats the photo's ~15% of empty
-// studio above her hair, so her head rides right under the header. The
-// headline splits AROUND the figure: "Her game." left, "Her numbers." +
-// sub-copy right; on phones the grid stacks game → portrait → numbers.
-// The real <h1> is screen-reader-only so the visual split never garbles
-// the sentence.
 // The TRENDING board — the pink chip stamps its top edge like the
 // section kickers. Every tile is a LINK into the data: just the photo
 // with the name riding the bottom edge — no ranks, no crests (user call:
