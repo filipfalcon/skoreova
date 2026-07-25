@@ -82,11 +82,11 @@ import {
   signOutStyle,
   skeletonCardStyle,
 } from '../styles';
-import { drawer } from './drawer';
+import * as Drawer from './drawer';
 
 const h = html<Message>();
 
-export const dashboardView = (model: Model): Document => {
+export const view = (model: Model): Document => {
   const account = accountName(model);
   // The screen is derived from the stored route: a section list when one is
   // addressed, the dashboard landing page otherwise (home and the 404
@@ -160,7 +160,7 @@ export const dashboardView = (model: Model): Document => {
             }),
           ],
         ),
-        drawer(model),
+        Drawer.view(model),
       ],
     ),
   };

@@ -49,7 +49,7 @@ const h = html<Message>();
 
 const drawerTabs: ReadonlyArray<DrawerTab> = ['Overview', 'Persistency', 'History'];
 
-export const drawer = (model: Model): Html => {
+export const view = (model: Model): Html => {
   const drawerState = model.drawer;
   const creating = drawerState._tag === 'Creating';
   // The record being edited, resolved by id (undefined while creating/closed
