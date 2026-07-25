@@ -10,8 +10,10 @@ import {
   countryFlags,
   draftOf,
   drawerRecord,
-  resolveEditionCell,
+  resolveDerivedCells,
+  retryBySection,
   sectionData,
+  sectionLabels,
   sectionRows,
   sectionSingularLabels,
 } from '../data';
@@ -168,7 +170,7 @@ export const view = (model: Model): Html => {
             ? referencePicker(column.derived, index)
             : h.input([
                 h.Type('text'),
-                h.Value(entry ? (resolveEditionCell(model, entry).values[index] ?? '') : ''),
+                h.Value(entry ? (resolveDerivedCells(model, entry).values[index] ?? '') : ''),
                 h.Readonly(true),
                 h.AriaDescribedBy(`drawer-field-${index}-note`),
                 h.Class(`${drawerInputStyle} cursor-not-allowed bg-neutral-100 text-neutral-500`),
@@ -188,7 +190,7 @@ export const view = (model: Model): Html => {
     const isCompetition = entry.section === 'competitions';
     const isEdition = entry.section === 'editions';
     // Read-only field values with the edition's competition name resolved.
-    const displayValues = resolveEditionCell(model, entry).values;
+    const displayValues = resolveDerivedCells(model, entry).values;
 
     // A competition's own editions, each opening its own drawer on click.
     const editionsList = (): Html => {

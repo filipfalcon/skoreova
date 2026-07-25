@@ -242,7 +242,7 @@ export const FetchCompetitions = Command.define(
 
 // Fetches every edition across all competitions in one request (this
 // endpoint isn't paginated). An edition's Competition cell carries the bare
-// competitionId; the view resolves it to a name (see resolveEditionCell), so
+// competitionId; the view resolves it to a name (see resolveDerivedCells), so
 // this maps to Entry rows exactly like every other section.
 export const FetchEditions = Command.define(
   'FetchEditions',

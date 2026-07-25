@@ -66,26 +66,31 @@ export const editRecord = (entry: Entry): DrawerState =>
     isConfirmingDelete: false,
   });
 
-// An edition row stores its owning competition's id (in parentId); the display
-// name for the "Competition" column (index 1) is resolved from the competitions
-// section at render time. Deriving it in the view — rather than rewriting the
-// stored value when either fetch lands — means there's no arrival-order race to
-// coordinate: whatever competitions are loaded now is what shows.
-export const resolveEditionCell = (model: Model, entry: Entry): Entry => {
-  if (entry.section !== 'editions') return entry;
-  const competition = sectionRows(model, 'competitions').find(
-    (candidate) => candidate.id === entry.parentId,
-  );
-  if (!competition) return entry;
-  const values = [...entry.values];
-  values[1] = competition.values[0] ?? values[1] ?? '';
+// A DERIVED cell stores a reference — the record's parentId — and displays the
+// referenced record's name (an edition's Competition is the one such column
+// today). Resolved at render time rather than by rewriting the stored value
+// when either fetch lands, so there's no arrival-order race to coordinate:
+// whatever the referenced section holds now is what shows.
+//
+// Driven off the column descriptors, not off the one section that has such a
+// column: this used to hardcode `editions` and index 1, so a second derived
+// column anywhere would have rendered its raw UUID on screen.
+export const resolveDerivedCells = (model: Model, entry: Entry): Entry => {
+  const columns = sectionData[entry.section].columns;
+  if (!columns.some((column) => column.derived !== undefined)) return entry;
+  const values = entry.values.map((value, index) => {
+    const referenced = columns[index]?.derived;
+    if (referenced === undefined) return value;
+    const parent = sectionRows(model, referenced).find((row) => row.id === entry.parentId);
+    return parent?.values[0] ?? value;
+  });
   return evo(entry, { values: () => values });
 };
 
-// A section's rows as displayed: editions get their competition name resolved
-// (see resolveEditionCell); every other section is shown as stored.
+// A section's rows as displayed: any derived cell carries the referenced
+// record's name (see resolveDerivedCells); everything else is shown as stored.
 export const displayRows = (model: Model, section: Section): ReadonlyArray<Entry> =>
-  sectionRows(model, section).map((row) => resolveEditionCell(model, row));
+  sectionRows(model, section).map((row) => resolveDerivedCells(model, row));
 
 // MENU
 

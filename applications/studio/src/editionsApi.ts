@@ -23,7 +23,7 @@ export const editionsUrl = (): string => `${GATEWAY_BASE_URL}/editions`;
 // Column order shown in the Editions list and drawer; keep in sync with the
 // values produced by `editionToRow` below. "Competition" holds the bare
 // competitionId the response gives — a `derived` column, resolved to the
-// competition's name at RENDER time (see resolveEditionCell in data.ts), so
+// competition's name at RENDER time (see resolveDerivedCells in data.ts), so
 // editions and competitions can arrive in either order.
 export const editionColumns: ReadonlyArray<Column> = [
   { label: 'Edition', kind: 'title' },
