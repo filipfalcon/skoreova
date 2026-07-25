@@ -446,6 +446,23 @@ const setUpReveals = (
     let lastRevealScrollY = window.scrollY;
     let revealScrollWasUp = false;
 
+    // ONE callback can carry SEVERAL entries for the same proxy — scroll a
+    // section past the fold fast enough and the observer reports the entry and
+    // the exit together. Only the last of them is the current state. Keeping
+    // both put the same key in `revealed` AND `concealed`, and the Model's fold
+    // applies concealed first, so an off-screen target came back marked
+    // `.is-in` with no further entry coming to correct it (its replay never
+    // re-armed either). Entries arrive in time order, so last wins.
+    const latestPerProxy = (
+      entries: ReadonlyArray<IntersectionObserverEntry>,
+    ): ReadonlyArray<IntersectionObserverEntry> => {
+      const byProxy = new Map<Element, IntersectionObserverEntry>();
+      for (const entry of entries) {
+        byProxy.set(entry.target, entry);
+      }
+      return [...byProxy.values()];
+    };
+
     const onReveal = (entries: ReadonlyArray<IntersectionObserverEntry>): void => {
       if (window.scrollY !== lastRevealScrollY) {
         revealScrollWasUp = window.scrollY < lastRevealScrollY;
@@ -455,7 +472,7 @@ const setUpReveals = (
       const revealed: Array<string> = [];
       const concealed: Array<string> = [];
       const drawn: Array<string> = [];
-      for (const entry of entries) {
+      for (const entry of latestPerProxy(entries)) {
         const revealOnce =
           entry.target instanceof HTMLElement && entry.target.dataset['revealGroup'] === 'once';
         for (const target of targetsByProxy.get(entry.target) ?? []) {
@@ -495,6 +512,10 @@ const setUpReveals = (
           }
         }
       }
+      // NOTE: raw `.length` rather than Effect's emptiness predicates, here and
+      // in the draw observer below. These are mutable accumulators inside the
+      // imperative DOM zone, and importing effect's `Array` module into this
+      // file would shadow the global `Array<T>` its own annotations use.
       if (revealed.length > 0 || concealed.length > 0 || drawn.length > 0) {
         emit(ChangedReveals({ revealed, concealed, drawn }));
       }
@@ -531,7 +552,7 @@ const setUpReveals = (
           (entries) => {
             const revealed: Array<string> = [];
             const concealed: Array<string> = [];
-            for (const entry of entries) {
+            for (const entry of latestPerProxy(entries)) {
               for (const target of targetsByProxy.get(entry.target) ?? []) {
                 const key = target.dataset['revealKey'];
                 if (key === undefined) continue;
