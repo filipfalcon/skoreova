@@ -19,9 +19,15 @@ export const Club = S.Struct({
   city: S.String,
   logo: S.String,
   league: S.String,
+  // The season record. This is the ONE authored source for a club's league
+  // standing: `played` and `points` are arithmetic on it (see standingsFor),
+  // never typed in beside it, and the clubs screen's form bar reads the same
+  // three numbers the table does.
   won: S.Number,
   drawn: S.Number,
   lost: S.Number,
+  scored: S.Number,
+  conceded: S.Number,
   // Honors counts, migrated from the landing page's profile mock —
   // placeholder until the real data lands.
   leagueTitles: S.Number,

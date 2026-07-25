@@ -4,11 +4,11 @@ import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
 import { clubSection, drawnRightArrow } from './components';
-import { clubs, hashSlug, leagueRounds, standingsFor } from './data';
+import { clubs, hashSlug, standingsFor } from './data';
 import type { Club } from './data';
 import type { Message } from './message';
 import { matchesRouter } from './route';
-import { leagueSchedule, mockScore } from './schedule';
+import { fixtureSeed, leagueRounds, mockScore } from './schedule';
 
 const h = html<Message>();
 
@@ -27,17 +27,11 @@ interface ClubMatch {
 }
 
 // Every round this club actually plays, in order.
-const clubMatches = (target: Club): ReadonlyArray<ClubMatch> => {
-  const rows = standingsFor(target.league);
-  const totalRounds = leagueRounds[target.league] ?? rows.length;
-  return leagueSchedule(
-    rows.map((row) => row.team),
-    totalRounds,
-  ).flatMap((matches, index) => {
+const clubMatches = (target: Club): ReadonlyArray<ClubMatch> =>
+  leagueRounds(target.league).flatMap((matches, index) => {
     const match = matches.find(([home, away]) => home === target.name || away === target.name);
     return match === undefined ? [] : [{ round: index + 1, home: match[0], away: match[1] }];
   });
-};
 
 // The date is SECONDARY here (user call), so it is one quiet line rather
 // than the big stacked numeral the strip used to lead with.
@@ -65,7 +59,7 @@ const describeMatch = (
   isPlayed: boolean,
 ): PlayedMatch => {
   const [homeGoals, awayGoals] = mockScore(
-    `${target.league}-${match.round}-${match.home}-${match.away}`,
+    fixtureSeed(target.league, match.round, match.home, match.away),
   );
   const isHome = match.home === target.name;
   return {

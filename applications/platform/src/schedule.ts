@@ -1,7 +1,7 @@
 import { Array, Match as M } from 'effect';
 
 import type { Competition } from './data';
-import { hashSlug, standingsFor } from './data';
+import { hashSlug, leagueTeams } from './data';
 
 // Fixture generation: a round-robin season generator plus the seeded
 // scoreline mock. Shared by the matches screen and both profile screens.
@@ -53,33 +53,34 @@ export const roundRobinRounds = (teams: ReadonlyArray<string>): ReadonlyArray<Ro
   return [...singles, ...swapVenues(singles)];
 };
 
-// A season of a GIVEN length, cycling the round-robin and swapping venues
-// each time round — so the eight First League clubs meeting three times
-// (21 rounds) and the eleven Second League clubs meeting twice (20) both
-// come out of the same generator, matching `leagueRounds`.
-export const leagueSchedule = (
-  teams: ReadonlyArray<string>,
-  totalRounds: number,
-): ReadonlyArray<Round> => {
-  const singles = singleRoundRobin(teams);
-  if (Array.isReadonlyArrayEmpty(singles)) return [];
-  // Round n comes from cycle ⌊n / cycleLength⌋ of the same pairings, with
-  // venues swapped on every other cycle — indexing straight into that
-  // instead of pushing rounds until the season is long enough.
-  return Array.makeBy(totalRounds, (index) => {
-    const round = singles[index % singles.length] ?? [];
-    const isReturnCycle = Math.floor(index / singles.length) % 2 === 1;
-    return isReturnCycle ? swapVenuesInRound(round) : round;
-  });
-};
+// A LEAGUE'S SEASON — the one schedule every screen reads. The competition
+// profile's matches panel, the club profile's calendar, and the round
+// picker's end-stop all come from here, so a fixture is in the same round
+// with the same venue wherever it appears. Its length is the club count's to
+// decide: eight clubs meet home and away over 14 rounds, eleven over 22 with
+// one club idle each matchday. (A hand-set season length used to live beside
+// this in `leagueRounds`, and disagreed with it — 21 and 20.)
+export const leagueRounds = (league: string): ReadonlyArray<Round> =>
+  roundRobinRounds(leagueTeams(league));
 
-// Hand-set results, keyed by the same seed the generator uses. The seeded
-// mock is fine as filler, but a specific scoreline someone asked for has
-// to survive any change to the hash — hence an explicit override rather
-// than fishing for a seed that happens to produce it.
+export const leagueRoundCount = (league: string): number => leagueRounds(league).length;
+
+// ONE seed per fixture, so the competition screen and the club calendar
+// can't disagree about a scoreline. They used to build their own seeds from
+// different parts ('<slug>:<round>:<index>' against
+// '<league>-<round>-<home>-<away>'), and the same match rendered 0–3 on one
+// screen and 4–0 on the other.
+export const fixtureSeed = (league: string, round: number, home: string, away: string): string =>
+  `${league}:${round}:${home}:${away}`;
+
+// Hand-set results, keyed by that same seed. The seeded mock is fine as
+// filler, but a specific scoreline someone asked for has to survive any
+// change to the hash — hence an explicit override rather than fishing for a
+// seed that happens to produce it.
 const SCORE_OVERRIDES: Record<string, readonly [number, number]> = {
-  // Sparta win the derby at Slavia.
-  'First League-14-Slavia Praha-Sparta Praha': [0, 1],
+  // Sparta win the derby at Slavia — round 14 is the return fixture at
+  // Slavia's ground, the one this canon calls the derby.
+  [fixtureSeed('First League', 14, 'Slavia Praha', 'Sparta Praha')]: [0, 1],
 };
 
 export const mockScore = (seed: string): readonly [number, number] => {
@@ -97,8 +98,7 @@ export const competitionRoundCount = (competition: Competition): number =>
   M.value(competition.standings).pipe(
     M.withReturnType<number>(),
     M.tagsExhaustive({
-      TableStandings: ({ league }) =>
-        roundRobinRounds(standingsFor(league).map((row) => row.team)).length,
+      TableStandings: ({ league }) => leagueRoundCount(league),
       TiesStandings: () => 1,
     }),
   );
