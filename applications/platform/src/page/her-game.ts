@@ -50,7 +50,8 @@ const metricRadioGroup = (model: Model): Html =>
       ),
   });
 
-// The studio chart: 14 matchday bars, three faint gridlines, and a dashed
+// The studio chart: one bar per matchday played (the series length is the
+// season canon — see metricSeries), three faint gridlines, and a dashed
 // season-average line. Pure SVG — the real chart engine replaces this.
 
 // Fixed geometry, in viewBox units: bars rise CHART_PLOT_HEIGHT above the
