@@ -294,7 +294,12 @@ export const clubsScreen = (model: Model): Html => {
               h.input([
                 ...attributes.input,
                 h.Class(
-                  'w-full border-2 border-ink/15 bg-transparent px-5 py-3.5 text-base text-ink transition-colors placeholder:text-ink/35 focus:border-pink focus:outline-none',
+                  // The house focus grammar (see studio's inputStyle): the
+                  // native outline goes, a pink border marks focus of any
+                  // kind, and a real focus-visible ring comes back for the
+                  // keyboard — outline-none on its own left a keyboard user
+                  // with nothing but a 2px border tint to find the field by.
+                  'w-full border-2 border-ink/15 bg-transparent px-5 py-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink/35 focus:border-pink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink',
                 ),
               ]),
             ],
