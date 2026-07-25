@@ -426,7 +426,7 @@ const setUpReveals = (
         if (!target.classList.contains('is-in')) return;
         // Only the root's OWN dash transition ending counts — that is the
         // outline pen closing its lap, and the land borders' clip wipes
-        // are timed to finish mid-lap (see LAND_BORDER_WIPES in main.ts),
+        // are timed to finish mid-lap (see LAND_BORDER_WIPES in page/clubs.ts),
         // so the whole figure is drawn. Bubbling transitions from the
         // region paths (their clips, the tint) must not stamp early.
         if (event.target === target && event.propertyName === 'stroke-dashoffset') {

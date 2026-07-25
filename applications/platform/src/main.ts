@@ -177,7 +177,5 @@ export const update = (model: Model, message: Message): UpdateReturn =>
 // COMMAND — see command.ts.
 export { Load, Navigate, ReadPins, WritePins };
 
-// DATA — all placeholder while the platform wires up.
-
 // SCREENS and the view composition live in page.ts.
 export { view } from './page';

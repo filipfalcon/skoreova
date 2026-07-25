@@ -121,8 +121,10 @@ const upsertEntry = (rows: ReadonlyArray<Entry>, entry: Entry): ReadonlyArray<En
   entry,
 ];
 
-// The rows a section currently holds (its Success/Refreshing/Stale data), or []
-// if it hasn't loaded. `model[section]` selects the section's AsyncData.
+// Evolves ONE section's AsyncData field by name. The field names match the
+// Section literals, but `evo` needs a literal key, so the switch is what turns
+// a runtime section into the right field — every handler that touches a
+// section's rows goes through here rather than naming the field itself.
 const evolveSection = (
   model: Model,
   section: Section,

@@ -122,13 +122,6 @@ const standingsPanel = (
   );
 };
 
-// ——— CLUB PROFILE — the immersive dark page (user call: Universe-style,
-// "full club immersive page"). One black world from the header down:
-// hero (crest + name), the club's own statement, standings, cup run, top
-// scorers, history, all-time stats (WIP), and the follow CTA. ———
-
-// The per-club statement block — hand-written for the marquee clubs, a
-// season-record fallback for everyone else.
 const competitionStandingsPanel = (competition: Competition): Html =>
   M.value(competition.standings).pipe(
     M.withReturnType<Html>(),

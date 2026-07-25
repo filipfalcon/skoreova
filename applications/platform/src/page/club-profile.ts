@@ -26,6 +26,8 @@ import type { EuroCampaign } from '../standings';
 
 const h = html<Message>();
 
+// The per-club statement block — hand-written for the marquee clubs, a
+// season-record fallback for everyone else (see clubProfileScreen).
 const clubHighlights: Record<string, { readonly kicker: string; readonly statement: string }> = {
   'sparta-praha': {
     kicker: 'Reigning champions',

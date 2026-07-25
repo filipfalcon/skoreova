@@ -97,9 +97,10 @@ const clubMatchCrest = (team: string): Html => {
 // comes from scale and from colour: the numerals go up to display scale,
 // and the colon goes brand pink, so the one punctuation mark on the card
 // is what carries the accent. Both numerals stay full ink (user call) —
-// an earlier pass faded the losing side to mark the result, but the WON
-// label already says that, and dimming half a score made the card look
-// like it had failed to load rather than like it had a winner.
+// an earlier pass faded the losing side to mark the result, and dimming
+// half a score made the card look like it had failed to load rather than
+// like it had a winner. The card no longer labels the result at all: the
+// W/D/L letters went with the old calendar strip.
 const clubMatchScore = (home: number, away: number): Html =>
   h.div(
     [
