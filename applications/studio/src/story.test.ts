@@ -105,7 +105,7 @@ test('signing in fans out one fetch per section, and each success loads it', () 
     Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [] })),
     Story.Command.resolve(FetchNationals, SucceededFetchNationals({ entries: [] })),
     Story.Command.resolve(FetchCompetitions, SucceededFetchCompetitions({ entries: [] })),
-    Story.Command.resolve(FetchEditions, SucceededFetchEditions({ editions: [] })),
+    Story.Command.resolve(FetchEditions, SucceededFetchEditions({ entries: [] })),
     Story.Command.resolve(FetchAssociations, SucceededFetchAssociations({ entries: [] })),
     Story.Command.resolve(
       FetchParticipations,
@@ -150,7 +150,7 @@ test('signing in refetches a section a pre-auth deep link had force-populated', 
     Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 0 })),
     Story.Command.resolve(FetchNationals, SucceededFetchNationals({ entries: [] })),
     Story.Command.resolve(FetchCompetitions, SucceededFetchCompetitions({ entries: [] })),
-    Story.Command.resolve(FetchEditions, SucceededFetchEditions({ editions: [] })),
+    Story.Command.resolve(FetchEditions, SucceededFetchEditions({ entries: [] })),
     Story.Command.resolve(FetchAssociations, SucceededFetchAssociations({ entries: [] })),
     Story.Command.resolve(
       FetchParticipations,
