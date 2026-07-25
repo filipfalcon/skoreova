@@ -1,4 +1,4 @@
-import { Match as M, Option } from 'effect';
+import { Array, Match as M, Option, Record } from 'effect';
 import type { Runtime } from 'foldkit';
 import { Command } from 'foldkit';
 import { evo } from 'foldkit/struct';
@@ -132,16 +132,24 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ChangedReveals: ({ revealed, concealed, drawn }) => [
         evo(model, {
           reveals: (reveals) => {
-            const gone = new Set(concealed);
-            const next: Record<string, RevealState> = {};
-            for (const [key, state] of Object.entries(reveals)) {
-              if (!gone.has(key)) next[key] = state;
-            }
-            for (const key of revealed) next[key] ??= 'entered';
-            for (const key of drawn) {
-              if (next[key] !== undefined) next[key] = 'drawn';
-            }
-            return next;
+            const kept = Record.filter(reveals, (_, key) => !Array.contains(concealed, key));
+            // union keeps the LEFT value on a conflict, which is the
+            // no-downgrade rule: a target already 'drawn' stays drawn when its
+            // observer re-reports it as merely entered.
+            const entered = Record.union(
+              kept,
+              Record.fromIterableWith(revealed, (key): readonly [string, RevealState] => [
+                key,
+                'entered',
+              ]),
+              (known) => known,
+            );
+            // Record.map only visits keys that are present, so a `drawn`
+            // report for a target that has since left the screen is dropped
+            // rather than resurrecting it.
+            return Record.map(entered, (state, key) =>
+              Array.contains(drawn, key) ? 'drawn' : state,
+            );
           },
         }),
         [],
