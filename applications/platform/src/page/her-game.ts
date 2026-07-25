@@ -1,5 +1,5 @@
 import { RadioGroup } from '@foldkit/ui';
-import { Match as M, Number, Option } from 'effect';
+import { Array, Match as M, Number, Option } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
@@ -303,7 +303,7 @@ const pinnedFeed = (model: Model): Html => {
     [h.Class('mt-14')],
     [
       sectionLabel('Pinned'),
-      tiles.length === 0
+      Array.isReadonlyArrayEmpty(tiles)
         ? h.div(
             [
               h.Class(

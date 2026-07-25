@@ -1,6 +1,6 @@
 import { RadioGroup } from '@foldkit/ui';
 import clsx from 'clsx';
-import { Match as M, Option } from 'effect';
+import { Array, Match as M, Option } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
@@ -480,7 +480,7 @@ export const clubProfileScreen = (target: Club, model: Model): Html => {
               // exact grammar: a push, not a crossfade. All the lines stack
               // in a single grid cell, so the chip's width is the WIDEST of
               // them and never jumps as the text changes.
-              ...(honours.length === 0
+              ...(Array.isReadonlyArrayEmpty(honours)
                 ? []
                 : [
                     h.ul(
