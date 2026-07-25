@@ -1,4 +1,4 @@
-import { Match as M, Option, Result } from 'effect';
+import { Array, Match as M, Option, Result } from 'effect';
 import { DatePicker, Dialog, Tabs } from '@foldkit/ui';
 import type { Runtime } from 'foldkit';
 import { AsyncData, Calendar, Command } from 'foldkit';
@@ -461,7 +461,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             return [
               evo(withListbox, {
                 filters: () =>
-                  nextExcluded.length === 0
+                  Array.isReadonlyArrayEmpty(nextExcluded)
                     ? rest
                     : { ...rest, [column]: ExcludedFilter.make({ excluded: nextExcluded }) },
                 clientPage: () => 1,

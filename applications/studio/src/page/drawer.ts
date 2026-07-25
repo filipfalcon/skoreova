@@ -1,5 +1,5 @@
 import { Dialog } from '@foldkit/ui';
-import { Match as M, Option } from 'effect';
+import { Array, Match as M, Option } from 'effect';
 import { AsyncData } from 'foldkit';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
@@ -116,7 +116,7 @@ export const drawer = (model: Model): Html => {
         [h.Class('flex flex-col gap-2')],
         [
           h.span([h.Class('text-sm font-medium text-neutral-700')], ['Editions']),
-          editions.length > 0
+          Array.isReadonlyArrayNonEmpty(editions)
             ? h.ul(
                 [h.Class('flex flex-col gap-2')],
                 editions.map((row) =>
@@ -187,7 +187,7 @@ export const drawer = (model: Model): Html => {
         [h.Class('flex flex-col gap-2')],
         [
           h.span([h.Class('text-sm font-medium text-neutral-700')], ['Teams']),
-          teams.length > 0
+          Array.isReadonlyArrayNonEmpty(teams)
             ? h.ul(
                 [h.Class('flex flex-col gap-2')],
                 teams.map((row) =>
@@ -329,7 +329,7 @@ export const drawer = (model: Model): Html => {
 
     return h.div(
       [h.Class('flex flex-1 flex-col overflow-y-auto px-6 py-6')],
-      changes.length > 0
+      Array.isReadonlyArrayNonEmpty(changes)
         ? [h.ul([h.Class('flex flex-col gap-2')], changes.map(changeCard))]
         : [h.p([h.Class('text-sm text-neutral-500')], ['No changes yet.'])],
     );
