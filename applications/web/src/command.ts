@@ -61,13 +61,20 @@ const animateScrollTo = (target: HTMLElement, reduceMotion: boolean): void => {
   );
   const startedAt = performance.now();
   // The user's own scrolling wins instantly — a navigation animation that
-  // fights the wheel feels broken.
+  // fights the wheel feels broken. Both listeners hang off ONE abort signal,
+  // so whichever way the ride ends — cancelled by a gesture, or run to
+  // completion — takes both down together. With `{ once: true }` only the
+  // gesture that actually fired retired itself, leaving its counterpart
+  // registered as a dead no-op (and a cancelled ride removed neither, since
+  // the step loop returned before its cleanup).
+  const gestures = new AbortController();
   let cancelled = false;
   const cancel = (): void => {
     cancelled = true;
+    gestures.abort();
   };
-  window.addEventListener('wheel', cancel, { once: true, passive: true });
-  window.addEventListener('touchmove', cancel, { once: true, passive: true });
+  window.addEventListener('wheel', cancel, { signal: gestures.signal, passive: true });
+  window.addEventListener('touchmove', cancel, { signal: gestures.signal, passive: true });
   const step = (now: number): void => {
     if (cancelled) return;
     const progress = Math.min(1, (now - startedAt) / duration);
@@ -76,8 +83,7 @@ const animateScrollTo = (target: HTMLElement, reduceMotion: boolean): void => {
     if (progress < 1) {
       window.requestAnimationFrame(step);
     } else {
-      window.removeEventListener('wheel', cancel);
-      window.removeEventListener('touchmove', cancel);
+      gestures.abort();
     }
   };
   window.requestAnimationFrame(step);
