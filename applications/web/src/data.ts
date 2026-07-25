@@ -468,8 +468,7 @@ export const haulMatches: ReadonlyArray<HaulMatch> = [
 // One club on the map and in the profile pages. `x`/`y` are percentages of
 // the outline's box, projected from real city coordinates (Prague and Brno
 // clubs are fanned out around their city so the crests don't stack).
-// League assignments and honors counts are placeholder — correct them as
-// the real data lands.
+// League assignments are placeholder — correct them as the real data lands.
 export interface Club {
   readonly slug: ClubSlug;
   readonly name: string;
@@ -478,8 +477,6 @@ export interface Club {
   readonly logo: string;
   readonly x: number;
   readonly y: number;
-  readonly leagueTitles: number;
-  readonly cupTitles: number;
   // Set on reserve ("B") teams: the slug of the club whose pin they live
   // under. B teams have no pin of their own — clicking the parent's pin
   // opens both cards side by side (filter permitting).
@@ -501,8 +498,6 @@ const clubTable = [
     logo: spartaPrahaLogo,
     x: 34.5,
     y: 38.4,
-    leagueTitles: 14,
-    cupTitles: 5,
   },
   {
     slug: 'slavia-praha',
@@ -512,8 +507,6 @@ const clubTable = [
     logo: slaviaPrahaLogo,
     x: 35.3,
     y: 39.7,
-    leagueTitles: 9,
-    cupTitles: 11,
   },
   {
     slug: 'abc-branik',
@@ -523,8 +516,6 @@ const clubTable = [
     logo: abcBranikLogo,
     x: 34.4,
     y: 41.0,
-    leagueTitles: 0,
-    cupTitles: 0,
   },
   {
     slug: 'vysocina-jihlava',
@@ -534,8 +525,6 @@ const clubTable = [
     logo: vysocinaJihlavaLogo,
     x: 51.7,
     y: 66.2,
-    leagueTitles: 0,
-    cupTitles: 0,
   },
   {
     slug: 'prague-raptors',
@@ -545,8 +534,6 @@ const clubTable = [
     logo: pragueRaptorsLogo,
     x: 33.8,
     y: 39.2,
-    leagueTitles: 0,
-    cupTitles: 0,
   },
   {
     slug: 'lokomotiva-brno',
@@ -556,8 +543,6 @@ const clubTable = [
     logo: lokomotivaBrnoLogo,
     x: 66.6,
     y: 75.3,
-    leagueTitles: 0,
-    cupTitles: 0,
   },
   {
     slug: 'artis-brno',
@@ -567,8 +552,6 @@ const clubTable = [
     logo: artisBrnoLogo,
     x: 67.8,
     y: 73.5,
-    leagueTitles: 0,
-    cupTitles: 0,
   },
   {
     slug: 'banik-ostrava',
@@ -581,8 +564,6 @@ const clubTable = [
     // of the historic border, and read as a Moravian club.
     x: 91.4,
     y: 48.5,
-    leagueTitles: 2,
-    cupTitles: 3,
   },
   {
     slug: 'viktoria-plzen',
@@ -592,8 +573,6 @@ const clubTable = [
     logo: viktoriaPlzenLogo,
     x: 19.3,
     y: 52.3,
-    leagueTitles: 0,
-    cupTitles: 1,
   },
   {
     slug: 'sigma-olomouc',
@@ -603,8 +582,6 @@ const clubTable = [
     logo: sigmaOlomoucLogo,
     x: 76.0,
     y: 58.4,
-    leagueTitles: 0,
-    cupTitles: 0,
   },
   {
     slug: 'slovan-liberec',
@@ -614,8 +591,6 @@ const clubTable = [
     logo: slovanLiberecLogo,
     x: 43.9,
     y: 12.1,
-    leagueTitles: 0,
-    cupTitles: 0,
   },
   {
     slug: 'dynamo-ceske-budejovice',
@@ -625,8 +600,6 @@ const clubTable = [
     logo: dynamoBudejoviceLogo,
     x: 35.3,
     y: 82.8,
-    leagueTitles: 0,
-    cupTitles: 0,
   },
   {
     slug: 'hradec-kralove',
@@ -636,8 +609,6 @@ const clubTable = [
     logo: hradecKraloveLogo,
     x: 55.2,
     y: 34.0,
-    leagueTitles: 0,
-    cupTitles: 0,
   },
   {
     slug: 'pardubice',
@@ -647,8 +618,6 @@ const clubTable = [
     logo: pardubiceLogo,
     x: 54.5,
     y: 41.0,
-    leagueTitles: 0,
-    cupTitles: 0,
   },
   {
     slug: 'teplice',
@@ -658,8 +627,6 @@ const clubTable = [
     logo: tepliceLogo,
     x: 25.8,
     y: 17.1,
-    leagueTitles: 0,
-    cupTitles: 0,
   },
   {
     slug: 'slovacko',
@@ -669,8 +636,6 @@ const clubTable = [
     logo: slovackoLogo,
     x: 79.1,
     y: 79.1,
-    leagueTitles: 0,
-    cupTitles: 2,
   },
   // Reserve sides — no pin of their own, they ride their parent's (see
   // `parent`). Coordinates mirror the parent and are never used.
@@ -682,8 +647,6 @@ const clubTable = [
     logo: spartaPrahaLogo,
     x: 34.5,
     y: 38.4,
-    leagueTitles: 0,
-    cupTitles: 0,
     parent: 'sparta-praha',
   },
   {
@@ -694,8 +657,6 @@ const clubTable = [
     logo: slovanLiberecLogo,
     x: 43.9,
     y: 12.1,
-    leagueTitles: 0,
-    cupTitles: 0,
     parent: 'slovan-liberec',
   },
   {
@@ -706,8 +667,6 @@ const clubTable = [
     logo: viktoriaPlzenLogo,
     x: 19.3,
     y: 52.3,
-    leagueTitles: 0,
-    cupTitles: 0,
     parent: 'viktoria-plzen',
   },
 ] as const;
