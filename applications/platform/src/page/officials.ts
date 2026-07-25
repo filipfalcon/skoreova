@@ -8,7 +8,7 @@ import type { Model } from '../model';
 
 const h = html<Message>();
 
-export const officialsScreen = (model: Model): Html =>
+export const view = (model: Model): Html =>
   h.div(
     [],
     [

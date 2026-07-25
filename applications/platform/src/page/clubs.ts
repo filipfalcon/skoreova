@@ -260,7 +260,7 @@ const normalizeQuery = (value: string): string =>
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '');
 
-export const clubsScreen = (model: Model): Html => {
+export const view = (model: Model): Html => {
   const query = normalizeQuery(model.clubQuery.trim());
   const filtered =
     query === ''

@@ -326,7 +326,7 @@ const pinnedFeed = (model: Model): Html => {
 // HER GAME — the platform's personal section (the former charts screen).
 // For now it holds the chart studio and saved charts; the custom feed of
 // followed clubs, players, and competitions lands here next.
-export const herGameScreen = (model: Model): Html =>
+export const view = (model: Model): Html =>
   h.div(
     [],
     [

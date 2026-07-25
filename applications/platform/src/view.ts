@@ -1,6 +1,7 @@
 // The view composition: routes a Model to its screen and wraps it in the
-// app shell. Every screen lives in its own module under ./page; the shared
-// engines (standings, schedule, stat tiles, …) live alongside.
+// app shell. Every screen lives in its own module under ./page (reached
+// through that directory's barrel); the shared engines (standings,
+// schedule, stat tiles, …) live alongside.
 
 import { Array, Match as M, Option } from 'effect';
 import { html } from 'foldkit/html';
@@ -19,16 +20,18 @@ import {
 } from './data';
 import type { Message } from './message';
 import type { Model } from './model';
-import { clubProfileScreen } from './page/club-profile';
-import { clubsScreen } from './page/clubs';
-import { competitionProfileScreen } from './page/competition-profile';
-import { competitionsScreen } from './page/competitions';
-import { herGameScreen } from './page/her-game';
-import { matchesScreen } from './page/matches';
-import { notFoundView } from './page/not-found';
-import { officialsScreen } from './page/officials';
-import { playersScreen } from './page/players';
-import { welcomeScreen } from './page/welcome';
+import {
+  ClubProfile,
+  Clubs,
+  CompetitionProfile,
+  Competitions,
+  HerGame,
+  Matches,
+  NotFound,
+  Officials,
+  Players,
+  Welcome,
+} from './page';
 
 const h = html<Message>();
 
@@ -52,20 +55,20 @@ const openCompetition = (model: Model): Option.Option<Competition> =>
 const screenView = (model: Model): Html => {
   // An unknown PATH names itself — only unknown club/competition SLUGS
   // still fall back to their directory screen (see openClub below).
-  if (model.route._tag === 'NotFoundRoute') return notFoundView(model.route.path);
+  if (model.route._tag === 'NotFoundRoute') return NotFound.view(model.route.path);
   const club = openClub(model);
-  if (Option.isSome(club)) return clubProfileScreen(club.value, model);
+  if (Option.isSome(club)) return ClubProfile.view(club.value, model);
   const competition = openCompetition(model);
-  if (Option.isSome(competition)) return competitionProfileScreen(competition.value, model);
+  if (Option.isSome(competition)) return CompetitionProfile.view(competition.value, model);
   return M.value(screenOf(model.route)).pipe(
     M.withReturnType<Html>(),
-    M.when('Welcome', () => welcomeScreen(model)),
-    M.when('HerGame', () => herGameScreen(model)),
-    M.when('Clubs', () => clubsScreen(model)),
-    M.when('Players', () => playersScreen(model)),
-    M.when('Matches', () => matchesScreen(model)),
-    M.when('Competitions', () => competitionsScreen(model)),
-    M.when('Officials', () => officialsScreen(model)),
+    M.when('Welcome', () => Welcome.view(model)),
+    M.when('HerGame', () => HerGame.view(model)),
+    M.when('Clubs', () => Clubs.view(model)),
+    M.when('Players', () => Players.view(model)),
+    M.when('Matches', () => Matches.view(model)),
+    M.when('Competitions', () => Competitions.view(model)),
+    M.when('Officials', () => Officials.view(model)),
     M.exhaustive,
   );
 };

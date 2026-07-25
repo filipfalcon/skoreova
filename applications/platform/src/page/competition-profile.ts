@@ -214,7 +214,7 @@ const competitionHistoryPanel = (competition: Competition): Html =>
 // competition + round + match); rounds past the current matchday show as
 // upcoming. The arrows page through the rounds.
 
-export const competitionMatchesPanel = (competition: Competition, model: Model): Html =>
+export const matchesPanel = (competition: Competition, model: Model): Html =>
   M.value(competition.standings).pipe(
     M.withReturnType<Html>(),
     M.tagsExhaustive({
@@ -355,7 +355,7 @@ const editionArchivePanel = (competition: Competition, open: Edition): Html =>
     ],
   );
 
-export const competitionProfileScreen = (competition: Competition, model: Model): Html =>
+export const view = (competition: Competition, model: Model): Html =>
   h.div(
     [],
     [
@@ -375,7 +375,7 @@ export const competitionProfileScreen = (competition: Competition, model: Model)
         [h.Class('mt-8 flex flex-col gap-8')],
         [
           ...(Option.isNone(model.competitionEdition)
-            ? [competitionStandingsPanel(competition), competitionMatchesPanel(competition, model)]
+            ? [competitionStandingsPanel(competition), matchesPanel(competition, model)]
             : [
                 editionArchivePanel(
                   competition,

@@ -481,7 +481,7 @@ const allTimeBestsPanel = (model: Model): Html =>
     ],
   );
 
-export const welcomeScreen = (model: Model): Html =>
+export const view = (model: Model): Html =>
   h.div(
     [],
     [

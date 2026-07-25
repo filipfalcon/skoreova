@@ -9,7 +9,7 @@ const h = html<Message>();
 // The 404 screen — an unknown path names itself instead of silently
 // rendering the welcome screen. Same anatomy as screenHeader (pink chip,
 // display title, quiet subtitle); the one action is the way home.
-export const notFoundView = (path: string): Html =>
+export const view = (path: string): Html =>
   h.div(
     [],
     [

@@ -27,7 +27,7 @@ import type { EuroCampaign } from '../standings';
 const h = html<Message>();
 
 // The per-club statement block — hand-written for the marquee clubs, a
-// season-record fallback for everyone else (see clubProfileScreen).
+// season-record fallback for everyone else (see this module's `view`).
 const clubHighlights: Record<string, { readonly kicker: string; readonly statement: string }> = {
   'sparta-praha': {
     kicker: 'Reigning champions',
@@ -368,7 +368,7 @@ const clubFollowSection = (target: Club, model: Model): Html => {
   );
 };
 
-export const clubProfileScreen = (target: Club, model: Model): Html => {
+export const view = (target: Club, model: Model): Html => {
   const heroArt = clubHeroPhotos[target.slug];
   const honours = clubHonours[target.slug] ?? [];
   const europe = clubEurope[target.slug];
