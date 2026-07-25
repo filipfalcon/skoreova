@@ -12,8 +12,15 @@ export const chipStyle =
 // The text inputs replace the browser's default outline with their own
 // focus-visible one (outline-none alone would leave keyboard focus with only
 // a subtle border shift — invisible at a glance).
+//
+// `outline-solid` is not decoration, it is what makes the ring exist. In
+// Tailwind 4 `outline-none` sets BOTH `outline-style: none` and
+// `--tw-outline-style: none`, and `outline-2` sets `outline-style:
+// var(--tw-outline-style)` — so the width-only utilities resolved back to
+// `none` and these four styles drew no ring at all. `outline-solid` restores
+// the style at the focus-visible variant's own specificity.
 export const inputStyle =
-  'w-full rounded-full border border-white/30 bg-white/25 px-5 py-3 text-white placeholder-white/70 outline-none transition focus:border-white/60 focus:bg-white/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
+  'w-full rounded-full border border-white/30 bg-white/25 px-5 py-3 text-white placeholder-white/70 outline-none transition focus:border-white/60 focus:bg-white/35 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
 
 export const submitStyle =
   'flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center rounded-full bg-neutral-950 text-xl text-white transition hover:bg-neutral-800 disabled:opacity-60';
@@ -87,10 +94,10 @@ export const paginationButtonStyle =
   'cursor-pointer rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50';
 
 export const searchInputStyle =
-  'w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900 placeholder-neutral-400 outline-none transition focus:border-neutral-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
+  'w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900 placeholder-neutral-400 outline-none transition focus:border-neutral-500 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
 
 export const filterSelectStyle =
-  'cursor-pointer rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 outline-none transition hover:border-neutral-400 focus:border-neutral-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
+  'cursor-pointer rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 outline-none transition hover:border-neutral-400 focus:border-neutral-500 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
 
 // Positioning comes from the Listbox's Floating UI anchor, not these classes.
 export const filterDropdownPanelStyle =
@@ -112,7 +119,7 @@ export const filterDropdownRowStyle =
   'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100';
 
 export const drawerInputStyle =
-  'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
+  'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
 
 export const drawerCloseStyle =
   'cursor-pointer rounded-full px-2 text-lg leading-none text-neutral-500 transition hover:text-neutral-900';
