@@ -1,8 +1,15 @@
 import { Number } from 'effect';
 import { expect, test } from 'vitest';
 
-import { POINTS_DRAW, POINTS_WIN, clubs, leagueTeams, standingsFor } from './data';
-import { MATCHDAYS_PLAYED, leagueRounds } from './schedule';
+import {
+  POINTS_DRAW,
+  POINTS_WIN,
+  clubs,
+  leagueCompetitions,
+  leagueTeams,
+  standingsFor,
+} from './data';
+import { MATCHDAYS_PLAYED, leagueRoundCount, leagueRounds } from './schedule';
 
 // THE SEASON CANON'S ARITHMETIC. The league numbers are mock, but a reader
 // can add them up — and the version before this one didn't survive that: the
@@ -74,6 +81,36 @@ test.each(LEAGUES)('%s: the league pays out no more points than it has matches',
   const rows = standingsFor(league);
   const matches = Number.sumAll(rows.map((row) => row.played)) / 2;
   expect(Number.sumAll(rows.map((row) => row.points))).toBeLessThanOrEqual(matches * POINTS_WIN);
+});
+
+// Spelled out because the format copy spells it out. A league whose club
+// count has no word here fails the test below rather than shipping a rule
+// that opens on the wrong number.
+const CLUB_COUNT_WORDS: Record<number, string> = { 8: 'Eight', 11: 'Eleven' };
+
+test.each(LEAGUES)('%s: the stage, progress and format copy match the schedule', (league) => {
+  // These four are hand-TYPED — nothing derives them. Every assertion above
+  // can pass while they go a round stale, which is exactly what adding a club
+  // to the table would do: the arithmetic follows, the sentences don't.
+  const competition = leagueCompetitions.find(
+    (candidate) =>
+      candidate.standings._tag === 'TableStandings' && candidate.standings.league === league,
+  );
+  expect(competition).toBeDefined();
+  if (!competition) return;
+
+  const rounds = leagueRoundCount(league);
+  const clubCount = leagueTeams(league).length;
+  const stage = `Matchday ${MATCHDAYS_PLAYED} of ${rounds}`;
+
+  expect(competition.stage).toBe(stage);
+  expect(competition.progress).toBe(Math.round((MATCHDAYS_PLAYED / rounds) * 100));
+  // The open edition's one-liner IS the stage line — the profile shows both.
+  expect(competition.editions.find((entry) => entry.isCurrent)?.detail).toBe(stage);
+  // Rule 01 states the format: how many clubs, over how many rounds.
+  expect(CLUB_COUNT_WORDS[clubCount]).toBeDefined();
+  expect(competition.format[0]).toContain(`${CLUB_COUNT_WORDS[clubCount]} clubs`);
+  expect(competition.format[0]).toContain(`${rounds} rounds`);
 });
 
 test('every club sits in a league the schedule generator knows', () => {
