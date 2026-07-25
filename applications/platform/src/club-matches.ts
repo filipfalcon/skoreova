@@ -42,7 +42,6 @@ const roundDate = (round: number): string =>
 
 interface PlayedMatch {
   readonly match: ClubMatch;
-  readonly index: number;
   readonly isPlayed: boolean;
   readonly forGoals: number;
   readonly againstGoals: number;
@@ -52,19 +51,13 @@ interface PlayedMatch {
 // Everything the calendar needs about one game, from the CLUB'S side —
 // the strip has to answer "did we win" without the reader doing the
 // home/away arithmetic themselves.
-const describeMatch = (
-  target: Club,
-  match: ClubMatch,
-  index: number,
-  isPlayed: boolean,
-): PlayedMatch => {
+const describeMatch = (target: Club, match: ClubMatch, isPlayed: boolean): PlayedMatch => {
   const [homeGoals, awayGoals] = mockScore(
     fixtureSeed(target.league, match.round, match.home, match.away),
   );
   const isHome = match.home === target.name;
   return {
     match,
-    index,
     isPlayed,
     isHome,
     forGoals: isHome ? homeGoals : awayGoals,
@@ -164,7 +157,12 @@ const clubMatchVersus = (): Html =>
 const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
   const homeGoals = entry.isHome ? entry.forGoals : entry.againstGoals;
   const awayGoals = entry.isHome ? entry.againstGoals : entry.forGoals;
-  const kickoff = kickoffFor(`${entry.match.round}-${entry.match.home}-${entry.match.away}`);
+  // Through fixtureSeed like the scoreline: a hand-built seed here left the
+  // league out, which is the drift schedule.ts documents — two leagues with a
+  // same-named B side would have shared a kickoff by accident.
+  const kickoff = kickoffFor(
+    fixtureSeed(target.league, entry.match.round, entry.match.home, entry.match.away),
+  );
   return h.div(
     [h.Class('flex flex-col border border-ink/15')],
     [
