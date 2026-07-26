@@ -1,6 +1,6 @@
 // The studio view: dispatches to the sign-in screen or, once signed in, the
 // dashboard (the section list and the record drawer). Each view lives in its
-// own module under ./page (reached through that directory's barrel); the
+// own module under ./page (reached through that directory’s barrel); the
 // shared class-string constants live in styles.ts.
 
 import type { Document } from 'foldkit/html';

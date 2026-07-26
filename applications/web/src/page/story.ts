@@ -13,7 +13,7 @@ const h = html<Message>();
 
 export const view = (model: Model): Html =>
   h.section(
-    // No `overflow-hidden`: it would clip the mascot (she's anchored to the
+    // No `overflow-hidden`: it would clip the mascot (she’s anchored to the
     // top edge and floats). Horizontal overflow is already contained globally
     // by `overflow-x: clip` on <body>, so nothing here needs to clip.
     // Slightly deeper bottom padding than top: the youth strip needs room to
@@ -21,21 +21,21 @@ export const view = (model: Model): Html =>
     [h.Id('on-the-rise'), h.Class('relative bg-paper pt-16 pb-20 text-ink md:pt-24 md:pb-32')],
     [
       // The armored mascot, md+ only — the original "alive emblem"
-      // treatment: a decorative accent anchored to the section's TOP band
-      // (by the headline, not the tall section's center — centering dragged
+      // treatment: a decorative accent anchored to the section’s TOP band
+      // (by the headline, not the tall section’s center — centering dragged
       // her legs over the photo strip), sliding in from the right on section
       // entry and idle-floating. Phones show no mascot at all (user call) —
       // their cover below is purely typographic.
       //
-      // Two elements so the two animations don't fight over `transform`: the
+      // Two elements so the two animations don’t fight over `transform`: the
       // wrapper carries the position + the reveal, the inner image runs the
       // slow idle float.
       h.div(
         [
           h.Class(
-            // From `xl` up she's anchored to the CONTAINER's right rim, not
-            // the viewport's — on wide screens a viewport anchor left a dead
-            // band between the copy's measure and her (80rem = the container's
+            // From `xl` up she’s anchored to the CONTAINER’s right rim, not
+            // the viewport’s — on wide screens a viewport anchor left a dead
+            // band between the copy’s measure and her (80rem = the container’s
             // max-w-7xl, 2.5rem = its px-10).
             // 26% — trimmed a touch from the original 28% so all three
             // mascot doodles land on one ~510px cap height at 1280
@@ -63,24 +63,24 @@ export const view = (model: Model): Html =>
       h.div(
         [h.Class(`${container} relative z-10`)],
         [
-          // The intro block (kicker → UEFA button) is the section's phone
+          // The intro block (kicker → UEFA button) is the section’s phone
           // cover: min-height fills the first viewport (100svh minus the
-          // 3.5rem header, the section's 4rem pt-16, and 1.5rem of air), so
+          // 3.5rem header, the section’s 4rem pt-16, and 1.5rem of air), so
           // the copy reads as one screen and the stat counters stay below
           // the fold. The knight gets her own band between the lede and the
           // button (a faded under-the-copy watermark read as noise — with
           // her own stage she can run full color like the desktop emblem),
-          // and the button rides the cover's bottom edge. From `md` up it's
+          // and the button rides the cover’s bottom edge. From `md` up it’s
           // a plain block again.
           h.div(
             [h.Class('flex min-h-[calc(100svh-9rem)] flex-col md:block md:min-h-0')],
             [
               // `dark: true` on a paper section is deliberate (user call):
-              // 01 opens the page's numbered run and the pink chip + ink
+              // 01 opens the page’s numbered run and the pink chip + ink
               // type reads stronger here than the ink chip variant.
               kicker(model, '01', 'On the rise', true, '/#on-the-rise'),
               // Slightly looser rhythm below md (mt-12/mt-10 vs the md
-              // mt-16/mt-12 pattern's phone halves): the cover has vertical
+              // mt-16/mt-12 pattern’s phone halves): the cover has vertical
               // room to give, and the extra air shrinks the dead band under
               // the button.
               h.h2(
@@ -102,8 +102,8 @@ export const view = (model: Model): Html =>
               // reveal sits on this wrapper, not the children) so the button lands
               // at the same moment as the line it belongs to.
               h.div(
-                // flex-1 (phone): the unit stretches to the cover's bottom —
-                // the knight's band absorbs the leftover space and the button
+                // flex-1 (phone): the unit stretches to the cover’s bottom —
+                // the knight’s band absorbs the leftover space and the button
                 // lands on the fold line.
                 [
                   h.Class(
@@ -124,13 +124,13 @@ export const view = (model: Model): Html =>
                     // that the glyphs are body-sized.
                     [h.Class('max-w-2xl text-lg leading-relaxed md:text-xl')],
                     [
-                      // "For women and girls" is UEFA's own Unstoppable-strategy
-                      // vocabulary — it also dodges doubling "women's" in one line.
+                      // "For women and girls" is UEFA’s own Unstoppable-strategy
+                      // vocabulary — it also dodges doubling "women’s" in one line.
                       'UEFA to make women’s football Europe’s most played and funded sport for women and girls by 2030.',
                     ],
                   ),
-                  // The knight's phone stage: an in-flow band between the lede
-                  // and the button, at her natural height — the cover's first
+                  // The knight’s phone stage: an in-flow band between the lede
+                  // and the button, at her natural height — the cover’s first
                   // screen shows her head and torso and scrolling walks down
                   // her to the button and the stats (the user liked the flow
                   // of that transition). w-4/5 + mx-auto: a notch smaller than
@@ -162,8 +162,8 @@ export const view = (model: Model): Html =>
                       // Tighter tracking below md: at 0.2em the label runs
                       // 352px against the 335px measure at 375 and wraps —
                       // 0.12em brings it to 321px, one line with air to spare.
-                      // self-center: centered on the knight's axis on phones
-                      // (only the phone layout is flex; md's block layout
+                      // self-center: centered on the knight’s axis on phones
+                      // (only the phone layout is flex; md’s block layout
                       // ignores align-self).
                       h.Class(
                         'mt-6 inline-block self-center border-2 border-ink px-4 py-2 text-xs tracking-[0.12em] uppercase text-ink transition-colors duration-300 hover:bg-ink hover:text-paper md:tracking-[0.2em]',
@@ -178,7 +178,7 @@ export const view = (model: Model): Html =>
           // Each stat carries its own short ink tick instead of one heavy
           // full-width rule — lighter, and the ticks column-align the grid.
           // A plain list, not a <dl>: value-as-term read the pairs backwards
-          // (the honors board's lesson) — spans carry the same formation.
+          // (the honors board’s lesson) — spans carry the same formation.
           h.ul(
             [
               // Content-sized columns spread with space-between, NOT three
@@ -205,7 +205,7 @@ export const view = (model: Model): Html =>
                     [
                       h.Class('display block text-fluid-7xl-8xl text-pink'),
                       h.AriaHidden(true),
-                      // Values a count-up can't serve get the slot-machine
+                      // Values a count-up can’t serve get the slot-machine
                       // scramble instead (motion.ts) — same tempo, so the
                       // three stats still land together.
                       ...(stat.countup === false
@@ -219,7 +219,7 @@ export const view = (model: Model): Html =>
                     [
                       h.Class(
                         // The width cap is md-only (max-w-64, not 52: the
-                        // longest label, "World-record women's football
+                        // longest label, "World-record women’s football
                         // crowd", must break at TWO lines there). On phones
                         // the full measure lets the shorter labels sit on ONE
                         // line — the cap broke "…through 2030" for no reason.
@@ -260,7 +260,7 @@ export const view = (model: Model): Html =>
                 model,
                 'story-climax',
                 // Phones stack it in three lines with the pink word alone on
-                // the middle one — the hero's own lockup (DISCOVER / HER GAME
+                // the middle one — the hero’s own lockup (DISCOVER / HER GAME
                 // / IN CZECHIA) replayed; the two-line balance-wrap read as
                 // an accident. One line again from md.
                 [
@@ -270,7 +270,7 @@ export const view = (model: Model): Html =>
                   h.br([h.Class('md:hidden')]),
                   ' on top.',
                 ],
-                // The same tier as OFFICIALLY UNSTOPPABLE — the section's two
+                // The same tier as OFFICIALLY UNSTOPPABLE — the section’s two
                 // shouts carry equal weight (was one step down at 5xl-8xl).
                 'text-fluid-6xl-9xl',
                 0,
@@ -279,7 +279,7 @@ export const view = (model: Model): Html =>
           ),
           // Body face under the climax line — the same lede idiom as the
           // UEFA sentence (Anton is for headlines; sentences in it are
-          // cognitive load, the user's call there applies here too). Claim
+          // cognitive load, the user’s call there applies here too). Claim
           // first, then the imperative: "it" needs its antecedent before it
           // lands.
           h.p(
@@ -301,7 +301,7 @@ export const view = (model: Model): Html =>
           // Phones: a swipeable scroll-snap strip — one big photo with the
           // next peeking in from the right edge (the peek IS the affordance),
           // bleeding to the viewport edges past the container padding.
-          // From `md` up it's the three-column grid with the offset middle.
+          // From `md` up it’s the three-column grid with the offset middle.
           // overflow-y-hidden is load-bearing: overflow-x auto alone computes
           // overflow-y to auto too, and the reveal transform (translateY)
           // makes the content overflow vertically — without it the strip is
@@ -334,7 +334,7 @@ export const view = (model: Model): Html =>
                   // The zoom clip lives on this inner div now — the figure
                   // itself must not clip, or the caption below would too.
                   // The reveal rides its own middle layer: on the img itself
-                  // it hijacked the hover's transition (reveal delay + a
+                  // it hijacked the hover’s transition (reveal delay + a
                   // front-loaded curve = a delayed bump instead of a glide).
                   h.div(
                     [h.Class('overflow-hidden')],
@@ -361,11 +361,11 @@ export const view = (model: Model): Html =>
                     [h.Class('mt-3 text-xs leading-relaxed')],
                     [
                       // The pyramid-level kicker — full ink, the caption
-                      // fades instead (swapped on the user's call: the LEVEL
+                      // fades instead (swapped on the user’s call: the LEVEL
                       // is the label you scan, the sentence is the detail).
                       // Still NOT a pink chip: three filled chips at three
-                      // different heights fought the headline's pink and
-                      // broke the block's documentary calm.
+                      // different heights fought the headline’s pink and
+                      // broke the block’s documentary calm.
                       h.span(
                         [
                           h.Class(

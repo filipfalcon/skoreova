@@ -10,7 +10,7 @@
 // - `scheduled` — the daily ticker refresh (cron in alchemy.run.ts):
 //   rewrites the single `ticker:clubs` KV key.
 //
-// The endpoint ships AHEAD of its consumer: the home page's tape still
+// The endpoint ships AHEAD of its consumer: the home page’s tape still
 // renders the local `tape` array in page/welcome.ts, so nothing fetches
 // /api/ticker yet. It exists so the KV key, the cron, and the edge-cache
 // headers are proven in production before the tape depends on them —
@@ -74,7 +74,7 @@ const tickerDocument = (): string => {
 };
 
 // Minimal local binding shapes — keeps this file free of
-// @cloudflare/workers-types inside the platform app's DOM tsconfig.
+// @cloudflare/workers-types inside the platform app’s DOM tsconfig.
 interface Env {
   readonly ASSETS: { fetch(request: Request): Promise<Response> };
   readonly TICKER: {

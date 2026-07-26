@@ -23,7 +23,7 @@ const waitUntil = async (predicate: () => boolean, timeout = 3000): Promise<void
   }
 };
 
-// `.idle-float` is shared with the champion's crest — scope to the section.
+// `.idle-float` is shared with the champion’s crest — scope to the section.
 const knight = (): HTMLImageElement => {
   const element = document.querySelector<HTMLImageElement>('#on-the-rise .idle-float');
   if (!element) throw new Error('knight not rendered');
@@ -74,7 +74,7 @@ beforeAll(async () => {
 
 // Same contract as map-collisions.browser.test.ts: the viewport is PAGE state shared
 // across files in one browser run, and this file pins a desktop size. Put the
-// runner's 414×896 default back, or the next file inherits a layout it never
+// runner’s 414×896 default back, or the next file inherits a layout it never
 // asked for — motion.ts snapshots `desktopViewport` at mount time, so it does
 // not merely look different, it takes a different code path.
 afterAll(async () => {
@@ -111,7 +111,7 @@ test('nothing paints over the mascot head band', async () => {
   if (!wrapper) throw new Error('knight reveal wrapper missing');
 
   // The wrapper is pointer-events-none by design; hit-testing needs it on.
-  // Its reveal TRANSITION is also frozen at the resting pose: WebKit's hit
+  // Its reveal TRANSITION is also frozen at the resting pose: WebKit’s hit
   // test disagrees with getBoundingClientRect around animated transforms
   // (see the pose loop below), and under a cold-cache full-suite run the
   // slide-in can still be settling when sampling starts.
@@ -122,7 +122,7 @@ test('nothing paints over the mascot head band', async () => {
     // The idle float matters here — near its peak the head rises past the
     // wrapper box, the exact spot the clip-path regression cut. The float
     // is switched OFF and poses are set as static inline transforms (a
-    // running or even merely paused animation makes WebKit's hit test
+    // running or even merely paused animation makes WebKit’s hit test
     // disagree with getBoundingClientRect). Two deliberate distortions
     // make the guard load-proof:
     //

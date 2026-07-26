@@ -90,8 +90,8 @@ export const view = (model: Model): Document => {
   // fallback).
   const maybeSection = routeSection(model.route);
 
-  // The document title follows the route: a section's name on its list, the
-  // open record's own title when one is addressed, 'Dashboard' otherwise.
+  // The document title follows the route: a section’s name on its list, the
+  // open record’s own title when one is addressed, 'Dashboard' otherwise.
   const documentTitle = M.value(model.route).pipe(
     M.withReturnType<string>(),
     M.tagsExhaustive({
@@ -220,7 +220,7 @@ const dashboardHome = (model: Model): Html => {
   const account = accountName(model);
 
   // Players is server-paginated, so its loaded rows are one page of ten —
-  // the card shows the server's total instead (0 until the first page lands).
+  // the card shows the server’s total instead (0 until the first page lands).
   const countFor = (section: Section): number =>
     section === 'players'
       ? model.playersTotal
@@ -259,7 +259,7 @@ const content = (model: Model, current: Section): Html => {
   const filterColumns = columns.map((column, index) => ({ column, index })).slice(1);
   const query = model.search.trim().toLowerCase();
 
-  // The current section's rows as displayed (edition competition names resolved
+  // The current section’s rows as displayed (edition competition names resolved
   // in the view), minus soft-deleted ones. Kept in the `{ entry, index }` shape
   // the filter and pagination chain below expects.
   const entries = displayRows(model, current)
@@ -306,9 +306,9 @@ const content = (model: Model, current: Section): Html => {
 
   // Players is the one server-paginated section, and GET /players takes no
   // query parameters yet — so its search and filters can only narrow the ONE
-  // page that's loaded. The count line, the empty state, and a note under the
+  // page that’s loaded. The count line, the empty state, and a note under the
   // controls all say so; left unsaid, a "0 entries" on page 1 read as "this
-  // record isn't in the table" when it was simply on another page.
+  // record isn’t in the table" when it was simply on another page.
   const isServerPaged = current === 'players';
   const isNarrowed =
     query !== '' ||
@@ -333,9 +333,9 @@ const content = (model: Model, current: Section): Html => {
     );
 
   // Keyed by record id so re-sorting under search/filter/pagination patches by
-  // identity, not position — otherwise a card's OnClick(ClickedRecord) can end
+  // identity, not position — otherwise a card’s OnClick(ClickedRecord) can end
   // up over a different row. Each card is a real <button> in a list item, so
-  // it's focusable and announced as one of N records.
+  // it’s focusable and announced as one of N records.
   const entryCard = ({ entry }: { entry: Entry }): Html =>
     h.keyed('li')(
       entry.id,
@@ -443,10 +443,10 @@ const content = (model: Model, current: Section): Html => {
       view: FilterListbox.view,
       viewInputs: {
         items: options,
-        // The Listbox highlights what's *included* — the complement of the
+        // The Listbox highlights what’s *included* — the complement of the
         // stored excluded set.
         selectedValues: options.filter((value) => !excludedValues.includes(value)),
-        // Label is always just the column name, regardless of what's selected.
+        // Label is always just the column name, regardless of what’s selected.
         buttonContent: h.span([], [column]),
         buttonClassName: filterSelectStyle,
         itemsClassName: filterDropdownPanelStyle,
@@ -508,7 +508,7 @@ const content = (model: Model, current: Section): Html => {
 
   const pageButton = (label: string, disabled: boolean, onClick: Message): Html =>
     // An end-stop arrow STAYS in the tab order — not by choice: `isDisabled`
-    // is Ui.Button's one blocked mode and it is the aria-disabled treatment,
+    // is Ui.Button’s one blocked mode and it is the aria-disabled treatment,
     // `tabindex="0"` included. (An earlier note here claimed the opposite and
     // called it deliberate.) It does drop the OnClick, so the arrow is inert
     // where it matters; what it costs is a tab stop that does nothing, which
@@ -588,7 +588,7 @@ const content = (model: Model, current: Section): Html => {
       [
         h.span(
           [h.Class('text-sm text-rose-700')],
-          [`Couldn't load ${label.toLowerCase()}: ${failureError}`],
+          [`Couldn’t load ${label.toLowerCase()}: ${failureError}`],
         ),
         Button.view({
           onClick: retry,
@@ -598,7 +598,7 @@ const content = (model: Model, current: Section): Html => {
     );
   };
 
-  // A shared link couldn't resolve its record (e.g. a deleted team, or a
+  // A shared link couldn’t resolve its record (e.g. a deleted team, or a
   // player not on the currently loaded page).
   const linkErrorBanner = (): Html => {
     if (model.linkError === '') return h.empty;
@@ -659,7 +659,7 @@ const content = (model: Model, current: Section): Html => {
                     // Keeping the tab stop is right here whatever the
                     // component did: the label reads "Refreshing…" and the
                     // AriaLive below announces it, so the button is worth
-                    // reaching while the fetch is in flight. It just isn't the
+                    // reaching while the fetch is in flight. It just isn’t the
                     // native `disabled` an earlier note here claimed.
                     isDisabled: pending,
                     toView: ({ button }) =>
@@ -739,7 +739,7 @@ const content = (model: Model, current: Section): Html => {
   );
 };
 
-// Lays out a DatePicker's embedded calendar from the component's attribute
+// Lays out a DatePicker’s embedded calendar from the component’s attribute
 // bundles: the Days grid, plus the Months/Years drill-downs reached through
 // the heading button.
 const calendarView = (attributes: UiCalendar.CalendarAttributes): Html => {

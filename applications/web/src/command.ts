@@ -18,7 +18,7 @@ import { menuEntries } from './data';
 // COMMAND
 
 // In-page section navigation with deliberate feel:
-// - If the chosen section is already on screen, snap — no theatre.
+// - If the chosen section is already on screen, snap — no theater.
 // - Otherwise animate from the REAL current position (direction follows
 //   naturally: picking an earlier section scrolls up), with a duration
 //   that grows gently with distance so a long trip is felt.
@@ -40,7 +40,7 @@ const animateScrollTo = (target: HTMLElement, reduceMotion: boolean): void => {
   const startY = window.scrollY;
   const rect = target.getBoundingClientRect();
   // Respect the CSS scroll-margin-top (styles.css sets it to the fixed
-  // header's height on anchored sections) — without it the section's top
+  // header’s height on anchored sections) — without it the section’s top
   // lands UNDER the header and its first rows arrive decapitated. Native
   // fragment jumps honor the property on their own; this animation has to
   // read it explicitly.
@@ -60,23 +60,23 @@ const animateScrollTo = (target: HTMLElement, reduceMotion: boolean): void => {
     SCROLL_BASE_MS + (Math.abs(distance) / viewport) * SCROLL_PER_VIEWPORT_MS,
   );
   const startedAt = performance.now();
-  // The user's own scrolling wins instantly — a navigation animation that
+  // The user’s own scrolling wins instantly — a navigation animation that
   // fights the wheel feels broken. Both listeners hang off ONE abort signal,
-  // so whichever way the ride ends — cancelled by a gesture, or run to
+  // so whichever way the ride ends — canceled by a gesture, or run to
   // completion — takes both down together. With `{ once: true }` only the
   // gesture that actually fired retired itself, leaving its counterpart
-  // registered as a dead no-op (and a cancelled ride removed neither, since
+  // registered as a dead no-op (and a canceled ride removed neither, since
   // the step loop returned before its cleanup).
   const gestures = new AbortController();
-  let cancelled = false;
+  let canceled = false;
   const cancel = (): void => {
-    cancelled = true;
+    canceled = true;
     gestures.abort();
   };
   window.addEventListener('wheel', cancel, { signal: gestures.signal, passive: true });
   window.addEventListener('touchmove', cancel, { signal: gestures.signal, passive: true });
   const step = (now: number): void => {
-    if (cancelled) return;
+    if (canceled) return;
     const progress = Math.min(1, (now - startedAt) / duration);
     const eased = progress < 0.5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
     window.scrollTo({ top: startY + distance * eased, behavior: 'instant' });
@@ -89,10 +89,10 @@ const animateScrollTo = (target: HTMLElement, reduceMotion: boolean): void => {
   window.requestAnimationFrame(step);
 };
 
-// Pushes the URL, then either scrolls to the fragment's element (see
+// Pushes the URL, then either scrolls to the fragment’s element (see
 // animateScrollTo) or jumps to the top (entering a page mid-scroll would
 // be disorienting). No wait for the scroll lock to release first: the lock
-// (Dom.lockScroll) keeps the page's real scroll position, so window.scrollY
+// (Dom.lockScroll) keeps the page’s real scroll position, so window.scrollY
 // is truthful even mid-lock and the trip animates from where the reader
 // actually sits — the old position:fixed trick zeroed scrollY, which is why
 // this used to poll `body.style.position` before measuring. Every fragment
@@ -129,12 +129,12 @@ export const Load = Command.define(
 )(({ href }) => loadUrl(href).pipe(Effect.as(CompletedLoad())));
 
 // Locks/unlocks page scrolling while the menu overlay is open. Delegates to
-// Foldkit's Dom.lockScroll/unlockScroll: they lock via `overflow: hidden`
+// Foldkit’s Dom.lockScroll/unlockScroll: they lock via `overflow: hidden`
 // (with scrollbar-width compensation, so nothing shifts), intercept iOS
 // `touchmove` so touch scrolling is pinned too, and reference-count nested
 // locks. Crucially the page keeps its real scroll position — there is no
 // position:fixed offset zeroing window.scrollY — so measurements taken while
-// the lock is up (Navigate's fragment scroll, DetectActiveSection) read true.
+// the lock is up (Navigate’s fragment scroll, DetectActiveSection) read true.
 export const SetScrollLock = Command.define(
   'SetScrollLock',
   { locked: S.Boolean },
@@ -143,9 +143,9 @@ export const SetScrollLock = Command.define(
   (locked ? Dom.lockScroll : Dom.unlockScroll).pipe(Effect.as(CompletedSetScrollLock())),
 );
 
-// Returns focus to the header's menu toggle after Escape closes the overlay
+// Returns focus to the header’s menu toggle after Escape closes the overlay
 // — the native-dialog contract (focus returns to the opener), done as a
-// Command rather than a side effect inside the subscription's stream. A
+// Command rather than a side effect inside the subscription’s stream. A
 // missing toggle is ignored: the header always renders it, and focus
 // restoration is courtesy, not correctness.
 export const FocusMenuToggle = Command.define(
@@ -158,18 +158,18 @@ export const FocusMenuToggle = Command.define(
   ),
 );
 
-// Resolves which landing section the viewport centre sits in, so the open
+// Resolves which landing section the viewport center sits in, so the open
 // menu can mark "you are here". Runs once per menu open. Measures
 // viewport-relative rects (getBoundingClientRect), unaffected by the scroll
 // lock — the page holds its real position under `overflow: hidden`. The
-// candidate ids come from menuEntries itself, so the two can't drift apart.
+// candidate ids come from menuEntries itself, so the two can’t drift apart.
 export const DetectActiveSection = Command.define(
   'DetectActiveSection',
   DetectedActiveSection,
 )(
   Effect.sync(() => {
-    const centre = window.innerHeight / 2;
-    // The last section whose top has passed the centre line wins — the
+    const center = window.innerHeight / 2;
+    // The last section whose top has passed the center line wins — the
     // unnumbered interludes (statement, marquee) then count toward the
     // section above them. Above the first section (the hero) none wins.
     const section = pipe(
@@ -178,7 +178,7 @@ export const DetectActiveSection = Command.define(
         const id = entry.target.split('#')[1];
         if (id === undefined) return false;
         const rect = document.getElementById(id)?.getBoundingClientRect();
-        return rect !== undefined && rect.top <= centre;
+        return rect !== undefined && rect.top <= center;
       }),
       Option.map((entry) => entry.target.split('#')[1] ?? ''),
     );

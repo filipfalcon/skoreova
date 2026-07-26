@@ -8,11 +8,11 @@ import { hashSlug, leagueTeams } from './data';
 
 export const MATCHDAYS_PLAYED = 12;
 
-// One matchday's pairings, and a season as a list of them.
+// One matchday’s pairings, and a season as a list of them.
 type Fixture = readonly [string, string];
 type Round = ReadonlyArray<Fixture>;
 
-// The circle method's rotation: team 0 stays put and the rest shift by one
+// The circle method’s rotation: team 0 stays put and the rest shift by one
 // seat per round. Expressed as an index rotation rather than the old
 // pop/unshift on a mutable copy.
 const rotateRight = (seats: ReadonlyArray<string>, by: number): ReadonlyArray<string> => {
@@ -33,7 +33,7 @@ const singleRoundRobin = (teams: ReadonlyArray<string>): ReadonlyArray<Round> =>
     return Array.range(0, half - 1).flatMap((seat): ReadonlyArray<Fixture> => {
       const home = lineup[seat] ?? '';
       const away = lineup[pool.length - 1 - seat] ?? '';
-      // The BYE seat's pairing is the one that drops out.
+      // The BYE seat’s pairing is the one that drops out.
       if (home === '' || away === '') return [];
       // Alternate venues by round so nobody hosts a whole half-season.
       return [round % 2 === 0 ? [home, away] : [away, home]];
@@ -53,10 +53,10 @@ export const roundRobinRounds = (teams: ReadonlyArray<string>): ReadonlyArray<Ro
   return [...singles, ...swapVenues(singles)];
 };
 
-// A LEAGUE'S SEASON — the one schedule every screen reads. The competition
-// profile's matches panel, the club profile's calendar, and the round
-// picker's end-stop all come from here, so a fixture is in the same round
-// with the same venue wherever it appears. Its length is the club count's to
+// A LEAGUE’S SEASON — the one schedule every screen reads. The competition
+// profile’s matches panel, the club profile’s calendar, and the round
+// picker’s end-stop all come from here, so a fixture is in the same round
+// with the same venue wherever it appears. Its length is the club count’s to
 // decide: eight clubs meet home and away over 14 rounds, eleven over 22 with
 // one club idle each matchday. (A hand-set season length used to live beside
 // this in `leagueRounds`, and disagreed with it — 21 and 20.)
@@ -66,7 +66,7 @@ export const leagueRounds = (league: string): ReadonlyArray<Round> =>
 export const leagueRoundCount = (league: string): number => leagueRounds(league).length;
 
 // ONE seed per fixture, so the competition screen and the club calendar
-// can't disagree about a scoreline. They used to build their own seeds from
+// can’t disagree about a scoreline. They used to build their own seeds from
 // different parts ('<slug>:<round>:<index>' against
 // '<league>-<round>-<home>-<away>'), and the same match rendered 0–3 on one
 // screen and 4–0 on the other.
@@ -79,7 +79,7 @@ export const fixtureSeed = (league: string, round: number, home: string, away: s
 // seed that happens to produce it.
 export const SCORE_OVERRIDES: Record<string, readonly [number, number]> = {
   // Sparta take the derby at Letná. Round 7 is the FIRST meeting and the one
-  // that has been played; the return at Slavia's ground is round 14, past the
+  // that has been played; the return at Slavia’s ground is round 14, past the
   // current matchday, so an override keyed there renders nowhere — which is
   // where this one used to sit while the derby people can actually see showed
   // a hash score. data.test.ts now refuses a key past MATCHDAYS_PLAYED.
@@ -93,7 +93,7 @@ export const mockScore = (seed: string): readonly [number, number] => {
   return [hash % 5, (hash >> 3) % 4];
 };
 
-// How many rounds a competition's picker can address: a league season's
+// How many rounds a competition’s picker can address: a league season’s
 // full double round-robin, or a single "round" for knockout competitions
 // (which render no picker). SelectedCompetitionRound clamps against this in
 // `update`, so the Model never holds an out-of-range round.

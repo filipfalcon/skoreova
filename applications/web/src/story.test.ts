@@ -35,7 +35,7 @@ test('opening the menu locks scroll and kicks off active-section detection', () 
     Story.message(ToggledMenu()),
     Story.model((model) => {
       expect(model.isMenuOpen).toBe(true);
-      // Opening resets the marker so a stale highlight can't flash.
+      // Opening resets the marker so a stale highlight can’t flash.
       expect(model.activeSection).toEqual(Option.none());
     }),
     Story.Command.expectExact(SetScrollLock, DetectActiveSection),
@@ -120,7 +120,7 @@ test('the hero observer drives the header CTA flag', () => {
     Story.model((model) => {
       expect(model.heroPastHeader).toBe(true);
     }),
-    // Back on the hero → the CTA yields to the hero's own.
+    // Back on the hero → the CTA yields to the hero’s own.
     Story.message(DetectedHeroPastHeader({ past: false })),
     Story.model((model) => {
       expect(model.heroPastHeader).toBe(false);

@@ -27,10 +27,10 @@ import {
 import { tickerQuotes } from './ticker';
 import { BASE, CLUB_NAMES } from './worker';
 
-// THE SEASON CANON'S ARITHMETIC. The league numbers are mock, but a reader
-// can add them up — and the version before this one didn't survive that: the
-// First League's points column came to 170 when fourteen rounds can only pay
-// out 168, and every club's table row claimed fourteen games played while its
+// THE SEASON CANON’S ARITHMETIC. The league numbers are mock, but a reader
+// can add them up — and the version before this one didn’t survive that: the
+// First League’s points column came to 170 when fourteen rounds can only pay
+// out 168, and every club’s table row claimed fourteen games played while its
 // own form bar said twelve. These are the invariants that make the mock
 // readable as a real season; they hold for any future edit to the clubs
 // table, or they fail here rather than on screen.
@@ -38,7 +38,7 @@ import { BASE, CLUB_NAMES } from './worker';
 const LEAGUES = ['First League', 'Second League'] as const;
 
 // How many matchdays each club has actually appeared in so far — the Second
-// League's odd club count means one club sits out each round, so its clubs
+// League’s odd club count means one club sits out each round, so its clubs
 // do NOT all arrive at the same number.
 const appearancesThroughPlayed = (league: string): Record<string, number> => {
   const counts: Record<string, number> = Object.fromEntries(
@@ -55,7 +55,7 @@ const appearancesThroughPlayed = (league: string): Record<string, number> => {
 
 test.each(LEAGUES)('%s: wins and losses balance, and draws pair off', (league) => {
   const sides = clubs.filter((club) => club.league === league);
-  // Every win is somebody's defeat, and a drawn match shows up in two clubs'
+  // Every win is somebody’s defeat, and a drawn match shows up in two clubs'
   // columns — so an odd total of draws is impossible.
   expect(Number.sumAll(sides.map((club) => club.won))).toBe(
     Number.sumAll(sides.map((club) => club.lost)),
@@ -107,7 +107,7 @@ const CLUB_COUNT_WORDS: Record<number, string> = { 8: 'Eight', 11: 'Eleven' };
 test.each(LEAGUES)('%s: the stage, progress and format copy match the schedule', (league) => {
   // These four are hand-TYPED — nothing derives them. Every assertion above
   // can pass while they go a round stale, which is exactly what adding a club
-  // to the table would do: the arithmetic follows, the sentences don't.
+  // to the table would do: the arithmetic follows, the sentences don’t.
   const competition = leagueCompetitions.find(
     (candidate) =>
       candidate.standings._tag === 'TableStandings' && candidate.standings.league === league,
@@ -121,7 +121,7 @@ test.each(LEAGUES)('%s: the stage, progress and format copy match the schedule',
 
   expect(competition.stage).toBe(stage);
   expect(competition.progress).toBe(Math.round((MATCHDAYS_PLAYED / rounds) * 100));
-  // The open edition's one-liner IS the stage line — the profile shows both.
+  // The open edition’s one-liner IS the stage line — the profile shows both.
   expect(competition.editions.find((entry) => entry.isCurrent)?.detail).toBe(stage);
   // Rule 01 states the format: how many clubs, over how many rounds.
   expect(CLUB_COUNT_WORDS[clubCount]).toBeDefined();
@@ -129,9 +129,9 @@ test.each(LEAGUES)('%s: the stage, progress and format copy match the schedule',
   expect(competition.format[0]).toContain(`${rounds} rounds`);
 });
 
-test.each(LEAGUES)("%s: the home board's goals per matchday add up to the table", (league) => {
+test.each(LEAGUES)('%s: the home board’s goals per matchday add up to the table', (league) => {
   // The board links straight to the standings, so the two have to agree on
-  // how much football the league has produced. They didn't: the boards had the
+  // how much football the league has produced. They didn’t: the boards had the
   // First League ahead 210 to 146 while the tables said 147 to 199.
   const board = goals.find((entry) => entry.league === league);
   expect(board).toBeDefined();
@@ -245,7 +245,7 @@ test('only the clubs the cup draw names carry a cup run', () => {
 // The ticker is the one surface that names clubs without reading the table,
 // and it had drifted: the tape quoted "FK Pardubice" for a club whose profile,
 // standings row and crest all say "Pardubice". The tape resolves names from
-// the table now, so only the Worker's copy can drift — it can't import the
+// the table now, so only the Worker’s copy can drift — it can’t import the
 // table without pulling every crest PNG into a Worker bundle. This is what
 // stands in for that import.
 test('the ticker quotes real clubs, under the names the season table gives them', () => {
@@ -259,10 +259,10 @@ test('the ticker quotes real clubs, under the names the season table gives them'
     expect(entry.name, `the worker calls ${entry.slug} "${entry.name}"`).toBe(club?.name);
   }
 
-  // The worker's name table covers the quote list EXACTLY. A missing key is
+  // The worker’s name table covers the quote list EXACTLY. A missing key is
   // already caught above (the fallback puts the slug where a name belongs), so
   // this is the other direction: a name left behind for a club the tape has
-  // stopped quoting. Comparing BASE's slugs to the quotes' would prove nothing —
+  // stopped quoting. Comparing BASE’s slugs to the quotes' would prove nothing —
   // BASE is `tickerQuotes.map(...)`, so that assertion held by construction and
   // read as coverage the pair never had.
   expect(Object.keys(CLUB_NAMES).sort()).toEqual(
@@ -270,13 +270,13 @@ test('the ticker quotes real clubs, under the names the season table gives them'
   );
 });
 
-// The clubs hero's tape is the OTHER surface that used to name clubs from
+// The clubs hero’s tape is the OTHER surface that used to name clubs from
 // literals — "Sparta Praha", "Slavia Praha", "Slovan Liberec", "UWCL 2025/26",
 // typed inside the function that resolves names from the table three lines
 // above. The names went stale-able and the competition line went wrong:
 // Liberec plays the Europa Cup. Both halves derive now, and this is what says
 // so out loud.
-test("the contenders tape names the featured clubs and only the cups they're in", () => {
+test('the contenders tape names the featured clubs and only the cups they’re in', () => {
   for (const entry of featuredClubs) {
     const club = clubs.find((candidate) => candidate.slug === entry.slug);
     expect(club, `${entry.slug} is not a club`).toBeDefined();
@@ -286,7 +286,7 @@ test("the contenders tape names the featured clubs and only the cups they're in"
 
   // Every competition the tape advertises is one a featured club actually
   // plays, and every one they play is advertised — the single hardcoded
-  // "UWCL" failed the first half, and dropping Liberec's UWEC the second.
+  // "UWCL" failed the first half, and dropping Liberec’s UWEC the second.
   const played = Array.dedupe(
     featuredClubs.flatMap((entry) => {
       const campaign = clubEurope[entry.slug];

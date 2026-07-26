@@ -18,7 +18,7 @@ import {
   SignedIn,
 } from './main';
 
-// A single player record — enough columns to fill the drawer's fields and feed
+// A single player record — enough columns to fill the drawer’s fields and feed
 // the stats chart. `values` line up with `playerColumns`; extras are ignored
 // and short arrays fall back to '' in the view, so the exact length is loose.
 export const samplePlayer: Entry = Entry.make({
@@ -38,7 +38,7 @@ export const sampleClub: Entry = Entry.make({
 });
 
 // A competition and an edition that belongs to it. The edition stores its
-// competition's id (parentId + the raw id in the "Competition" cell); the view
+// competition’s id (parentId + the raw id in the "Competition" cell); the view
 // resolves the name from the competitions section.
 export const sampleCompetition: Entry = Entry.make({
   section: 'competitions',
@@ -57,7 +57,7 @@ export const sampleEdition: Entry = Entry.make({
 });
 
 // The signed-out boot model — mirrors `initialModel` in main.ts (kept here so a
-// fixture tweak can never quietly reshape the app's real starting state).
+// fixture tweak can never quietly reshape the app’s real starting state).
 export const signedOutModel = Model.make({
   session: Anonymous({ emailInput: '', passwordInput: '' }),
   route: HomeRoute(),
@@ -108,7 +108,7 @@ export const playersListModel = Model.make({
   serverHealth: 'Ok',
 });
 
-// Signed in on the Editions list with both sections loaded — the edition's
+// Signed in on the Editions list with both sections loaded — the edition’s
 // "Competition" cell must render the resolved name, not the stored id.
 export const editionsListModel = Model.make({
   ...signedOutModel,
@@ -138,7 +138,7 @@ export const clubRecordModel = Model.make({
   dialog: Dialog.init({ id: DRAWER_DIALOG_ID, isOpen: true }),
 });
 
-// Signed in with a player record open in the drawer's Overview tab — the state
+// Signed in with a player record open in the drawer’s Overview tab — the state
 // that mounts the stats chart (a non-team record, so only the single host). The
 // drawer addresses the record by id, resolved against the players section.
 export const playerRecordModel = Model.make({
@@ -150,6 +150,6 @@ export const playerRecordModel = Model.make({
     draft: samplePlayer.values.map((value) => NotValidated({ value })),
     isConfirmingDelete: false,
   }),
-  // The drawer's content only renders while its Dialog is open.
+  // The drawer’s content only renders while its Dialog is open.
   dialog: Dialog.init({ id: DRAWER_DIALOG_ID, isOpen: true }),
 });

@@ -9,7 +9,7 @@ export const cardStyle =
 export const chipStyle =
   'rounded-full border border-white/30 bg-white/20 px-4 py-1.5 text-sm text-white';
 
-// The text inputs replace the browser's default outline with their own
+// The text inputs replace the browser’s default outline with their own
 // focus-visible one (outline-none alone would leave keyboard focus with only
 // a subtle border shift — invisible at a glance).
 //
@@ -18,7 +18,7 @@ export const chipStyle =
 // `--tw-outline-style: none`, and `outline-2` sets `outline-style:
 // var(--tw-outline-style)` — so the width-only utilities resolved back to
 // `none` and these four styles drew no ring at all. `outline-solid` restores
-// the style at the focus-visible variant's own specificity.
+// the style at the focus-visible variant’s own specificity.
 export const inputStyle =
   'w-full rounded-full border border-white/30 bg-white/25 px-5 py-3 text-white placeholder-white/70 outline-none transition focus:border-white/60 focus:bg-white/35 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
 
@@ -87,7 +87,7 @@ export const diodeColorStyle: Record<Model['serverHealth'], string> = {
   Down: 'bg-rose-500',
 };
 
-// Refresh and pagination, in DISJOINT sets like the drawer's Save — and here
+// Refresh and pagination, in DISJOINT sets like the drawer’s Save — and here
 // the reason is one layer deeper than specificity. `disabled:` compiles to
 // `&:disabled`, which needs the native attribute, and Ui.Button never emits
 // it: `isDisabled` produces `aria-disabled="true"`, `data-disabled=""` and
@@ -96,7 +96,7 @@ export const diodeColorStyle: Record<Model['serverHealth'], string> = {
 // two kept `cursor-pointer` and their hover fill and never dimmed. A
 // `data-disabled:` variant would match, but overlaying it still loses the
 // properties the live utilities also set, which is the trap the Save note
-// below describes. Two strings the caller picks between can't have either bug.
+// below describes. Two strings the caller picks between can’t have either bug.
 const listButtonShape = 'px-4 py-2 text-sm transition';
 
 export const refreshButtonStyle = `${listButtonShape} cursor-pointer text-neutral-700 hover:bg-neutral-100`;
@@ -127,11 +127,11 @@ export const searchInputStyle =
 export const filterSelectStyle =
   'cursor-pointer rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 outline-none transition hover:border-neutral-400 focus:border-neutral-500 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
 
-// Positioning comes from the Listbox's Floating UI anchor, not these classes.
+// Positioning comes from the Listbox’s Floating UI anchor, not these classes.
 export const filterDropdownPanelStyle =
   'flex min-w-40 flex-col gap-1 rounded-lg border border-neutral-200 bg-white p-2 shadow-lg';
 
-// Positioned by the DatePicker's Floating UI anchor, like the Listbox panel.
+// Positioned by the DatePicker’s Floating UI anchor, like the Listbox panel.
 export const datePickerPanelStyle = 'rounded-lg border border-neutral-200 bg-white shadow-lg';
 
 export const filterClearStyle =
@@ -146,12 +146,12 @@ export const calendarHeadingStyle =
 export const filterDropdownRowStyle =
   'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100';
 
-// The drawer field, split into SHAPE and COLOUR. Appending `bg-neutral-100`
+// The drawer field, split into SHAPE and COLOR. Appending `bg-neutral-100`
 // to a string that already says `bg-white` is a no-op — Tailwind emits its
 // utilities in its own order, not the order you concatenated them, and
 // `bg-white` wins — so the disabled picker rendered white and the read-only
 // cell rendered as an ordinary editable field. Composing two complete,
-// non-overlapping colour sets is what actually switches the look.
+// non-overlapping color sets is what actually switches the look.
 const drawerFieldShape =
   'w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-neutral-500 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
 

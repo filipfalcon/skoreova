@@ -10,11 +10,11 @@ import { type Message, ChangedReducedMotion, ClosedMapClub, PressedMenuEscape } 
 // SUBSCRIPTIONS
 
 // Smooth wheel scrolling (Lenis-style inertia): wheel input feeds a target
-// that an rAF loop eases the viewport toward, replacing the browser's stepped
+// that an rAF loop eases the viewport toward, replacing the browser’s stepped
 // jumps. It emits no Messages — it is the sanctioned "maintain a DOM behavior
 // for as long as a Model condition holds" kind of Subscription — but it lives
 // here rather than in the motion Mount for two reasons. The wheel listener is
-// a window event source whose `preventDefault` must run inside the browser's
+// a window event source whose `preventDefault` must run inside the browser’s
 // own dispatch (Subscription territory), and keeping the per-frame
 // window.scrollTo out of the Mount means DevTools time-travel — which re-runs
 // Mount factories — can never scroll the live viewport. Wheel only, so touch,
@@ -93,7 +93,7 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
         isMenuOpen || hasMapClub
           ? Stream.fromEventListener<KeyboardEvent>(document, 'keydown').pipe(
               Stream.filter((event) => event.key === 'Escape'),
-              // Just the Message — the menu path's focus hand-back to the
+              // Just the Message — the menu path’s focus hand-back to the
               // toggle runs as a Command from the update handler
               // (FocusMenuToggle), not as a DOM side effect in the stream.
               Stream.map(() => (isMenuOpen ? PressedMenuEscape() : ClosedMapClub())),

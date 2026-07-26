@@ -10,7 +10,7 @@ import { matchesPanel } from './competition-profile';
 const h = html<Message>();
 
 // MATCHES — the standalone section: the round-by-round schedule of every
-// league, reusing the competition profile's matches panel.
+// league, reusing the competition profile’s matches panel.
 export const view = (model: Model): Html =>
   h.div(
     [],

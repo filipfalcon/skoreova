@@ -1,23 +1,23 @@
 import { Schema as S, pipe } from 'effect';
 import { literal, mapTo, oneOf, parseUrlWithFallback, r, root, slash, string } from 'foldkit/route';
 
-// The platform's top-level sections, plus the two profile routes migrated
+// The platform’s top-level sections, plus the two profile routes migrated
 // from the landing page: `/clubs/<slug>` and `/competitions/<slug>`. The
 // remaining entity profiles (players, officials…) get their slug routes once
 // real data lands — for the mock, each directory is a single screen.
-// The platform's HOME at `/` — the former welcome and dashboard screens
+// The platform’s HOME at `/` — the former welcome and dashboard screens
 // merged into one (the brand wordmark also lands here).
 export const WelcomeRoute = r('WelcomeRoute');
-// HER GAME — the platform's personal section (the former charts screen);
+// HER GAME — the platform’s personal section (the former charts screen);
 // the custom follow-feed lands here later.
 export const HerGameRoute = r('HerGameRoute');
 export const ClubsRoute = r('ClubsRoute');
-// One club's profile page.
+// One club’s profile page.
 export const ClubRoute = r('ClubRoute', { slug: S.String });
 export const PlayersRoute = r('PlayersRoute');
 export const MatchesRoute = r('MatchesRoute');
 export const CompetitionsRoute = r('CompetitionsRoute');
-// One competition's profile page.
+// One competition’s profile page.
 export const CompetitionRoute = r('CompetitionRoute', { slug: S.String });
 // Not in the top nav — reachable from the home browse tiles and by URL.
 export const OfficialsRoute = r('OfficialsRoute');

@@ -2,7 +2,7 @@
 // projected equirectangularly (cos-corrected at the mid-latitude). The
 // national outline dissolves geoBoundaries.org gbOpen kraje (ADM1; sourced
 // from the Czech Office for Surveying, CC BY 4.0). The land borders are the
-// REAL historical ones: Moravia's boundary — including the Moravian
+// REAL historical ones: Moravia’s boundary — including the Moravian
 // enclaves inside Silesia — comes from the cadastral-level reconstruction
 // published as KML at hranice.moravy.eu (Moravská národní obec + Společnost
 // pro Moravu a Slezsko, 2017–2025; no explicit license, used with

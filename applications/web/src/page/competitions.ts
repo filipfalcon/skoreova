@@ -25,8 +25,8 @@ const competitionCard = (model: Model, competition: Competition): Html =>
       h.div(
         [h.Class('relative')],
         [
-          // The zoom reveal's clip lives one layer down, NOT on the
-          // positioning wrapper — the badge below straddles the photo's
+          // The zoom reveal’s clip lives one layer down, NOT on the
+          // positioning wrapper — the badge below straddles the photo’s
           // corner and an outer overflow-hidden would slice it off.
           h.div(
             [h.Class('overflow-hidden')],
@@ -49,10 +49,10 @@ const competitionCard = (model: Model, competition: Competition): Html =>
               ),
             ],
           ),
-          // The competition's brand tile on the photo's top-right corner —
-          // the label bar's poking-into-space language mirrored exactly: it
-          // straddles VERTICALLY only (up, where there's air between cards)
-          // and stays inside horizontally, like the label's `-mt-6 ml-4`.
+          // The competition’s brand tile on the photo’s top-right corner —
+          // the label bar’s poking-into-space language mirrored exactly: it
+          // straddles VERTICALLY only (up, where there’s air between cards)
+          // and stays inside horizontally, like the label’s `-mt-6 ml-4`.
           // The old two-axis overhang read as a clipped sticker on phones
           // (the photo ends ~4px from the viewport rim there), and once the
           // vertical-only cut existed, the desktop kept it too — one grammar
@@ -68,13 +68,13 @@ const competitionCard = (model: Model, competition: Competition): Html =>
         ],
       ),
       // `relative z-10` keeps the label painted above the photo — the
-      // image's reveal transform creates a stacking context that would
-      // otherwise cover the overlapping bar. The label IS the card's button.
+      // image’s reveal transform creates a stacking context that would
+      // otherwise cover the overlapping bar. The label IS the card’s button.
       // Paper text on the pink, not the usual ink (user call): every
       // competition badge is a WHITE mark on a colored tile, and the label
       // echoing that (white mark, pink tile) makes the card read as one
       // clickable system. Paper-on-pink is 3.03:1 — AA for LARGE text only,
-      // which this display size is; don't copy this pairing to small type.
+      // which this display size is; don’t copy this pairing to small type.
       // Hover flips to paper bg + ink text, same as the other CTAs.
       h.h3(
         [h.Class('relative z-10 -mt-6 ml-4 inline-block')],
@@ -121,7 +121,7 @@ export const view = (model: Model): Html =>
             // On phones the visible slice is a ~6% column of the photo (the
             // cover scale rides the tall section), so the position must land
             // ON a player — the gap between them (~40–60%) shows nothing.
-            // 60% = the right player's near edge (user pick after walking
+            // 60% = the right player’s near edge (user pick after walking
             // 55/65/70/80 — the 40–60% band is empty studio and shows
             // nothing at this crop).
             h.Class('h-full w-full object-cover object-[60%_center] md:object-center'),
@@ -149,14 +149,14 @@ export const view = (model: Model): Html =>
           // only delayed it. The competitions speak for themselves.
           // All six cards AND the trailing CTA fire as ONE simultaneous beat
           // keyed off this wrapper, re-arming when it scrolls away
-          // ('replay') — the CTA belongs to the grid's moment, not its own
+          // ('replay') — the CTA belongs to the grid’s moment, not its own
           // later one.
           h.div(
             [h.DataAttribute('reveal-group', 'replay')],
             [
               h.div(
                 // Same step as kicker → headline (mt-10/16): with no subhead
-                // in between, the cards are the headline's direct answer and
+                // in between, the cards are the headline’s direct answer and
                 // follow on the same beat.
                 [h.Class('mt-10 grid gap-10 md:mt-16 md:grid-cols-3')],
                 competitions.map((competition) => competitionCard(model, competition)),
@@ -179,7 +179,7 @@ export const view = (model: Model): Html =>
                       // Tighter tracking below md: at 0.08em the label needs
                       // 339px against the 335px measure at 375 and wraps by a
                       // hair — 0.04em buys ~20px and keeps it on one line.
-                      // Paper text like the section's card labels (large
+                      // Paper text like the section’s card labels (large
                       // display type — the pairing is AA at this size only).
                       h.Class(
                         'display inline-block bg-pink px-8 py-4 text-xl tracking-[0.04em] text-paper transition-colors duration-300 hover:bg-paper hover:text-ink active:bg-paper active:text-ink md:text-2xl md:tracking-[0.08em]',

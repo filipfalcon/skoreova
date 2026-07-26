@@ -6,7 +6,7 @@ import type { Section } from './section';
 
 // In dev, go through the Vite proxy (see vite.config.ts) as a relative path —
 // same-origin, so the browser never makes a cross-origin request and CORS
-// doesn't apply. There is no deployed API yet, so production builds still
+// doesn’t apply. There is no deployed API yet, so production builds still
 // target the local gateway; this constant is where its real origin lands.
 export const GATEWAY_BASE_URL = import.meta.env.DEV ? '' : 'http://localhost:1340';
 
@@ -14,23 +14,23 @@ export const PAGE_SIZE = 10;
 
 // One list column: the display label plus which FILTER CONTROL it gets —
 // the kind (and the flag rendering) travels WITH the label. The old
-// label-keyed Sets in data.ts meant renaming a column's copy silently
+// label-keyed Sets in data.ts meant renaming a column’s copy silently
 // changed its filter behavior. 'title' is the entry-name column (always
 // index 0) — searchable, never filtered.
 export type ColumnKind = 'title' | 'select' | 'checkbox' | 'date';
 export type Column = Readonly<{
   label: string;
   kind: ColumnKind;
-  // Render the cell's value as a country flag (the card pill and the
-  // drawer's Overview summary) instead of the raw code.
+  // Render the cell’s value as a country flag (the card pill and the
+  // drawer’s Overview summary) instead of the raw code.
   flag?: true;
-  // The cell holds a REFERENCE (the record's parentId) into the named
+  // The cell holds a REFERENCE (the record’s parentId) into the named
   // section, not text of its own; the display name is resolved from that
   // section at render time. Editing such a cell as free text wrote a
   // "<uuid> → <text>" entry into the edit log that the next render resolved
   // away, so the drawer shows it read-only on an existing record — but a NEW
   // record has to be able to name its parent, and there it becomes a picker
-  // over this section's rows (see `field` in page/drawer.ts).
+  // over this section’s rows (see `field` in page/drawer.ts).
   //
   // AT MOST ONE per section: `Entry` has a single `parentId`, so two derived
   // columns would both resolve against it. data.test.ts asserts this rather
@@ -38,7 +38,7 @@ export type Column = Readonly<{
   derived?: Section;
 }>;
 
-// The backend's ALLCAPS enum values ('FORWARD', 'CLUB', …) as display labels
+// The backend’s ALLCAPS enum values ('FORWARD', 'CLUB', …) as display labels
 // ('Forward', 'Club') — shared by every *Api row mapper.
 export const titleCase = (value: string): string => pipe(value, Str.toLowerCase, Str.capitalize);
 
@@ -56,7 +56,7 @@ export const paginatedUrl = (path: string, page: number): string =>
 
 // The one GET → status check → JSON → schema decode pipeline every fetch
 // Command goes through (each endpoint used to hand-roll this same chain
-// around raw fetch). Requests run through Effect's HttpClient on foldkit's
+// around raw fetch). Requests run through Effect’s HttpClient on foldkit’s
 // Fetch-backed layer; every failure — transport, non-2xx status, malformed
 // JSON, schema mismatch — is normalized to a plain Error whose message the
 // Failed* messages carry as their reason.

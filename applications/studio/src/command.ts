@@ -74,7 +74,7 @@ export const MountChart = Mount.define(
               resizeObserver.observe(element);
               setChart(hostId, chart);
               // The release carries the instance it created, so a remount
-              // that already claimed this hostId can't be torn down by the
+              // that already claimed this hostId can’t be torn down by the
               // mount it replaced (see releaseChart).
               return { chart, resizeObserver };
             },
@@ -152,7 +152,7 @@ export const SyncPointsChart = Command.define(
 
 // Fetches one page of the real player roster and maps it into `Entry` rows.
 // Every other section (see below) fetches everything at once — theirs
-// aren't paginated.
+// aren’t paginated.
 export const FetchPlayers = Command.define(
   'FetchPlayers',
   { page: S.Number },
@@ -219,7 +219,7 @@ export const FetchNationals = Command.define(
   ),
 );
 
-// Fetches every competition in one request (this endpoint isn't paginated).
+// Fetches every competition in one request (this endpoint isn’t paginated).
 export const FetchCompetitions = Command.define(
   'FetchCompetitions',
   SucceededFetchCompetitions,
@@ -242,7 +242,7 @@ export const FetchCompetitions = Command.define(
 );
 
 // Fetches every edition across all competitions in one request (this
-// endpoint isn't paginated). An edition's Competition cell carries the bare
+// endpoint isn’t paginated). An edition’s Competition cell carries the bare
 // competitionId; the view resolves it to a name (see resolveDerivedCells), so
 // this maps to Entry rows exactly like every other section.
 export const FetchEditions = Command.define(
@@ -266,8 +266,8 @@ export const FetchEditions = Command.define(
   ),
 );
 
-// Fetches every team/edition pairing in one request (this endpoint isn't
-// paginated) — used only to resolve an edition's participating teams.
+// Fetches every team/edition pairing in one request (this endpoint isn’t
+// paginated) — used only to resolve an edition’s participating teams.
 export const FetchParticipations = Command.define(
   'FetchParticipations',
   SucceededFetchParticipations,
@@ -279,7 +279,7 @@ export const FetchParticipations = Command.define(
   ),
 );
 
-// Fetches every association in one request (this endpoint isn't paginated).
+// Fetches every association in one request (this endpoint isn’t paginated).
 export const FetchAssociations = Command.define(
   'FetchAssociations',
   SucceededFetchAssociations,
@@ -302,7 +302,7 @@ export const FetchAssociations = Command.define(
 );
 
 // Whether the backend is up at all — drives the diode on every API-backed
-// section's Refresh button (see serverHealth on the Model).
+// section’s Refresh button (see serverHealth on the Model).
 export const FetchHealth = Command.define(
   'FetchHealth',
   SucceededFetchHealth,
@@ -314,14 +314,14 @@ export const FetchHealth = Command.define(
   ),
 );
 
-// Reads the current calendar date (through Effect's Clock, like StampSave) at
+// Reads the current calendar date (through Effect’s Clock, like StampSave) at
 // boot — the date filter DatePickers open their calendar grid onto it.
 export const FetchToday = Command.define(
   'FetchToday',
   FetchedToday,
 )(Calendar.today.local.pipe(Effect.map((today) => FetchedToday({ today }))));
 
-// Reads the wall clock (through Effect's Clock, so it's swappable in tests) and
+// Reads the wall clock (through Effect’s Clock, so it’s swappable in tests) and
 // hands the formatted timestamp back as SavedRecordAt — the record commit needs
 // a timestamp for its edit log, and this keeps `new Date()` out of `update`.
 export const StampSave = Command.define(
@@ -333,8 +333,8 @@ export const StampSave = Command.define(
   ),
 );
 
-// The delete's own clock read. One Command per intent rather than one shared
-// stamp the handler has to disambiguate from the drawer's state.
+// The delete’s own clock read. One Command per intent rather than one shared
+// stamp the handler has to disambiguate from the drawer’s state.
 export const StampDelete = Command.define(
   'StampDelete',
   DeletedRecordAt,
@@ -363,7 +363,7 @@ export const Load = Command.define(
 )(({ href }) => loadUrl(href).pipe(Effect.as(CompletedLoad())));
 
 // Resolves a single team by id (GET /teams/{id}) when a shared record link
-// points at a team that isn't already in the loaded list.
+// points at a team that isn’t already in the loaded list.
 export const FetchTeamById = Command.define(
   'FetchTeamById',
   { section: S.Literals(['clubs', 'nationals']), id: S.String },

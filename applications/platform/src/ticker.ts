@@ -8,10 +8,10 @@
 // clubs table calls "Pardubice", which is the name its own profile, standings
 // row and crest rail all use.
 //
-// So names are NOT stored here. An entry carries the club's slug and its
+// So names are NOT stored here. An entry carries the club’s slug and its
 // movement; the display name is resolved from the clubs table at render, which
 // makes a wrong name unrepresentable rather than merely tested. The worker
-// can't do that — it is a separate deployable and importing data.ts would drag
+// can’t do that — it is a separate deployable and importing data.ts would drag
 // every crest PNG into a Worker bundle — so it keeps names of its own, and
 // data.test.ts holds them to the same table.
 //

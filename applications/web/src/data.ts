@@ -45,7 +45,7 @@ export const FIRST_LEAGUE = 'First League';
 export const SECOND_LEAGUE = 'Second League';
 
 // One competition card in 02. The full profile (standings, format, history)
-// lives on the platform — the card's slug builds the cross-app link.
+// lives on the platform — the card’s slug builds the cross-app link.
 export interface Competition {
   readonly slug: string;
   readonly label: string;
@@ -172,9 +172,9 @@ export interface Stat {
 
 // Receipts for the "unstoppable" claim, one per axis: money (the
 // Unstoppable strategy commits €1bn of competition revenues and UEFA
-// investment over 2024–30), attention (Women's EURO 2025 total attendance),
+// investment over 2024–30), attention (Women’s EURO 2025 total attendance),
 // and one concrete goosebump moment (Camp Nou, Barcelona–Wolfsburg, UWCL
-// semifinal 2022 — the women's football attendance world record).
+// semifinal 2022 — the women’s football attendance world record).
 export const unstoppableProof: ReadonlyArray<Stat> = [
   {
     // "B", not "BN" — American English abbreviates billion as $1B/€1B;
@@ -234,7 +234,7 @@ export const youthPhotos: ReadonlyArray<YouthPhoto> = [
   },
 ];
 
-// CHAMPIONS (04 · Meet our champion) — the reigning champion's receipts.
+// CHAMPIONS (04 · Meet our champion) — the reigning champion’s receipts.
 
 // One row of the champions honors board. `count` is the big pink multiplier
 // ('22×'); `first` stamps a "#1" chip — the count is the national record.
@@ -254,12 +254,12 @@ export const honors: ReadonlyArray<Honor> = [
 ];
 
 // ---- Season 2025/2026 highlights -------------------------------------------
-// The reigning champion's case, in receipts: four 7:0s, a European semifinal
+// The reigning champion’s case, in receipts: four 7:0s, a European semifinal
 // run clinched entirely on the road, and the double. Fixtures, stages, and
 // results are real 2025/2026 data supplied by the user.
 
 // Rows show the OPPONENT with their crest and the score read from
-// Sparta's side — the European table's language exactly. With no fixture
+// Sparta’s side — the European table’s language exactly. With no fixture
 // line there is no home-team-first convention left to respect, and an
 // opponent-first row with a flipped score would leave "whose 0?"
 // ambiguous; the AWAY chip alone carries the venue.
@@ -314,7 +314,7 @@ export const seasonRouts: ReadonlyArray<SeasonRout> = [
 
 // The Domestic Cup run — four wins to the trophy, the final settled on
 // penalties (0:0, won 4:3 from the spot). Same language as the other two
-// tables: the opponent with their crest, the score from Sparta's side,
+// tables: the opponent with their crest, the score from Sparta’s side,
 // the venue as the label under it. Stage lines carry ONLY the round — the
 // 0:0 is explained by the payoff copy directly above the table, so the
 // row needs no note of its own. (`CupTie`/`cupRun` names belong to the
@@ -366,7 +366,7 @@ export const seasonCupRun: ReadonlyArray<SeasonCupTie> = [
   },
 ];
 
-// Both legs read from Sparta's side (their goals first) so the whole column
+// Both legs read from Sparta’s side (their goals first) so the whole column
 // scans at a glance; `through` is false only for the semifinal exit.
 export interface EuroTie {
   readonly stage: string;
@@ -387,7 +387,7 @@ export const euroTies: ReadonlyArray<EuroTie> = [
     through: true,
   },
   {
-    // UEFA's draw sheet says "1/8 finals" — in English that's the Round
+    // UEFA’s draw sheet says "1/8 finals" — in English that’s the Round
     // of 16.
     stage: 'Round of 16',
     opponent: 'Young Boys',
@@ -414,7 +414,7 @@ export const euroTies: ReadonlyArray<EuroTie> = [
   },
 ];
 
-// STAR (05 · Hail to the queen) — the champion's spotlight player.
+// STAR (05 · Hail to the queen) — the champion’s spotlight player.
 
 export interface StarStat {
   readonly value: string;
@@ -432,7 +432,7 @@ export const starStats: ReadonlyArray<StarStat> = [
 // receipts tables' language instead of a bare "2×" (user call: the games
 // say more than the count). From the match records: 4 vs Lokomotiva Brno
 // H.H. (5:0, round 12) and 4 vs Slovácko (4:1, title group round 6) —
-// 8 of her 17. Her count rides the 04 stamp element (the row's ONLY
+// 8 of her 17. Her count rides the 04 stamp element (the row’s ONLY
 // pink); the match score stays neutral context, and the raw minute list
 // died as anti-user noise.
 export interface HaulMatch {
@@ -466,8 +466,8 @@ export const haulMatches: ReadonlyArray<HaulMatch> = [
 // CLUBS (03 · Across the lands) — the map pins and profile records.
 
 // One club on the map and in the profile pages. `x`/`y` are percentages of
-// the outline's box, projected from real city coordinates (Prague and Brno
-// clubs are fanned out around their city so the crests don't stack).
+// the outline’s box, projected from real city coordinates (Prague and Brno
+// clubs are fanned out around their city so the crests don’t stack).
 // League assignments are placeholder — correct them as the real data lands.
 export interface Club {
   readonly slug: ClubSlug;
@@ -478,7 +478,7 @@ export interface Club {
   readonly x: number;
   readonly y: number;
   // Set on reserve ("B") teams: the slug of the club whose pin they live
-  // under. B teams have no pin of their own — clicking the parent's pin
+  // under. B teams have no pin of their own — clicking the parent’s pin
   // opens both cards side by side (filter permitting).
   readonly parent?: ClubSlug;
 }
@@ -637,7 +637,7 @@ const clubTable = [
     x: 79.1,
     y: 79.1,
   },
-  // Reserve sides — no pin of their own, they ride their parent's (see
+  // Reserve sides — no pin of their own, they ride their parent’s (see
   // `parent`). Coordinates mirror the parent and are never used.
   {
     slug: 'sparta-praha-b',
@@ -675,7 +675,7 @@ export type ClubSlug = (typeof clubTable)[number]['slug'];
 
 export const clubs: ReadonlyArray<Club> = clubTable;
 
-// League-filter labels for the map's radiogroup.
+// League-filter labels for the map’s radiogroup.
 export const MAP_LEAGUE_LABELS: Record<MapLeague, string> = {
   All: 'All clubs',
   First: 'First League',

@@ -121,7 +121,7 @@ test('signing in fans out one fetch per section, and each success loads it', () 
       FetchParticipations,
       FetchHealth,
     ),
-    // Every fallible fetch's SUCCESS path — each settles into Success.
+    // Every fallible fetch’s SUCCESS path — each settles into Success.
     Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 0 })),
     Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [] })),
     Story.Command.resolve(FetchNationals, SucceededFetchNationals({ entries: [] })),
@@ -344,7 +344,7 @@ test('once the chart host mounts, the current record is synced into it', () => {
   );
 });
 
-test("a team record's points host syncs through SyncPointsChart, and reports its failures", () => {
+test('a team record’s points host syncs through SyncPointsChart, and reports its failures', () => {
   Story.story(
     update,
     Story.with(clubRecordModel),
@@ -356,7 +356,7 @@ test("a team record's points host syncs through SyncPointsChart, and reports its
     Story.model((model) => {
       expect(model.chartError).toEqual(Option.none());
     }),
-    // …and the same Command's failure path lands in chartError.
+    // …and the same Command’s failure path lands in chartError.
     Story.message(SucceededMountChart({ hostId: POINTS_CHART_HOST_ID })),
     Story.Command.resolve(SyncPointsChart, FailedSyncChart({ reason: 'no live chart' })),
     Story.model((model) => {
@@ -398,7 +398,7 @@ test('a new edition names its competition through the picker, and is filed under
   Story.story(
     update,
     // On the Editions list with the competitions loaded — what the picker
-    // offers. Creating opens a blank draft over the section's columns.
+    // offers. Creating opens a blank draft over the section’s columns.
     Story.with(editionsListModel),
     Story.message(ClickedAddNew()),
     Story.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
@@ -406,7 +406,7 @@ test('a new edition names its competition through the picker, and is filed under
       expect(model.drawer._tag).toBe('Creating');
     }),
     // Column 1 is the derived Competition cell; the picker writes the chosen
-    // competition's ID into the draft.
+    // competition’s ID into the draft.
     Story.message(UpdatedDraftField({ index: 0, value: '2026/2027' })),
     Story.message(UpdatedDraftField({ index: 1, value: sampleCompetition.id })),
     Story.message(ClickedSaveRecord()),
@@ -432,7 +432,7 @@ test('a new edition with no competition chosen is refused, not filed', () => {
     Story.message(ClickedAddNew()),
     Story.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
     // Everything but the reference filled in. The drawer disables Save here;
-    // `update` refuses the same way, so a held Enter can't slip a record
+    // `update` refuses the same way, so a held Enter can’t slip a record
     // through with parentId '' — the cell it would need goes read-only the
     // moment the record exists.
     Story.message(UpdatedDraftField({ index: 0, value: '2026/2027' })),
@@ -507,7 +507,7 @@ test('saving an edited record defers to the clock, then commits with that timest
       expect(logged.to).toBe('Slavia Praha');
       expect(logged.at).toBe('6/1/2026, 12:00:00 PM');
     }),
-    // The commit also closes the drawer's Dialog alongside the navigation.
+    // The commit also closes the drawer’s Dialog alongside the navigation.
     Story.Command.expectHas(Dialog.CloseDialog),
     Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
     Story.Command.expectHas(Navigate),
@@ -587,7 +587,7 @@ test('a delete on one players page survives paging away and back', () => {
     update,
     // Players is the one server-paged section: each fetch REPLACES the rows
     // with a different page, so a merge that reads deleted ids off the loaded
-    // rows can't see page 1's delete while page 2 is on screen.
+    // rows can’t see page 1's delete while page 2 is on screen.
     Story.with({
       ...playersListModel,
       playersTotal: 42,
@@ -688,7 +688,7 @@ test('a by-id response in flight when the delete happens cannot land the record'
     Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [] })),
     Story.Command.resolve(FetchHealth, SucceededFetchHealth()),
     // And NOW the by-id request that a deep link fired before any of this
-    // finally answers. It is the wire's view of the record and the wire never
+    // finally answers. It is the wire’s view of the record and the wire never
     // heard about the delete, so it reports the record alive. The route guard
     // cannot help here: it ran before the delete, which is exactly why this
     // handler needs its own guard rather than trusting the one upstream.
@@ -738,7 +738,7 @@ test('the column rules decide what saves, and the same rules refuse in update', 
     Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
     Story.Command.resolve(Navigate, CompletedNavigate()),
     Story.model((model) => {
-      // The create is in the record's History, as its own event rather than a
+      // The create is in the record’s History, as its own event rather than a
       // field change with empty strings in it.
       expect(model.editLog[0]?._tag).toBe('RecordCreated');
       expect(model.editLog[0]?.recordId).toBe('local-1');

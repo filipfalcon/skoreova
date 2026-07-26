@@ -1,5 +1,5 @@
 // The studio data layer: section config + the pure helpers that read the
-// model's rows, plus the chart data derivations.
+// model’s rows, plus the chart data derivations.
 
 import { Array, Option, String as Str } from 'effect';
 import { DatePicker, Listbox } from '@foldkit/ui';
@@ -25,7 +25,7 @@ import { teamColumns } from './teamsApi';
 import { Section } from './section';
 import { type DrawerState, type Entry, type Model, DrawerEditing } from './model';
 
-// The signed-in editor's display name ('editor' when the email was blank).
+// The signed-in editor’s display name ('editor' when the email was blank).
 export const accountName = (model: Model): string =>
   model.session._tag === 'SignedIn' && Str.isNonEmpty(model.session.email)
     ? model.session.email
@@ -34,11 +34,11 @@ export const accountName = (model: Model): string =>
 export const sectionRows = (model: Model, section: Section): ReadonlyArray<Entry> =>
   Option.getOrElse(AsyncData.getData(model[section]), () => []);
 
-// Finds a record by id within its section's loaded rows.
+// Finds a record by id within its section’s loaded rows.
 export const findRecord = (model: Model, section: Section, id: string): Entry | undefined =>
   sectionRows(model, section).find((row) => row.id === id);
 
-// The record the drawer is editing, resolved by id from its section's rows
+// The record the drawer is editing, resolved by id from its section’s rows
 // (undefined when the drawer is closed, creating, or the record is gone).
 export const drawerRecord = (model: Model): Entry | undefined => {
   const drawer = model.drawer;
@@ -51,7 +51,7 @@ export const draftOf = (drawer: DrawerState): ReadonlyArray<FieldValidation.Fiel
   drawer._tag === 'Closed' ? [] : drawer.draft;
 
 // The raw text of each cell, for the consumers that want the value rather than
-// its validation state (the save path, the drawer's own inputs).
+// its validation state (the save path, the drawer’s own inputs).
 export const draftValues = (drawer: DrawerState): ReadonlyArray<string> =>
   draftOf(drawer).map((field) => field.value);
 
@@ -66,7 +66,7 @@ export const withDraft = (
 };
 
 // WHAT EACH COLUMN REQUIRES, derived from the descriptor rather than written
-// per section — a derived column holds a reference the record can't do without
+// per section — a derived column holds a reference the record can’t do without
 // (see the save gate), a title names the record, and a date has a shape. The
 // rules live here next to the columns they belong to; the four-state answer
 // for the value currently typed lives in the Model (DrawerState.draft).
@@ -80,7 +80,7 @@ export const columnRules = (column: Column): FieldValidation.Rules<string> => {
   }
   if (column.kind === 'title') {
     return FieldValidation.makeRules({
-      required: `${column.label} can't be empty.`,
+      required: `${column.label} can’t be empty.`,
       isEmpty: (value) => value.trim() === '',
     });
   }
@@ -92,7 +92,7 @@ export const columnRules = (column: Column): FieldValidation.Rules<string> => {
   return FieldValidation.makeRules();
 };
 
-// A record's cells as a fresh draft: existing values start NotValidated —
+// A record’s cells as a fresh draft: existing values start NotValidated —
 // nothing has been typed yet, so nothing has been judged.
 const toDraft = (values: ReadonlyArray<string>): ReadonlyArray<FieldValidation.Field<string>> =>
   values.map((value) => FieldValidation.NotValidated({ value }));
@@ -111,9 +111,9 @@ export const editRecord = (entry: Entry): DrawerState =>
 export const emptyDraft = (section: Section): ReadonlyArray<FieldValidation.Field<string>> =>
   toDraft(sectionData[section].columns.map(() => ''));
 
-// Is this draft fit to save? Every cell judged against its own column's rules,
+// Is this draft fit to save? Every cell judged against its own column’s rules,
 // which is the one place that question is answered — the drawer blocks Save on
-// it and `update` refuses on it, so the two can't drift into disagreeing.
+// it and `update` refuses on it, so the two can’t drift into disagreeing.
 // NotValidated counts as acceptable for an optional cell and not for a required
 // one, which is exactly `isValid`'s contract.
 export const isDraftSavable = (
@@ -136,10 +136,10 @@ export const unsatisfiedColumns = (
     return field === undefined || !FieldValidation.isValid(columnRules(column))(field);
   });
 
-// A DERIVED cell stores a reference — the record's parentId — and displays the
-// referenced record's name (an edition's Competition is the one such column
+// A DERIVED cell stores a reference — the record’s parentId — and displays the
+// referenced record’s name (an edition’s Competition is the one such column
 // today). Resolved at render time rather than by rewriting the stored value
-// when either fetch lands, so there's no arrival-order race to coordinate:
+// when either fetch lands, so there’s no arrival-order race to coordinate:
 // whatever the referenced section holds now is what shows.
 //
 // Driven off the column descriptors rather than the hardcoded `editions` +
@@ -159,8 +159,8 @@ export const resolveDerivedCells = (model: Model, entry: Entry): Entry => {
   return evo(entry, { values: () => values });
 };
 
-// A section's rows as displayed: any derived cell carries the referenced
-// record's name (see resolveDerivedCells); everything else is shown as stored.
+// A section’s rows as displayed: any derived cell carries the referenced
+// record’s name (see resolveDerivedCells); everything else is shown as stored.
 export const displayRows = (model: Model, section: Section): ReadonlyArray<Entry> =>
   sectionRows(model, section).map((row) => resolveDerivedCells(model, row));
 
@@ -210,7 +210,7 @@ export const sectionLabels: Record<Section, string> = {
   associations: 'Associations',
 };
 
-// Singular form for the drawer header's type pill, e.g. "Klára Nováková (Player)".
+// Singular form for the drawer header’s type pill, e.g. "Klára Nováková (Player)".
 export const sectionSingularLabels: Record<Section, string> = {
   players: 'Player',
   clubs: 'Club',
@@ -220,11 +220,11 @@ export const sectionSingularLabels: Record<Section, string> = {
   associations: 'Association',
 };
 
-// DOM id for a checkbox column's filter Listbox ('Team kind' → 'filter-team-kind').
+// DOM id for a checkbox column’s filter Listbox ('Team kind' → 'filter-team-kind').
 export const filterListboxId = (column: string): string =>
   `filter-${column.toLowerCase().replace(/ /g, '-')}`;
 
-// DOM id for one bound of a date column's filter DatePicker
+// DOM id for one bound of a date column’s filter DatePicker
 // ('Starts on' + 'from' → 'date-filter-starts-on-from').
 export const dateFilterPickerId = (column: string, bound: 'from' | 'to'): string =>
   `date-filter-${column.toLowerCase().replace(/ /g, '-')}-${bound}`;
@@ -284,14 +284,14 @@ export const countryNames: Record<string, string> = {
 
 export type Table = Readonly<{
   // columns[0] is the entry title; columns[1..] each get their own filter
-  // control, picked by the column's `kind` (see Column in api.ts).
+  // control, picked by the column’s `kind` (see Column in api.ts).
   columns: ReadonlyArray<Column>;
 }>;
 
 // Every section is backed by the real API — see the FetchX commands below.
 // Data starts empty and is fetched at sign-in; only column layout lives here.
-// The retry each section's failure banner dispatches. Lives here rather than
-// in the section list, because the drawer's reference picker needs the same
+// The retry each section’s failure banner dispatches. Lives here rather than
+// in the section list, because the drawer’s reference picker needs the same
 // escape hatch when the section it reads from is the one that failed.
 export const retryBySection: Record<Section, Message> = {
   players: ClickedRetryPlayers(),
@@ -339,7 +339,7 @@ export const dateColumnLabels = columnLabelsOfKind('date');
 // CHART
 //
 // A small bar chart of mock "season stats" for the Overview tab. Values are
-// derived deterministically from the record's own fields, so the same record
+// derived deterministically from the record’s own fields, so the same record
 // always shows the same numbers without needing real data.
 
 export const metricsBySection: Record<Section, ReadonlyArray<string>> = {
@@ -351,7 +351,7 @@ export const metricsBySection: Record<Section, ReadonlyArray<string>> = {
   associations: ['Members', 'Competitions', 'Years active'],
 };
 
-// Classic polynomial string hash (Java's 31 multiplier) — spread only, no
+// Classic polynomial string hash (Java’s 31 multiplier) — spread only, no
 // crypto intent.
 const HASH_MULTIPLIER = 31;
 

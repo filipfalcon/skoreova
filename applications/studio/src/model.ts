@@ -1,4 +1,4 @@
-// The studio's Model, the record Entry, and the drawer state union.
+// The studio’s Model, the record Entry, and the drawer state union.
 
 import { Schema as S } from 'effect';
 import { DatePicker, Dialog, Listbox, Tabs } from '@foldkit/ui';
@@ -11,12 +11,12 @@ import { AppRoute } from './route';
 import { Section } from './section';
 
 // The one Dialog instance the app renders (the record drawer). The id keys the
-// native <dialog> element and the framework's per-dialog resource accounting.
+// native <dialog> element and the framework’s per-dialog resource accounting.
 export const DRAWER_DIALOG_ID = 'record-drawer';
 
 // Who is using the studio. A tagged union so the credential inputs only
 // exist while signing in — after sign-in the model carries the email alone,
-// and the plaintext password can't linger in state (or DevTools snapshots).
+// and the plaintext password can’t linger in state (or DevTools snapshots).
 export const Anonymous = ts('Anonymous', {
   emailInput: S.String,
   passwordInput: S.String,
@@ -25,7 +25,7 @@ export const SignedIn = ts('SignedIn', { email: S.String });
 export const Session = S.Union([Anonymous, SignedIn]);
 export type Session = typeof Session.Type;
 
-// One record. `values` line up with the section's columns (see `sectionData`).
+// One record. `values` line up with the section’s columns (see `sectionData`).
 export const Entry = S.Struct({
   section: Section,
   values: S.Array(S.String),
@@ -36,7 +36,7 @@ export const Entry = S.Struct({
   // endpoint exists to hand out a real one. Either way it is never blank —
   // the drawer and the keyed lists address a record by it.
   id: S.String,
-  // Generic "belongs to" reference, e.g. an edition's owning competition.
+  // Generic "belongs to" reference, e.g. an edition’s owning competition.
   // '' when not applicable.
   parentId: S.String,
 });
@@ -50,9 +50,9 @@ export const LOCAL_ID_PREFIX = 'local-';
 export const DrawerTab = S.Literals(['Overview', 'Persistency', 'History']);
 export type DrawerTab = typeof DrawerTab.Type;
 
-// The drawer's Tabs instance, Value-typed so its Selected OutMessage carries a
+// The drawer’s Tabs instance, Value-typed so its Selected OutMessage carries a
 // DrawerTab (not a bare string). The id keys the tab/panel DOM ids the
-// component's roving focus targets.
+// component’s roving focus targets.
 export const DRAWER_TABS_ID = 'drawer-tabs';
 // The annotation keeps the declaration emit portable (the inferred type would
 // reference foldkit internals — TS2883).
@@ -64,9 +64,9 @@ export const DrawerTabs: ReturnType<typeof Tabs.create<DrawerTab>> = Tabs.create
 export const FilterListbox: ReturnType<typeof Listbox.Multi.create<string>> =
   Listbox.Multi.create<string>();
 
-// One column's list filter, keyed by column name in `Model.filters` (an
-// absent key means "All"). Exact is a dropdown column's single choice;
-// Excluded is a checkbox column's *unchecked* set — a row passes unless its
+// One column’s list filter, keyed by column name in `Model.filters` (an
+// absent key means "All"). Exact is a dropdown column’s single choice;
+// Excluded is a checkbox column’s *unchecked* set — a row passes unless its
 // value is in it. Tagged variants replace the old per-index string slot that
 // multiplexed both encodings comma-joined (a value containing a comma
 // corrupted the excluded set).
@@ -75,7 +75,7 @@ export const ExcludedFilter = ts('ExcludedFilter', { excluded: S.Array(S.String)
 export const ColumnFilter = S.Union([ExactFilter, ExcludedFilter]);
 export type ColumnFilter = typeof ColumnFilter.Type;
 
-// A date column's from/to range filter as typed CalendarDates — replaces the
+// A date column’s from/to range filter as typed CalendarDates — replaces the
 // old comma-joined "from,to" string that rode in the `filters` slot. Either
 // side may be unset.
 export const DateRangeFilter = S.Struct({
@@ -84,12 +84,12 @@ export const DateRangeFilter = S.Struct({
 });
 export type DateRangeFilter = typeof DateRangeFilter.Type;
 
-// The profile drawer's state. A tagged union so its shape can't drift into an
+// The profile drawer’s state. A tagged union so its shape can’t drift into an
 // impossible state (a draft with the drawer closed, a delete-confirm on a
-// record that isn't open). An open record is addressed by its stable
+// record that isn’t open). An open record is addressed by its stable
 // section+id, NOT a row index, so a background refetch that rebuilds `rows`
-// can't repoint the drawer at a different record.
-// The draft carries each cell's VALIDATION STATE, not a bare string — the
+// can’t repoint the drawer at a different record.
+// The draft carries each cell’s VALIDATION STATE, not a bare string — the
 // four-state Field the framework models a form cell with (see
 // foldkit/fieldValidation). The rules live beside the column descriptors in
 // data.ts; this is where the answer for the value currently typed lives, so
@@ -110,10 +110,10 @@ export const DrawerEditing = ts('Editing', {
 export const DrawerState = S.Union([DrawerClosed, DrawerCreating, DrawerEditing]);
 export type DrawerState = typeof DrawerState.Type;
 
-// One recorded change to a field, for the drawer's History tab. Keyed by the
-// record's id (not its row index), so the log stays attached to its record
+// One recorded change to a field, for the drawer’s History tab. Keyed by the
+// record’s id (not its row index), so the log stays attached to its record
 // across refetches.
-// THE RECORD'S HISTORY, as tagged events rather than one struct shaped like a
+// THE RECORD’S HISTORY, as tagged events rather than one struct shaped like a
 // field edit. Creating and deleting are not field changes — they have no field,
 // no from and no to — so logging them through that shape meant either lying
 // with empty strings or not logging them at all, and it was the second. Every
@@ -131,11 +131,11 @@ export const RecordDeleted = ts('RecordDeleted', { recordId: S.String, at: S.Str
 export const LogEntry = S.Union([FieldChanged, RecordCreated, RecordDeleted]);
 export type LogEntry = typeof LogEntry.Type;
 
-// A section's fetch is a six-state AsyncData: Idle before sign-in, Loading on
+// A section’s fetch is a six-state AsyncData: Idle before sign-in, Loading on
 // the first fetch, Success holding its rows, Failure holding the error, and
 // Refreshing/Stale for stale-while-revalidate on retry. This replaces the flat
-// `xRequest`/`xError` pair per section, so a "loaded" state can't carry a stale
-// error, and the rows live inside Success (there's no separate flat array to
+// `xRequest`/`xError` pair per section, so a "loaded" state can’t carry a stale
+// error, and the rows live inside Success (there’s no separate flat array to
 // drift out of sync).
 export const SectionData = AsyncData.Schema(S.Array(Entry), S.String);
 export type SectionData = typeof SectionData.schema.Type;
@@ -147,7 +147,7 @@ export type ParticipationsData = typeof ParticipationsData.schema.Type;
 
 export const Model = S.Struct({
   session: Session,
-  // The current route is the source of truth for what's on screen — the
+  // The current route is the source of truth for what’s on screen — the
   // section list (or the dashboard landing page) is derived from it via
   // routeSection, so no separate section/dashboard flags can drift out of
   // sync with the URL.
@@ -157,7 +157,7 @@ export const Model = S.Struct({
   isMenuOpen: S.Boolean,
   search: S.String,
   // The active list filter per column of the current section, keyed by the
-  // column's name (see ColumnFilter). Absent key = "All".
+  // column’s name (see ColumnFilter). Absent key = "All".
   filters: S.Record(S.String, ColumnFilter),
   // The profile drawer: closed, creating a new record, or editing one by id.
   drawer: DrawerState,
@@ -166,8 +166,8 @@ export const Model = S.Struct({
   // the source of truth for WHAT is open; this owns HOW it is presented, so
   // every handler that opens/closes `drawer` threads the dialog alongside.
   dialog: Dialog.Model,
-  // The drawer's Tabs submodel (roving focus, activation mode). The active tab
-  // itself is parent-owned: it lives on DrawerEditing's `tab`.
+  // The drawer’s Tabs submodel (roving focus, activation mode). The active tab
+  // itself is parent-owned: it lives on DrawerEditing’s `tab`.
   tabs: Tabs.Model,
   // Client-side id source for records created in the mock (the backend would
   // assign one). Monotonic so a created row gets a stable, unique id the
@@ -177,8 +177,8 @@ export const Model = S.Struct({
   editLog: S.Array(LogEntry),
   // Why the last chart mount/sync failed; None when there is nothing wrong.
   chartError: S.Option(S.String),
-  // Each section's fetch state, holding its own rows in Success. Field names
-  // match the Section literals, so `model[section]` selects a section's state.
+  // Each section’s fetch state, holding its own rows in Success. Field names
+  // match the Section literals, so `model[section]` selects a section’s state.
   players: SectionData.schema,
   clubs: SectionData.schema,
   nationals: SectionData.schema,
@@ -186,41 +186,41 @@ export const Model = S.Struct({
   editions: SectionData.schema,
   associations: SectionData.schema,
   // Which team played in which edition. Not browsable as its own section —
-  // only used to resolve an edition's participating teams in its Overview tab.
+  // only used to resolve an edition’s participating teams in its Overview tab.
   participations: ParticipationsData.schema,
   // Only /players is paginated server-side right now; Clubs/Nationals fetch
   // everything in one request.
   playersPage: S.Number,
   playersTotal: S.Number,
   // Whether the backend is reachable at all, via GET /health — shown as the
-  // diode on every API-backed section's Refresh button. Separate from each
-  // section's own request status, since a health check is cheaper/faster
+  // diode on every API-backed section’s Refresh button. Separate from each
+  // section’s own request status, since a health check is cheaper/faster
   // than waiting on a full list fetch to fail.
   serverHealth: S.Literals(['Unknown', 'Ok', 'Down']),
-  // Page within the current section's *filtered* list, for every section
+  // Page within the current section’s *filtered* list, for every section
   // other than Players (which pages server-side instead). Resets to 1 on
   // section switch, search, or filter change.
   clientPage: S.Number,
   // THE DELETE LEDGER: `section:id` for every record soft-deleted this
-  // session. The row's own `isDeleted` flag is what the list renders from, but
+  // session. The row’s own `isDeleted` flag is what the list renders from, but
   // it cannot be the source of truth — a fetch response replaces the rows, and
   // on Players it replaces them with a DIFFERENT PAGE, where the deleted id
-  // isn't present to be preserved. Deleting on page 1 and paging to page 2 lost
+  // isn’t present to be preserved. Deleting on page 1 and paging to page 2 lost
   // the marker outright. This ledger outlives any page (see mergeLocalEdits).
   deletedRecordIds: S.Array(S.String),
   // The record a clock read is in flight for: a create or a delete has already
   // committed, and its History event is waiting on StampSave/StampDelete to
   // answer with a timestamp. '' when nothing is pending.
   pendingLogRecordId: S.String,
-  // Set when a shared record link couldn't be resolved (e.g. a deleted team,
+  // Set when a shared record link couldn’t be resolved (e.g. a deleted team,
   // or a player not on the currently loaded page — see FetchTeamById).
   linkError: S.String,
   // One multi-select Listbox submodel per checkbox filter column (see
-  // checkboxColumnLabels in data.ts), keyed by the column's name. Only interaction state
+  // checkboxColumnLabels in data.ts), keyed by the column’s name. Only interaction state
   // lives here — the selection stays in `filters` as the excluded set.
   filterListboxes: S.Record(S.String, Listbox.Multi.Model),
   // The active from/to range per date filter column (see dateColumnLabels in
-  // data.ts), keyed by the column's name. Absent key = no range set.
+  // data.ts), keyed by the column’s name. Absent key = no range set.
   dateFilters: S.Record(S.String, DateRangeFilter),
   // One from/to pair of DatePicker submodels per date filter column. Only
   // interaction state (popover, visible month) lives here — the selection is

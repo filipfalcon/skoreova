@@ -3,12 +3,12 @@ import tailwindcss from '@tailwindcss/vite';
 import { playwright } from 'vite-plus/test/browser-playwright';
 import { defineConfig } from 'vite-plus';
 
-// The half of web's suite that a fake DOM cannot answer for: computed
+// The half of web’s suite that a fake DOM cannot answer for: computed
 // visibility, painted geometry, stroke-dashoffset, IntersectionObserver on an
 // inner SVG node, and a real stylesheet to read `prefers-reduced-motion` rules
 // out of. Browser mode and a Node-based environment cannot coexist in one
 // project, so this is a second project over the same package — the shape
-// Vitest's own docs prescribe, and the reason the root config can no longer
+// Vitest’s own docs prescribe, and the reason the root config can no longer
 // derive its project list from `workspaces`: a package is not a runner.
 //
 // A sidecar config file rather than an inline project entry in the root, for
@@ -38,10 +38,10 @@ export default defineConfig({
       enabled: true,
       provider: playwright(),
       headless: true,
-      // WebKit is Safari's engine, so the overlay's transform/visibility CSS
-      // is verified there too. Note: neither engine renders the browser's own
-      // toolbar, so this can't reproduce the original mobile-Safari safe-area
-      // residue — it guards the fix's invariant (a closed overlay is never
+      // WebKit is Safari’s engine, so the overlay’s transform/visibility CSS
+      // is verified there too. Note: neither engine renders the browser’s own
+      // toolbar, so this can’t reproduce the original mobile-Safari safe-area
+      // residue — it guards the fix’s invariant (a closed overlay is never
       // painted), which is the browser-agnostic root cause of that bug.
       instances: [{ browser: 'chromium' }, { browser: 'webkit' }],
     },

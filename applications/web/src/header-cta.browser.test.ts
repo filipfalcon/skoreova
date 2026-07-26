@@ -13,10 +13,10 @@ import './styles.css';
 // header view rendering `is-visible` from it. That is what a real scroll
 // exercises and what the earlier rAF-loop version got wrong twice over: it
 // re-asserted the class every frame against the vdom, and its mount-time
-// header lookup pinned `null` whenever the header wasn't in the DOM yet.
+// header lookup pinned `null` whenever the header wasn’t in the DOM yet.
 // Asserted on BOTH halves of the contract: `is-visible` (what the view
 // renders from the Model) and the computed `visibility` the class resolves to.
-// The class alone was not enough — the hidden state's job is to keep the link
+// The class alone was not enough — the hidden state’s job is to keep the link
 // out of the tab order and out of the accessibility tree, and only a real
 // `visibility: hidden` does that. Opacity and pointer-events, which is what
 // this used to be, left an invisible focusable link on the hero. `display` is
@@ -84,7 +84,7 @@ test('the CTA appears once the hero scrolls away and hides again on return', asy
 
   window.scrollTo({ top: 0, behavior: 'instant' });
   await expect.poll(ctaVisible, { timeout: 3000 }).toBe(false);
-  // The visibility leg is delayed by the fade's duration, so this is also the
+  // The visibility leg is delayed by the fade’s duration, so this is also the
   // guard that the delay is on the way OUT only.
   await expect.poll(ctaComputedVisibility, { timeout: 3000 }).toBe('hidden');
 });

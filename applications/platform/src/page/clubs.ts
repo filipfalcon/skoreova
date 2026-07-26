@@ -17,18 +17,18 @@ const h = html<Message>();
 const clubBySlug = (slug: string): Club | undefined =>
   clubs.find((candidate) => candidate.slug === slug);
 
-// THE MARQUEE TAPE, derived twice over. The hero's bottom edge loops the
-// contenders' names on a tilted PINK TAPE — the landing marquee's louder
+// THE MARQUEE TAPE, derived twice over. The hero’s bottom edge loops the
+// contenders' names on a tilted PINK TAPE — the landing marquee’s louder
 // cousin — and it used to hand-type them: "Sparta Praha", "Slavia Praha",
 // "Slovan Liberec", "UWCL 2025/26", four literals inside a function that
 // already resolves names from the clubs table three lines above. Both halves
-// had gone wrong. A typed name drifts against the table (the ticker's "FK
+// had gone wrong. A typed name drifts against the table (the ticker’s "FK
 // Pardubice" did, for a club the table calls "Pardubice"), and the single UWCL
 // line was flatly wrong for Liberec: clubEurope puts them in the Europa Cup,
 // as does the UWEC page a click away. Reading the names off the table and the
 // competitions off clubEurope makes both mistakes unrepresentable — the tape
-// cannot name a club the season canon doesn't, or a competition its clubs
-// aren't in.
+// cannot name a club the season canon doesn’t, or a competition its clubs
+// aren’t in.
 const contenderCompetitions: ReadonlyArray<string> = Array.dedupe(
   featuredClubs.flatMap((entry) => {
     const campaign = clubEurope[entry.slug];
@@ -122,7 +122,7 @@ const europeanContenders = (model: Model): Html => {
   return h.section(
     // IMMERSIVE hero (user call — the boxed chip+band read as "just put
     // in", then "GET CRAZY"): full-bleed ink that swallows the main
-    // container's top padding (-mt) so the stage flows straight out of
+    // container’s top padding (-mt) so the stage flows straight out of
     // the black header chrome; a giant outline club name roars behind the
     // stage, the artwork rides a pink offset frame, film grain sits over
     // everything, and a tilted pink tape closes the band.
@@ -145,8 +145,8 @@ const europeanContenders = (model: Model): Html => {
           h.div(
             [h.Class('relative h-80 md:h-[28rem]')],
             [
-              // The active club's name SCREAMS as a giant outline rising
-              // from behind the artwork's top edge, through the kicker.
+              // The active club’s name SCREAMS as a giant outline rising
+              // from behind the artwork’s top edge, through the kicker.
               h.div(
                 [
                   h.Key(`shout-${entryAt(active).slug}`),
@@ -261,7 +261,7 @@ const europeanContenders = (model: Model): Html => {
         ],
       ),
       // The tilted pink tape — full-bleed, slightly rotated, looping the
-      // contenders. Oversized width hides the rotation's corner gaps.
+      // contenders. Oversized width hides the rotation’s corner gaps.
       h.div(
         [h.Class('ticker mt-10 -mx-[2%] w-[104%] -rotate-1 bg-pink py-2.5')],
         [
@@ -271,7 +271,7 @@ const europeanContenders = (model: Model): Html => {
           ),
         ],
       ),
-      // Film grain over the whole band — the landing hero's skin.
+      // Film grain over the whole band — the landing hero’s skin.
       h.div([h.Class('grain pointer-events-none absolute inset-0'), h.AriaHidden(true)], []),
     ],
   );
@@ -327,7 +327,7 @@ export const view = (model: Model): Html => {
                   // utilities on the theory that they were needed; they were
                   // inert. Studio is the app that genuinely needed them: its
                   // stylesheet is a bare `@import` with no focus rule.) The
-                  // border tint is the field's own addition on top.
+                  // border tint is the field’s own addition on top.
                   'w-full border-2 border-ink/15 bg-transparent px-5 py-3.5 text-base text-ink transition-colors placeholder:text-ink/35 focus:border-pink',
                 ),
               ]),

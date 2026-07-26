@@ -27,11 +27,11 @@ describe('view', () => {
       { update, view },
       Scene.with(signedOutModel),
       Scene.expect(Scene.role('heading', { name: 'Sign in' })).toExist(),
-      // By LABEL, not placeholder: the field's accessible name is what a
+      // By LABEL, not placeholder: the field’s accessible name is what a
       // screen reader announces, and a placeholder is only a hint the browser
       // clears the moment anything is typed.
       Scene.expect(Scene.label('Email address')).toExist(),
-      // The arrow submit button's accessible name comes from its AriaLabel.
+      // The arrow submit button’s accessible name comes from its AriaLabel.
       Scene.expect(Scene.role('button', { name: 'Sign in' })).toExist(),
     );
   });
@@ -54,7 +54,7 @@ describe('view', () => {
     );
   });
 
-  test("an edition's competition name is resolved in the view, not the stored id", () => {
+  test('an edition’s competition name is resolved in the view, not the stored id', () => {
     Scene.scene(
       { update, view },
       Scene.with(editionsListModel),
@@ -81,12 +81,12 @@ describe('view', () => {
       Scene.Command.resolve(Navigate, CompletedNavigate()),
       Scene.Mount.resolve(MountChart, SucceededMountChart({ hostId: CHART_HOST_ID })),
       Scene.Command.resolve(SyncChart, SucceededSyncChart()),
-      // The drawer's own footer control — it exists only with a record open.
+      // The drawer’s own footer control — it exists only with a record open.
       Scene.expect(Scene.role('button', { name: 'Save' })).toExist(),
     );
   });
 
-  // f6ee49d's view contract: the gate is visible and explained, and the
+  // f6ee49d’s view contract: the gate is visible and explained, and the
   // button stays reachable so the explanation can be read.
   test('creating a record without its reference offers a blocked, explained Save', () => {
     Scene.scene(
@@ -122,7 +122,7 @@ describe('view', () => {
       Scene.expect(Scene.role('button', { name: 'Previous' })).not.toHaveClass('cursor-pointer'),
       Scene.expect(Scene.role('button', { name: 'Previous' })).toHaveClass('cursor-not-allowed'),
       // The live sibling proves the two styles are actually different, so the
-      // assertions above can't pass by both strings collapsing to one.
+      // assertions above can’t pass by both strings collapsing to one.
       Scene.expect(Scene.role('button', { name: 'Next' })).not.toHaveAttr('aria-disabled'),
       Scene.expect(Scene.role('button', { name: 'Next' })).toHaveClass('cursor-pointer'),
     );
@@ -138,7 +138,7 @@ describe('view', () => {
       Scene.Mount.resolve(MountChart, SucceededMountChart({ hostId: CHART_HOST_ID })),
       Scene.Command.resolve(SyncChart, SucceededSyncChart()),
       Scene.expect(Scene.label('Record stats chart')).toExist(),
-      // The drawer's own footer control — unique to the open record.
+      // The drawer’s own footer control — unique to the open record.
       Scene.expect(Scene.role('button', { name: 'Save' })).toExist(),
     );
   });

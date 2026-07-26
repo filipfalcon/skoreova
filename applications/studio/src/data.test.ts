@@ -7,7 +7,7 @@ import { sectionData } from './data';
 // path lifts a single cell into it, and `resolveDerivedCells` resolves every
 // derived cell against that one id — so a section declaring two derived
 // columns would resolve both to the same parent and print a raw UUID in
-// whichever one didn't match. The resolver reads generically because that is
+// whichever one didn’t match. The resolver reads generically because that is
 // the honest way to find the column, not because two are supported; this is
 // the assertion that keeps the invariant true instead of the comment claiming
 // it does.

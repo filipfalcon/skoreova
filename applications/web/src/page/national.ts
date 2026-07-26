@@ -24,7 +24,7 @@ const h = html<Message>();
 
 // One Round 1 tie — a real, scheduled fixture, so it clicks through to the
 // platform like every match row on the page. Hover pops the card to paper:
-// the tables' sliding pink row fill would vanish into this section's pink
+// the tables' sliding pink row fill would vanish into this section’s pink
 // background.
 const playoffTie = (home: string, away: string, czech: boolean, step: number): Html =>
   h.a(
@@ -59,7 +59,7 @@ const playoffTie = (home: string, away: string, czech: boolean, step: number): H
   );
 
 // A bracket joint (desktop only — phones stack the bracket vertically):
-// the horizontal stub leaves its cell at the cell's vertical centre, and
+// the horizontal stub leaves its cell at the cell’s vertical center, and
 // the half-height bar runs toward the sibling joint — stretched 0.75rem
 // past the cell so the two halves meet across the md:gap-y-6 row gap.
 // 'none' is the plain pass-through stub (Round 2 → the prize).
@@ -85,12 +85,12 @@ const bracketJoint = (position: string, bridge: 'down' | 'up' | 'none', step: nu
     ],
   );
 
-// The joint's phone-sized sibling: a short centred drop between the
+// The joint’s phone-sized sibling: a short centered drop between the
 // stacked bracket stages.
 const bracketDrop = (): Html => h.div([h.Class('mx-auto h-10 w-1 bg-ink md:hidden')], []);
 
-// The national team's ID card — the club pages' facts anatomy (tick →
-// value → label), values in PAPER: on this section's pink ground paper is
+// The national team’s ID card — the club pages' facts anatomy (tick →
+// value → label), values in PAPER: on this section’s pink ground paper is
 // the accent (the club pages' pink values would vanish). It lives UNDER
 // THE PAYOFF, not under the lioness (tried): the left column is short
 // since the league stats died, and with the card on the right the
@@ -130,8 +130,8 @@ export const view = (model: Model): Html =>
     [h.Id('roar-as-one'), h.Class('relative bg-pink py-16 text-ink md:py-24')],
     [
       // The flag-bearer lioness — third of the mascot doodles, the
-      // knight's (01) and the lands scout's (03) anatomy: anchored to the
-      // section's right edge behind the copy, sliding in from the right
+      // knight’s (01) and the lands scout’s (03) anatomy: anchored to the
+      // section’s right edge behind the copy, sliding in from the right
       // and idle-floating.
       // The paper sticker outline is load-bearing: pink kit, pink ground.
       // HIDDEN for now — whether she stays is an open decision (user,
@@ -139,7 +139,7 @@ export const view = (model: Model): Html =>
       h.div(
         [
           h.Class(
-            // Full family presence (the knight's ~510px cap height needs
+            // Full family presence (the knight’s ~510px cap height needs
             // 38% here — the flag owns half the image width), sized so
             // her boots land just above the mascots photo. Only possible
             // because the headline was shortened for her; the md tier is
@@ -179,9 +179,9 @@ export const view = (model: Model): Html =>
         [
           h.Class(
             // SHIFTED down (same size — resizing was tried and rejected)
-            // so from xl the tile's bottom edge sits on the payoff's echo
+            // so from xl the tile’s bottom edge sits on the payoff’s echo
             // line — on the GLYPH baseline, not the line box (the box
-            // carries ~13px of descent air below Anton's caps and the
+            // carries ~13px of descent air below Anton’s caps and the
             // tile read as hanging past the text). Everything above the
             // fluid cap is position-stable from xl, so the rem offset
             // holds at every xl width.
@@ -248,9 +248,9 @@ export const view = (model: Model): Html =>
           // (04's lesson: near-fold reveals never fire on their own this
           // close to the landing frame — and the road bar sat exactly at
           // the fold, so it kept appearing a beat too late on scroll;
-          // grouped, it's simply already there). The group wraps AROUND
+          // grouped, it’s simply already there). The group wraps AROUND
           // the min-height zone: inside it, the road would inflate the
-          // zone's floor.
+          // zone’s floor.
           h.div(
             [h.DataAttribute('reveal-group', 'replay')],
             [
@@ -261,10 +261,10 @@ export const view = (model: Model): Html =>
               // the zone far past the ID card and opened a dead gap before
               // the road divider — the cap trades that for the divider
               // peeking at the bottom of very tall viewports (the next
-              // chapter's rule showing there is fine, the league stats
+              // chapter’s rule showing there is fine, the league stats
               // showing was not). The payoff stays in the canonical
               // headline → payoff rhythm (a floor-anchored payoff slid off
-              // the user's screen; tried and reverted).
+              // the user’s screen; tried and reverted).
               h.div(
                 [h.Class('md:min-h-[min(calc(100svh-10rem),40rem)]')],
                 [
@@ -272,13 +272,13 @@ export const view = (model: Model): Html =>
                   h.h2(
                     [h.Class('mt-10 md:mt-16')],
                     [
-                      // LVICE — the national team's REAL nickname, kept
+                      // LVICE — the national team’s REAL nickname, kept
                       // Czech as a brand name (canon: brand names stay
                       // Czech; name-as-headline is 04/05's device). This
                       // replaced a chain of 'Lionesses …' headlines that
                       // all ended up sparring with England — the Czech
                       // name introduces instead of comparing. Paper, no
-                      // trailing dot (names don't carry one).
+                      // trailing dot (names don’t carry one).
                       maskedLine(
                         model,
                         'national-headline',
@@ -296,8 +296,8 @@ export const view = (model: Model): Html =>
                   h.p(
                     [
                       h.Class(
-                        // max-w-2xl = the ID card's exact box, so the
-                        // right-aligned echo line ENDS where the card's
+                        // max-w-2xl = the ID card’s exact box, so the
+                        // right-aligned echo line ENDS where the card’s
                         // League B column ends — one shared right edge.
                         clsx(
                           'display mt-8 max-w-2xl text-fluid-2xl-4xl leading-snug md:mt-12',
@@ -309,9 +309,9 @@ export const view = (model: Model): Html =>
                     ],
                     [
                       // Staggered couplet (user layout): the answer line
-                      // steps to the right and ENDS on the card's right
+                      // steps to the right and ENDS on the card’s right
                       // edge (phones keep a soft fixed step — a right
-                      // alignment reads accidental at one line's width).
+                      // alignment reads accidental at one line’s width).
                       h.span([h.Class('block')], ['Czech for lionesses...']),
                       h.span(
                         [h.Class('block pl-16 text-paper md:pl-0 md:text-right')],
@@ -334,8 +334,8 @@ export const view = (model: Model): Html =>
           //
           // The whole road block is SCROLL-PINNED on md+: the runway below
           // reserves 260svh of scroll, the stage sticks near the viewport
-          // centre, and motion.ts stamps `.is-on` onto the bracket's
-          // [data-bracket-step] pieces as the runway's progress passes
+          // center, and motion.ts stamps `.is-on` onto the bracket’s
+          // [data-bracket-step] pieces as the runway’s progress passes
           // each step — the bracket builds tie by tie under a standing
           // frame, and unwinds when you scroll back. Phones skip the pin
           // (steps are forced on) and keep the plain stacked bracket.
@@ -413,7 +413,7 @@ export const view = (model: Model): Html =>
                           h.DataAttribute('bracket-step', '3'),
                         ],
                         [
-                          // Solid PORTS where the bracket's bars land: the
+                          // Solid PORTS where the bracket’s bars land: the
                           // bars only abutted the dashed outline, and when
                           // the touch point fell into a dash gap the whole
                           // junction read as coincidence, not a joint. Each
@@ -444,7 +444,7 @@ export const view = (model: Model): Html =>
                       ),
                       bracketDrop(),
                       bracketJoint('md:col-start-4 md:row-span-2 md:row-start-1', 'none', 4),
-                      // The prize node — the section's only paper block, so the
+                      // The prize node — the section’s only paper block, so the
                       // eye lands where the bracket ends.
                       h.div(
                         [
@@ -454,7 +454,7 @@ export const view = (model: Model): Html =>
                             // Round 2 outline one stage up); desktop has open pink
                             // above the card, so there it rises past the edge.
                             // md band (768–1279) squeezes this column to ~200–290px,
-                            // so the copy reserves the trophy's lane (pr-14) and the
+                            // so the copy reserves the trophy’s lane (pr-14) and the
                             // trophy shrinks a notch; xl has room for both at full size.
                             'relative min-h-48 bg-paper p-5 md:col-start-5 md:row-span-2 md:row-start-1 md:min-h-0 md:self-center md:p-6 md:pr-14 xl:pr-6',
                           ),

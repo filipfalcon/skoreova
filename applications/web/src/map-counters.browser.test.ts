@@ -24,7 +24,7 @@ const counterValues = (): ReadonlyArray<string> =>
     (node) => node.textContent ?? '',
   );
 
-// Generous timeouts throughout: on a cold cache the whole suite's browser
+// Generous timeouts throughout: on a cold cache the whole suite’s browser
 // pages compile and import at once, and a starved page can spend seconds
 // just reaching the first frame of a 700ms animation.
 beforeAll(async () => {

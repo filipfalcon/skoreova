@@ -27,7 +27,7 @@ import type { EuroCampaign } from '../standings';
 const h = html<Message>();
 
 // The per-club statement block — hand-written for the marquee clubs, a
-// season-record fallback for everyone else (see this module's `view`).
+// season-record fallback for everyone else (see this module’s `view`).
 const clubHighlights: Record<string, { readonly kicker: string; readonly statement: string }> = {
   'sparta-praha': {
     kicker: 'Reigning champions',
@@ -44,17 +44,17 @@ const clubHighlights: Record<string, { readonly kicker: string; readonly stateme
   },
 };
 
-// The one line of honours that sits under the club's name — hand-picked
-// per club, NOT derived. A club's case for itself is editorial: the
+// The one line of honors that sits under the club’s name — hand-picked
+// per club, NOT derived. A club’s case for itself is editorial: the
 // numbers that matter to Sparta are not the ones that matter to a side
 // that has never won the league. Clubs without an entry show nothing
 // rather than a padded-out list.
-interface ClubHonour {
+interface ClubHonor {
   readonly count?: number;
   readonly label: string;
 }
 
-const clubHonours: Record<string, ReadonlyArray<ClubHonour>> = {
+const clubHonors: Record<string, ReadonlyArray<ClubHonor>> = {
   'sparta-praha': [
     { count: 22, label: 'League champions' },
     { count: 9, label: 'Domestic double' },
@@ -70,26 +70,26 @@ const clubHeroPhotos: Record<string, { readonly photo: string; readonly focus: s
 
 // Section headings are a PINK RULE beside display type, not a filled chip
 // (user call). The rule is the brand mark here; the pink block is now
-// reserved for things you can act on — the honour badges, the highlighted
+// reserved for things you can act on — the honor badges, the highlighted
 // rows — so a heading no longer competes with them for attention.
-// Back to the LANDING PAGE's grammar (user call): a filled pink block,
+// Back to the LANDING PAGE’s grammar (user call): a filled pink block,
 // not a ruled headline — the platform and the landing site should name a
 // section the same way. Reverting also settles the disagreement the ruled
-// version had opened up with the home screen's own chips.
+// version had opened up with the home screen’s own chips.
 
 // What a finishing position BUYS you. The First League sends its top two
 // to the UWCL and the third to the UWEC, and drops the last club into the
-// Second League; the Second League's winner comes straight back up.
+// Second League; the Second League’s winner comes straight back up.
 
-// ——— RESULTS & FIXTURES — two tiles, each paging THIS CLUB'S matches
-// with arrows. The arrows step through the club's own games rather than
-// the league's rounds, so a matchday it sits out can never land the tile
+// ——— RESULTS & FIXTURES — two tiles, each paging THIS CLUB’S matches
+// with arrows. The arrows step through the club’s own games rather than
+// the league’s rounds, so a matchday it sits out can never land the tile
 // on an empty card. The schedule and scores come from the same generators
 // the competition screen uses, so nothing here can contradict the table
 // below. ———
 
-// Rounds are a week apart from a fixed season opening, so every club's
-// dates line up and nothing depends on today's date.
+// Rounds are a week apart from a fixed season opening, so every club’s
+// dates line up and nothing depends on today’s date.
 
 const clubStandingsSection = (target: Club): Html => {
   const rows = standingsFor(target.league);
@@ -98,9 +98,9 @@ const clubStandingsSection = (target: Club): Html => {
     'Standings',
     [
       standingsHeadline(target.league),
-      // The canon's matchday, not the leader's played count — in a league with
+      // The canon’s matchday, not the leader’s played count — in a league with
       // an odd club count the leader can be a bye or two behind the season, and
-      // this bar then disagreed with the competition screen's own stage line.
+      // this bar then disagreed with the competition screen’s own stage line.
       seasonProgress(MATCHDAYS_PLAYED, totalRounds),
       ...standingsTable(rows, target.name, (position) =>
         zoneFor(target.league, position, rows.length),
@@ -164,10 +164,10 @@ const clubCupSection = (run: ReadonlyArray<CupTie>): Html =>
   );
 
 // The top-scorers scope selector. These are mutually-exclusive choices (all
-// competitions, the club's league, or the cup), so a real radiogroup — not the
+// competitions, the club’s league, or the cup), so a real radiogroup — not the
 // per-button AriaPressed toggle semantics this wore before, which read to a
 // screen reader as N independent toggles rather than one single-select group.
-// The 'league' label is the club's own league name, so labels come from target.
+// The 'league' label is the club’s own league name, so labels come from target.
 const scopeRadioGroup = (target: Club, model: Model): Html => {
   const labels: Record<ScorerScope, string> = {
     All: 'All',
@@ -209,7 +209,7 @@ const scorerRow = (scorer: Scorer, index: number): Html =>
   );
 
 // One named list view per scope. Each list carries a LITERAL key — the
-// identity of that scope's board — so switching scopes swaps subtrees
+// identity of that scope’s board — so switching scopes swaps subtrees
 // (replaying the `.screen` slide-in) without a data-derived key.
 const SCORERS_LIST_CLASS = 'screen mt-6 flex flex-col';
 const allScorersList = (target: Club): Html =>
@@ -238,7 +238,7 @@ const scorersListFor = (target: Club, scope: ScorerScope): Html =>
   );
 
 // ONE top-scorers component, scoped by chips: all competitions, the
-// club's league, or the cup (user call).
+// club’s league, or the cup (user call).
 const clubScorersSection = (target: Club, model: Model): Html => {
   return clubSection(
     'Top scorers',
@@ -375,17 +375,17 @@ const clubFollowSection = (target: Club, model: Model): Html => {
 
 export const view = (target: Club, model: Model): Html => {
   const heroArt = clubHeroPhotos[target.slug];
-  const honours = clubHonours[target.slug] ?? [];
+  const honors = clubHonors[target.slug] ?? [];
   const europe = clubEurope[target.slug];
   const cupRun = clubCupRun[target.slug];
   const highlight = clubHighlights[target.slug] ?? {
     kicker: 'This season',
     statement: `${target.won} wins in ${target.won + target.drawn + target.lost} games — the numbers tell it straight.`,
   };
-  // TWO BANDS, the landing page's rhythm (user call): the profile opens on
-  // a full-bleed DARK act — artwork, crest, name, honours, commentary — and
+  // TWO BANDS, the landing page’s rhythm (user call): the profile opens on
+  // a full-bleed DARK act — artwork, crest, name, honors, commentary — and
   // the black ENDS there. Everything from the calendar down is the data
-  // act, and it runs on the platform's own paper. The switch does real
+  // act, and it runs on the platform’s own paper. The switch does real
   // work: the editorial half is a magazine spread you look at, the data
   // half is a reference table you read, and the surface change tells you
   // which mode you are in before you read a word. It also stops the club
@@ -461,7 +461,7 @@ export const view = (target: Club, model: Model): Html => {
                 ),
               ]),
           // HERO — crest and name are THE BANG (user call): both huge,
-          // riding the artwork's fade. ONE parallax only (user call): the
+          // riding the artwork’s fade. ONE parallax only (user call): the
           // artwork itself drifts (.club-hero-art) and everything over it
           // sits still — the layered stack of counter-drifting blocks was
           // removed, along with the ink fills that only existed so those
@@ -486,52 +486,52 @@ export const view = (target: Club, model: Model): Html => {
                 ],
                 [target.name],
               ),
-              // Honours ride UNDER the name and above the commentary. ONE
-              // chip whose line ROLLS over to the next honour (user call —
-              // like the landing page's pitchside ad board), borrowing that
+              // Honors ride UNDER the name and above the commentary. ONE
+              // chip whose line ROLLS over to the next honor (user call —
+              // like the landing page’s pitchside ad board), borrowing that
               // exact grammar: a push, not a crossfade. All the lines stack
-              // in a single grid cell, so the chip's width is the WIDEST of
+              // in a single grid cell, so the chip’s width is the WIDEST of
               // them and never jumps as the text changes.
-              ...(Array.isReadonlyArrayEmpty(honours)
+              ...(Array.isReadonlyArrayEmpty(honors)
                 ? []
                 : [
                     h.ul(
                       [
                         h.Class(
-                          'honour-roll display mx-auto mt-6 grid w-fit overflow-hidden bg-paper px-3 py-1.5 text-lg tracking-[0.12em] text-ink md:mt-7 md:px-3.5 md:py-2 md:text-xl',
+                          'honor-roll display mx-auto mt-6 grid w-fit overflow-hidden bg-paper px-3 py-1.5 text-lg tracking-[0.12em] text-ink md:mt-7 md:px-3.5 md:py-2 md:text-xl',
                         ),
                       ],
-                      honours.map((honour, index) =>
+                      honors.map((honor, index) =>
                         h.li(
                           [
                             h.Class('col-start-1 row-start-1 text-center whitespace-nowrap'),
-                            h.Style({ '--honour-index': `${index}` }),
+                            h.Style({ '--honor-index': `${index}` }),
                           ],
-                          honour.count === undefined
-                            ? [honour.label]
-                            : [...timesCount(honour.count), honour.label],
+                          honor.count === undefined
+                            ? [honor.label]
+                            : [...timesCount(honor.count), honor.label],
                         ),
                       ),
                     ),
                     // Reduced motion gets them all at once instead — a
                     // rotator that cannot rotate would hide two thirds of
-                    // the honours.
+                    // the honors.
                     h.ul(
                       [
                         h.Class(
-                          'honour-static mt-6 flex-wrap items-center justify-center gap-2 md:mt-7 md:gap-3',
+                          'honor-static mt-6 flex-wrap items-center justify-center gap-2 md:mt-7 md:gap-3',
                         ),
                       ],
-                      honours.map((honour) =>
+                      honors.map((honor) =>
                         h.li(
                           [
                             h.Class(
                               'display bg-paper px-3 py-1.5 text-lg tracking-[0.12em] text-ink md:px-3.5 md:py-2 md:text-xl',
                             ),
                           ],
-                          honour.count === undefined
-                            ? [honour.label]
-                            : [...timesCount(honour.count), honour.label],
+                          honor.count === undefined
+                            ? [honor.label]
+                            : [...timesCount(honor.count), honor.label],
                         ),
                       ),
                     ),
@@ -541,18 +541,18 @@ export const view = (target: Club, model: Model): Html => {
           // SKÓREOVÁ COMMENTARY — an editorial PULL-QUOTE: a giant Anton
           // quotation mark anchors the block, the text hangs off a pink
           // rule, and the sign-off closes the row on a hairline that runs
-          // from the quote to the reporter's portrait. The portrait is a
+          // from the quote to the reporter’s portrait. The portrait is a
           // placeholder glyph until her photo lands — swap it for an
           // <img> in the circle then.
           h.figure(
             [h.Class(clsx('mx-auto max-w-2xl', heroArt ? 'mt-10' : 'mt-16 md:mt-24'))],
             [
               // The TEXT is the anchor of this block (user call): it gets a
-              // measure of its own and is centred inside the figure, and
+              // measure of its own and is centered inside the figure, and
               // every decoration — the quote mark, the pink rule, the
               // hairline, the portrait — hangs off that column rather than
               // shifting it. Without this the mark and rule sat left of the
-              // text and pushed its optical centre to the right.
+              // text and pushed its optical center to the right.
               h.div(
                 [h.Class('mx-auto w-full max-w-[30rem] md:max-w-[34rem]')],
                 [
@@ -566,10 +566,10 @@ export const view = (target: Club, model: Model): Html => {
                   h.blockquote(
                     [
                       h.Class(
-                        // pt clears the MARK'S INK, not its box: leading-[0.3]
+                        // pt clears the MARK’S INK, not its box: leading-[0.3]
                         // collapses the line box to ~29px while the glyph
                         // still paints ~25px above it, so without this the
-                        // quote mark bleeds up into the honour chips.
+                        // quote mark bleeds up into the honor chips.
                         'mt-0 border-l-2 border-pink pt-6 pl-5 text-left text-xl leading-relaxed font-medium text-pretty text-paper/90 md:pt-8 md:pl-7 md:text-2xl',
                       ),
                     ],
@@ -577,7 +577,7 @@ export const view = (target: Club, model: Model): Html => {
                       h.span(
                         [
                           h.Class(
-                            // -ml compensates the glyph's own side bearing:
+                            // -ml compensates the glyph’s own side bearing:
                             // aligning the BOXES leaves the ink looking
                             // indented, so nudge it back to sit optically
                             // flush with the first letter of the quote.
@@ -592,7 +592,7 @@ export const view = (target: Club, model: Model): Html => {
                   ),
                   // Sign-off: a hairline runs out of the quote into the
                   // byline + portrait closing the right edge. It TUCKS UP into
-                  // the quote's last line (negative margin) so the portrait
+                  // the quote’s last line (negative margin) so the portrait
                   // sits right against the text rather than floating away
                   // below it.
                   h.figcaption(
@@ -649,12 +649,12 @@ export const view = (target: Club, model: Model): Html => {
         ],
       ),
       // Film grain over the dark world only — `overlay` against paper just
-      // dirties it, and the grain is the dark act's texture anyway.
+      // dirties it, and the grain is the dark act’s texture anyway.
       h.div([h.Class('grain pointer-events-none absolute inset-0'), h.AriaHidden(true)], []),
     ],
   );
 
-  // The DATA act, on the page's own paper. No full-bleed wrapper and no
+  // The DATA act, on the page’s own paper. No full-bleed wrapper and no
   // background of its own: the document is already paper, so this is
   // simply the dark band ending. Column width matches the band above it so
   // the section headings line up straight through the seam.

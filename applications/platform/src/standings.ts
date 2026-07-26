@@ -16,7 +16,7 @@ export interface StandingsZone {
 
 // NOT brand pink (user call): pink is the highlight row, the points and
 // every chip, so it reads as brand rather than as a prize — and it
-// disappears completely against the club's own pink row.
+// disappears completely against the club’s own pink row.
 // `bar` carries the picked hue; `text` is what that hue becomes as 10px
 // uppercase type on PAPER — see the -ink tokens in styles.css.
 const UWCL_ZONE: StandingsZone = { label: 'UWCL', bar: 'bg-ucl', text: 'text-ucl' };
@@ -204,7 +204,7 @@ const standingsColumnKey = (): Html =>
     ],
   );
 
-// One run of table rows. `flushFirst` drops the first row's top border —
+// One run of table rows. `flushFirst` drops the first row’s top border —
 // wanted only when the run opens the table directly under the column key.
 const standingsRows = (
   entries: ReadonlyArray<StandingsEntry>,
@@ -225,16 +225,16 @@ const standingsRows = (
       });
       const zoneLabel = Option.match(zone, { onNone: () => '', onSome: (z) => z.label });
       return h.li(
-        // The band lives in a GUTTER outside the row's own background:
-        // inside it, the club's pink highlight row would swallow a pink
+        // The band lives in a GUTTER outside the row’s own background:
+        // inside it, the club’s pink highlight row would swallow a pink
         // UWCL band and the indicator would read as broken (rows 1 and 2
         // sit in the same zone and must look it). Out here it keeps its
-        // colour on every row, and because no border crosses the gutter,
+        // color on every row, and because no border crosses the gutter,
         // consecutive rows in one zone form a single unbroken ribbon.
         // gap-px leaves a paper hairline between band and row: against the
-        // club's own pink fill the blue band matches almost exactly in
+        // club’s own pink fill the blue band matches almost exactly in
         // LUMINANCE (1.02:1) and differs only in hue, so without it the
-        // edge vanishes in greyscale or for total colour blindness.
+        // edge vanishes in grayscale or for total color blindness.
         [h.Class('flex items-stretch gap-px')],
         [
           h.span([h.Class(clsx('w-1.5 shrink-0', zoneBar)), h.AriaHidden(true)], []),
@@ -261,7 +261,7 @@ const standingsRows = (
               ),
               h.span([h.Class('display flex-1 truncate text-lg sm:text-xl')], [row.team]),
               // The zone spelled out where there is room — desktop has it
-              // to spare, and a named prize beats decoding a colour.
+              // to spare, and a named prize beats decoding a color.
               h.span(
                 [
                   h.Class(
@@ -303,7 +303,7 @@ const standingsRows = (
     }),
   );
 
-// Legend — carries the zone colours below md, where the named column
+// Legend — carries the zone colors below md, where the named column
 // is hidden. Swatches are BARS of the same width as the ribbon, not
 // squares, so the mapping back to the table is immediate.
 const standingsLegend = (zones: ReadonlyArray<StandingsZone>): Html =>
@@ -323,7 +323,7 @@ const standingsLegend = (zones: ReadonlyArray<StandingsZone>): Html =>
     ),
   );
 
-// The full table in one piece — the domestic league's shape.
+// The full table in one piece — the domestic league’s shape.
 export const standingsTable = (
   rows: ReadonlyArray<StandingsRow>,
   highlightName: string,

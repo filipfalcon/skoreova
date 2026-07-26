@@ -4,23 +4,23 @@ import { defineConfig } from 'vite-plus';
 
 // The Foldkit plugin runs in tests too, WITHOUT the DevTools MCP port. The
 // port is what could not be shared (it clashed across test/browser workers, and
-// studio's relay kept the Vitest process alive after a run — every workspace
+// studio’s relay kept the Vitest process alive after a run — every workspace
 // config loads when tests boot), but the plugin also brands view-function
 // identity, in dev and in build alike. Dropping it wholesale meant tests
-// exercised the differ's positional fallback while production ran branded — the
-// one difference a view test can't see.
+// exercised the differ’s positional fallback while production ran branded — the
+// one difference a view test can’t see.
 const testing = process.env['VITEST'] === 'true';
 
 export default defineConfig({
   // IPv4 loopback, explicitly: under `alchemy dev` all three apps' inner
   // vite servers race for ports, and a dual-stack bind lets two of them
   // "own" the same port (one v4, one v6) — the workerd proxy then routes
-  // one app's traffic to another. On one family the collision is real and
+  // one app’s traffic to another. On one family the collision is real and
   // vite increments to a free port instead.
   server: { host: '127.0.0.1' },
   // Studio claims 9988, web 9989 — each app needs its own DevTools MCP port.
   plugins: [tailwindcss(), foldkit(testing ? {} : { devToolsMcpPort: 9990 })],
-  // Alchemy's deploy captures the build output through a `buildApp` post
+  // Alchemy’s deploy captures the build output through a `buildApp` post
   // hook, but Vite 8 only runs the default environment builds AFTER all
   // buildApp hooks when no real `builder.buildApp` exists — the hook then
   // fires before anything is built and the deploy dies with "Vite build
@@ -31,7 +31,7 @@ export default defineConfig({
   // alchemy deploy the Cloudflare plugin points it at the Worker module
   // (`main: 'src/worker.ts'` in alchemy.run.ts — /api/ticker + the daily
   // ticker cron). In a plain local `vite build` there is no plugin and no
-  // entry, and building the bare environment dies with rolldown's
+  // entry, and building the bare environment dies with rolldown’s
   // INVALID_OPTION.
   builder: {
     buildApp: async (builder) => {
@@ -52,11 +52,11 @@ export default defineConfig({
     // falls back to when a project config names nothing.
     name: 'platform',
     include: ['src/**/*.test.ts'],
-    // The app's own update/view/init never touch the DOM at call time, but the
+    // The app’s own update/view/init never touch the DOM at call time, but the
     // @foldkit/ui components rendered in the view do (CSS.escape when building
     // id selectors), so scene tests run under happy-dom rather than bare Node.
-    // This matches @foldkit/ui's own test setup. The motion/scroll Command
-    // effects that need a real browser aren't exercised here — Story and Scene
+    // This matches @foldkit/ui’s own test setup. The motion/scroll Command
+    // effects that need a real browser aren’t exercised here — Story and Scene
     // intercept Commands rather than run them.
     environment: 'happy-dom',
     setupFiles: ['./src/vitest-setup.ts'],
