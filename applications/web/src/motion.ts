@@ -72,6 +72,56 @@ const parseRevealDelaySeconds = (element: HTMLElement | null): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+// THE WHOLE NUMBER, not its first digit group. The parser used to be
+// `(\d+)`, which reads "1.51" as the integer 1 with the literal suffix ".51"
+// and "657,291" as 657 followed by ",291" — so the tile opened on "0.51",
+// span up past the target to "6.51" and settled correctly, and the EURO
+// attendance figure spun through "736,291", a crowd larger than the record it
+// labels. Reveals replay, so both happened on every scroll-by.
+//
+// Grouping is a real alternative rather than `[\d,]*`: without it "12, next"
+// would swallow the comma into the number and render back without it.
+const COUNT_PATTERN = /^([^\d]*)(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)([\s\S]*)$/;
+
+export interface CountShape {
+  readonly prefix: string;
+  readonly value: number;
+  readonly suffix: string;
+  // How the number was WRITTEN, so every intermediate frame can be written
+  // the same way — two decimals stay two decimals, and a grouped figure keeps
+  // its separators instead of flickering between "657291" and "657,291".
+  readonly decimals: number;
+  readonly grouped: boolean;
+}
+
+// Exported for count-up.test.ts: the defect these two carry is a WRONG NUMBER
+// mid-animation, which no round trip at rest can see — "1.51" parsed as 1 with
+// the literal suffix ".51" still reassembles into "1.51" when it settles.
+export const parseCount = (text: string): CountShape | undefined => {
+  const match = text.match(COUNT_PATTERN);
+  if (!match) return undefined;
+  const digits = match[2] ?? '0';
+  return {
+    prefix: match[1] ?? '',
+    value: Number(digits.replace(/,/g, '')),
+    suffix: match[3] ?? '',
+    decimals: (digits.split('.')[1] ?? '').length,
+    grouped: digits.includes(','),
+  };
+};
+
+// Takes only the SHAPE fields, so the live CountUp — whose own number lives
+// in `target` and whose displayed one is mid-flight — can format through it.
+export const formatCount = (
+  shape: Pick<CountShape, 'decimals' | 'grouped'>,
+  value: number,
+): string =>
+  value.toLocaleString('en-US', {
+    minimumFractionDigits: shape.decimals,
+    maximumFractionDigits: shape.decimals,
+    useGrouping: shape.grouped,
+  });
+
 interface CountUp {
   readonly element: HTMLElement;
   // Re-parsed from the element every time the animation (re)starts — the
@@ -80,6 +130,8 @@ interface CountUp {
   prefix: string;
   target: number;
   suffix: string;
+  decimals: number;
+  grouped: boolean;
   // The exact string this system last wrote, and the number it showed. When
   // the element's text differs from `lastText`, the MODEL rewrote it (league
   // filter) — the rAF loop catches that and counts from `current` to the new
@@ -135,15 +187,17 @@ const setUpReveals = (
 
   const countUps = new Map<HTMLElement, CountUp>();
   for (const element of root.querySelectorAll<HTMLElement>('[data-countup]')) {
-    const match = (element.textContent ?? '').match(/^([^\d]*)(\d+)([\s\S]*)$/);
-    if (!match) continue;
+    const shape = parseCount(element.textContent ?? '');
+    if (!shape) continue;
     countUps.set(element, {
       element,
-      prefix: match[1] ?? '',
-      target: Number(match[2] ?? '0'),
-      suffix: match[3] ?? '',
+      prefix: shape.prefix,
+      target: shape.value,
+      suffix: shape.suffix,
+      decimals: shape.decimals,
+      grouped: shape.grouped,
       lastText: element.textContent ?? '',
-      current: Number(match[2] ?? '0'),
+      current: shape.value,
       lastRecount: element.dataset['recount'],
       timeout: 0,
       frame: 0,
@@ -151,7 +205,7 @@ const setUpReveals = (
   }
 
   const renderCount = (countUp: CountUp, value: number): void => {
-    const text = `${countUp.prefix}${value}${countUp.suffix}`;
+    const text = `${countUp.prefix}${formatCount(countUp, value)}${countUp.suffix}`;
     const node = countUp.element.firstChild;
     // Mutate the EXISTING text node instead of assigning textContent — that
     // would replace the node, and Foldkit's patcher keeps a reference to the
@@ -181,7 +235,14 @@ const setUpReveals = (
     // a 0↔1 land counter still pops to ~6, while "1015 minutes" flies
     // ~120 over before settling. (Scaling by the DELTA was tried twice and
     // read as stutter/clumsy — the magnitude is the right knob.)
-    const overshootStep = Math.max(5, Math.round(Math.max(from, target) * 0.12));
+    // Everything below counts in the number's OWN least significant digit, so
+    // a per-90 rate written to two places moves in hundredths and the bold
+    // floor is 0.05 rather than the 5 that sent "1.51" spinning to "6.51".
+    // For the integers this started life on, the quantum is 1 and the maths
+    // is unchanged.
+    const quantum = 10 ** -countUp.decimals;
+    const quantize = (value: number): number => Math.round(value / quantum) * quantum;
+    const overshootStep = Math.max(5 * quantum, quantize(Math.max(from, target) * 0.12));
     const peak = Math.max(from, target) + overshootStep;
     // Split the duration roughly by distance so both legs move at a similar
     // clip: a long climb gets most of the time, a short wind-up pops fast
@@ -200,7 +261,7 @@ const setUpReveals = (
         const eased = 1 - (1 - (progress - split) / (1 - split)) ** 3;
         value = peak + (target - peak) * eased;
       }
-      renderCount(countUp, Math.max(0, Math.round(value)));
+      renderCount(countUp, Math.max(0, quantize(value)));
       if (progress < 1) countUp.frame = window.requestAnimationFrame(step);
     };
     countUp.frame = window.requestAnimationFrame(step);
@@ -211,11 +272,13 @@ const setUpReveals = (
     window.cancelAnimationFrame(countUp.frame);
     // The element shows its CURRENT resting value here (the view may have
     // changed it since mount) — re-parse so the animation lands on it.
-    const match = (countUp.element.textContent ?? '').match(/^([^\d]*)(\d+)([\s\S]*)$/);
-    if (match) {
-      countUp.prefix = match[1] ?? '';
-      countUp.target = Number(match[2] ?? '0');
-      countUp.suffix = match[3] ?? '';
+    const shape = parseCount(countUp.element.textContent ?? '');
+    if (shape) {
+      countUp.prefix = shape.prefix;
+      countUp.target = shape.value;
+      countUp.suffix = shape.suffix;
+      countUp.decimals = shape.decimals;
+      countUp.grouped = shape.grouped;
     }
     renderCount(countUp, 0);
     // No buffer past the element's own reveal delay — a revealed number
@@ -231,11 +294,13 @@ const setUpReveals = (
     // Re-parse before settling: the model may have patched a new value in
     // since our fields were last synced (league-filter click racing the
     // reveal observer) — settling on the stale target would overwrite it.
-    const match = (countUp.element.textContent ?? '').match(/^([^\d]*)(\d+)([\s\S]*)$/);
-    if (match && countUp.lastText !== (countUp.element.textContent ?? '')) {
-      countUp.prefix = match[1] ?? '';
-      countUp.target = Number(match[2] ?? '0');
-      countUp.suffix = match[3] ?? '';
+    const shape = parseCount(countUp.element.textContent ?? '');
+    if (shape && countUp.lastText !== (countUp.element.textContent ?? '')) {
+      countUp.prefix = shape.prefix;
+      countUp.target = shape.value;
+      countUp.suffix = shape.suffix;
+      countUp.decimals = shape.decimals;
+      countUp.grouped = shape.grouped;
     }
     renderCount(countUp, countUp.target);
   };
