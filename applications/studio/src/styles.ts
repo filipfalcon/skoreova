@@ -150,7 +150,9 @@ export const drawerSaveStyle = `${drawerButtonShape} cursor-pointer bg-neutral-9
 
 // Blocked, not disabled: the button keeps its place in the tab order so the
 // note explaining why can be reached (see the save gate in page/drawer.ts).
-export const drawerSaveInertStyle = `${drawerButtonShape} cursor-not-allowed bg-neutral-400`;
+// neutral-600, not the 400 it started on — white on 400 is about 2.6:1, and a
+// blocked control still has to be readable to be understood as blocked.
+export const drawerSaveInertStyle = `${drawerButtonShape} cursor-not-allowed bg-neutral-600`;
 
 export const drawerTabStyle =
   'cursor-pointer border-b-2 border-transparent px-3 pb-3 text-sm text-neutral-500 transition hover:text-neutral-900';

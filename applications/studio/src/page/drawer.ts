@@ -82,6 +82,18 @@ export const view = (model: Model): Html => {
   // picker over the referenced section's own rows, and the draft carries the
   // chosen id — exactly what a fetched row holds in that cell (see
   // ClickedSaveRecord, which lifts it into parentId).
+  // A picker with nothing to offer, in the same grammar as the blocked Save:
+  // AriaDisabled, not the native attribute. A natively disabled control leaves
+  // the tab order and takes its own explanation with it — and explaining
+  // itself is the entire job of this one, which exists to say "still loading",
+  // "couldn't load" or "none exist yet". There is nothing to pick either way:
+  // it carries a single option and no OnChange.
+  const inertSelect = (label: string): Html =>
+    h.select(
+      [h.AriaDisabled(true), h.Class(drawerInputInertStyle)],
+      [h.option([h.Value('')], [label])],
+    );
+
   const referencePicker = (section: Section, index: number): Html => {
     const chosen = draft[index] ?? '';
     const singular = sectionSingularLabels[section].toLowerCase();
@@ -100,16 +112,10 @@ export const view = (model: Model): Html => {
       return h.div(
         [h.Class('flex flex-col gap-2')],
         [
-          h.select(
-            [h.Disabled(true), h.Class(drawerInputInertStyle)],
-            [
-              option(
-                '',
-                isFailed
-                  ? `Couldn't load ${sectionLabels[section].toLowerCase()}`
-                  : `Loading ${sectionLabels[section].toLowerCase()}…`,
-              ),
-            ],
+          inertSelect(
+            isFailed
+              ? `Couldn't load ${sectionLabels[section].toLowerCase()}`
+              : `Loading ${sectionLabels[section].toLowerCase()}…`,
           ),
           isFailed
             ? h.div(
