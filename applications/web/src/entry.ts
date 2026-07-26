@@ -5,6 +5,7 @@ import * as Sentry from '@sentry/browser';
 import { Effect } from 'effect';
 import { Runtime } from 'foldkit';
 
+import { isMeasurementOff } from './analytics';
 import {
   ChangedUrl,
   ClickedLink,
@@ -17,27 +18,20 @@ import {
   view,
 } from './main';
 
-// Set by the inline consent-mode script in index.html: true everywhere
-// except the two production hostnames.
-declare global {
-  interface Window {
-    skoreovaAnalyticsOff: boolean;
-  }
-}
-
-// Error monitoring ONLY — no tracing, no replay, no PII beyond Sentry's
-// defaults — so the cookie banner's "analytics only, we count visits"
+// Error monitoring ONLY — no tracing, no replay, no PII beyond Sentry’s
+// defaults — so the cookie banner’s "analytics only, we count visits"
 // promise stays true; crash reports are legitimate-interest telemetry,
-// not analytics. Same kill switch as gtag: localhost, LAN phone testing,
-// and preview deploys stay silent.
+// not analytics. Same kill switch as gtag, from the same source of truth
+// (analytics.ts) rather than a global set by a script in index.html:
+// localhost, LAN phone testing, and preview deploys stay silent.
 Sentry.init({
   dsn: 'https://e4a8e88469481b1b99170df7523983b9@o4511717331107840.ingest.de.sentry.io/4511717341790288',
-  enabled: !window.skoreovaAnalyticsOff,
+  enabled: !isMeasurementOff(),
 });
 
-// DEV ONLY: every edit is a full page reload (the Foldkit plugin can't
+// DEV ONLY: every edit is a full page reload (the Foldkit plugin can’t
 // hot-swap an Elm-style runtime — its handleHotUpdate always sends
-// 'full-reload'), and the browser's NATIVE scroll restoration jumps
+// 'full-reload'), and the browser’s NATIVE scroll restoration jumps
 // before the fonts/photos have settled, clamping into a disorienting
 // half-scrolled frame. So restore the scroll ourselves, but only once
 // the layout has its final height: fonts loaded + window load. Every
@@ -72,9 +66,9 @@ if (import.meta.env.DEV) {
     // If the user starts scrolling before the restore fires, they have
     // taken over — yanking the viewport from under them would be worse
     // than losing the position.
-    let cancelled = false;
+    let canceled = false;
     const cancel = (): void => {
-      cancelled = true;
+      canceled = true;
     };
     window.addEventListener('wheel', cancel, { once: true, passive: true });
     window.addEventListener('touchstart', cancel, { once: true, passive: true });
@@ -88,7 +82,7 @@ if (import.meta.env.DEV) {
     // restore would never fire in a backgrounded tab.
     const deadline = performance.now() + 5000;
     const attempt = (): void => {
-      if (cancelled) return;
+      if (canceled) return;
       const max = document.documentElement.scrollHeight - window.innerHeight;
       if ((max >= saved && document.fonts.status === 'loaded') || performance.now() > deadline) {
         // 'instant' — the page has CSS scroll-behavior: smooth, which
