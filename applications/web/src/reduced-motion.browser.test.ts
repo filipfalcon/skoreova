@@ -2,7 +2,7 @@ import { expect, test } from 'vite-plus/test';
 
 import './styles.css';
 
-// WHAT THIS GUARDS, and what it can't. Four review rounds in a row found motion
+// WHAT THIS GUARDS, and what it can’t. Four review rounds in a row found motion
 // still playing for someone who asked for none, every time because a reduced
 // motion rule named a selector and some state rule (`.is-in`, `.is-open`)
 // out-ranked it. The fix was to stop enumerating: one universal `!important`
@@ -41,7 +41,7 @@ test('reduced motion is enforced by one universal rule, not a list of selectors'
 
   // Every one of these has to be `!important`, or a state rule out-ranks it —
   // which is exactly how the menu overlay kept sliding open and the platform
-  // CTA's beckon kept looping after the block claimed to have stopped them.
+  // CTA’s beckon kept looping after the block claimed to have stopped them.
   // The DELAYS matter as much as the durations: a 0.4s visibility delay is
   // still a wait imposed on someone who asked for none.
   for (const property of [
@@ -58,11 +58,40 @@ test('reduced motion is enforced by one universal rule, not a list of selectors'
 });
 
 // The blanket overrides durations, not END STATES — so a `fill: both` animation
-// whose last keyframe isn't its resting position parks there instantly. That is
+// whose last keyframe isn’t its resting position parks there instantly. That is
 // a real regression this file exists to catch: the hero photo held a 1.5% crop.
 test('an animation whose final frame is not its resting state opts out by name', () => {
   const heroPhoto = reduceRules().find((rule) => rule.selectorText.includes('.hero-photo'));
 
   expect(heroPhoto, '.hero-photo no longer opts out of its animation').toBeDefined();
   expect(heroPhoto?.style.animationName).toBe('none');
+});
+
+// A DIFFERENT kind of coupling: the consent banner's close path READS this rule
+// back at runtime. index.html does `getComputedStyle(banner).animationName ===
+// 'none'` and, on a match, hides the element straight away instead of waiting
+// for `animationend`.
+//
+// Be clear about what this does and does not catch. It is NOT protecting
+// against a hang — the blanket above sets 0.01ms rather than `none` precisely so
+// animations still run and still fire their events, so losing this rule would
+// leave the banner closing correctly via the listener. What it protects is a
+// dependency that is invisible from both ends: nothing in index.html points at
+// styles.css, and nothing in styles.css hints that a script parses this value.
+// Delete the rule and the fast branch silently becomes dead code; rename the
+// banner's id and the two drift apart with every test still green.
+//
+// The rule moved 180 lines away from its markup when the banner styles left
+// index.html, which is what made an invisible dependency worth pinning.
+test('the consent banner opts out by name, keeping its close path reachable', () => {
+  const banner = reduceRules().find((rule) => rule.selectorText.includes('#cookie-consent'));
+
+  expect(banner, 'the consent banner no longer opts out of its animations').toBeDefined();
+  expect(banner?.style.animationName).toBe('none');
+
+  // The CLOSING state is the one the script actually measures — it reads the
+  // computed value AFTER `.is-closing` lands. A rule covering only the resting
+  // selector would report `none` at rest and the animation name at the moment
+  // that matters.
+  expect(banner?.selectorText, 'the .is-closing state is not covered').toContain('.is-closing');
 });
