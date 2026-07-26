@@ -228,6 +228,10 @@ const showList = (model: Model, route: AppRoute): UpdateReturn => {
       route: () => route,
       isMenuOpen: () => false,
       drawer: () => DrawerClosed(),
+      // Whatever went wrong reaching a record belongs to that attempt, not to
+      // the list you land on. Callers that DO want to explain themselves set
+      // linkError after this (see the deleted-record guard in applyRoute).
+      linkError: () => '',
     }),
     dialogCommands,
   ];
