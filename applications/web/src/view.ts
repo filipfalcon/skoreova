@@ -62,7 +62,7 @@ const landingSections = (model: Model, rootKey: string): ReadonlyArray<Html> => 
 export const view = (model: Model): Document => {
   const rootKey = `motion-${model.prefersReducedMotion}`;
   return {
-    title: 'Skóreová — Czech Women’s Football',
+    title: 'Skóreová — Czech Women’s Football Coverage',
     // The root is keyed on the reduced-motion flag: flipping the OS setting
     // tears both motion mounts down (symmetric release) and re-runs their
     // setup with the fresh value — no stale mount-time snapshot. The reveal
