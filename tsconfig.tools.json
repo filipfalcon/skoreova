@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": ["alchemy.run.ts"],
+  "references": [],
+  "compilerOptions": {
+    "outDir": "./tsbuild",
+    "lib": ["esnext"],
+    "types": ["bun"]
+  }
+}
