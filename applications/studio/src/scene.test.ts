@@ -1,6 +1,6 @@
 import { Dialog } from '@foldkit/ui';
 import { Scene } from 'foldkit';
-import { describe, test } from 'vitest';
+import { describe, test } from 'vite-plus/test';
 
 import {
   dashboardModel,

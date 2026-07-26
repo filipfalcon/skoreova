@@ -1,5 +1,5 @@
 import type { Html } from 'foldkit/html';
-import { expect, test } from 'vitest';
+import { expect, test } from 'vite-plus/test';
 
 import * as Hero from './page/hero';
 

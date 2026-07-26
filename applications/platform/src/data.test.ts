@@ -1,5 +1,5 @@
 import { Number } from 'effect';
-import { expect, test } from 'vitest';
+import { expect, test } from 'vite-plus/test';
 
 import {
   POINTS_DRAW,

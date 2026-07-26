@@ -2,7 +2,7 @@ import { Option } from 'effect';
 import { Story } from 'foldkit';
 import { External, Internal } from 'foldkit/navigation';
 import { fromString } from 'foldkit/url';
-import { expect, test } from 'vitest';
+import { expect, test } from 'vite-plus/test';
 
 import { ChangedReveals, DetectedHeroPastHeader } from './motion';
 import { landingModel, menuOpenModel, secondLeagueMapModel } from './main.fixtures';
