@@ -31,6 +31,10 @@ export type Column = Readonly<{
   // away, so the drawer shows it read-only on an existing record — but a NEW
   // record has to be able to name its parent, and there it becomes a picker
   // over this section's rows (see `field` in page/drawer.ts).
+  //
+  // AT MOST ONE per section: `Entry` has a single `parentId`, so two derived
+  // columns would both resolve against it. data.test.ts asserts this rather
+  // than trusting the comment.
   derived?: Section;
 }>;
 
