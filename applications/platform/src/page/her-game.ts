@@ -178,14 +178,22 @@ const chartSummary = (series: MetricSeries): Html =>
     ],
   );
 
-const chartWithSummary = (key: string, series: MetricSeries): Html =>
-  h.div([h.Key(key)], [studioChart(series), chartSummary(series)]);
+// The chart is KEYED per metric — each draws a different series and must be
+// replaced rather than patched. The summary above deliberately is NOT: a live
+// region announces a text CHANGE inside an element the reader is already on,
+// and this one used to sit inside the keyed wrapper, so every metric switch
+// tore the region down and inserted a new one. Assistive tech does not
+// reliably announce a live region that did not exist a moment ago — which
+// defeated the entire point of adding it. It lives beside the chart now, one
+// element for the panel's whole life, and only its sentence changes.
+const keyedChart = (key: string, series: MetricSeries): Html =>
+  h.div([h.Key(key)], [studioChart(series)]);
 
-const goalsChartView = (): Html => chartWithSummary('studio-chart-goals', metricSeries.Goals);
+const goalsChartView = (): Html => keyedChart('studio-chart-goals', metricSeries.Goals);
 const attendanceChartView = (): Html =>
-  chartWithSummary('studio-chart-attendance', metricSeries.Attendance);
+  keyedChart('studio-chart-attendance', metricSeries.Attendance);
 const conversionChartView = (): Html =>
-  chartWithSummary('studio-chart-conversion', metricSeries.Conversion);
+  keyedChart('studio-chart-conversion', metricSeries.Conversion);
 
 const metricChartView = (metric: Metric): Html =>
   M.value(metric).pipe(
@@ -232,6 +240,7 @@ const chartStudioPanel = (model: Model): Html =>
         ],
       ),
       metricRadioGroup(model),
+      chartSummary(metricSeries[model.metric]),
       metricChartView(model.metric),
     ],
   );
