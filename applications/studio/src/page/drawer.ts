@@ -437,28 +437,42 @@ export const view = (model: Model): Html => {
   const historyTab = (): Html => {
     const changes = model.editLog.filter((change) => change.recordId === editingId);
 
-    const changeCard = (change: LogEntry): Html =>
-      h.li(
-        [h.Class('rounded-lg border border-neutral-200 px-3 py-2 text-sm')],
-        [
-          h.div(
-            [h.Class('flex items-center justify-between')],
-            [
-              h.span([h.Class('font-medium text-neutral-900')], [change.field]),
-              h.span([h.Class('text-xs text-neutral-400')], [change.at]),
-            ],
-          ),
-          h.div(
-            [h.Class('mt-1 text-neutral-500')],
-            [`${change.from === '' ? '—' : change.from} → ${change.to === '' ? '—' : change.to}`],
-          ),
-        ],
+    // One card per event, matched exhaustively — a created or deleted record
+    // has no field, from or to, which is exactly why the log is a union now.
+    const eventCard = (change: LogEntry): Html => {
+      const shell = (title: string, detail: string): Html =>
+        h.li(
+          [h.Class('rounded-lg border border-neutral-200 px-3 py-2 text-sm')],
+          [
+            h.div(
+              [h.Class('flex items-center justify-between')],
+              [
+                h.span([h.Class('font-medium text-neutral-900')], [title]),
+                h.span([h.Class('text-xs text-neutral-400')], [change.at]),
+              ],
+            ),
+            h.div([h.Class('mt-1 text-neutral-500')], [detail]),
+          ],
+        );
+
+      return M.value(change).pipe(
+        M.withReturnType<Html>(),
+        M.tagsExhaustive({
+          FieldChanged: ({ field, from, to }) =>
+            shell(field, `${from === '' ? '—' : from} → ${to === '' ? '—' : to}`),
+          RecordCreated: () => shell('Created', 'Added in the studio.'),
+          // Reachable only if a deleted record is ever openable again — the
+          // event is logged regardless, so the history is honest rather than
+          // shaped by what today's UI happens to show.
+          RecordDeleted: () => shell('Deleted', 'Removed from the list.'),
+        }),
       );
+    };
 
     return h.div(
       [h.Class('flex flex-1 flex-col overflow-y-auto px-6 py-6')],
       Array.isReadonlyArrayNonEmpty(changes)
-        ? [h.ul([h.Class('flex flex-col gap-2')], changes.map(changeCard))]
+        ? [h.ul([h.Class('flex flex-col gap-2')], changes.map(eventCard))]
         : [h.p([h.Class('text-sm text-neutral-500')], ['No changes yet.'])],
     );
   };

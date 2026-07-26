@@ -54,6 +54,8 @@ import {
   Navigate,
   POINTS_CHART_HOST_ID,
   SavedRecordAt,
+  DeletedRecordAt,
+  StampDelete,
   SectionRoute,
   SignedIn,
   StampSave,
@@ -415,6 +417,7 @@ test('a new edition names its competition through the picker, and is filed under
       expect(created?.parentId).toBe(sampleCompetition.id);
       expect(created?.values[1]).toBe(sampleCompetition.id);
     }),
+    Story.Command.resolve(StampSave, SavedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
     Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
     Story.Command.resolve(Navigate, CompletedNavigate()),
   );
@@ -510,6 +513,7 @@ test('a deleted record stays deleted when the browser replays its route', () => 
     Story.message(ClickedDeleteRecord()),
     Story.message(ClickedConfirmDelete()),
     Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
+    Story.Command.resolve(StampDelete, DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
     Story.Command.resolve(Navigate, CompletedNavigate()),
     Story.model((model) => {
       const rows = Option.getOrElse(AsyncData.getData(model.clubs), () => []);
@@ -549,6 +553,7 @@ test('a refetch cannot resurrect a deleted record or drop a locally created one'
     Story.message(ClickedDeleteRecord()),
     Story.message(ClickedConfirmDelete()),
     Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
+    Story.Command.resolve(StampDelete, DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
     Story.Command.resolve(Navigate, CompletedNavigate()),
     // Refresh. The wire replies with the record alive, because the delete is
     // client-side and never reached it — and with no knowledge of anything the
@@ -585,6 +590,7 @@ test('a delete on one players page survives paging away and back', () => {
       }),
     }),
     Story.message(ClickedConfirmDelete()),
+    Story.Command.resolve(StampDelete, DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
     Story.Command.resolve(Navigate, CompletedNavigate()),
     // Page 2 arrives without the deleted player in it at all.
     Story.message(ClickedPlayersPage({ page: 2 })),
@@ -610,6 +616,7 @@ test('the ledger outranks a list that no longer carries the deleted record', () 
     Story.message(ClickedDeleteRecord()),
     Story.message(ClickedConfirmDelete()),
     Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
+    Story.Command.resolve(StampDelete, DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
     Story.Command.resolve(Navigate, CompletedNavigate()),
     // A refetch whose response has dropped the record entirely — so the row
     // that carried `isDeleted` is gone and only the ledger remembers.
@@ -661,7 +668,14 @@ test('the column rules decide what saves, and the same rules refuse in update', 
       const editions = Option.getOrElse(AsyncData.getData(model.editions), () => []);
       expect(editions.find((row) => row.id === 'local-1')?.parentId).toBe(sampleCompetition.id);
     }),
+    Story.Command.resolve(StampSave, SavedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
     Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
     Story.Command.resolve(Navigate, CompletedNavigate()),
+    Story.model((model) => {
+      // The create is in the record's History, as its own event rather than a
+      // field change with empty strings in it.
+      expect(model.editLog[0]?._tag).toBe('RecordCreated');
+      expect(model.editLog[0]?.recordId).toBe('local-1');
+    }),
   );
 });
