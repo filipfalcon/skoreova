@@ -30,6 +30,7 @@ import {
   ExactFilter,
   ExcludedFilter,
   FilterListbox,
+  LOCAL_ID_PREFIX,
   LogEntry,
   Model,
   ParticipationsData,
@@ -110,6 +111,7 @@ const initialModel = (): Model => ({
   playersTotal: 0,
   serverHealth: 'Unknown',
   clientPage: 1,
+  deletedRecordIds: [],
   linkError: '',
   filterListboxes: initialFilterListboxes(),
   dateFilters: {},
@@ -145,6 +147,50 @@ const evolveSection = (
       return evo(model, { associations: f });
   }
 };
+
+// LOCAL EDITS THE WIRE DOESN'T KNOW ABOUT. Deletes are soft and creates are
+// client-side — neither ever reaches the backend, because there is no write
+// endpoint yet. So any response that REPLACES a section's rows would undo both:
+// a Refresh, a Retry, or a fetch already in flight when the editor pressed
+// delete. Fixing only the Back-button path (see applyRoute) left those open.
+//
+// The deleted ids come from the MODEL, not from the rows on hand. Deriving them
+// from the loaded rows works for the five sections that load whole and fails on
+// the one that doesn't: Players pages server-side, so a merge against page 2
+// never sees the id deleted on page 1 and quietly drops the marker.
+//
+// Locally created rows ride along on every page of a paged section, which is
+// visibly odd on Players — but losing an unsaved record outright is worse, and
+// both go away the moment a real save endpoint exists. (Signing out is NOT one
+// of these paths: it swaps in a fresh model, ledger included, on purpose.)
+const deletedKey = (section: Section, id: string): string => `${section}:${id}`;
+
+const mergeLocalEdits = (
+  current: SectionData,
+  incoming: ReadonlyArray<Entry>,
+  section: Section,
+  deletedRecordIds: ReadonlyArray<string>,
+): ReadonlyArray<Entry> => {
+  const deleted = new Set(deletedRecordIds);
+  const known = Option.getOrElse(AsyncData.getData(current), () => []);
+  const localOnly = known.filter((row) => row.id.startsWith(LOCAL_ID_PREFIX));
+  return [
+    ...incoming.map((row) =>
+      deleted.has(deletedKey(section, row.id)) ? evo(row, { isDeleted: () => true }) : row,
+    ),
+    ...localOnly,
+  ];
+};
+
+// IS THIS RECORD DELETED? Ask the LEDGER, not the rows. The row's `isDeleted`
+// flag is a render signal and a fallback: the row can be absent entirely — a
+// list response that no longer carries it — while the ledger still knows. Both
+// the route guard and the by-id response used `findRecord` alone, so once a
+// refetch dropped the row they let the record back in live, and the NEXT
+// refetch flipped it deleted again.
+const isLedgerDeleted = (model: Model, section: Section, id: string): boolean =>
+  model.deletedRecordIds.includes(deletedKey(section, id)) ||
+  findRecord(model, section, id)?.isDeleted === true;
 
 // Upserts a record into a section's rows, forcing the section to Success —
 // the row has to be there whatever state the list is in. Both callers need
@@ -203,7 +249,19 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
       SectionRoute: () => showList(model, route),
       RecordRoute: ({ section, id }) => {
         const found = findRecord(model, section, id);
-        const entry = found && !found.isDeleted ? found : undefined;
+        // A row that IS loaded and soft-deleted is not the same as one that
+        // isn't loaded, and collapsing the two RESURRECTED it: the id fetch
+        // below still succeeds (the delete is mock-only and never reached the
+        // backend), and SucceededFetchTeamById upserts what comes back as
+        // live. Delete a club, land on the section list, press Back — the
+        // record returned and its drawer reopened on it. This is one of three
+        // doors: SucceededFetchTeamById guards the in-flight response, and
+        // mergeLocalEdits guards every full section refetch.
+        if (isLedgerDeleted(model, section, id)) {
+          const [listed, listCommands] = showList(model, route);
+          return [evo(listed, { linkError: () => 'That record was deleted.' }), listCommands];
+        }
+        const entry = found;
         if (entry) {
           const [withDialog, dialogCommands] = openDialog(model);
           return [
@@ -590,7 +648,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             section,
             values: drawer.draft,
             isDeleted: false,
-            id: `local-${model.nextLocalId}`,
+            id: `${LOCAL_ID_PREFIX}${model.nextLocalId}`,
             parentId,
           };
           // Forced in rather than mapped over the loaded rows: AsyncData.map
@@ -730,6 +788,8 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           evo(withDialog, {
             route: () => SectionRoute({ section }),
             drawer: () => DrawerClosed(),
+            // The ledger, not the row flag, is what survives a refetch.
+            deletedRecordIds: (ids) => [...ids, deletedKey(section, id)],
           }),
           [...dialogCommands, navigate(sectionRouter({ section }))],
         ];
@@ -760,7 +820,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       // Success, failure → Failure or, if a prior page is still shown, Stale.
       SucceededFetchPlayers: ({ entries, total }) => [
         evo(model, {
-          players: () => SectionData.Success({ data: entries }),
+          players: (data) =>
+            SectionData.Success({
+              data: mergeLocalEdits(data, entries, 'players', model.deletedRecordIds),
+            }),
           playersTotal: () => total,
         }),
         [],
@@ -788,7 +851,12 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       },
       ClickedClientPage: ({ page }) => [evo(model, { clientPage: () => page }), []],
       SucceededFetchClubs: ({ entries }) => [
-        evo(model, { clubs: () => SectionData.Success({ data: entries }) }),
+        evo(model, {
+          clubs: (data) =>
+            SectionData.Success({
+              data: mergeLocalEdits(data, entries, 'clubs', model.deletedRecordIds),
+            }),
+        }),
         [],
       ],
       FailedFetchClubs: ({ reason }) => [
@@ -797,7 +865,12 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ],
       ClickedRetryClubs: () => retrySection(model, 'clubs', [fetchClubs(), fetchHealth()]),
       SucceededFetchNationals: ({ entries }) => [
-        evo(model, { nationals: () => SectionData.Success({ data: entries }) }),
+        evo(model, {
+          nationals: (data) =>
+            SectionData.Success({
+              data: mergeLocalEdits(data, entries, 'nationals', model.deletedRecordIds),
+            }),
+        }),
         [],
       ],
       FailedFetchNationals: ({ reason }) => [
@@ -807,7 +880,12 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ClickedRetryNationals: () =>
         retrySection(model, 'nationals', [fetchNationals(), fetchHealth()]),
       SucceededFetchCompetitions: ({ entries }) => [
-        evo(model, { competitions: () => SectionData.Success({ data: entries }) }),
+        evo(model, {
+          competitions: (data) =>
+            SectionData.Success({
+              data: mergeLocalEdits(data, entries, 'competitions', model.deletedRecordIds),
+            }),
+        }),
         [],
       ],
       FailedFetchCompetitions: ({ reason }) => [
@@ -819,7 +897,12 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ClickedRetryCompetitions: () =>
         retrySection(model, 'competitions', [fetchCompetitions(), fetchHealth()]),
       SucceededFetchEditions: ({ entries }) => [
-        evo(model, { editions: () => SectionData.Success({ data: entries }) }),
+        evo(model, {
+          editions: (data) =>
+            SectionData.Success({
+              data: mergeLocalEdits(data, entries, 'editions', model.deletedRecordIds),
+            }),
+        }),
         [],
       ],
       FailedFetchEditions: ({ reason }) => [
@@ -828,7 +911,12 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ],
       ClickedRetryEditions: () => retrySection(model, 'editions', [fetchEditions(), fetchHealth()]),
       SucceededFetchAssociations: ({ entries }) => [
-        evo(model, { associations: () => SectionData.Success({ data: entries }) }),
+        evo(model, {
+          associations: (data) =>
+            SectionData.Success({
+              data: mergeLocalEdits(data, entries, 'associations', model.deletedRecordIds),
+            }),
+        }),
         [],
       ],
       FailedFetchAssociations: ({ reason }) => [
@@ -878,6 +966,14 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       // The record wasn't in the currently loaded list, so it was fetched
       // directly by id — insert it into its section and open its drawer.
       SucceededFetchTeamById: ({ entry }) => {
+        // The response is authoritative about the record's FIELDS and knows
+        // nothing about the editor deleting it — and this fetch can still be in
+        // flight when they do. Landing it as live would resurrect the record and
+        // reopen its drawer, which is the same defect the route guard fixes from
+        // the other side.
+        if (isLedgerDeleted(model, entry.section, entry.id)) {
+          return [evo(model, { linkError: () => 'That record was deleted.' }), []];
+        }
         const [withDialog, dialogCommands] = openDialog(
           evolveSection(model, entry.section, (data) => upsertRecord(data, entry)),
         );

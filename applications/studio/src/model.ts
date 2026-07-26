@@ -41,6 +41,11 @@ export const Entry = S.Struct({
 });
 export type Entry = typeof Entry.Type;
 
+// Records created in the studio carry this prefix until a real save endpoint
+// exists to hand out server ids — it is how a fetch response tells "this row
+// came from the wire" from "this row only exists here" (see mergeLocalEdits).
+export const LOCAL_ID_PREFIX = 'local-';
+
 export const DrawerTab = S.Literals(['Overview', 'Persistency', 'History']);
 export type DrawerTab = typeof DrawerTab.Type;
 
@@ -180,6 +185,13 @@ export const Model = S.Struct({
   // other than Players (which pages server-side instead). Resets to 1 on
   // section switch, search, or filter change.
   clientPage: S.Number,
+  // THE DELETE LEDGER: `section:id` for every record soft-deleted this
+  // session. The row's own `isDeleted` flag is what the list renders from, but
+  // it cannot be the source of truth — a fetch response replaces the rows, and
+  // on Players it replaces them with a DIFFERENT PAGE, where the deleted id
+  // isn't present to be preserved. Deleting on page 1 and paging to page 2 lost
+  // the marker outright. This ledger outlives any page (see mergeLocalEdits).
+  deletedRecordIds: S.Array(S.String),
   // Set when a shared record link couldn't be resolved (e.g. a deleted team,
   // or a player not on the currently loaded page — see FetchTeamById).
   linkError: S.String,

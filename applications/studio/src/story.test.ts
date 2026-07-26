@@ -1,6 +1,7 @@
 import { Option } from 'effect';
 import { Dialog } from '@foldkit/ui';
 import { AsyncData, Story } from 'foldkit';
+import { fromString } from 'foldkit/url';
 import { expect, test } from 'vitest';
 
 import {
@@ -15,8 +16,12 @@ import {
 } from './main.fixtures';
 import {
   CHART_HOST_ID,
+  ChangedUrl,
   ClickedAddNew,
+  ClickedConfirmDelete,
+  ClickedDeleteRecord,
   ClickedPlayersPage,
+  ClickedRetryClubs,
   ClickedRetryPlayers,
   ClickedSaveRecord,
   SubmittedSignIn,
@@ -65,6 +70,9 @@ import {
   UpdatedDraftField,
   update,
 } from './main';
+
+// Builds a parsed Url from a path, the way the runtime hands one to ChangedUrl.
+const url = (path: string) => Option.getOrThrow(fromString(`https://studio.example${path}`));
 
 // A model with every section mid-flight — the state each Failed* handler acts
 // on. (`signedOutModel` starts every section Idle.)
@@ -487,5 +495,115 @@ test('saving an edited record defers to the clock, then commits with that timest
     Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
     Story.Command.expectHas(Navigate),
     Story.Command.resolve(Navigate, CompletedNavigate()),
+  );
+});
+
+test('a deleted record stays deleted when the browser replays its route', () => {
+  Story.story(
+    update,
+    // A club open in its drawer, deep-linkable by id.
+    Story.with(clubRecordModel),
+    Story.message(ClickedDeleteRecord()),
+    Story.message(ClickedConfirmDelete()),
+    Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
+    Story.Command.resolve(Navigate, CompletedNavigate()),
+    Story.model((model) => {
+      const rows = Option.getOrElse(AsyncData.getData(model.clubs), () => []);
+      expect(rows.find((row) => row.id === sampleClub.id)?.isDeleted).toBe(true);
+    }),
+    // Back. The route is replayed — and must NOT fetch the record by id: that
+    // request still succeeds (the delete never left the client) and would
+    // upsert the row back as live.
+    Story.message(ChangedUrl({ url: url(`/clubs/${sampleClub.id}`) })),
+    Story.model((model) => {
+      const rows = Option.getOrElse(AsyncData.getData(model.clubs), () => []);
+      expect(rows.find((row) => row.id === sampleClub.id)?.isDeleted).toBe(true);
+      expect(model.drawer._tag).toBe('Closed');
+      expect(model.linkError).toBe('That record was deleted.');
+    }),
+    Story.Command.expectNone(),
+  );
+});
+
+test('a refetch cannot resurrect a deleted record or drop a locally created one', () => {
+  Story.story(
+    update,
+    Story.with(clubRecordModel),
+    Story.message(ClickedDeleteRecord()),
+    Story.message(ClickedConfirmDelete()),
+    Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
+    Story.Command.resolve(Navigate, CompletedNavigate()),
+    // Refresh. The wire replies with the record alive, because the delete is
+    // client-side and never reached it — and with no knowledge of anything the
+    // editor created for the same reason.
+    Story.message(ClickedRetryClubs()),
+    Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [sampleClub] })),
+    Story.Command.resolve(FetchHealth, SucceededFetchHealth()),
+    Story.model((model) => {
+      const rows = Option.getOrElse(AsyncData.getData(model.clubs), () => []);
+      expect(rows.find((row) => row.id === sampleClub.id)?.isDeleted).toBe(true);
+    }),
+  );
+});
+
+test('a delete on one players page survives paging away and back', () => {
+  Story.story(
+    update,
+    // Players is the one server-paged section: each fetch REPLACES the rows
+    // with a different page, so a merge that reads deleted ids off the loaded
+    // rows can't see page 1's delete while page 2 is on screen.
+    Story.with({
+      ...playersListModel,
+      playersTotal: 42,
+      drawer: DrawerEditing({
+        section: 'players',
+        id: samplePlayer.id,
+        tab: 'Overview',
+        draft: [...samplePlayer.values],
+        isConfirmingDelete: true,
+      }),
+    }),
+    Story.message(ClickedConfirmDelete()),
+    Story.Command.resolve(Navigate, CompletedNavigate()),
+    // Page 2 arrives without the deleted player in it at all.
+    Story.message(ClickedPlayersPage({ page: 2 })),
+    Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 42 })),
+    // …and page 1 comes back with the record alive, because the wire never
+    // heard about the delete.
+    Story.message(ClickedPlayersPage({ page: 1 })),
+    Story.Command.resolve(
+      FetchPlayers,
+      SucceededFetchPlayers({ entries: [samplePlayer], total: 42 }),
+    ),
+    Story.model((model) => {
+      const rows = Option.getOrElse(AsyncData.getData(model.players), () => []);
+      expect(rows.find((row) => row.id === samplePlayer.id)?.isDeleted).toBe(true);
+    }),
+  );
+});
+
+test('the ledger outranks a list that no longer carries the deleted record', () => {
+  Story.story(
+    update,
+    Story.with(clubRecordModel),
+    Story.message(ClickedDeleteRecord()),
+    Story.message(ClickedConfirmDelete()),
+    Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
+    Story.Command.resolve(Navigate, CompletedNavigate()),
+    // A refetch whose response has dropped the record entirely — so the row
+    // that carried `isDeleted` is gone and only the ledger remembers.
+    Story.message(ClickedRetryClubs()),
+    Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [] })),
+    Story.Command.resolve(FetchHealth, SucceededFetchHealth()),
+    Story.model((model) => {
+      expect(Option.getOrElse(AsyncData.getData(model.clubs), () => [])).toHaveLength(0);
+    }),
+    // Deep-linking to it must NOT fetch it back by id and open the drawer.
+    Story.message(ChangedUrl({ url: url(`/clubs/${sampleClub.id}`) })),
+    Story.model((model) => {
+      expect(model.drawer._tag).toBe('Closed');
+      expect(model.linkError).toBe('That record was deleted.');
+    }),
+    Story.Command.expectNone(),
   );
 });
