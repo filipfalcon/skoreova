@@ -38,6 +38,12 @@ import { tickerQuotes } from '../ticker';
 
 const h = html<Message>();
 
+// HOME — the platform's ONE front page at `/` (the former welcome and
+// dashboard screens, merged): the ticker, a mock-personalized greeting,
+// the club crests, the weekend's results, trending, the chart studio
+// card, what's new, and the platform's numbers. There is no account gate —
+// every visitor lands straight in the data.
+
 // What the platform gained lately — the home page's proof that the
 // database is alive (user-supplied canonical list). Placeholder entries
 // in the mock's spirit.
@@ -114,17 +120,10 @@ const newContentPanel = (): Html =>
     ],
   );
 
-// HOME — the platform's ONE front page at `/` (the former welcome and
-// dashboard screens, merged): the ticker, a mock-personalized greeting,
-// the club crests, the weekend's results, trending, the chart studio
-// card, what's new, and the platform's numbers. There is no account gate —
-// every visitor lands straight in the data.
-
 // The TRENDING board — the pink chip stamps its top edge like the
 // section kickers. Every tile is a LINK into the data: just the photo
 // with the name riding the bottom edge — no ranks, no crests (user call:
 // the photo carries the tile alone).
-
 const trendingTiles = (model: Model): Html =>
   h.section(
     [h.Class('mt-12')],
@@ -452,14 +451,7 @@ const sectionTileView = (tile: SectionTile): Html =>
     ],
   );
 
-// The record board: one entry per all-time best. Placeholder values in the
-// mock's spirit — replace with API data when it exists.
-// The landing page's drawn arrow, ported with its hover contract intact
-// (`drawn-arrow` nudges right inside any hovered link or button — see
-// styles.css). Filled silhouette, not a text glyph: it sits next to
-
-// One all-time record — its own pinnable unit (user call: split the
-// board). Frameless like before, but the pin tick becomes the pin BUTTON:
+// ALL-TIME BESTS — the same section grammar as Trending/Goals/Attendance.
 // New content: pink chip heading, frameless records straight on the paper.
 const allTimeBestsPanel = (model: Model): Html =>
   h.section(

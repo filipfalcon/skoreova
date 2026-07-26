@@ -381,8 +381,6 @@ export const statCard = (
   );
 };
 
-// display type here, the same register it does over there.
-
 export interface BestRecord {
   readonly value: string;
   // Counts take the drawn multiplication mark. Scorelines, totals and
@@ -392,9 +390,11 @@ export interface BestRecord {
   readonly label: string;
 }
 
-// the pink tick was always decorative, so making it the control adds no
-// clutter. `standalone` left-aligns it for the Her Game feed (the home grid
-// centres on phones); the id is `best:<label>`.
+// One all-time record — its own pinnable unit (user call: split the board).
+// Frameless like before, but the pin tick becomes the pin BUTTON: the pink
+// tick was always decorative, so making it the control adds no clutter.
+// `standalone` left-aligns it for the Her Game feed (the home grid centres on
+// phones); the id is `best:<label>`.
 export const bestRecord = (model: Model, record: BestRecord, standalone: boolean): Html => {
   const pinned = model.pinned.includes(`best:${slugify(record.label)}`);
   return h.li(
@@ -441,9 +441,8 @@ export const bestRecord = (model: Model, record: BestRecord, standalone: boolean
   );
 };
 
-// ALL-TIME BESTS — the same section grammar as Trending/Goals/Attendance/
-
-// The all-time record board — one entry per best. Placeholder values.
+// The record board: one entry per all-time best. Placeholder values in the
+// mock's spirit — replace with API data when it exists.
 export const allTimeBests: ReadonlyArray<BestRecord> = [
   { value: '22', isCount: true, holder: 'Sparta Praha', label: 'League titles' },
   { value: '11', isCount: true, holder: 'Sparta Praha', label: 'Domestic cup wins' },
