@@ -1285,6 +1285,27 @@ body {
 /* ------------------------------------------------------------------ */
 
 @media (prefers-reduced-motion: reduce) {
+  /* THE BLANKET RULE, and it is deliberately `!important`. Four review rounds
+     in a row found motion still playing for someone who asked for none, and
+     every time the cause was the same: this block named a selector, and a
+     state rule elsewhere (`.is-in`, `.is-open`, a `:not()` chain) out-ranked
+     it. Enumerating selectors here is a race you re-lose every time a state
+     rule is added, because nothing fails when you forget one. A universal
+     near-zero duration cannot be out-specified, so new animations opt OUT by
+     default instead of opting in by omission.
+     Near-zero rather than `none`: an animation still runs, instantly, and
+     lands on its final frame — the statement's pen-slash ends up drawn rather
+     than vanishing, which is what `animation: none` did to it. */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0.01ms !important;
+  }
+
   html {
     scroll-behavior: auto;
   }
@@ -1295,10 +1316,6 @@ body {
     opacity: 1;
     transform: none;
     clip-path: none;
-    transition: none;
-    /* Keyframe-driven reveals (the statement strike) too, not just
-       transitions. */
-    animation: none;
   }
 
   /* The stamp still needs its centering translate and resting tilt. */
@@ -1310,37 +1327,22 @@ body {
     stroke-dashoffset: 0;
   }
 
-  .hero-line,
-  .hero-fade,
-  .hero-photo,
-  .idle-float,
-  .marquee-track {
-    animation: none;
-  }
+  /* Everything below the blanket rule sets a RESTING STATE, which duration
+     overrides can't do on their own. Rules that only said `transition: none`
+     or `animation: none` are gone — the blanket covers those, and each one
+     that stayed was another selector to keep in sync (the menu overlay's slide
+     and the CTA's beckon both escaped exactly that way). */
 
-  /* The cookie banner appears instantly here (index.html), so the hero
-     photo's yield must snap with it. */
-  #top [data-parallax] {
-    transition: none;
-  }
-
-  /* The area unit odometer snaps instead of rolling. */
-  .area-metric,
-  .area-imperial {
-    transition: none;
-  }
-
-  /* Keep the neon glow, just hold it steady (no flicker). */
-
-  .menu-overlay {
-    transition: none;
-  }
-
-  .menu-overlay .menu-item {
-    transition: none;
-  }
-
-  .platform-beckon svg {
-    animation: none;
+  /* THE BLANKET'S ONE BLIND SPOT: it overrides durations, not END STATES.
+     `hero-photo` is `fill: both` and its final frame is deliberately mid-travel
+     — scale(1.015), the hand-off point for the drift that follows — so running
+     it instantly parks the photo there: a permanent 1.5% crop off
+     `transform-origin: top center` for a reader who asked for no motion, with a
+     full-viewport compositing layer held open behind it. The longhand
+     `animation-name` is what the blanket can't reach, and using it here keeps
+     the duration overrides visible rather than shadowed by a shorthand. */
+  .hero-photo {
+    animation-name: none;
+    will-change: auto;
   }
 }
