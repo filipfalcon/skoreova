@@ -27,6 +27,8 @@ import {
   ClickedSaveRecord,
   SubmittedSignIn,
   CompletedNavigate,
+  DRAWER_DIALOG_ID,
+  DrawerClosed,
   DrawerEditing,
   Entry,
   ParticipationsData,
@@ -629,6 +631,32 @@ test('the ledger outranks a list that no longer carries the deleted record', () 
     // Deep-linking to it must NOT fetch it back by id and open the drawer.
     Story.message(ChangedUrl({ url: url(`/clubs/${sampleClub.id}`) })),
     Story.model((model) => {
+      expect(model.drawer._tag).toBe('Closed');
+      expect(model.linkError).toBe('That record was deleted.');
+    }),
+    Story.Command.expectNone(),
+  );
+});
+
+test('a row the wire already reports deleted does not open either', () => {
+  Story.story(
+    update,
+    // The OTHER half of `isLedgerDeleted`. Every story above deletes the
+    // record here first, which fills the ledger — so the row-flag fallback
+    // beside it was never the clause doing the work, and deleting it left all
+    // of them green. This is the case only it covers: a soft delete that
+    // happened somewhere else and arrived on the wire, with an empty ledger
+    // because this client never performed it.
+    Story.with({
+      ...clubRecordModel,
+      drawer: DrawerClosed(),
+      dialog: Dialog.init({ id: DRAWER_DIALOG_ID }),
+      clubs: SectionData.Success({ data: [{ ...sampleClub, isDeleted: true }] }),
+      deletedRecordIds: [],
+    }),
+    Story.message(ChangedUrl({ url: url(`/clubs/${sampleClub.id}`) })),
+    Story.model((model) => {
+      expect(model.deletedRecordIds).toHaveLength(0);
       expect(model.drawer._tag).toBe('Closed');
       expect(model.linkError).toBe('That record was deleted.');
     }),
