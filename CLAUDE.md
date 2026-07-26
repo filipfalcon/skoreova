@@ -17,4 +17,8 @@ Assert the class, not the look — a Scene test can reach `toHaveClass`, and the
 
 ## Everything else
 
-Follow the Foldkit canon (Elm-style Model/update/view, Commands/Subscriptions/Mounts, `evo`, `Option`, keyed lists, Story/Scene tests). Verify per app with `bunx tsgo --build tsconfig.json --emitDeclarationOnly`, `bunx vp lint`, `bunx vp fmt`, `bunx vite build`, `bunx vp test run`.
+Follow the Foldkit canon (Elm-style Model/update/view, Commands/Subscriptions/Mounts, `evo`, `Option`, keyed lists, Story/Scene tests).
+
+Verify from the repo root with `bunx vp lint`, `bunx vp fmt`, `bunx vp test run`, plus `bunx vite build` per app. There is no separate typecheck step and no task runner: `vp lint` runs `typeAware` + `typeCheck`, so it reports TypeScript's own diagnostics from the same program it lints with.
+
+Two rules that follow from that. Tests import Vitest as `vite-plus/test` (and `vite-plus/test/browser`) — never bare `vitest`, which is not installed; Vite+ re-exports it. And every source file must belong to a tsconfig project, or the linter types it without one and invents errors: `src/**/*.ts` per app, `alchemy.run.ts` via `tsconfig.tools.json`.
