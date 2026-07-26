@@ -350,6 +350,10 @@ export const headerView = (model: Model): Html =>
 
 // ——— Shared drawn glyphs and the club-profile section wrapper. ———
 
+// The landing page's drawn arrow, ported with its hover contract intact
+// (`drawn-arrow` nudges right inside any hovered link or button — see
+// styles.css). Filled silhouette, not a text glyph: it sits next to display
+// type here, the same register it does over there.
 export const drawnRightArrow = (classes: string): Html =>
   h.svg(
     [
