@@ -71,6 +71,10 @@ export default defineConfig({
     },
   },
   test: {
+    // Without a name the project is called after the package, so filtering
+    // reads `--project '@skoreova/studio-application'`. That is what Vitest
+    // falls back to when a project config names nothing.
+    name: 'studio',
     include: ['src/**/*.test.ts'],
     // The app's own update/view/init are pure (the ECharts touch lives inside a
     // Mount effect that Scene intercepts rather than runs), but the @foldkit/ui
