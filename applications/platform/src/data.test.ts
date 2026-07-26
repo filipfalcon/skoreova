@@ -25,7 +25,7 @@ import {
   leagueRounds,
 } from './schedule';
 import { tickerQuotes } from './ticker';
-import { BASE } from './worker';
+import { BASE, CLUB_NAMES } from './worker';
 
 // THE SEASON CANON'S ARITHMETIC. The league numbers are mock, but a reader
 // can add them up — and the version before this one didn't survive that: the
@@ -259,9 +259,15 @@ test('the ticker quotes real clubs, under the names the season table gives them'
     expect(entry.name, `the worker calls ${entry.slug} "${entry.name}"`).toBe(club?.name);
   }
 
-  // Both sides quote the same clubs in the same order — the worker's document
-  // is what the tape will fetch once it stops rendering the local copy.
-  expect(BASE.map((entry) => entry.slug)).toEqual(tickerQuotes.map((quote) => quote.slug));
+  // The worker's name table covers the quote list EXACTLY. A missing key is
+  // already caught above (the fallback puts the slug where a name belongs), so
+  // this is the other direction: a name left behind for a club the tape has
+  // stopped quoting. Comparing BASE's slugs to the quotes' would prove nothing —
+  // BASE is `tickerQuotes.map(...)`, so that assertion held by construction and
+  // read as coverage the pair never had.
+  expect(Object.keys(CLUB_NAMES).sort()).toEqual(
+    tickerQuotes.map((quote) => quote.slug).sort((left, right) => (left < right ? -1 : 1)),
+  );
 });
 
 // The clubs hero's tape is the OTHER surface that used to name clubs from
