@@ -11,8 +11,6 @@ export default Alchemy.Stack(
   Effect.gen(function* () {
     const studio = yield* Cloudflare.Website.Vite('Studio', {
       rootDir: 'applications/studio',
-      // workersDev: false,
-      // domains: ["beta.studio.skoreova.com", "beta.studio.skoreova.cz"],
       subdomain: {
         enabled: false,
         previewsEnabled: false,
@@ -32,8 +30,6 @@ export default Alchemy.Stack(
 
     const platform = yield* Cloudflare.Website.Vite('Platform', {
       rootDir: 'applications/platform',
-      // workersDev: false,
-      // domains: ["beta.platform.skoreova.com", "beta.platform.skoreova.cz"],
       subdomain: {
         enabled: false,
         previewsEnabled: false,
@@ -56,8 +52,6 @@ export default Alchemy.Stack(
 
     const web = yield* Cloudflare.Website.Vite('Web', {
       rootDir: 'applications/web',
-      // workersDev: false,
-      // domains: ["beta.skoreova.com", "beta.skoreova.cz"],
       subdomain: {
         enabled: false,
         previewsEnabled: false,
@@ -82,9 +76,6 @@ export default Alchemy.Stack(
       studio: studio.url,
       web: web.url,
       platform: platform.url,
-      // studio: studio.allUrls,
-      // web: web.allUrls,
-      // platform: platform.allUrls,
     };
   }),
 );
