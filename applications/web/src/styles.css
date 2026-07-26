@@ -64,7 +64,7 @@
 /* Anchored sections stop below the fixed header instead of sliding under
    it — without this, fragment navigation decapitated each section's first
    rows. Native jumps (initial load with a #hash) honor the property on
-   their own; animateScrollTo (main.ts) reads it explicitly. The values
+   their own; animateScrollTo (command.ts) reads it explicitly. The values
    mirror the header's h-14/md:h-16. */
 section[id] {
   scroll-margin-top: 3.5rem;
@@ -311,7 +311,7 @@ body {
      the rim perpendicular (radially). sin/cos of the fan angle project
      that extra radius along the line; downward fans fall out of the same
      math (cos flips negative). --chip-r mirrors the chip size classes in
-     main.ts: h-8 → sm:h-10 → md:h-16. */
+     page/clubs.ts: h-8 → sm:h-10 → md:h-16. */
   left: calc(var(--fx) * var(--fan-scale) + var(--chip-r) * sin(var(--fangle)));
   top: calc((var(--fy) * var(--fan-scale) + var(--chip-r) * cos(var(--fangle))) * -1);
   translate: -50% -50%;
@@ -503,7 +503,7 @@ body {
    holds transparent until the whole figure is drawn (`.is-drawn`, stamped
    when the outline pen closes its lap; the borders always finish
    mid-lap), then the lands fade in one after another, Bohemia → Moravia →
-   Silesia (--tint-delay, inline from main.ts; the pins wait for the LAST
+   Silesia (--tint-delay, inline from page/clubs.ts; the pins wait for the LAST
    fade before their own land-by-land entrance). The hold is unlayered on
    purpose so it outweighs the checked state's Tailwind fill utility. The
    keyframes only pin the FROM — the fill lands on whatever the current

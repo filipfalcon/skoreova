@@ -71,7 +71,7 @@ test('the outline and land borders draw in fully', async () => {
   ];
   expect(paths.length).toBeGreaterThanOrEqual(4);
 
-  // The draw transition runs 2.4s; poll until every path lands at 0.
+  // The draw transition runs 0.7s (styles.css); poll until every path lands at 0.
   await waitUntil(() => paths.every((path) => dashOffset(path) === 0));
   for (const path of paths) {
     expect(dashOffset(path)).toBe(0);
