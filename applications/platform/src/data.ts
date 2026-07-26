@@ -61,9 +61,6 @@ import spartaPhoto from './assets/trending/sparta.jpg';
 export interface NavEntry {
   readonly screen: Screen;
   readonly label: string;
-  // The bottom tab bar's label — five tabs on a phone leave no room for
-  // long labels. Home is not a tab: the brand wordmark is the way home.
-  readonly short: string;
   readonly href: string;
   // HER GAME — the personal section. Always the CENTER tab and visually
   // set apart from the rest (solid pink chip, no number).
@@ -73,20 +70,18 @@ export interface NavEntry {
 // Officials left the top nav (still reachable from the home browse tiles
 // and by URL) so HER GAME can hold the center with two sections per side.
 export const navEntries: ReadonlyArray<NavEntry> = [
-  { screen: 'Clubs', label: 'Clubs', short: 'Clubs', href: clubsRouter() },
-  { screen: 'Players', label: 'Players', short: 'Players', href: playersRouter() },
+  { screen: 'Clubs', label: 'Clubs', href: clubsRouter() },
+  { screen: 'Players', label: 'Players', href: playersRouter() },
   {
     screen: 'HerGame',
     label: 'Her Game',
-    short: 'Her Game',
     href: herGameRouter(),
     isFeatured: true,
   },
-  { screen: 'Matches', label: 'Matches', short: 'Matches', href: matchesRouter() },
+  { screen: 'Matches', label: 'Matches', href: matchesRouter() },
   {
     screen: 'Competitions',
     label: 'Competitions',
-    short: 'Competitions',
     href: competitionsRouter(),
   },
 ];
