@@ -960,6 +960,32 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
   let lastFrameAt = performance.now();
   let frame = 0;
 
+  // READ, THEN WRITE. Every subsystem below used to measure and mutate in the
+  // same pass — five `for` blocks each doing getBoundingClientRect, then
+  // style.transform, then the next block measuring again. Each of those reads
+  // lands after a write and forces the engine to flush layout: about five
+  // synchronous reflows per frame, on the page whose first render already
+  // trips Foldkit's own budget warning. Splitting the frame in two costs a
+  // couple of small arrays and leaves exactly one layout flush.
+  interface TransformWrite {
+    readonly element: HTMLElement;
+    readonly transform: string;
+  }
+
+  interface ClassWrite {
+    readonly element: HTMLElement;
+    readonly name: string;
+    readonly on: boolean;
+  }
+
+  // The ROOT font size, not a literal 16. `--dock-lift` is authored in rem
+  // precisely so the lift scales with type, and multiplying its number by a
+  // hardcoded 16 undid that for every reader who raised their browser's
+  // default text size — the comment promised the scaling the code then threw
+  // away. Read once at setup: it changes with a browser setting, and
+  // re-reading it per frame would put a style read back in the hot loop.
+  const remPixels = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+
   const tick = (now: number): void => {
     const dt = Math.min(64, now - lastFrameAt) / 1000;
     lastFrameAt = now;
@@ -971,19 +997,26 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       lastScrollY = window.scrollY;
     }
 
-    const viewportCenterY = window.innerHeight / 2;
+    // ----- Read phase --------------------------------------------------------
+
+    const viewportHeight = window.innerHeight;
+    const viewportCenterY = viewportHeight / 2;
+    const transformWrites: Array<TransformWrite> = [];
+    const classWrites: Array<ClassWrite> = [];
 
     for (const layer of parallaxLayers) {
       const rect = layer.host.getBoundingClientRect();
       const centerDelta = rect.top + rect.height / 2 - viewportCenterY;
       const scrollOffset = -centerDelta * layer.speed;
-      layer.element.style.transform = `translate3d(0, ${scrollOffset.toFixed(1)}px, 0)`;
+      transformWrites.push({
+        element: layer.element,
+        transform: `translate3d(0, ${scrollOffset.toFixed(1)}px, 0)`,
+      });
     }
 
     for (const layer of scrubAlignLayers) {
       const host = layer.parentElement ?? layer;
       const rect = host.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
       const progress = Math.min(
         1,
         Math.max(
@@ -992,44 +1025,53 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
         ),
       );
       const stagger = Number.parseFloat(getComputedStyle(layer).marginTop) || 0;
-      layer.style.transform = `translate3d(0, ${(-stagger * progress).toFixed(1)}px, 0)`;
+      transformWrites.push({
+        element: layer,
+        transform: `translate3d(0, ${(-stagger * progress).toFixed(1)}px, 0)`,
+      });
       // The finishing CLICK: at full progress the host is stamped so CSS
       // can snap its .collage-snap children together (a transition, not a
       // scrub — it must run on its own element and its own clock).
-      host.classList.toggle('is-assembled', progress >= 1);
+      classWrites.push({ element: host, name: 'is-assembled', on: progress >= 1 });
     }
 
     for (const layer of scrubDockLayers) {
       if (!dockViewport.matches) {
-        layer.style.transform = '';
+        transformWrites.push({ element: layer, transform: '' });
         continue;
       }
       const section = layer.closest('section');
       if (!section) continue;
       // Rem-based like the pin fan vars, so the lift scales with type.
       const style = getComputedStyle(layer);
-      const lift = (Number.parseFloat(style.getPropertyValue('--dock-lift')) || 0) * 16;
+      const lift = (Number.parseFloat(style.getPropertyValue('--dock-lift')) || 0) * remPixels;
       // The ceiling keeps the lifted rider clear of the fixed header AND
       // leaves air for whatever crowns it (the queen's scribble) — without
       // it the mid-ride pin parked her hairline at the header's edge and
       // the crown vanished underneath. rect.top is measured WITH the
       // current translate; subtracting the matrix's Y gives the layout top.
-      const ceiling = (Number.parseFloat(style.getPropertyValue('--dock-ceiling')) || 0) * 16;
+      const ceiling =
+        (Number.parseFloat(style.getPropertyValue('--dock-ceiling')) || 0) * remPixels;
       const matrix = new DOMMatrix(style.transform === 'none' ? undefined : style.transform);
       const layoutTop = layer.getBoundingClientRect().top - matrix.m42;
-      const room = section.getBoundingClientRect().bottom - window.innerHeight;
+      const room = section.getBoundingClientRect().bottom - viewportHeight;
       const offset = Math.max(0, Math.min(lift, room, layoutTop - ceiling));
-      layer.style.transform = `translate3d(0, ${(-offset).toFixed(1)}px, 0)`;
+      transformWrites.push({
+        element: layer,
+        transform: `translate3d(0, ${(-offset).toFixed(1)}px, 0)`,
+      });
     }
 
     for (const scrub of bracketScrubs) {
       if (!dockViewport.matches) {
         // Phones have no pin — the bracket is a plain stack, all steps on.
-        for (const step of scrub.steps) step.element.classList.add('is-on');
+        for (const step of scrub.steps) {
+          classWrites.push({ element: step.element, name: 'is-on', on: true });
+        }
         continue;
       }
       const rect = scrub.runway.getBoundingClientRect();
-      const track = rect.height - window.innerHeight;
+      const track = rect.height - viewportHeight;
       const progress = track > 0 ? Math.min(1, Math.max(0, -rect.top / track)) : 1;
       // The build only ever ADDS while the reader is on the runway: coming
       // back up (from below, progress starts at 1 anyway) the bracket rides
@@ -1038,12 +1080,12 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       // the reader safely above, the teardown is invisible and the next
       // descent builds from zero again. (Resetting at the unpin line was
       // visible: the upward warp parks the stage in view just above it.)
-      const clearedAbove = rect.top > window.innerHeight;
+      const clearedAbove = rect.top > viewportHeight;
       for (const step of scrub.steps) {
         if (progress >= (step.index + 1) / (scrub.stepCount + 2)) {
-          step.element.classList.add('is-on');
+          classWrites.push({ element: step.element, name: 'is-on', on: true });
         } else if (clearedAbove) {
-          step.element.classList.remove('is-on');
+          classWrites.push({ element: step.element, name: 'is-on', on: false });
         }
       }
     }
@@ -1069,9 +1111,17 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       if (half > 0) {
         // Keep the offset in (-half, 0] so the two copies swap seamlessly.
         marquee.offset = -(((-(marquee.offset + speed * dt) % half) + half) % half);
-        marquee.element.style.transform = `translate3d(${marquee.offset.toFixed(1)}px, 0, 0)`;
+        transformWrites.push({
+          element: marquee.element,
+          transform: `translate3d(${marquee.offset.toFixed(1)}px, 0, 0)`,
+        });
       }
     }
+
+    // ----- Write phase -------------------------------------------------------
+
+    for (const write of transformWrites) write.element.style.transform = write.transform;
+    for (const write of classWrites) write.element.classList.toggle(write.name, write.on);
 
     frame = window.requestAnimationFrame(tick);
   };
