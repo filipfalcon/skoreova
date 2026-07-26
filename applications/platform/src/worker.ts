@@ -37,7 +37,7 @@ interface TickerClub {
 // authored. The NAMES stay here: this module is a separate deployable and
 // importing the clubs table would drag every crest PNG into a Worker bundle,
 // so data.test.ts holds these to the same table the tape resolves against.
-const CLUB_NAMES: Record<string, string> = {
+export const CLUB_NAMES: Record<string, string> = {
   pardubice: 'Pardubice',
   'slavia-praha': 'Slavia Praha',
   'banik-ostrava': 'Baník Ostrava',
