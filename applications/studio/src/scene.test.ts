@@ -105,6 +105,29 @@ describe('view', () => {
     );
   });
 
+  // The fourth time a blocked control shipped looking clickable, and the
+  // first two words of the fix are always the same: the state has to be
+  // expressed in a selector that MATCHES. `disabled:` compiles to
+  // `&:disabled` and Ui.Button never emits the native attribute, so the whole
+  // blocked half of those strings was unreachable markup. Asserting the class
+  // rather than the look is the only thing this runner can do — but it is the
+  // thing that broke, four times: the intent was always written down and
+  // never applied.
+  test('a blocked pager end-stop does not render as a live control', () => {
+    Scene.scene(
+      { update, view },
+      // Page 1 of 42 players, so Previous is at its end-stop and Next is not.
+      Scene.with({ ...playersListModel, playersPage: 1, playersTotal: 42 }),
+      Scene.expect(Scene.role('button', { name: 'Previous' })).toHaveAttr('aria-disabled', 'true'),
+      Scene.expect(Scene.role('button', { name: 'Previous' })).not.toHaveClass('cursor-pointer'),
+      Scene.expect(Scene.role('button', { name: 'Previous' })).toHaveClass('cursor-not-allowed'),
+      // The live sibling proves the two styles are actually different, so the
+      // assertions above can't pass by both strings collapsing to one.
+      Scene.expect(Scene.role('button', { name: 'Next' })).not.toHaveAttr('aria-disabled'),
+      Scene.expect(Scene.role('button', { name: 'Next' })).toHaveClass('cursor-pointer'),
+    );
+  });
+
   // The exact flow the charting example demonstrates: the view renders a bare
   // host, `Mount.resolve` acknowledges the ECharts mount (no real canvas is
   // created in the test), and the resulting SyncChart Command is resolved.
