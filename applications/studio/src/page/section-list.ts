@@ -66,10 +66,12 @@ import {
   navGroupLabelStyle,
   navItemActiveStyle,
   navItemStyle,
+  paginationButtonInertStyle,
   paginationButtonStyle,
   pillLabelStyle,
   pillValueStyle,
   pillWrapStyle,
+  refreshButtonInertStyle,
   refreshButtonStyle,
   refreshControlStyle,
   retryButtonStyle,
@@ -505,13 +507,20 @@ const content = (model: Model, current: Section): Html => {
       : visible.slice((clientPage - 1) * PAGE_SIZE, clientPage * PAGE_SIZE);
 
   const pageButton = (label: string, disabled: boolean, onClick: Message): Html =>
-    // NATIVE disabled here, on purpose: an end-stop arrow has nothing to
-    // explain, so removing it from the tab order is the right answer rather
-    // than the aria-disabled treatment the drawer's Save needs.
+    // An end-stop arrow STAYS in the tab order — not by choice: `isDisabled`
+    // is Ui.Button's one blocked mode and it is the aria-disabled treatment,
+    // `tabindex="0"` included. (An earlier note here claimed the opposite and
+    // called it deliberate.) It does drop the OnClick, so the arrow is inert
+    // where it matters; what it costs is a tab stop that does nothing, which
+    // is why the label has to look blocked.
     Button.view({
       onClick,
       isDisabled: disabled,
-      toView: ({ button }) => h.button([...button, h.Class(paginationButtonStyle)], [label]),
+      toView: ({ button }) =>
+        h.button(
+          [...button, h.Class(disabled ? paginationButtonInertStyle : paginationButtonStyle)],
+          [label],
+        ),
     });
 
   const pagination = (): Html => {
@@ -647,13 +656,19 @@ const content = (model: Model, current: Section): Html => {
                   ),
                   Button.view({
                     onClick: retry,
-                    // Native disabled: the label itself already reads
-                    // "Refreshing…", so nothing is lost by leaving the tab
-                    // order while the fetch is in flight.
+                    // Keeping the tab stop is right here whatever the
+                    // component did: the label reads "Refreshing…" and the
+                    // AriaLive below announces it, so the button is worth
+                    // reaching while the fetch is in flight. It just isn't the
+                    // native `disabled` an earlier note here claimed.
                     isDisabled: pending,
                     toView: ({ button }) =>
                       h.button(
-                        [...button, h.AriaLive('polite'), h.Class(refreshButtonStyle)],
+                        [
+                          ...button,
+                          h.AriaLive('polite'),
+                          h.Class(pending ? refreshButtonInertStyle : refreshButtonStyle),
+                        ],
                         [
                           pending
                             ? 'Refreshing…'

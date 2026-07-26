@@ -22,8 +22,11 @@ export const chipStyle =
 export const inputStyle =
   'w-full rounded-full border border-white/30 bg-white/25 px-5 py-3 text-white placeholder-white/70 outline-none transition focus:border-white/60 focus:bg-white/35 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
 
+// No blocked half: the sign-in submit is never given `isDisabled`, and the
+// `disabled:opacity-60` it used to carry could not have fired even if it were
+// — see the refresh/pagination note below for what Ui.Button actually emits.
 export const submitStyle =
-  'flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center rounded-full bg-neutral-950 text-xl text-white transition hover:bg-neutral-800 disabled:opacity-60';
+  'flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center rounded-full bg-neutral-950 text-xl text-white transition hover:bg-neutral-800';
 
 export const headerStyle =
   'flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-4';
@@ -84,14 +87,33 @@ export const diodeColorStyle: Record<Model['serverHealth'], string> = {
   Down: 'bg-rose-500',
 };
 
-export const refreshButtonStyle =
-  'cursor-pointer px-4 py-2 text-sm text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50';
+// Refresh and pagination, in DISJOINT sets like the drawer's Save — and here
+// the reason is one layer deeper than specificity. `disabled:` compiles to
+// `&:disabled`, which needs the native attribute, and Ui.Button never emits
+// it: `isDisabled` produces `aria-disabled="true"`, `data-disabled=""` and
+// `tabindex="0"`, deliberately keeping the control in the tab order. So the
+// blocked half of a `disabled:`-variant string is unreachable markup — these
+// two kept `cursor-pointer` and their hover fill and never dimmed. A
+// `data-disabled:` variant would match, but overlaying it still loses the
+// properties the live utilities also set, which is the trap the Save note
+// below describes. Two strings the caller picks between can't have either bug.
+const listButtonShape = 'px-4 py-2 text-sm transition';
+
+export const refreshButtonStyle = `${listButtonShape} cursor-pointer text-neutral-700 hover:bg-neutral-100`;
+
+export const refreshButtonInertStyle = `${listButtonShape} cursor-not-allowed text-neutral-400`;
 
 export const retryButtonStyle =
   'cursor-pointer rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 transition hover:bg-rose-100';
 
-export const paginationButtonStyle =
-  'cursor-pointer rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50';
+const paginationButtonShape = 'rounded-lg border bg-white px-3 py-1.5 text-sm transition';
+
+export const paginationButtonStyle = `${paginationButtonShape} cursor-pointer border-neutral-300 text-neutral-700 hover:bg-neutral-100`;
+
+// An end-stop arrow dims rather than fading to 50%: at that opacity the glyph
+// on white lands under 3:1, and the thing a pager most needs to say is which
+// way it can still go.
+export const paginationButtonInertStyle = `${paginationButtonShape} cursor-not-allowed border-neutral-200 text-neutral-400`;
 
 export const searchInputStyle =
   'w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900 placeholder-neutral-400 outline-none transition focus:border-neutral-500 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
