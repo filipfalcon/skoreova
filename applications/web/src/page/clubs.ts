@@ -70,7 +70,7 @@ interface Fan {
 // Every connector line is the SAME length within a breakpoint — a pin
 // differs only by its ANGLE, in degrees: 0 = straight up, positive leans
 // right, ±90 = flat, past ±90 the crest hangs below the dot. Both angle
-// sets are vetted against the geometric guard in map-collisions.test.ts
+// sets are vetted against the geometric guard in map-collisions.browser.test.ts
 // by the uniform-length solver in the session scratchpad — rerun it when
 // dots move or a pin joins.
 const PIN_LINE_REM = 2;
@@ -100,7 +100,7 @@ const PIN_ANGLE: Partial<Record<ClubSlug, number>> = {
 // ONE shared anchor there, and their crests fan into whatever space the
 // neighboring cities leave free (Plzeň blocks Prague's west, Dynamo its
 // south, Teplice's dot the northwest). Values tuned against the geometric
-// collision probe in map-collisions.test.ts — don't eyeball-edit these;
+// collision probe in map-collisions.browser.test.ts — don't eyeball-edit these;
 // re-run that test.
 const PIN_ANCHOR_PHONE: Partial<Record<ClubSlug, { readonly x: number; readonly y: number }>> = {
   'sparta-praha': { x: 34.5, y: 39.6 },

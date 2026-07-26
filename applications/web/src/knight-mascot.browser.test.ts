@@ -72,7 +72,7 @@ beforeAll(async () => {
   await new Promise((resolve) => setTimeout(resolve, 1400));
 });
 
-// Same contract as map-collisions.test.ts: the viewport is PAGE state shared
+// Same contract as map-collisions.browser.test.ts: the viewport is PAGE state shared
 // across files in one browser run, and this file pins a desktop size. Put the
 // runner's 414×896 default back, or the next file inherits a layout it never
 // asked for — motion.ts snapshots `desktopViewport` at mount time, so it does
