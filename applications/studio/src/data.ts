@@ -72,9 +72,11 @@ export const editRecord = (entry: Entry): DrawerState =>
 // when either fetch lands, so there's no arrival-order race to coordinate:
 // whatever the referenced section holds now is what shows.
 //
-// Driven off the column descriptors, not off the one section that has such a
-// column: this used to hardcode `editions` and index 1, so a second derived
-// column anywhere would have rendered its raw UUID on screen.
+// Driven off the column descriptors rather than the hardcoded `editions` +
+// index 1 it used to assume — that broke the moment the column moved. It is
+// NOT support for two references: `Entry` carries one `parentId`, so a second
+// derived column would resolve against the same parent (data.test.ts asserts
+// no section declares one).
 export const resolveDerivedCells = (model: Model, entry: Entry): Entry => {
   const columns = sectionData[entry.section].columns;
   if (!columns.some((column) => column.derived !== undefined)) return entry;
