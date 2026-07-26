@@ -604,9 +604,6 @@ const cupRunGrid = (model: Model): Html =>
         ],
       ),
       // The payoff frame — both trophies, no fanfare, uncropped.
-      // No hover tilt on any photo in this section — they sit next
-      // to interactive tables, and a photo that reacts to the
-      // pointer reads as another control.
       h.figure(
         [
           h.Class(revealClass(model, 'champions-double-figure')),
@@ -742,9 +739,9 @@ const honorsBoard = (model: Model): Html =>
       // factor buys the big stagger a fast timeline; motion.ts). At
       // full progress motion.ts stamps `is-assembled` on the grid
       // and the .collage-snap halves CLICK together, closing the
-      // column gap (see styles.css). Scrub, snap, and reveal/tilt
-      // each own a separate wrapper — three transform owners that
-      // must not overwrite each other.
+      // column gap (see styles.css). Scrub, snap, and reveal each
+      // own a separate wrapper — three transform owners that must
+      // not overwrite each other.
       //
       // From `md` the ASSEMBLED photo sits vertically CENTERED on
       // the honors TABLE across the aisle (top rule → last row
