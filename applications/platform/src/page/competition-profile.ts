@@ -1,4 +1,4 @@
-import { RadioGroup } from '@foldkit/ui';
+import { Button, RadioGroup } from '@foldkit/ui';
 import clsx from 'clsx';
 import { Match as M, Option, Record } from 'effect';
 import { html } from 'foldkit/html';
@@ -237,27 +237,34 @@ const leagueMatchesPanel = (competition: Competition, league: string, model: Mod
   );
   const matches = rounds[open - 1] ?? [];
   const arrow = (target: number, glyph: string, label: string): Html => {
-    const disabled = target < 1 || target > total;
-    return h.button(
-      [
-        h.Type('button'),
-        h.AriaLabel(label),
-        // AriaDisabled, not Disabled: a disabled end-stop dropping out of
-        // the tab order mid-interaction strands keyboard focus.
-        ...(disabled
-          ? [h.AriaDisabled(true)]
-          : [h.OnClick(SelectedCompetitionRound({ slug: competition.slug, round: target }))]),
-        h.Class(
-          clsx(
-            'display border px-3.5 py-1.5 text-base transition-colors',
-            disabled
-              ? 'cursor-default border-ink/10 text-ink/20'
-              : 'cursor-pointer border-ink/20 text-ink hover:border-pink hover:text-pink',
-          ),
+    const blocked = target < 1 || target > total;
+    // Ui.Button's isDisabled is exactly this end-stop's contract: aria-disabled
+    // and no click handler, but NEVER the native attribute — an end-stop that
+    // drops out of the tab order mid-interaction strands keyboard focus. The two
+    // looks are disjoint strings for the reason CLAUDE.md records: overlaying the
+    // blocked colours on the live ones loses Tailwind's emit order.
+    return Button.view({
+      isDisabled: blocked,
+      ...(blocked
+        ? {}
+        : { onClick: SelectedCompetitionRound({ slug: competition.slug, round: target }) }),
+      toView: ({ button }) =>
+        h.button(
+          [
+            ...button,
+            h.AriaLabel(label),
+            h.Class(
+              clsx(
+                'display border px-3.5 py-1.5 text-base transition-colors',
+                blocked
+                  ? 'cursor-default border-ink/10 text-ink/20'
+                  : 'cursor-pointer border-ink/20 text-ink hover:border-pink hover:text-pink',
+              ),
+            ),
+          ],
+          [glyph],
         ),
-      ],
-      [glyph],
-    );
+    });
   };
   return h.section(
     [h.Class(`${panel} p-6 md:p-8`)],

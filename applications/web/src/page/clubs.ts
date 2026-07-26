@@ -1,4 +1,4 @@
-import { RadioGroup } from '@foldkit/ui';
+import { Button, RadioGroup } from '@foldkit/ui';
 import clsx from 'clsx';
 import { Option } from 'effect';
 import { html } from 'foldkit/html';
@@ -280,33 +280,36 @@ const clubPin = (model: Model, club: Club): Html => {
           // crests all read as one calm system). A few crest images carry
           // extra transparent padding and read smaller than their peers —
           // CREST_SCALE nudges those up to the same optical size.
-          h.button(
-            [
-              h.Type('button'),
-              h.OnClick(selected ? ClosedMapClub() : OpenedMapClub({ slug: club.slug })),
-              h.AriaLabel(`${club.name} — ${club.city}, ${club.league}`),
-              // The pin toggles its club card open/closed — say so, instead
-              // of signalling selection by ring color alone.
-              h.AriaExpanded(selected),
-              h.Class(
-                clsx(
-                  'club-pin-chip absolute flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-[scale,box-shadow] delay-[250ms] duration-300 group-hover:scale-110 group-hover:delay-0 group-hover:duration-150 sm:h-10 sm:w-10 sm:p-2 md:h-16 md:w-16 md:p-3',
-                  { 'scale-110 ring-2 ring-pink delay-0 md:ring-[3px]': selected },
-                ),
+          Button.view({
+            onClick: selected ? ClosedMapClub() : OpenedMapClub({ slug: club.slug }),
+            toView: ({ button }) =>
+              h.button(
+                [
+                  ...button,
+                  h.AriaLabel(`${club.name} — ${club.city}, ${club.league}`),
+                  // The pin toggles its club card open/closed — say so, instead
+                  // of signalling selection by ring color alone.
+                  h.AriaExpanded(selected),
+                  h.Class(
+                    clsx(
+                      'club-pin-chip absolute flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-[scale,box-shadow] delay-[250ms] duration-300 group-hover:scale-110 group-hover:delay-0 group-hover:duration-150 sm:h-10 sm:w-10 sm:p-2 md:h-16 md:w-16 md:p-3',
+                      { 'scale-110 ring-2 ring-pink delay-0 md:ring-[3px]': selected },
+                    ),
+                  ),
+                ],
+                [
+                  h.img([
+                    h.Src(club.logo),
+                    h.Alt(''),
+                    h.Loading('lazy'),
+                    h.Class('h-full w-full object-contain'),
+                    ...(CREST_SCALE[club.slug]
+                      ? [h.Style({ transform: `scale(${CREST_SCALE[club.slug]})` })]
+                      : []),
+                  ]),
+                ],
               ),
-            ],
-            [
-              h.img([
-                h.Src(club.logo),
-                h.Alt(''),
-                h.Loading('lazy'),
-                h.Class('h-full w-full object-contain'),
-                ...(CREST_SCALE[club.slug]
-                  ? [h.Style({ transform: `scale(${CREST_SCALE[club.slug]})` })]
-                  : []),
-              ]),
-            ],
-          ),
+          }),
           // The hover banner — an "achievement toast": a paper bar slides out
           // of the crest to the right. The outer span is a clipping WINDOW
           // whose left boundary sits exactly at the crest's center, so the
@@ -552,45 +555,48 @@ export const view = (model: Model): Html =>
               // A real button so the unit swap also works from the keyboard
               // and gets the pink focus ring; cursor-help still signals
               // "informational" rather than navigational.
-              h.button(
-                [
-                  h.Type('button'),
-                  h.Class(
-                    // justify-items-start + underline ON THE VARIANTS, not
-                    // the button: the cell is as wide as the wider variant,
-                    // and a centered short variant with a full-width
-                    // underline floated mid-sentence instead of reading as
-                    // plain text. clip-path, NOT overflow-hidden, hides the
-                    // rolling figure — a non-visible overflow moves an
-                    // inline box's baseline to its bottom edge and the
-                    // number would sink out of the sentence's line.
-                    'area-swap inline-grid cursor-help justify-items-start whitespace-nowrap select-none [clip-path:inset(0)]',
-                  ),
-                  h.OnClick(ToggledAreaUnit()),
-                  h.AriaLabel('Toggle between metric and imperial area'),
-                ],
-                [
-                  h.span(
+              Button.view({
+                onClick: ToggledAreaUnit(),
+                toView: ({ button }) =>
+                  h.button(
                     [
+                      ...button,
                       h.Class(
-                        // The odometer poses: metric parks ABOVE the clip,
-                        // imperial BELOW — toggling rolls one out and the
-                        // other through in the same direction.
-                        `area-metric col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'invisible -translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`,
+                        // justify-items-start + underline ON THE VARIANTS, not
+                        // the button: the cell is as wide as the wider variant,
+                        // and a centered short variant with a full-width
+                        // underline floated mid-sentence instead of reading as
+                        // plain text. clip-path, NOT overflow-hidden, hides the
+                        // rolling figure — a non-visible overflow moves an
+                        // inline box's baseline to its bottom edge and the
+                        // number would sink out of the sentence's line.
+                        'area-swap inline-grid cursor-help justify-items-start whitespace-nowrap select-none [clip-path:inset(0)]',
+                      ),
+                      h.AriaLabel('Toggle between metric and imperial area'),
+                    ],
+                    [
+                      h.span(
+                        [
+                          h.Class(
+                            // The odometer poses: metric parks ABOVE the clip,
+                            // imperial BELOW — toggling rolls one out and the
+                            // other through in the same direction.
+                            `area-metric col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'invisible -translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`,
+                          ),
+                        ],
+                        ['78,871 km².'],
+                      ),
+                      h.span(
+                        [
+                          h.Class(
+                            `area-imperial col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'translate-y-0 opacity-100' : 'invisible translate-y-full opacity-0'}`,
+                          ),
+                        ],
+                        ['30,452 sq mi.'],
                       ),
                     ],
-                    ['78,871 km².'],
                   ),
-                  h.span(
-                    [
-                      h.Class(
-                        `area-imperial col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'translate-y-0 opacity-100' : 'invisible translate-y-full opacity-0'}`,
-                      ),
-                    ],
-                    ['30,452 sq mi.'],
-                  ),
-                ],
-              ),
+              }),
               // The second sentence opens its own line — two beats, the same
               // device as 01's ledes.
               h.br([]),

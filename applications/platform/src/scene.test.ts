@@ -1,7 +1,13 @@
 import { Scene } from 'foldkit';
 import { describe, test } from 'vite-plus/test';
 
-import { clubsModel, herGameModel, herGamePinnedModel, welcomeModel } from './main.fixtures';
+import {
+  clubsModel,
+  competitionFirstRoundModel,
+  herGameModel,
+  herGamePinnedModel,
+  welcomeModel,
+} from './main.fixtures';
 import { update, view } from './main';
 
 describe('view', () => {
@@ -37,6 +43,26 @@ describe('view', () => {
       Scene.expect(Scene.text('Trending · Sparta Praha')).toExist(),
       // …and its pin control now offers to remove it.
       Scene.expect(Scene.role('button', { name: 'Unpin Sparta Praha from Her Game' })).toExist(),
+    );
+  });
+
+  // The round pager's end-stops are the app's one blocked control, and the
+  // blocked half is what has broken elsewhere in this repo — a state announced
+  // through an attribute the markup never carried, or styled through a selector
+  // that never matched. On matchday 1 "Previous round" must be announced as
+  // disabled and dimmed, while its live twin beside it proves the two looks are
+  // genuinely different strings rather than one that lost the cascade.
+  test('a blocked round arrow announces and dims, its live twin does neither', () => {
+    Scene.scene(
+      { update, view },
+      Scene.with(competitionFirstRoundModel),
+      Scene.expect(Scene.role('button', { name: 'Previous round' })).toHaveAttr(
+        'aria-disabled',
+        'true',
+      ),
+      Scene.expect(Scene.role('button', { name: 'Previous round' })).toHaveClass('text-ink/20'),
+      Scene.expect(Scene.role('button', { name: 'Next round' })).not.toHaveAttr('aria-disabled'),
+      Scene.expect(Scene.role('button', { name: 'Next round' })).not.toHaveClass('text-ink/20'),
     );
   });
 
