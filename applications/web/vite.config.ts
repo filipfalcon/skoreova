@@ -3,16 +3,20 @@ import tailwindcss from '@tailwindcss/vite';
 import { playwright } from 'vite-plus/test/browser-playwright';
 import { defineConfig } from 'vite-plus';
 
-// NOTE: no Foldkit plugin under test in THIS app. Elsewhere (platform, studio)
-// it runs portless in tests, because the plugin also brands view-function
-// identity — in dev and in build alike — and dropping it leaves tests exercising
-// the differ's positional fallback while production runs branded. Here it can't:
-// under `vp test`'s browser runner every test file fails to import with the
-// transform in place ("Failed to fetch dynamically imported module"), on both
-// chromium and webkit. So web's view tests do run against the fallback differ;
-// the motion-regression tests below are the guard that the real DOM behaves.
-// The DevTools MCP port is dev-only regardless — it clashed across browser
-// workers.
+// The Foldkit plugin runs in tests too, WITHOUT the DevTools MCP port. The
+// port is the only part that can't be shared — it clashes across browser
+// workers — but the plugin also brands view-function identity, in dev and in
+// build alike, and that IS the differ's second axis: an identity mismatch
+// replaces a node where a bare tag match would have patched it. Dropping the
+// plugin wholesale left these tests diffing on tag and position alone while
+// production diffed on identity too.
+//
+// It needs `optimizeDeps.include: ['foldkit/brand']` below to work here. The
+// transform injects that import into every module, so vite's browser runner
+// discovers a brand-new bare dependency mid-run, pre-bundles it, and reloads
+// the page — which tears down the in-flight dynamic import of the test file
+// itself ("Failed to fetch dynamically imported module", both engines).
+// Pre-declaring it means the optimizer already has it before the run starts.
 const testing = process.env['VITEST'] === 'true';
 
 export default defineConfig({
@@ -23,7 +27,7 @@ export default defineConfig({
   // vite increments to a free port instead.
   server: { host: '127.0.0.1' },
   // Studio claims 9988 — each app needs its own DevTools MCP port.
-  plugins: [tailwindcss(), ...(testing ? [] : [foldkit({ devToolsMcpPort: 9989 })])],
+  plugins: [tailwindcss(), foldkit(testing ? {} : { devToolsMcpPort: 9989 })],
   // Alchemy's deploy captures the build output through a `buildApp` post
   // hook, but Vite 8 only runs the default environment builds AFTER all
   // buildApp hooks when no real `builder.buildApp` exists — the hook then
@@ -48,6 +52,9 @@ export default defineConfig({
   },
   optimizeDeps: {
     entries: ['src/entry.ts'],
+    // See the plugin note at the top of this file — without this the browser
+    // test runner reloads mid-import and every test file fails to load.
+    include: ['foldkit/brand'],
   },
   test: {
     include: ['src/**/*.test.ts'],
