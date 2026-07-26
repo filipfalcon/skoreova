@@ -601,11 +601,19 @@ export const view = (model: Model): Html => {
               ),
               h.button([...render.closeButton, h.Class(drawerCancelStyle)], ['Cancel']),
               // NOT Ui.Button, deliberately — the one control in the app that
-              // opts out. Its only disabled mode is the native attribute, and
-              // this button must stay in the tab order while blocked so the
-              // note explaining why can be reached. Everything else here is
-              // Ui.Button; when the component grows an aria-disabled mode,
-              // this becomes the last conversion.
+              // opts out. An earlier note here gave the wrong reason: it said
+              // the component's only blocked mode was the native attribute and
+              // predicted a conversion once an aria-disabled mode arrived.
+              // That mode is what `isDisabled` has always been — AriaDisabled,
+              // data-disabled, `tabindex="0"` — and AriaDescribedBy rides fine
+              // in `toView`.
+              //
+              // The real reason is the click. `isDisabled` also DROPS the
+              // OnClick, and this app refuses the save in `update`, not in the
+              // view: `ClickedSaveRecord` re-checks the column rules and is
+              // where the refusal is tested. Suppressing the message here
+              // would move that decision into the view and leave the update
+              // path unreachable from the UI that is supposed to exercise it.
               h.button(
                 [
                   h.OnClick(ClickedSaveRecord()),
