@@ -49,10 +49,6 @@ const metricRadioGroup = (model: Model): Html =>
       ),
   });
 
-// The studio chart: one bar per matchday played (the series length is the
-// season canon — see metricSeries), three faint gridlines, and a dashed
-// season-average line. Pure SVG — the real chart engine replaces this.
-
 // Fixed geometry, in viewBox units: bars rise CHART_PLOT_HEIGHT above the
 // CHART_BASELINE_Y axis line, one bar per BAR_STEP with the axis labels a
 // hair under the baseline. The WIDTH is derived, not fixed — it was 560 for
@@ -70,6 +66,9 @@ const BAR_DELAY_STEP_SECONDS = 0.035;
 
 const chartWidth = (series: MetricSeries): number => series.values.length * BAR_STEP;
 
+// The studio chart: one bar per matchday played (the series length is the
+// season canon — see metricSeries), three faint gridlines, and a dashed
+// season-average line. Pure SVG — the real chart engine replaces this.
 const studioChart = (series: MetricSeries): Html => {
   const CHART_WIDTH = chartWidth(series);
   const max = Math.max(...series.values);
@@ -159,10 +158,6 @@ const studioChart = (series: MetricSeries): Html => {
   );
 };
 
-// One named chart view per metric. Each subtree carries a LITERAL key —
-// the identity of that metric's chart — so switching metrics swaps whole
-// subtrees (teardown + the bars' grow-in replay) without a key ever being
-// derived from model data.
 // The SVG is decorative markup — AriaHidden, like every other drawn chart here
 // — which left the metric radiogroup changing nothing an assistive-tech reader
 // could perceive: three options, one silent picture. This is the same treatment
@@ -177,14 +172,18 @@ const chartSummary = (series: MetricSeries): Html =>
     ],
   );
 
-// The chart is KEYED per metric — each draws a different series and must be
-// replaced rather than patched. The summary above deliberately is NOT: a live
-// region announces a text CHANGE inside an element the reader is already on,
-// and this one used to sit inside the keyed wrapper, so every metric switch
-// tore the region down and inserted a new one. Assistive tech does not
-// reliably announce a live region that did not exist a moment ago — which
-// defeated the entire point of adding it. It lives beside the chart now, one
-// element for the panel's whole life, and only its sentence changes.
+// The chart is KEYED per metric, on a LITERAL key — the identity of that
+// metric's chart, never a value derived from model data — so switching metrics
+// swaps whole subtrees, teardown plus the bars' grow-in replay, instead of
+// patching one series' bars into another's.
+//
+// The summary above deliberately is NOT keyed: a live region announces a text
+// CHANGE inside an element the reader is already on, and this one used to sit
+// inside the keyed wrapper, so every metric switch tore the region down and
+// inserted a new one. Assistive tech does not reliably announce a live region
+// that did not exist a moment ago — which defeated the entire point of adding
+// it. It lives beside the chart now, one element for the panel's whole life,
+// and only its sentence changes.
 const keyedChart = (key: string, series: MetricSeries): Html =>
   h.div([h.Key(key)], [studioChart(series)]);
 

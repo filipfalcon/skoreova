@@ -236,11 +236,6 @@ const heroTicker = (): Html => {
   );
 };
 
-// Every A-side crest, one tap from its profile — B teams share their
-// parent's crest, so they'd only duplicate the artwork here. On phones the
-// rail stacks into centered 5-4-5-… rows (user call — the staggered
-// formation reads like a lineup, and no row is left with an orphan flush
-// left); from `md` everything fits one straight row.
 // One honeycomb CELL: a single solid-white clip-path hexagon on the
 // paper page (user pick — a neon-tube pass was tried and reverted).
 // Hover floods the cell flat pink, and cells pop in with a small cascade
@@ -307,6 +302,11 @@ const CREST_ORDER: ReadonlyArray<string> = [
 // the stagger delays stay consecutive across rows.
 const CREST_ROW_SIZES: ReadonlyArray<number> = [5, 4, 5, 4];
 
+// Every A-side crest, one tap from its profile — B teams share their
+// parent's crest, so they'd only duplicate the artwork here. On phones the
+// rail stacks into centered 5-4-5-… rows (user call — the staggered
+// formation reads like a lineup, and no row is left with an orphan flush
+// left); from `md` everything fits one straight row.
 const crestRail = (): Html => {
   const bySlug = (slug: string): Club | undefined => clubs.find((entry) => entry.slug === slug);
   const aSides = CREST_ORDER.flatMap((slug) => {
