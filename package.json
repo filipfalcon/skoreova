@@ -11,10 +11,8 @@
   ],
   "scripts": {
     "dev": "alchemy dev",
-    "format": "vp fmt",
-    "format:check": "vp fmt --check",
-    "lint": "vp lint --fix",
-    "lint:check": "vp lint",
+    "check": "vp check",
+    "check:fix": "vp check --fix",
     "test": "vp test run",
     "test:watch": "vp test watch",
     "test:coverage": "vp test run --coverage"
