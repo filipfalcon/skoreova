@@ -20,6 +20,8 @@ import {
   leagueRoundCount,
   leagueRounds,
 } from './schedule';
+import { tickerQuotes } from './ticker';
+import { BASE } from './worker';
 
 // THE SEASON CANON'S ARITHMETIC. The league numbers are mock, but a reader
 // can add them up — and the version before this one didn't survive that: the
@@ -234,6 +236,28 @@ test('only the clubs the cup draw names carry a cup run', () => {
     clubs.find((club) => club.name === name)?.slug ?? `unknown:${name}`;
 
   expect(Object.keys(clubCupRun).sort()).toEqual(semifinalists.map(slugFor).sort());
+});
+
+// The ticker is the one surface that names clubs without reading the table,
+// and it had drifted: the tape quoted "FK Pardubice" for a club whose profile,
+// standings row and crest all say "Pardubice". The tape resolves names from
+// the table now, so only the Worker's copy can drift — it can't import the
+// table without pulling every crest PNG into a Worker bundle. This is what
+// stands in for that import.
+test('the ticker quotes real clubs, under the names the season table gives them', () => {
+  for (const quote of tickerQuotes) {
+    const club = clubs.find((candidate) => candidate.slug === quote.slug);
+    expect(club, `${quote.slug} is not a club`).toBeDefined();
+  }
+
+  for (const entry of BASE) {
+    const club = clubs.find((candidate) => candidate.slug === entry.slug);
+    expect(entry.name, `the worker calls ${entry.slug} "${entry.name}"`).toBe(club?.name);
+  }
+
+  // Both sides quote the same clubs in the same order — the worker's document
+  // is what the tape will fetch once it stops rendering the local copy.
+  expect(BASE.map((entry) => entry.slug)).toEqual(tickerQuotes.map((quote) => quote.slug));
 });
 
 test('every club sits in a league the schedule generator knows', () => {

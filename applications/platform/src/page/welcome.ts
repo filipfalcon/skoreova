@@ -34,6 +34,7 @@ import {
   trendingTile,
 } from '../stat-tiles';
 import type { StatEntry } from '../stat-tiles';
+import { tickerQuotes } from '../ticker';
 
 const h = html<Message>();
 
@@ -183,33 +184,24 @@ const attendanceTiles = (model: Model): Html =>
 // item is an entity with a movement in the MARKET colors (green rise, red
 // fall — they clashed with the pink band, so the tape runs on a dark
 // strip; the pink lives on in the spark separators). No scores, no counts
-// (user call: "jen stocks"). Keep the names consistent with the mock
-// arrays' world.
+// (user call: "jen stocks"). CLUBS ONLY (user call) — no players, coaches or
+// competitions on the tape, which is what lets every row resolve its name
+// from the clubs table.
+//
+// A quote as the tape draws it: the club's canonical name from the season
+// table, plus its movement. The name is looked up rather than stored — see
+// ticker.ts for why.
 interface TapeQuote {
   readonly name: string;
   readonly delta: string;
   readonly isUp: boolean;
 }
 
-const quote = (name: string, delta: string, isUp: boolean): TapeQuote => ({ name, delta, isUp });
-
-// CLUBS ONLY (user call) — no players, coaches, or competitions on the
-// tape.
-const tape: ReadonlyArray<TapeQuote> = [
-  quote('FK Pardubice', '345 %', true),
-  quote('Slavia Praha', '9 %', false),
-  quote('Baník Ostrava', '11 %', true),
-  quote('Teplice', '12 %', false),
-  quote('Sparta Praha', '4 %', true),
-  quote('Prague Raptors', '6 %', false),
-  quote('Sigma Olomouc', '17 %', true),
-  quote('Slovácko', '3 %', false),
-  quote('Viktoria Plzeň', '8 %', true),
-  quote('Hradec Králové', '14 %', true),
-  quote('Vysočina Jihlava', '5 %', false),
-  quote('Lokomotiva Brno', '21 %', true),
-  quote('Slovan Liberec', '2 %', false),
-];
+const tape: ReadonlyArray<TapeQuote> = tickerQuotes.map((quote) => ({
+  name: clubs.find((club) => club.slug === quote.slug)?.name ?? quote.slug,
+  delta: `${quote.delta} %`,
+  isUp: quote.isUp,
+}));
 
 const quoteView = (entry: TapeQuote): ReadonlyArray<Html> => [
   h.span(

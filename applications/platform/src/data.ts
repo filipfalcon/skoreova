@@ -182,7 +182,12 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     focus: '50% 35%',
   },
   {
-    name: 'FK Pardubice',
+    // The clubs table's name, not "FK Pardubice" — the tile links to the
+    // profile, and the profile, its standings row and the crest rail all say
+    // "Pardubice". A trending tile is free-text because anything can trend,
+    // so nothing derived this; the ticker quoting the same wrong name is what
+    // gave it away.
+    name: 'Pardubice',
     kind: 'Club',
     href: clubRouter({ slug: 'pardubice' }),
     crest: pardubiceLogo,

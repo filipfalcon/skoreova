@@ -21,6 +21,8 @@
 // with a small random offset, so the tape visibly moves day to day. Real
 // percentages replace it when that API exists.
 
+import { tickerQuotes } from './ticker';
+
 export const TICKER_KEY = 'ticker:clubs';
 
 interface TickerClub {
@@ -31,21 +33,32 @@ interface TickerClub {
   readonly up: boolean;
 }
 
-const BASE: ReadonlyArray<TickerClub> = [
-  { slug: 'pardubice', name: 'FK Pardubice', delta: 345, up: true },
-  { slug: 'slavia-praha', name: 'Slavia Praha', delta: 9, up: false },
-  { slug: 'banik-ostrava', name: 'Baník Ostrava', delta: 11, up: true },
-  { slug: 'teplice', name: 'Teplice', delta: 12, up: false },
-  { slug: 'sparta-praha', name: 'Sparta Praha', delta: 4, up: true },
-  { slug: 'prague-raptors', name: 'Prague Raptors', delta: 6, up: false },
-  { slug: 'sigma-olomouc', name: 'Sigma Olomouc', delta: 17, up: true },
-  { slug: 'slovacko', name: 'Slovácko', delta: 3, up: false },
-  { slug: 'viktoria-plzen', name: 'Viktoria Plzeň', delta: 8, up: true },
-  { slug: 'hradec-kralove', name: 'Hradec Králové', delta: 14, up: true },
-  { slug: 'vysocina-jihlava', name: 'Vysočina Jihlava', delta: 5, up: false },
-  { slug: 'lokomotiva-brno', name: 'Lokomotiva Brno', delta: 21, up: true },
-  { slug: 'slovan-liberec', name: 'Slovan Liberec', delta: 2, up: false },
-];
+// The movements come from ticker.ts, the one place the quoted clubs are
+// authored. The NAMES stay here: this module is a separate deployable and
+// importing the clubs table would drag every crest PNG into a Worker bundle,
+// so data.test.ts holds these to the same table the tape resolves against.
+const CLUB_NAMES: Record<string, string> = {
+  pardubice: 'Pardubice',
+  'slavia-praha': 'Slavia Praha',
+  'banik-ostrava': 'Baník Ostrava',
+  teplice: 'Teplice',
+  'sparta-praha': 'Sparta Praha',
+  'prague-raptors': 'Prague Raptors',
+  'sigma-olomouc': 'Sigma Olomouc',
+  slovacko: 'Slovácko',
+  'viktoria-plzen': 'Viktoria Plzeň',
+  'hradec-kralove': 'Hradec Králové',
+  'vysocina-jihlava': 'Vysočina Jihlava',
+  'lokomotiva-brno': 'Lokomotiva Brno',
+  'slovan-liberec': 'Slovan Liberec',
+};
+
+export const BASE: ReadonlyArray<TickerClub> = tickerQuotes.map((quote) => ({
+  slug: quote.slug,
+  name: CLUB_NAMES[quote.slug] ?? quote.slug,
+  delta: quote.delta,
+  up: quote.isUp,
+}));
 
 // ±10% of the base value, but at least a whole point, so even the small
 // quotes move; never drops below 1.
