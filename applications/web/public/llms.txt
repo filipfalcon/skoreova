@@ -1,8 +1,8 @@
 # Skóreová
 
-> Independent media covering Czech women's football: the first league, the
-> second league, the domestic cup, Czech clubs in European competitions
-> (UWCL, UWEC), and the national team. Made in Czechia, written in English.
+> Czech Women's Football Coverage: the first league, the second league, the
+> domestic cup, Czech clubs in European competitions (UWCL, UWEC), and the
+> national team. Made in Czechia, written in English.
 
 Skóreová is a media brand, not a governing body. The landing site tells the
 story of the sport; the platform carries the data (fixtures, results,
