@@ -145,16 +145,7 @@ export const view = (model: Model): Html => {
     if (Array.isReadonlyArrayEmpty(choices)) {
       return h.div(
         [h.Class('flex flex-col gap-2')],
-        [
-          h.select(
-            [h.Disabled(true), h.Class(drawerInputInertStyle)],
-            [option('', `No ${sectionLabels[section].toLowerCase()} yet`)],
-          ),
-          h.p(
-            [h.Class('text-xs text-neutral-500')],
-            [`Create a ${singular} first — this record has to belong to one.`],
-          ),
-        ],
+        [inertSelect(`No ${sectionLabels[section].toLowerCase()} yet`)],
       );
     }
 
@@ -181,6 +172,19 @@ export const view = (model: Model): Html => {
   const missingReferences = creating
     ? columns.filter((column, index) => column.derived !== undefined && (draft[index] ?? '') === '')
     : [];
+
+  // The note has to match what the picker above it is actually showing. When
+  // the referenced section is empty there is nothing to choose, so telling the
+  // editor to choose is a dead end — the two used to say different things at
+  // the same moment, one in the field and one in the footer.
+  const missingReferenceNote = (column: Column): string => {
+    const section = column.derived;
+    if (section === undefined) return '';
+    const label = column.label.toLowerCase();
+    return sectionRows(model, section).some((row) => !row.isDeleted)
+      ? `Choose a ${label} to save this record.`
+      : `No ${sectionLabels[section].toLowerCase()} exist yet — create one, then this record can belong to it.`;
+  };
 
   const field = (column: Column, index: number): Html =>
     h.label(
@@ -553,13 +557,7 @@ export const view = (model: Model): Html => {
                   h.Role('status'),
                   h.Class('mr-auto text-xs text-neutral-500'),
                 ],
-                Array.isReadonlyArrayNonEmpty(missingReferences)
-                  ? [
-                      `Choose a ${missingReferences
-                        .map((column) => column.label.toLowerCase())
-                        .join(' and a ')} to save this record.`,
-                    ]
-                  : [],
+                missingReferences.map(missingReferenceNote),
               ),
               h.button([...render.closeButton, h.Class(drawerCancelStyle)], ['Cancel']),
               h.button(
