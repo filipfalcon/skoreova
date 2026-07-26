@@ -1,4 +1,4 @@
-import { RadioGroup } from '@foldkit/ui';
+import { Button, RadioGroup } from '@foldkit/ui';
 import { Array, Match as M, Number, Option } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
@@ -223,18 +223,24 @@ const chartStudioPanel = (model: Model): Html =>
               ),
             ],
           ),
-          // NOTE: deliberately inert mock until saved charts persist —
-          // AriaDisabled announces the not-yet state to AT.
-          h.button(
-            [
-              h.Type('button'),
-              h.AriaDisabled(true),
-              h.Class(
-                'border border-ink/15 px-4 py-2 text-[10px] tracking-[0.2em] uppercase text-ink/60 transition-colors hover:border-pink hover:text-ink',
+          // NOTE: deliberately inert mock until saved charts persist — the
+          // blocked state comes from Ui.Button, which announces it as
+          // aria-disabled and passes no click handler while leaving the control
+          // in the tab order. The message type is written out because an
+          // always-blocked button has no onClick to infer it from.
+          Button.view<Message>({
+            isDisabled: true,
+            toView: ({ button }) =>
+              h.button(
+                [
+                  ...button,
+                  h.Class(
+                    'border border-ink/15 px-4 py-2 text-[10px] tracking-[0.2em] uppercase text-ink/60 transition-colors hover:border-pink hover:text-ink',
+                  ),
+                ],
+                ['Save to my charts'],
               ),
-            ],
-            ['Save to my charts'],
-          ),
+          }),
         ],
       ),
       metricRadioGroup(model),
@@ -374,18 +380,21 @@ export const view = (model: Model): Html =>
         [h.Class('mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3')],
         [
           ...savedCharts.map((chart) => savedChartCard(model, chart)),
-          // NOTE: deliberately inert mock until the chart builder exists —
-          // AriaDisabled announces the not-yet state to AT.
-          h.button(
-            [
-              h.Type('button'),
-              h.AriaDisabled(true),
-              h.Class(
-                'display flex min-h-40 items-center justify-center border border-dashed border-ink/20 p-6 text-xl text-ink/40 transition-colors hover:border-pink hover:text-pink',
+          // NOTE: deliberately inert mock until the chart builder exists — same
+          // blocked contract as the save control above.
+          Button.view<Message>({
+            isDisabled: true,
+            toView: ({ button }) =>
+              h.button(
+                [
+                  ...button,
+                  h.Class(
+                    'display flex min-h-40 items-center justify-center border border-dashed border-ink/20 p-6 text-xl text-ink/40 transition-colors hover:border-pink hover:text-pink',
+                  ),
+                ],
+                ['+ New chart'],
               ),
-            ],
-            ['+ New chart'],
-          ),
+          }),
         ],
       ),
     ],

@@ -1,4 +1,4 @@
-import { RadioGroup } from '@foldkit/ui';
+import { Button, RadioGroup } from '@foldkit/ui';
 import clsx from 'clsx';
 import { Array, Match as M, Option } from 'effect';
 import { html } from 'foldkit/html';
@@ -346,24 +346,29 @@ const clubFollowSection = (target: Club, model: Model): Html => {
         [h.Class('mx-auto mt-4 max-w-md text-sm leading-relaxed text-ink/50')],
         ['Follow the club and Her Game builds your feed around it — matches, movers, and records.'],
       ),
-      h.button(
-        [
-          h.Type('button'),
-          h.OnClick(ToggledFollow({ slug: target.slug })),
-          h.AriaPressed(following ? 'true' : 'false'),
-          h.Class(
-            // On PAPER the states invert from the dark build: the call to
-            // action is the pink fill, and the settled "following" state
-            // goes solid ink — on a light surface a paper fill would have
-            // been the button disappearing, not receding.
-            clsx(
-              'display mt-8 inline-block cursor-pointer px-10 py-4 text-xl tracking-[0.12em] transition-colors md:text-2xl',
-              following ? 'bg-ink text-paper' : 'bg-pink text-ink hover:bg-ink hover:text-paper',
-            ),
+      Button.view({
+        onClick: ToggledFollow({ slug: target.slug }),
+        toView: ({ button }) =>
+          h.button(
+            [
+              ...button,
+              h.AriaPressed(following ? 'true' : 'false'),
+              h.Class(
+                // On PAPER the states invert from the dark build: the call to
+                // action is the pink fill, and the settled "following" state
+                // goes solid ink — on a light surface a paper fill would have
+                // been the button disappearing, not receding.
+                clsx(
+                  'display mt-8 inline-block cursor-pointer px-10 py-4 text-xl tracking-[0.12em] transition-colors md:text-2xl',
+                  following
+                    ? 'bg-ink text-paper'
+                    : 'bg-pink text-ink hover:bg-ink hover:text-paper',
+                ),
+              ),
+            ],
+            [following ? 'Following ✓' : `Follow ${target.name}`],
           ),
-        ],
-        [following ? 'Following ✓' : `Follow ${target.name}`],
-      ),
+      }),
     ],
   );
 };

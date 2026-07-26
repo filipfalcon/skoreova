@@ -1,6 +1,7 @@
 // Shared view helpers and the app shell (header + nav) — the building blocks
 // every screen composes from.
 
+import { Button } from '@foldkit/ui';
 import clsx from 'clsx';
 import type { Html } from 'foldkit/html';
 import { html } from 'foldkit/html';
@@ -53,23 +54,26 @@ export const pinGlyph = (classes: string): Html =>
 // not a bare "pin".
 export const pinToggle = (model: Model, id: string, label: string): Html => {
   const pinned = model.pinned.includes(id);
-  return h.button(
-    [
-      h.Type('button'),
-      h.OnClick(ToggledPin({ id })),
-      h.AriaPressed(pinned ? 'true' : 'false'),
-      h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
-      h.Class(
-        clsx(
-          'group/pin flex shrink-0 cursor-pointer items-center gap-1.5 border px-2.5 py-1.5 text-[10px] tracking-[0.2em] uppercase transition-colors',
-          pinned
-            ? 'border-pink bg-pink text-ink'
-            : 'border-ink/20 text-ink/50 hover:border-pink hover:text-ink',
-        ),
+  return Button.view({
+    onClick: ToggledPin({ id }),
+    toView: ({ button }) =>
+      h.button(
+        [
+          ...button,
+          h.AriaPressed(pinned ? 'true' : 'false'),
+          h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
+          h.Class(
+            clsx(
+              'group/pin flex shrink-0 cursor-pointer items-center gap-1.5 border px-2.5 py-1.5 text-[10px] tracking-[0.2em] uppercase transition-colors',
+              pinned
+                ? 'border-pink bg-pink text-ink'
+                : 'border-ink/20 text-ink/50 hover:border-pink hover:text-ink',
+            ),
+          ),
+        ],
+        [pinGlyph('h-3.5 w-3.5'), pinned ? 'Pinned' : 'Pin'],
       ),
-    ],
-    [pinGlyph('h-3.5 w-3.5'), pinned ? 'Pinned' : 'Pin'],
-  );
+  });
 };
 
 // A section chip that carries its pin control on the same row. The chip is
@@ -161,35 +165,42 @@ export const personGlyph: Html = h.svg(
 );
 
 // NOTE: deliberately inert mock — accounts arrive with the paid tiers; the
-// free platform never demands one. AriaDisabled keeps it in the tab order
-// while announcing honestly that it does nothing yet.
+// free platform never demands one. Ui.Button's isDisabled is what announces
+// that honestly: aria-disabled plus data-disabled, and NO click handler, while
+// the control keeps its place in the tab order so a keyboard reader still
+// meets it and hears why it does nothing yet.
 export const accountButton = (): Html =>
-  h.button(
-    [
-      h.Type('button'),
-      h.AriaLabel('Account'),
-      h.AriaDisabled(true),
-      h.Class('group flex shrink-0 cursor-pointer items-center gap-3'),
-    ],
-    [
-      h.span(
+  // The message type has to be written out: nothing else in this call carries
+  // it, since an always-blocked button has no onClick to infer it from.
+  Button.view<Message>({
+    isDisabled: true,
+    toView: ({ button }) =>
+      h.button(
         [
-          h.Class(
-            'flex h-9 w-9 items-center justify-center rounded-full border border-paper/15 text-paper/60 transition-colors group-hover:border-pink group-hover:text-paper',
+          ...button,
+          h.AriaLabel('Account'),
+          h.Class('group flex shrink-0 cursor-pointer items-center gap-3'),
+        ],
+        [
+          h.span(
+            [
+              h.Class(
+                'flex h-9 w-9 items-center justify-center rounded-full border border-paper/15 text-paper/60 transition-colors group-hover:border-pink group-hover:text-paper',
+              ),
+            ],
+            [personGlyph],
+          ),
+          h.span(
+            [
+              h.Class(
+                'hidden text-[10px] tracking-[0.2em] uppercase text-paper/60 transition-colors group-hover:text-paper md:inline',
+              ),
+            ],
+            ['Account'],
           ),
         ],
-        [personGlyph],
       ),
-      h.span(
-        [
-          h.Class(
-            'hidden text-[10px] tracking-[0.2em] uppercase text-paper/60 transition-colors group-hover:text-paper md:inline',
-          ),
-        ],
-        ['Account'],
-      ),
-    ],
-  );
+  });
 
 // Phone nav ICONS — below `md` the tabs show a glyph instead of text
 // (user call). PLACEHOLDER line art for now: the user supplies the final

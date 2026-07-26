@@ -1,6 +1,7 @@
 // The shared landing-page building blocks: the display-type helpers, drawn
 // glyphs, and the header / menu overlay / footer shell.
 
+import { Button } from '@foldkit/ui';
 import { Option } from 'effect';
 import clsx from 'clsx';
 import { html } from 'foldkit/html';
@@ -276,26 +277,30 @@ export const headerView = (model: Model): Html =>
                 ],
                 ['Enter platform', displayArrow],
               ),
-              h.button(
-                [
-                  // The FocusMenuToggle Command returns focus here after
-                  // Escape closes the overlay.
-                  h.Id('menu-toggle'),
-                  h.OnClick(ToggledMenu()),
-                  h.AriaLabel(model.isMenuOpen ? 'Close menu' : 'Open menu'),
-                  h.AriaExpanded(model.isMenuOpen),
-                  h.AriaControls('menu-overlay'),
-                  // The text size exists for the glyph alone (the button has
-                  // no text): menuGlyph is 0.875em tall, so tracking the
-                  // wordmark's text-xl/2xl keeps the two the same height.
-                  h.Class(
-                    'display flex cursor-pointer items-center text-xl text-paper transition-colors duration-300 hover:text-pink md:text-2xl',
+              Button.view({
+                onClick: ToggledMenu(),
+                toView: ({ button }) =>
+                  h.button(
+                    [
+                      ...button,
+                      // The FocusMenuToggle Command returns focus here after
+                      // Escape closes the overlay.
+                      h.Id('menu-toggle'),
+                      h.AriaLabel(model.isMenuOpen ? 'Close menu' : 'Open menu'),
+                      h.AriaExpanded(model.isMenuOpen),
+                      h.AriaControls('menu-overlay'),
+                      // The text size exists for the glyph alone (the button has
+                      // no text): menuGlyph is 0.875em tall, so tracking the
+                      // wordmark's text-xl/2xl keeps the two the same height.
+                      h.Class(
+                        'display flex cursor-pointer items-center text-xl text-paper transition-colors duration-300 hover:text-pink md:text-2xl',
+                      ),
+                    ],
+                    // The hamburger/X glyph on every breakpoint — the aria-label
+                    // carries the wording the icon dropped.
+                    [menuGlyph(model.isMenuOpen)],
                   ),
-                ],
-                // The hamburger/X glyph on every breakpoint — the aria-label
-                // carries the wording the icon dropped.
-                [menuGlyph(model.isMenuOpen)],
-              ),
+              }),
             ],
           ),
         ],

@@ -1,3 +1,4 @@
+import { Button } from '@foldkit/ui';
 import clsx from 'clsx';
 import { Array, Number, Option } from 'effect';
 import { html } from 'foldkit/html';
@@ -188,21 +189,24 @@ export const statSpark = (rounds: ReadonlyArray<number>): Html =>
 // sibling of the card link, never inside it.
 export const pinOverlay = (model: Model, id: string, label: string): Html => {
   const pinned = model.pinned.includes(id);
-  return h.button(
-    [
-      h.Type('button'),
-      h.OnClick(ToggledPin({ id })),
-      h.AriaPressed(pinned ? 'true' : 'false'),
-      h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
-      h.Class(
-        clsx(
-          'absolute top-3 right-3 z-10 flex h-9 w-9 cursor-pointer items-center justify-center transition-colors',
-          pinned ? 'bg-pink text-ink' : 'bg-paper/90 text-ink hover:bg-pink',
-        ),
+  return Button.view({
+    onClick: ToggledPin({ id }),
+    toView: ({ button }) =>
+      h.button(
+        [
+          ...button,
+          h.AriaPressed(pinned ? 'true' : 'false'),
+          h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
+          h.Class(
+            clsx(
+              'absolute top-3 right-3 z-10 flex h-9 w-9 cursor-pointer items-center justify-center transition-colors',
+              pinned ? 'bg-pink text-ink' : 'bg-paper/90 text-ink hover:bg-pink',
+            ),
+          ),
+        ],
+        [pinGlyph('h-4 w-4')],
       ),
-    ],
-    [pinGlyph('h-4 w-4')],
-  );
+  });
 };
 
 // 'First League' -> 'first-league', so a card's pin id is stable and
@@ -400,28 +404,31 @@ export const bestRecord = (model: Model, record: BestRecord, standalone: boolean
       ),
     ],
     [
-      h.button(
-        [
-          h.Type('button'),
-          h.OnClick(ToggledPin({ id: `best:${record.id}` })),
-          h.AriaPressed(pinned ? 'true' : 'false'),
-          h.AriaLabel(
-            pinned ? `Unpin ${record.label} from Her Game` : `Pin ${record.label} to Her Game`,
+      Button.view({
+        onClick: ToggledPin({ id: `best:${record.id}` }),
+        toView: ({ button }) =>
+          h.button(
+            [
+              ...button,
+              h.AriaPressed(pinned ? 'true' : 'false'),
+              h.AriaLabel(
+                pinned ? `Unpin ${record.label} from Her Game` : `Pin ${record.label} to Her Game`,
+              ),
+              // The tick, now a hit target: pink bar at rest, growing a pin
+              // glyph beside it when pinned so the state reads without colour.
+              h.Class(
+                clsx(
+                  'flex cursor-pointer items-center gap-2 transition-colors',
+                  pinned ? 'text-pink' : 'text-ink/30 hover:text-pink',
+                ),
+              ),
+            ],
+            [
+              h.div([h.Class('h-1 w-10 bg-pink')], []),
+              pinned ? pinGlyph('h-3.5 w-3.5 text-pink') : h.empty,
+            ],
           ),
-          // The tick, now a hit target: pink bar at rest, growing a pin
-          // glyph beside it when pinned so the state reads without colour.
-          h.Class(
-            clsx(
-              'flex cursor-pointer items-center gap-2 transition-colors',
-              pinned ? 'text-pink' : 'text-ink/30 hover:text-pink',
-            ),
-          ),
-        ],
-        [
-          h.div([h.Class('h-1 w-10 bg-pink')], []),
-          pinned ? pinGlyph('h-3.5 w-3.5 text-pink') : h.empty,
-        ],
-      ),
+      }),
       h.p(
         [h.Class('display mt-3 text-5xl text-ink sm:text-4xl md:text-5xl')],
         record.isCount === true ? [record.value, drawnTimes()] : [record.value],

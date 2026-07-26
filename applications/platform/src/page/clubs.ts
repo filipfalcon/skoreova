@@ -1,4 +1,4 @@
-import { Input } from '@foldkit/ui';
+import { Button, Input } from '@foldkit/ui';
 import { Array } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
@@ -66,17 +66,20 @@ const featuredArtwork = (entry: FeaturedClub, club: Club | undefined): Html =>
       ]);
 
 const carouselArrow = (target: number, glyph: string, label: string): Html =>
-  h.button(
-    [
-      h.Type('button'),
-      h.AriaLabel(label),
-      h.OnClick(SelectedFeaturedClub({ index: target })),
-      h.Class(
-        'display flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-paper/30 bg-ink/60 text-lg text-paper backdrop-blur-[2px] transition-colors hover:border-pink hover:text-pink',
+  Button.view({
+    onClick: SelectedFeaturedClub({ index: target }),
+    toView: ({ button }) =>
+      h.button(
+        [
+          ...button,
+          h.AriaLabel(label),
+          h.Class(
+            'display flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-paper/30 bg-ink/60 text-lg text-paper backdrop-blur-[2px] transition-colors hover:border-pink hover:text-pink',
+          ),
+        ],
+        [glyph],
       ),
-    ],
-    [glyph],
-  );
+  });
 
 const europeanContenders = (model: Model): Html => {
   const count = featuredClubs.length;
