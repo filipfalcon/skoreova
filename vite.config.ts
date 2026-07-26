@@ -6,10 +6,6 @@ export default defineConfig({
     semi: true,
     singleQuote: true,
   },
-  // oxlint runs through vite-plus (`vp lint`), so its config lives here
-  // rather than a standalone .oxlintrc.json. `@foldkit/oxlint-plugin` adds
-  // the Foldkit-aware rules (Message/Command naming, evo updates, no
-  // module-level mutable state) that oxlint can't know on its own.
   lint: {
     plugins: ['typescript'],
     jsPlugins: [{ name: 'foldkit', specifier: '@foldkit/oxlint-plugin' }],
