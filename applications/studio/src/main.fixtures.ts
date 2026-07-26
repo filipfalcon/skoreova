@@ -80,6 +80,7 @@ export const signedOutModel = Model.make({
   playersTotal: 0,
   serverHealth: 'Unknown',
   clientPage: 1,
+  deletedRecordIds: [],
   linkError: '',
   filterListboxes: initialFilterListboxes(),
   dateFilters: {},
