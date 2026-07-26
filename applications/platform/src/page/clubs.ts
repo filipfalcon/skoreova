@@ -359,14 +359,17 @@ export const view = (model: Model): Html => {
                   ),
                   // INK tints, not paper. These segments date from the dark
                   // build; on the paper panel this card actually sits on,
-                  // `bg-paper/40` and `bg-paper/10` are invisible, so the form
-                  // bar read as a pink stub that stopped short of the card.
+                  // `bg-paper/40` and `bg-paper/10` were invisible, so the form
+                  // bar read as a pink stub that stopped short of the card. The
+                  // losses tint is /25 rather than /10 for the same reason at a
+                  // smaller scale: at /10 a club with few defeats still showed
+                  // a bar that appeared to end early.
                   h.div(
                     [h.Class('bg-ink/40'), h.Style({ width: `${(entry.drawn / played) * 100}%` })],
                     [],
                   ),
                   h.div(
-                    [h.Class('bg-ink/10'), h.Style({ width: `${(entry.lost / played) * 100}%` })],
+                    [h.Class('bg-ink/25'), h.Style({ width: `${(entry.lost / played) * 100}%` })],
                     [],
                   ),
                 ],
