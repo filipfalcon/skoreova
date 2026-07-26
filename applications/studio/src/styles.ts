@@ -118,8 +118,20 @@ export const calendarHeadingStyle =
 export const filterDropdownRowStyle =
   'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100';
 
-export const drawerInputStyle =
-  'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
+// The drawer field, split into SHAPE and COLOUR. Appending `bg-neutral-100`
+// to a string that already says `bg-white` is a no-op — Tailwind emits its
+// utilities in its own order, not the order you concatenated them, and
+// `bg-white` wins — so the disabled picker rendered white and the read-only
+// cell rendered as an ordinary editable field. Composing two complete,
+// non-overlapping colour sets is what actually switches the look.
+const drawerFieldShape =
+  'w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-neutral-500 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
+
+export const drawerInputStyle = `${drawerFieldShape} border-neutral-300 bg-white text-neutral-900`;
+
+// A field the editor cannot type into: the derived cell in Editing mode, and
+// the reference picker while its section is still loading or has failed.
+export const drawerInputInertStyle = `${drawerFieldShape} cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-500`;
 
 export const drawerCloseStyle =
   'cursor-pointer rounded-full px-2 text-lg leading-none text-neutral-500 transition hover:text-neutral-900';
@@ -127,8 +139,18 @@ export const drawerCloseStyle =
 export const drawerCancelStyle =
   'cursor-pointer rounded-lg border border-neutral-300 px-4 py-2 text-sm text-neutral-700 transition hover:bg-neutral-100';
 
-export const drawerSaveStyle =
-  'cursor-pointer rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400';
+// Save, in two DISJOINT sets — the same split the drawer fields use, and for
+// the same reason. Overlaying `bg-neutral-400 cursor-not-allowed` on the live
+// string does nothing: Tailwind emits those utilities BEFORE `bg-neutral-900`
+// and `cursor-pointer` at equal specificity, so the enabled look wins every
+// property and the blocked button renders as a normal, clickable one.
+const drawerButtonShape = 'rounded-lg px-4 py-2 text-sm font-medium text-white transition';
+
+export const drawerSaveStyle = `${drawerButtonShape} cursor-pointer bg-neutral-900 hover:bg-neutral-800`;
+
+// Blocked, not disabled: the button keeps its place in the tab order so the
+// note explaining why can be reached (see the save gate in page/drawer.ts).
+export const drawerSaveInertStyle = `${drawerButtonShape} cursor-not-allowed bg-neutral-400`;
 
 export const drawerTabStyle =
   'cursor-pointer border-b-2 border-transparent px-3 pb-3 text-sm text-neutral-500 transition hover:text-neutral-900';
