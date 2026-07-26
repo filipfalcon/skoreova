@@ -570,10 +570,10 @@ const content = (model: Model, current: Section): Html => {
         ),
       ],
       [
-        h.span(
-          [h.Class('text-sm text-amber-800')],
-          [`Couldn't open the shared link: ${model.linkError}`],
-        ),
+        // No "shared link" prefix: this banner started life as a deep-link
+        // failure, but the delete guard writes it on a plain Back/Forward too,
+        // where no link was involved. The message says what happened.
+        h.span([h.Class('text-sm text-amber-800')], [model.linkError]),
       ],
     );
   };
