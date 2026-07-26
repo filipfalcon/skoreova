@@ -42,8 +42,10 @@ export const view = (model: Model): Html =>
                     [h.Class('mt-2 text-[10px] tracking-[0.2em] uppercase text-ink/40')],
                     [competition.stage],
                   ),
+                  // Ink track: a paper-tinted one is invisible on the paper
+                  // card, which left the progress bar with no groove behind it.
                   h.div(
-                    [h.Class('mt-4 h-1 bg-paper/10')],
+                    [h.Class('mt-4 h-1 bg-ink/10')],
                     [
                       h.div(
                         [h.Class('h-full bg-pink'), h.Style({ width: `${competition.progress}%` })],
