@@ -553,7 +553,7 @@ const setUpReveals = (
       rootMargin: '0px 0px -10% 0px',
     });
     // Phones give draw targets their own late trigger: with the generic 5%
-    // threshold the 2.4s pen stroke started the instant a sliver crossed
+    // threshold the 0.7s pen stroke started the instant a sliver crossed
     // the fold and played out mostly below the viewport — the map read as
     // popping in fully drawn. Waiting for HALF the figure costs moments
     // (the map is short on a phone) but the stroke is actually watched.

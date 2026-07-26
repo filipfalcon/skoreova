@@ -126,9 +126,11 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         evo(model, { prefersReducedMotion: () => reduce, reveals: () => ({}) }),
         [],
       ],
-      // The reveal observers' report — the single place reveal state
-      // changes. `revealed` never downgrades an already-drawn target;
-      // `drawn` only upgrades one that is on screen.
+      // The reveal observers' report, and the only message that MOVES a
+      // target between reveal states (ChangedReducedMotion above clears the
+      // record wholesale, which is a reset, not a transition). `revealed`
+      // never downgrades an already-drawn target; `drawn` only upgrades one
+      // that is on screen.
       ChangedReveals: ({ revealed, concealed, drawn }) => [
         evo(model, {
           reveals: (reveals) => {
