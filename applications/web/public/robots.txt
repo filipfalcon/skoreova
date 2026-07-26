@@ -44,4 +44,3 @@ Allow: /
 User-agent: meta-externalagent
 Allow: /
 
-Sitemap: https://beta.skoreova.com/sitemap.xml
