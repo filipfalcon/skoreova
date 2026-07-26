@@ -27,6 +27,7 @@ import {
   SubmittedSignIn,
   CompletedNavigate,
   DrawerEditing,
+  Entry,
   ParticipationsData,
   SectionData,
   SucceededSyncChart,
@@ -526,9 +527,22 @@ test('a deleted record stays deleted when the browser replays its route', () => 
 });
 
 test('a refetch cannot resurrect a deleted record or drop a locally created one', () => {
+  // One fetched row (about to be deleted) and one that only exists here — the
+  // wire will answer with the first alive and no knowledge of the second.
+  const localClub: Entry = {
+    section: 'clubs',
+    id: 'local-1',
+    parentId: '',
+    isDeleted: false,
+    values: ['Nova Praha', 'Prague', '2026'],
+  };
+
   Story.story(
     update,
-    Story.with(clubRecordModel),
+    Story.with({
+      ...clubRecordModel,
+      clubs: SectionData.Success({ data: [sampleClub, localClub] }),
+    }),
     Story.message(ClickedDeleteRecord()),
     Story.message(ClickedConfirmDelete()),
     Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
@@ -542,6 +556,10 @@ test('a refetch cannot resurrect a deleted record or drop a locally created one'
     Story.model((model) => {
       const rows = Option.getOrElse(AsyncData.getData(model.clubs), () => []);
       expect(rows.find((row) => row.id === sampleClub.id)?.isDeleted).toBe(true);
+      // …and the locally created row is still there. The name of this test
+      // promises both halves; without this line, deleting `...localOnly` from
+      // the merge left everything green.
+      expect(rows.some((row) => row.id.startsWith('local-'))).toBe(true);
     }),
   );
 });
