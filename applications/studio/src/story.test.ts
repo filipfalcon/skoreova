@@ -3,7 +3,7 @@ import { Dialog } from '@foldkit/ui';
 import { AsyncData, Story } from 'foldkit';
 import { NotValidated } from 'foldkit/fieldValidation';
 import { fromString } from 'foldkit/url';
-import { expect, test } from 'vitest';
+import { expect, test } from 'vite-plus/test';
 
 import {
   clubRecordModel,
@@ -495,9 +495,17 @@ test('saving an edited record defers to the clock, then commits with that timest
       expect(model.drawer._tag).toBe('Closed');
       expect(model.dialog.isOpen).toBe(false);
       expect(model.editLog).toHaveLength(1);
-      expect(model.editLog[0]?.from).toBe('Sparta Praha');
-      expect(model.editLog[0]?.to).toBe('Slavia Praha');
-      expect(model.editLog[0]?.at).toBe('6/1/2026, 12:00:00 PM');
+      // Narrowed on the tag rather than optional-chained off the union: only
+      // FieldChanged carries `from`/`to` (RecordCreated and RecordDeleted have
+      // nothing to report), so `editLog[0]?.from` read a property the union
+      // does not have — it type-checked nowhere and would have compared
+      // `undefined` against the expected club had the wrong event been logged.
+      const [logged] = model.editLog;
+      expect(logged?._tag).toBe('FieldChanged');
+      if (logged?._tag !== 'FieldChanged') return;
+      expect(logged.from).toBe('Sparta Praha');
+      expect(logged.to).toBe('Slavia Praha');
+      expect(logged.at).toBe('6/1/2026, 12:00:00 PM');
     }),
     // The commit also closes the drawer's Dialog alongside the navigation.
     Story.Command.expectHas(Dialog.CloseDialog),
