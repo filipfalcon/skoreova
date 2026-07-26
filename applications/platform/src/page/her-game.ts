@@ -134,12 +134,13 @@ const studioChart = (series: MetricSeries): Html => {
         ],
         [],
       ),
-      // Every OTHER matchday gets an axis label, starting at 1 (so 1, 3, 5…
-      // — the labels are `index + 1`, and it is the even INDEXES that carry
-      // them). flatMap emits nothing for the rest rather than an empty
-      // placeholder element.
+      // Every OTHER matchday gets a label, counted back from the END so the
+      // CURRENT matchday always carries one — anchoring to the start left the
+      // most recent bar as the only unlabelled one on an even-length series,
+      // which is exactly the bar a reader looks for. flatMap emits nothing for
+      // the rest rather than an empty placeholder element.
       ...series.values.flatMap((_, index) =>
-        index % 2 === 0
+        (series.values.length - 1 - index) % 2 === 0
           ? [
               h.text(
                 [
@@ -163,12 +164,28 @@ const studioChart = (series: MetricSeries): Html => {
 // the identity of that metric's chart — so switching metrics swaps whole
 // subtrees (teardown + the bars' grow-in replay) without a key ever being
 // derived from model data.
-const goalsChartView = (): Html =>
-  h.div([h.Key('studio-chart-goals')], [studioChart(metricSeries.Goals)]);
+// The SVG is decorative markup — AriaHidden, like every other drawn chart here
+// — which left the metric radiogroup changing nothing an assistive-tech reader
+// could perceive: three options, one silent picture. This is the same treatment
+// the count-up numbers get on the landing page: the shape stays hidden and a
+// screen-reader-only summary carries the content, so switching metrics actually
+// announces something.
+const chartSummary = (series: MetricSeries): Html =>
+  h.p(
+    [h.Class('sr-only'), h.Role('status')],
+    [
+      `${series.label}, ${series.unit}. Matchdays 1 to ${series.values.length}: ${series.values.join(', ')}.`,
+    ],
+  );
+
+const chartWithSummary = (key: string, series: MetricSeries): Html =>
+  h.div([h.Key(key)], [studioChart(series), chartSummary(series)]);
+
+const goalsChartView = (): Html => chartWithSummary('studio-chart-goals', metricSeries.Goals);
 const attendanceChartView = (): Html =>
-  h.div([h.Key('studio-chart-attendance')], [studioChart(metricSeries.Attendance)]);
+  chartWithSummary('studio-chart-attendance', metricSeries.Attendance);
 const conversionChartView = (): Html =>
-  h.div([h.Key('studio-chart-conversion')], [studioChart(metricSeries.Conversion)]);
+  chartWithSummary('studio-chart-conversion', metricSeries.Conversion);
 
 const metricChartView = (metric: Metric): Html =>
   M.value(metric).pipe(
