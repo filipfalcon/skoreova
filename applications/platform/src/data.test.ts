@@ -10,7 +10,7 @@ import {
   metricSeries,
   standingsFor,
 } from './data';
-import { goals } from './stat-tiles';
+import { attendance, goals } from './stat-tiles';
 import {
   MATCHDAYS_PLAYED,
   SCORE_OVERRIDES,
@@ -134,6 +134,48 @@ test.each(LEAGUES)("%s: the home board's goals per matchday add up to the table"
   );
   expect(Number.sumAll(board.rounds)).toBe(scored);
   expect(board.rounds).toHaveLength(MATCHDAYS_PLAYED);
+});
+
+// How many matches each matchday actually staged, both leagues together —
+// four in the eight-club First League, five in the eleven-club Second with
+// one club idle. Read off the generated schedule rather than assumed, so the
+// divisor below follows the club tables the way everything else here does.
+const matchesPerMatchday = (): ReadonlyArray<number> =>
+  LEAGUES.map((league) => leagueRounds(league).slice(0, MATCHDAYS_PLAYED)).reduce<
+    ReadonlyArray<number>
+  >(
+    (totals, rounds) => rounds.map((fixtures, index) => (totals[index] ?? 0) + fixtures.length),
+    [],
+  );
+
+// The board for a matchday, both leagues added together.
+const boardTotals = (
+  boards: ReadonlyArray<{ readonly rounds: ReadonlyArray<number> }>,
+): ReadonlyArray<number> =>
+  boards.reduce<ReadonlyArray<number>>(
+    (totals, board) => board.rounds.map((value, index) => (totals[index] ?? 0) + value),
+    [],
+  );
+
+test('the Her Game goals series is the two league boards, matchday by matchday', () => {
+  // The chart and the home tiles describe the SAME rounds — one per league,
+  // one across both — so the chart is a combination of the boards, never a
+  // second opinion. It was one: 323 goals against the boards' 346, and
+  // disagreeing round by round even where the totals nearly met. Only the
+  // totals were ever checked, and only for the boards, so the chart drifted
+  // freely underneath a green suite.
+  expect(metricSeries.Goals.values).toEqual(boardTotals(goals));
+});
+
+test('the Her Game attendance series is the boards divided by the matches played', () => {
+  // Its unit is "fans per match" while the boards are per-round TOTALS, so
+  // the two only agree through the fixture count — nine matches a matchday.
+  const totals = boardTotals(attendance);
+  const matches = matchesPerMatchday();
+
+  expect(metricSeries.Attendance.values).toEqual(
+    totals.map((total, index) => Math.round(total / (matches[index] ?? 1))),
+  );
 });
 
 test('every metric series carries exactly one point per matchday played', () => {
