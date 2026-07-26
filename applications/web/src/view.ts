@@ -26,7 +26,7 @@ const h = html<Message>();
 // slot hands back the same VNode reference, which the patcher short-circuits
 // on, skipping both construction and the subtree diff. The win is the SCROLL,
 // not the boot: the first render has to build both sections anyway (and that is
-// the render foldkit's devtools flags as over budget — memoization can do
+// the render foldkit’s devtools flags as over budget — memoization can do
 // nothing for it), while a reader scrolling the page re-runs this view dozens
 // of times and now rebuilds neither. The rest of the sections all read
 // `model.reveals` through revealClass, so there is nothing stable to memoize
@@ -52,7 +52,7 @@ const landingSections = (model: Model, rootKey: string): ReadonlyArray<Html> => 
   Star.view(model),
   National.view(model),
   Statement.view(model),
-  // The competitions ticker answers the statement's closing line — "Watch
+  // The competitions ticker answers the statement’s closing line — "Watch
   // it rise to the top." and every competition name rolls past (user call;
   // it used to close the competitions section instead).
   marqueeLazy(rootKey, Marquee.view, []),
@@ -67,7 +67,7 @@ export const view = (model: Model): Document => {
     // tears both motion mounts down (symmetric release) and re-runs their
     // setup with the fresh value — no stale mount-time snapshot. The reveal
     // observers sit HERE (one OnMount per element; <main> below carries the
-    // per-frame choreography's MountMotion).
+    // per-frame choreography’s MountMotion).
     body: h.keyed('div')(
       rootKey,
       [

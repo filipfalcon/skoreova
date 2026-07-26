@@ -42,7 +42,7 @@ const applyRoute = (model: Model, route: AppRoute): Model => {
       NotFoundRoute: () => evo(model, { isMenuOpen: () => false }),
     }),
   );
-  // Any navigation closes the map's club card — landing back on the page
+  // Any navigation closes the map’s club card — landing back on the page
   // with a stale card open would be odd.
   return evo(next, { mapClub: () => Option.none() });
 };
@@ -69,7 +69,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         const isMenuOpen = !model.isMenuOpen;
         return [
           // Opening resets the marker to "unknown" so a stale highlight from
-          // the previous open can't flash before detection lands.
+          // the previous open can’t flash before detection lands.
           evo(model, {
             isMenuOpen: () => isMenuOpen,
             activeSection: (s) => (isMenuOpen ? Option.none() : s),

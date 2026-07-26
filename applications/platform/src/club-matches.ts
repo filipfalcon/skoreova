@@ -18,7 +18,7 @@ const DAYS_PER_ROUND = 7;
 
 // A modulo of a non-empty tuple always lands in range, so the fallback is
 // unreachable — and it is the first kickoff rather than an off-canon time,
-// so a future edit to KICKOFFS can't leak one either.
+// so a future edit to KICKOFFS can’t leak one either.
 const KICKOFFS = ['14:00', '16:00', '17:30', '19:00'] as const;
 
 const kickoffFor = (seed: string): string =>
@@ -52,7 +52,7 @@ interface PlayedMatch {
   readonly isHome: boolean;
 }
 
-// Everything the calendar needs about one game, from the CLUB'S side —
+// Everything the calendar needs about one game, from the CLUB’S side —
 // the strip has to answer "did we win" without the reader doing the
 // home/away arithmetic themselves.
 const describeMatch = (target: Club, match: ClubMatch, isPlayed: boolean): PlayedMatch => {
@@ -69,8 +69,8 @@ const describeMatch = (target: Club, match: ClubMatch, isPlayed: boolean): Playe
   };
 };
 
-// Crest for a team NAME. The B sides don't carry their own badge, so
-// they fall back to the parent club's — and anything still unmatched
+// Crest for a team NAME. The B sides don’t carry their own badge, so
+// they fall back to the parent club’s — and anything still unmatched
 // falls back to its name rather than an empty square.
 const crestFor = (team: string): string | undefined =>
   (
@@ -98,7 +98,7 @@ const clubMatchCrest = (team: string): Html => {
 
 // THE SCOREBOARD. The colon is FIXED (user call) — it is how a score is
 // written, and no amount of styling gets to trade that away. So the energy
-// comes from scale and from colour: the numerals go up to display scale,
+// comes from scale and from color: the numerals go up to display scale,
 // and the colon goes brand pink, so the one punctuation mark on the card
 // is what carries the accent. Both numerals stay full ink (user call) —
 // an earlier pass faded the losing side to mark the result, and dimming
@@ -142,7 +142,7 @@ const clubMatchScore = (home: number, away: number): Html =>
 
 // A fixture has no numerals to carry the accent, so the pink moves into a
 // filled chip — the same block the section headings are cut from — rather
-// than sitting between the crests as grey lowercase type.
+// than sitting between the crests as gray lowercase type.
 const clubMatchVersus = (): Html =>
   h.span(
     [
@@ -154,11 +154,11 @@ const clubMatchVersus = (): Html =>
   );
 
 // ONE match, with the CRESTS as the whole point (user call). The badges
-// are what a supporter recognises before they read anything — they say
+// are what a supporter recognizes before they read anything — they say
 // "us against them" instantly, in a way no line of type does — so they get
 // the top of the card at full size, and every word sits underneath them.
 // The card carries no label: it is the only thing in its section, and the
-// section's chip has already named it.
+// section’s chip has already named it.
 const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
   const homeGoals = entry.isHome ? entry.forGoals : entry.againstGoals;
   const awayGoals = entry.isHome ? entry.againstGoals : entry.forGoals;
@@ -175,7 +175,7 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
       // THE FIXTURE — crests at hero scale with the scoreline between
       // them. Generous padding so the badges own the space rather than
       // sharing it; crest order carries home and away.
-      // Capped and centred: on a full-width card the two crests would
+      // Capped and centered: on a full-width card the two crests would
       // otherwise sit at opposite edges with the score marooned between
       // them, and they stop reading as one fixture.
       h.div(
@@ -191,7 +191,7 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
         ],
       ),
       // Everything else, below the badges and behind a hairline so the
-      // crest block reads as the card's subject and this as its caption.
+      // crest block reads as the card’s subject and this as its caption.
       h.div(
         [h.Class('mt-auto border-t border-ink/10 px-5 py-5 md:px-6')],
         [
@@ -199,7 +199,7 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
           // call) — it is what tells you whether this is a league game, a
           // cup tie or a European night. Display type carries POSITIVE
           // tracking here (the .display default is tight −0.01em); the
-          // widened caps read as a label, not a headline, so they don't
+          // widened caps read as a label, not a headline, so they don’t
           // fight the scoreline above.
           h.p(
             [h.Class('display text-2xl tracking-[0.05em] text-ink md:text-3xl')],
@@ -216,7 +216,7 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
             ],
           ),
           // Through to the match itself as a STANDARD button (user call) —
-          // a bordered ink control that fills on hover, the app's secondary
+          // a bordered ink control that fills on hover, the app’s secondary
           // button grammar, not a text link. No per-match route exists yet,
           // so it points at the matches section rather than a dead href.
           h.a(
@@ -238,7 +238,7 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
 // (user call: the calendar was "too chaotic", it took enormous cognitive
 // load to read). The strip of five dates is gone, and with it the
 // selection state, the paging arrows and the W/D/L letters. Both questions
-// a supporter actually arrives with — how did we do, who's next — are now
+// a supporter actually arrives with — how did we do, who’s next — are now
 // answered without a single interaction, and each card names its
 // competition and stage outright instead of leaving the reader to infer it
 // from a date. STACKED rather than side by side (user call): reading down
@@ -248,12 +248,12 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
 // TWO sections, not one holding two cards (user call): one component per
 // chip. LAST MATCH and UPCOMING MATCH each get their own heading, their
 // own anchor and their own card — which also means the chip does the
-// labelling the cards used to do for themselves. Side by side from md
+// labeling the cards used to do for themselves. Side by side from md
 // (user call), stacked below it.
 export const clubMatchesSections = (target: Club): Html => {
-  // MATCHDAYS_PLAYED, not the leader's played count. Reading the season's
-  // position off `standingsFor(league)[0].played` looked equivalent and isn't:
-  // the Second League's eleven clubs mean one sits out each round, so its
+  // MATCHDAYS_PLAYED, not the leader’s played count. Reading the season’s
+  // position off `standingsFor(league)[0].played` looked equivalent and isn’t:
+  // the Second League’s eleven clubs mean one sits out each round, so its
   // leader has ten games to the other clubs' eleven, and rounds 11–12 came
   // back here as unplayed "VS" cards while the competition screen showed the
   // same fixtures with final scores. The canon has exactly one current
@@ -287,7 +287,7 @@ export const clubMatchesSections = (target: Club): Html => {
           ),
         ]),
   ];
-  // gap-x only: stacked, the sections' own mt keeps the page's section
+  // gap-x only: stacked, the sections' own mt keeps the page’s section
   // rhythm, and a row gap on top of it would open a hole between two
   // blocks that belong together. Side by side, both sit in row one and
   // that same mt aligns their chips.

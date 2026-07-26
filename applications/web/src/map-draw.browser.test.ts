@@ -5,7 +5,7 @@ import { beforeAll, expect, test } from 'vite-plus/test';
 import { ChangedUrl, ClickedLink, Flags, Model, init, update, view } from './main';
 import './styles.css';
 
-// Guards the map's pen-stroke draw-in: after the clubs section scrolls into
+// Guards the map’s pen-stroke draw-in: after the clubs section scrolls into
 // view, the country outline AND the internal land borders must finish
 // drawing — computed stroke-dashoffset reaches 0 on every path. This runs on
 // chromium and webkit; webkit is the engine where an IntersectionObserver on

@@ -1,4 +1,4 @@
-// The platform's domain entities as Schema structs. The mock data layer
+// The platform’s domain entities as Schema structs. The mock data layer
 // derives its types from these today; when the real API lands, decoding a
 // response is a schema call here — nothing downstream changes shape.
 
@@ -19,16 +19,16 @@ export const Club = S.Struct({
   city: S.String,
   logo: S.String,
   league: S.String,
-  // The season record. This is the ONE authored source for a club's league
+  // The season record. This is the ONE authored source for a club’s league
   // standing: `played` and `points` are arithmetic on it (see standingsFor),
-  // never typed in beside it, and the clubs screen's form bar reads the same
+  // never typed in beside it, and the clubs screen’s form bar reads the same
   // three numbers the table does.
   won: S.Number,
   drawn: S.Number,
   lost: S.Number,
   scored: S.Number,
   conceded: S.Number,
-  // Honors counts, migrated from the landing page's profile mock —
+  // Honors counts, migrated from the landing page’s profile mock —
   // placeholder until the real data lands.
   leagueTitles: S.Number,
   cupTitles: S.Number,
@@ -63,10 +63,10 @@ export const CupTie = S.Struct({
 export type CupTie = typeof CupTie.Type;
 
 export const TrendingEntry = S.Struct({
-  // The tile's IDENTITY, and the tail of its pin id (`trending:pardubice`).
+  // The tile’s IDENTITY, and the tail of its pin id (`trending:pardubice`).
   // Authored rather than slugified from `name`, because pins persist: the id
-  // used to be `slugify(name)`, so renaming this row's display text from "FK
-  // Pardubice" to the table's "Pardubice" silently orphaned every pin a visitor
+  // used to be `slugify(name)`, so renaming this row’s display text from "FK
+  // Pardubice" to the table’s "Pardubice" silently orphaned every pin a visitor
   // had already saved for it — `trending:fk-pardubice` matched no tile any more
   // and the tile simply vanished from their Her Game. Display copy changes; an
   // id, once authored, does not.
@@ -75,10 +75,10 @@ export const TrendingEntry = S.Struct({
   kind: S.String,
   // Where the row leads — every trending row is a door into the data.
   href: S.String,
-  // Club rows carry their crest; '' renders the person's initials instead.
+  // Club rows carry their crest; '' renders the person’s initials instead.
   crest: S.String,
   // A featured tile background ('' = plain paper card). `focus` is the
-  // cover crop's object-position — where the subject's face lives.
+  // cover crop’s object-position — where the subject’s face lives.
   photo: S.String,
   focus: S.String,
 });
@@ -91,7 +91,7 @@ export const MetricSeries = S.Struct({
 });
 export type MetricSeries = typeof MetricSeries.Type;
 
-// One season's running of a competition. `detail` is the one-liner the
+// One season’s running of a competition. `detail` is the one-liner the
 // archive shows — the champion for finished editions, the stage for the
 // current one.
 export const Edition = S.Struct({
@@ -104,7 +104,7 @@ export type Edition = typeof Edition.Type;
 export const CompetitionTie = S.Struct({ primary: S.String, secondary: S.String });
 export type CompetitionTie = typeof CompetitionTie.Type;
 
-// What a competition's standings section renders: a league TABLE, or the
+// What a competition’s standings section renders: a league TABLE, or the
 // knockout TIES list. Tagged variants (the DrawerState idiom) so branch
 // sites match exhaustively instead of comparing a bare kind string.
 export const TableStandings = S.TaggedStruct('TableStandings', { league: S.String });

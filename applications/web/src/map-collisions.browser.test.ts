@@ -6,7 +6,7 @@ import { afterAll, beforeAll, expect, test } from 'vite-plus/test';
 import { ChangedUrl, ClickedLink, Flags, Model, init, update, view } from './main';
 import './styles.css';
 
-// Geometric guard for the map's pin system: measures the real rendered
+// Geometric guard for the map’s pin system: measures the real rendered
 // geometry (chips, dots, connector lines) and fails on ANY touching pair —
 // on the phone viewport and on desktop. The phone layout lives on
 // hand-tuned constants (PIN_ANCHOR_PHONE / PIN_ANGLE_PHONE in page/clubs.ts);
@@ -72,7 +72,7 @@ const segmentToSegment = (a: Point, b: Point, c: Point, d: Point): number => {
 // transition; see clubPin in page/clubs.ts): until it intersects the viewport
 // the wrapper holds its entrance offset (translateY), so measuring at an
 // arbitrary scroll position compares settled pins against still-offset
-// ones and reports phantom overlaps. Center the map, wait for every pin's
+// ones and reports phantom overlaps. Center the map, wait for every pin’s
 // reveal, then wait for the geometry itself to stop moving (`.is-in`
 // lands when the observer fires, while the transform is still in flight).
 const settleMap = async (): Promise<void> => {
@@ -153,7 +153,7 @@ beforeAll(async () => {
 // The viewport is PAGE state shared across test files in the same browser
 // run — leave it as we found it, or whichever file runs next inherits a
 // phone/desktop layout it never asked for (the knight-mascot hit test
-// failed exactly this way). 414×896 is the runner's default.
+// failed exactly this way). 414×896 is the runner’s default.
 afterAll(async () => {
   await page.viewport(414, 896);
 });
@@ -166,7 +166,7 @@ test('draw-in animates progressively on a phone viewport', async () => {
 
   // The map STAGE, not the section top: on phone widths the section head
   // (counters column + the scout) is taller than a viewport, so the svg
-  // never intersects from the section's own top.
+  // never intersects from the section’s own top.
   const stage = document.querySelector<HTMLElement>('.map-stage');
   if (!stage) throw new Error('map stage missing');
   const stageTop = (): number => stage.getBoundingClientRect().top + window.scrollY;

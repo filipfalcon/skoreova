@@ -9,7 +9,7 @@ import './styles.css';
 // A browser-mode integration test: it mounts the real app into a real DOM so
 // the actual stylesheet decides whether the menu overlay is painted. This
 // guards the fix for the iOS bug where a closed overlay kept painting (a black
-// band under Safari's toolbar) — the invariant is simply "a closed menu is
+// band under Safari’s toolbar) — the invariant is simply "a closed menu is
 // never visible", verified through computed styles rather than internal state.
 
 const overlay = (): HTMLElement => {
@@ -84,7 +84,7 @@ test('choosing a menu item also closes and hides the overlay', async () => {
   await expect.poll(overlayVisibility, { timeout: 2000 }).toBe('hidden');
 });
 
-// The keyboard contract for a full-screen overlay: while it's open the page
+// The keyboard contract for a full-screen overlay: while it’s open the page
 // behind it is inert (Tab stays inside the overlay), Escape closes it, and
 // focus lands back on the toggle that opened it.
 

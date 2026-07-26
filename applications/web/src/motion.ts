@@ -2,7 +2,7 @@ import { Effect, Queue, Schema as S, Stream } from 'effect';
 import { Mount } from 'foldkit';
 import { m } from 'foldkit/message';
 
-// The page's scroll and pointer choreography, in two mounts. The PER-FRAME
+// The page’s scroll and pointer choreography, in two mounts. The PER-FRAME
 // work (MountMotion: parallax, scrubs, marquee, neon) is deliberately
 // outside the Elm model — those effects fire every frame, and routing them
 // through `update` would re-render the page constantly. The DISCRETE reveal
@@ -15,10 +15,10 @@ import { m } from 'foldkit/message';
 // - [data-reveal]        in/out reveal state, replaying on every re-entry —
 //                        keyed by [data-reveal-key], reported to the Model
 // - [data-countup]       numbers count up from 0 when their reveal enters
-// - [data-scramble]      slot-machine roll for values a count-up can't
+// - [data-scramble]      slot-machine roll for values a count-up can’t
 //                        serve ("€1B") — see the Scrambles section
 // - [data-parallax]      scroll-lagged layers (speed = fraction of scroll)
-// - [data-scrub-align]   scroll-scrubbed cancel of the element's own top
+// - [data-scrub-align]   scroll-scrubbed cancel of the element’s own top
 //                        margin — staggered until its parent reaches the
 //                        viewport center, then sitting level (a negative
 //                        margin scrubs downward, so a ±margin pair
@@ -26,9 +26,9 @@ import { m } from 'foldkit/message';
 // - [data-scrub-dock]    scroll-scrubbed lift: rides `--dock-lift` above its
 //                        layout spot while its section still has room below
 //                        the viewport, and settles (docks) exactly as the
-//                        section's bottom edge reaches the viewport's
+//                        section’s bottom edge reaches the viewport’s
 // - [data-bracket-scrub] scroll-pinned build: the runway reserves the scroll,
-//                        a sticky stage holds the frame, and the runway's
+//                        a sticky stage holds the frame, and the runway’s
 //                        progress stamps `.is-on` onto the numbered
 //                        [data-bracket-step] pieces inside — forward builds,
 //                        backward unwinds (desktop only; phones force all
@@ -41,7 +41,7 @@ import { m } from 'foldkit/message';
 export const CompletedMountMotion = m('CompletedMountMotion');
 export const FailedMountMotion = m('FailedMountMotion', { reason: S.String });
 // Reports whether the hero has scrolled up under the fixed header — `past`
-// drives the header's persistent CTA in the Model. See ObserveHeroPastHeader.
+// drives the header’s persistent CTA in the Model. See ObserveHeroPastHeader.
 export const DetectedHeroPastHeader = m('DetectedHeroPastHeader', { past: S.Boolean });
 // One reveal-observer notification, already resolved to reveal keys: which
 // targets entered the viewport (render `.is-in`), which left (back to
@@ -119,12 +119,12 @@ export const formatCount = (
     useGrouping: shape.grouped,
   });
 
-// The PEAK a count flies to before settling, in the number's own least
+// The PEAK a count flies to before settling, in the number’s own least
 // significant unit. Pure and exported because it is the part of the animation
 // that has been wrong twice and the part no screenshot can catch: it only
 // exists between the first frame and the last.
 //
-// The reach scales with the NUMBER'S SIZE (scaling by the DELTA was tried twice
+// The reach scales with the NUMBER’S SIZE (scaling by the DELTA was tried twice
 // and read as stutter), floored bold enough that a 0↔1 land counter still pops
 // to ~6, and CAPPED at a thousand quanta. The cap is the half that was missing:
 // at 12% unbounded, the EURO attendance total spun to 736,166 — half again the
@@ -152,7 +152,7 @@ export const countPeak = (
 interface CountUp {
   readonly element: HTMLElement;
   // Re-parsed from the element every time the animation (re)starts — the
-  // map's land counters change their value with the league filter, so the
+  // map’s land counters change their value with the league filter, so the
   // mount-time snapshot goes stale.
   prefix: string;
   target: number;
@@ -160,7 +160,7 @@ interface CountUp {
   decimals: number;
   grouped: boolean;
   // The exact string this system last wrote, and the number it showed. When
-  // the element's text differs from `lastText`, the MODEL rewrote it (league
+  // the element’s text differs from `lastText`, the MODEL rewrote it (league
   // filter) — the rAF loop catches that and counts from `current` to the new
   // value instead of letting it snap.
   lastText: string;
@@ -200,7 +200,7 @@ const setUpReveals = (
   const cleanups: Array<() => void> = [];
 
   // ----- Count-ups ---------------------------------------------------------
-  // Parsed once; started/cancelled from the reveal observer below.
+  // Parsed once; started/canceled from the reveal observer below.
 
   const countUps = new Map<HTMLElement, CountUp>();
   for (const element of root.querySelectorAll<HTMLElement>('[data-countup]')) {
@@ -225,7 +225,7 @@ const setUpReveals = (
     const text = `${countUp.prefix}${formatCount(countUp, value)}${countUp.suffix}`;
     const node = countUp.element.firstChild;
     // Mutate the EXISTING text node instead of assigning textContent — that
-    // would replace the node, and Foldkit's patcher keeps a reference to the
+    // would replace the node, and Foldkit’s patcher keeps a reference to the
     // original one, so every later model-driven text update (the reactive
     // land counters) would land in a detached node and never show up.
     if (node !== null && node.nodeType === Node.TEXT_NODE) {
@@ -237,10 +237,10 @@ const setUpReveals = (
     countUp.current = value;
   };
 
-  // Eases from `from` to the countUp's target via a PEAK well above both, so
+  // Eases from `from` to the countUp’s target via a PEAK well above both, so
   // the number visibly SPINS through intermediates in either direction — no
   // snap-flips. Upward changes overshoot past the target and settle back;
-  // downward ones can't overshoot (the floor at zero is right there and a
+  // downward ones can’t overshoot (the floor at zero is right there and a
   // spurious low number reads as a glitch), so they wind UP above the start
   // and roll down through every value. A same-value recount bounces up and
   // back. Either way even a 0↔1 counter flies to ~6 mid-flight — that
@@ -248,7 +248,7 @@ const setUpReveals = (
   const animateCount = (countUp: CountUp, from: number, milliseconds: number): void => {
     window.cancelAnimationFrame(countUp.frame);
     const target = countUp.target;
-    // Every value below counts in the number's OWN least significant digit, so
+    // Every value below counts in the number’s OWN least significant digit, so
     // a per-90 rate written to two places moves in hundredths — the floor is
     // 0.05 rather than the 5 that sent "1.51" spinning to "6.51". For the
     // integers this started life on the quantum is 1 and the maths is
@@ -293,7 +293,7 @@ const setUpReveals = (
       countUp.grouped = shape.grouped;
     }
     renderCount(countUp, 0);
-    // No buffer past the element's own reveal delay — a revealed number
+    // No buffer past the element’s own reveal delay — a revealed number
     // that sits on 0 before it starts moving reads as a stall.
     countUp.timeout = window.setTimeout(() => {
       animateCount(countUp, 0, COUNT_UP_MILLISECONDS);
@@ -323,7 +323,7 @@ const setUpReveals = (
 
   // ----- Scrambles -----------------------------------------------------------
   // [data-scramble] — the calculating feel for display values a count-up
-  // can't serve (single-significant-digit figures like "€1B"): every
+  // can’t serve (single-significant-digit figures like "€1B"): every
   // character rolls through a pool of its own KIND — currency signs,
   // digits 1–9, magnitude letters — and the text locks left to right onto
   // the real value, slot-machine style.
@@ -418,8 +418,8 @@ const setUpReveals = (
   // (`${count}|${mapLeague}` in page/clubs.ts) — the order matters, because
   // the split below reads field 0 as the number. Watching
   // that attribute instead of the text fixes two things text-diffing
-  // couldn't: the spin fires even when the VALUE stays the same (every
-  // recount should visibly spin), and it can't lose a change to an
+  // couldn’t: the spin fires even when the VALUE stays the same (every
+  // recount should visibly spin), and it can’t lose a change to an
   // in-flight animation frame overwriting the text node right after
   // Foldkit patches it (the counter then froze on a stale value). Its own
   // small rAF loop — the per-frame choreography lives in MountMotion, and
@@ -445,7 +445,7 @@ const setUpReveals = (
   const revealTargets = Array.from(root.querySelectorAll<HTMLElement>('[data-reveal]'));
 
   {
-    // 'mask' targets sit fully outside their wrapper's overflow clip and
+    // 'mask' targets sit fully outside their wrapper’s overflow clip and
     // 'wipe' targets are clip-pathed to zero area — either way the element
     // itself never registers an intersection, so the reveal would never
     // fire. Observe the parent box (a plain, visible container) instead and
@@ -453,17 +453,17 @@ const setUpReveals = (
     // the viewport removes `.is-in` so the animation runs again on re-entry.
     //
     // Exception: targets inside a `[data-reveal-group]` container all key
-    // off the CONTAINER's visibility — one simultaneous cascade instead of
+    // off the CONTAINER’s visibility — one simultaneous cascade instead of
     // per-item observation. The value picks the replay policy: 'once' never
     // un-reveals (the swipeable photo strip — swiping must not replay it),
     // 'replay' re-arms when the group leaves the viewport (the competitions
     // grid). 'replay' groups are a DESKTOP formation: on phones the same
     // cards stack into one tall column, where a single simultaneous beat
     // fires mostly below the fold — there they fall back to per-item
-    // observation. 'once' groups stay grouped everywhere (the strip's whole
+    // observation. 'once' groups stay grouped everywhere (the strip’s whole
     // point is the phone behavior).
     //
-    // A third policy, 'late', gathers only the container's `data-reveal-late`
+    // A third policy, 'late', gathers only the container’s `data-reveal-late`
     // targets and keys them off the container crossing the LATE line
     // (mid-viewport) — one shared scroll-gated beat (the statement strike +
     // rebuttal land together). Non-late targets inside stay per-item, so a
@@ -503,7 +503,7 @@ const setUpReveals = (
       if (key === undefined) continue;
       const onTransitionEnd = (event: TransitionEvent): void => {
         if (!target.classList.contains('is-in')) return;
-        // Only the root's OWN dash transition ending counts — that is the
+        // Only the root’s OWN dash transition ending counts — that is the
         // outline pen closing its lap, and the land borders' clip wipes
         // are timed to finish mid-lap (see LAND_BORDER_WIPES in page/clubs.ts),
         // so the whole figure is drawn. Bubbling transitions from the
@@ -534,7 +534,7 @@ const setUpReveals = (
     // ONE callback can carry SEVERAL entries for the same proxy — scroll a
     // section past the fold fast enough and the observer reports the entry and
     // the exit together. Only the last of them is the current state. Keeping
-    // both put the same key in `revealed` AND `concealed`, and the Model's fold
+    // both put the same key in `revealed` AND `concealed`, and the Model’s fold
     // applies concealed first, so an off-screen target came back marked
     // `.is-in` with no further entry coming to correct it (its replay never
     // re-armed either). Entries arrive in time order, so last wins.
@@ -604,9 +604,9 @@ const setUpReveals = (
           }
         }
       }
-      // NOTE: raw `.length` rather than Effect's emptiness predicates, here and
+      // NOTE: raw `.length` rather than Effect’s emptiness predicates, here and
       // in the draw observer below. These are mutable accumulators inside the
-      // imperative DOM zone, and importing effect's `Array` module into this
+      // imperative DOM zone, and importing effect’s `Array` module into this
       // file would shadow the global `Array<T>` its own annotations use.
       if (revealed.length > 0 || concealed.length > 0 || drawn.length > 0) {
         emit(ChangedReveals({ revealed, concealed, drawn }));
@@ -626,7 +626,7 @@ const setUpReveals = (
     // fires far too late (15% of a 1200px grid = a sliver above the fold, or
     // never for very tall groups). They trigger on their top edge instead:
     // threshold 0 with only a small bottom inset, so the cascade starts
-    // early — right as the group's top clears the fold.
+    // early — right as the group’s top clears the fold.
     const groupObserver = new IntersectionObserver(onReveal, {
       threshold: 0,
       rootMargin: '0px 0px -10% 0px',
@@ -637,7 +637,7 @@ const setUpReveals = (
     // popping in fully drawn. Waiting for HALF the figure costs moments
     // (the map is short on a phone) but the stroke is actually watched.
     // The un-draw still waits for a full exit, so a half-scrolled map
-    // doesn't reset mid-view.
+    // doesn’t reset mid-view.
     const drawObserver = desktopViewport
       ? null
       : new IntersectionObserver(
@@ -719,12 +719,12 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
   // layer in WebKit, where its big drop-shadow glow rasterizes at low
   // resolution (a coarse box) for as long as it runs. Setting opacity in
   // one-off steps leaves no animation running, so the element de-composites
-  // between steps and the resting glow renders sharp — the same state you'd
+  // between steps and the resting glow renders sharp — the same state you’d
   // otherwise only get after scrolling away and back on iOS Safari.
 
   const neon = root.querySelector<HTMLElement>('.hero-neon');
   if (neon) {
-    // WebKit (Safari, all iOS browsers) rasterizes the sign's big drop-shadow
+    // WebKit (Safari, all iOS browsers) rasterizes the sign’s big drop-shadow
     // coarse under EVERY per-word flicker mechanism we tried — opacity steps
     // inside the filter, opacity or visibility on wrappers above a second
     // (even fully static) filter layer. Only the original shape survives
@@ -756,7 +756,7 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       // dark while "Her" strikes, then runs a four-blink pattern — blink,
       // ~300ms dark, blink, ultra-light pause, blink, ~300ms dark, final
       // blink. The final one lands at 500 + 1900 = 2400ms on the intro
-      // clock: the exact moment the photo's settle (`hero-photo`, 2.4s)
+      // clock: the exact moment the photo’s settle (`hero-photo`, 2.4s)
       // comes to rest, and holds.
       const lateWordOn: ReadonlyArray<readonly [number, number]> = [
         [0, 0],
@@ -777,8 +777,8 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
 
       neon.style.opacity = '0';
 
-      // The ignition runs on the PHOTO INTRO's own clock, not wall-clock
-      // timers: every frame reads the `hero-photo` CSS animation's
+      // The ignition runs on the PHOTO INTRO’s own clock, not wall-clock
+      // timers: every frame reads the `hero-photo` CSS animation’s
       // currentTime and fires the steps that are due. Timers drifted (mount
       // lag, timer throttling) and kept landing the finale off the zoom
       // settle; sampling the animation itself makes the two inseparable by
@@ -837,7 +837,7 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
         const now = introClock();
         while (nextStep < ignitionSteps.length && (ignitionSteps[nextStep]?.at ?? 0) <= now) {
           const step = ignitionSteps[nextStep];
-          // Plain opacity for everything — including the "game" span's dark
+          // Plain opacity for everything — including the "game" span’s dark
           // phases at ~10%, so the unlit tube keeps a faint outline the way
           // a real neon does. (This path never runs on WebKit; see above.)
           if (step) step.element.style.opacity = `${step.opacity}`;
@@ -860,9 +860,9 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
     }
   }
 
-  // The header's persistent "Enter platform" CTA used to be driven from the
+  // The header’s persistent "Enter platform" CTA used to be driven from the
   // rAF loop below, re-asserting an `.is-visible` class every frame because a
-  // header re-render (opening the menu flips the toggle's aria) kept wiping
+  // header re-render (opening the menu flips the toggle’s aria) kept wiping
   // it. It now lives in the Model: ObserveHeroPastHeader watches the hero and
   // reports when it slips under the header, and the view renders the class —
   // so nothing here has to fight the vdom for it.
@@ -887,12 +887,12 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
   });
 
   // ----- Scroll-scrubbed alignment -------------------------------------------
-  // The element's own top margin IS the stagger being cancelled — measured
+  // The element’s own top margin IS the stagger being canceled — measured
   // per frame so responsive margins survive rotations. Progress runs from
-  // the parent entering the viewport's bottom edge (0), directly
+  // the parent entering the viewport’s bottom edge (0), directly
   // scroll-bound: no easing, no lag, reversible by scrolling back. The
   // lead factor compresses the window — at 1 the scrub would finish with
-  // the parent's center on the viewport's center; higher finishes that
+  // the parent’s center on the viewport’s center; higher finishes that
   // much sooner. Was 1.4; eased to 1.25 when the honors stagger shrank to
   // 56px (alignment work, 2026-07-13) — the shorter travel deserves a
   // slightly longer window (1.1 read as lagging; user-tuned).
@@ -910,10 +910,10 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
   });
 
   // ----- Scroll-scrubbed docking ---------------------------------------------
-  // The queen's portrait (section 05): on the section's landing frame it
+  // The queen’s portrait (section 05): on the section’s landing frame it
   // rides `--dock-lift` (rem) higher so she is IN the frame, then sinks
-  // with the scroll and sits on the section's bottom edge exactly when
-  // that edge reaches the viewport's bottom — offset = the room still
+  // with the scroll and sits on the section’s bottom edge exactly when
+  // that edge reaches the viewport’s bottom — offset = the room still
   // below the viewport, capped at the lift. Desktop only: on phones the
   // portrait is mid-flow and a lift would tear a hole under the headline.
 
@@ -926,7 +926,7 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
   const dockViewport = window.matchMedia('(min-width: 48rem)');
 
   // ----- Scroll-pinned bracket build ----------------------------------------
-  // The runway's own height (minus one viewport) is the scrub track: progress
+  // The runway’s own height (minus one viewport) is the scrub track: progress
   // 0 → 1 across it turns the numbered steps on one by one. The +1 head
   // margin holds a beat of empty scroll after the pin engages before step 0
   // fires (a wheel-lock "hard stop" was tried here and pulled — it kept
@@ -990,7 +990,7 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
   // style.transform, then the next block measuring again. Each of those reads
   // lands after a write and forces the engine to flush layout: about five
   // synchronous reflows per frame, on the page whose first render already
-  // trips Foldkit's own budget warning. Splitting the frame in two costs a
+  // trips Foldkit’s own budget warning. Splitting the frame in two costs a
   // couple of small arrays and leaves exactly one layout flush.
   interface TransformWrite {
     readonly element: HTMLElement;
@@ -1005,7 +1005,7 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
 
   // The ROOT font size, not a literal 16. `--dock-lift` is authored in rem
   // precisely so the lift scales with type, and multiplying its number by a
-  // hardcoded 16 undid that for every reader who raised their browser's
+  // hardcoded 16 undid that for every reader who raised their browser’s
   // default text size — the comment promised the scaling the code then threw
   // away. Read once at setup: it changes with a browser setting, and
   // re-reading it per frame would put a style read back in the hot loop.
@@ -1071,10 +1071,10 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       const style = getComputedStyle(layer);
       const lift = (Number.parseFloat(style.getPropertyValue('--dock-lift')) || 0) * remPixels;
       // The ceiling keeps the lifted rider clear of the fixed header AND
-      // leaves air for whatever crowns it (the queen's scribble) — without
-      // it the mid-ride pin parked her hairline at the header's edge and
+      // leaves air for whatever crowns it (the queen’s scribble) — without
+      // it the mid-ride pin parked her hairline at the header’s edge and
       // the crown vanished underneath. rect.top is measured WITH the
-      // current translate; subtracting the matrix's Y gives the layout top.
+      // current translate; subtracting the matrix’s Y gives the layout top.
       const ceiling =
         (Number.parseFloat(style.getPropertyValue('--dock-ceiling')) || 0) * remPixels;
       const matrix = new DOMMatrix(style.transform === 'none' ? undefined : style.transform);
@@ -1120,7 +1120,7 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       // scrolling down. The base drift runs leftward, so a naive
       // base+boost muted upward scrolls (down read much faster) — the
       // boost first had to cancel the drift before the belt even turned.
-      // Instead the drift's SIGN flips smoothly across a small
+      // Instead the drift’s SIGN flips smoothly across a small
       // upward-velocity window; beyond it, both directions obey exactly
       // base + |velocity| × gain. At rest the belt still drifts left.
       const driftSign =
@@ -1212,8 +1212,8 @@ export const ObserveReveals = Mount.defineStream(
 );
 
 // Watches the hero and reports when its bottom slips under the fixed header,
-// so the header's persistent "Enter platform" CTA can take over from the
-// hero's own primary CTA. A streaming Mount, not part of the rAF loop: the
+// so the header’s persistent "Enter platform" CTA can take over from the
+// hero’s own primary CTA. A streaming Mount, not part of the rAF loop: the
 // visibility is discrete state that belongs in the Model, and observing the
 // element directly (rather than sampling geometry every frame) is both the
 // element-scoped shape a Mount wants and cheaper. The header renders the
@@ -1226,7 +1226,7 @@ export const ObserveHeroPastHeader = Mount.defineStream(
     Effect.gen(function* () {
       yield* Effect.acquireRelease(
         Effect.sync(() => {
-          // The fixed header's own height is the observer's top inset: the
+          // The fixed header’s own height is the observer’s top inset: the
           // hero counts as "past" the instant its bottom crosses under the
           // bar, not once it clears the whole viewport. Measured once at
           // mount (3.5rem on phones, 4rem from md up) — a mid-session

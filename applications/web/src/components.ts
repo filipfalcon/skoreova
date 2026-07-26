@@ -18,10 +18,10 @@ export const container = 'mx-auto w-full max-w-7xl px-5 md:px-10';
 
 // The classes a keyed reveal target renders, straight from the Model (fed
 // by the ObserveReveals mount in motion.ts). Under reduced motion every
-// target simply IS in — the observers aren't even installed, and
+// target simply IS in — the observers aren’t even installed, and
 // styles.css quiets the transitions. Each site merges this into its own
 // h.Class (foldkit keeps ONE class attribute per element, last one wins —
-// a separate h.Class here would overwrite the site's) and stamps the same
+// a separate h.Class here would overwrite the site’s) and stamps the same
 // key as `data-reveal-key`.
 export const revealClass = (model: Model, key: string): string => {
   if (model.prefersReducedMotion) return 'is-in';
@@ -30,10 +30,10 @@ export const revealClass = (model: Model, key: string): string => {
 };
 
 // A `01 — LABEL` section kicker on a pink bar that wipes in from the left.
-// Deliberately large — it sets the section's context and shouldn't be
+// Deliberately large — it sets the section’s context and shouldn’t be
 // skimmed past.
 // The numbered chips are self-links: a click parks the scroll back on the
-// section's own top AND stamps the fragment into the URL — an in-place
+// section’s own top AND stamps the fragment into the URL — an in-place
 // permalink you can copy. Same ClickedLink → Navigate path as the menu
 // anchors, so the header offset (scroll-margin-top) is honored. Hovers
 // follow the CTA language: pink chips lift to paper, ink chips swap their
@@ -57,7 +57,7 @@ export const kicker = (
               dark
                 ? 'bg-pink text-ink hover:bg-paper active:bg-paper'
                 : 'bg-ink text-pink hover:text-paper active:text-paper',
-              // The section number is the kicker's identity — one per section.
+              // The section number is the kicker’s identity — one per section.
               revealClass(model, `kicker-${index}`),
             ),
           ),
@@ -75,11 +75,11 @@ export const kicker = (
 // content. Content may be a plain string or mixed children (for an accent
 // span inside the line).
 //
-// The pt/-mt pair (BOTH on the clipping wrapper): Anton's accented caps
+// The pt/-mt pair (BOTH on the clipping wrapper): Anton’s accented caps
 // (Á in "DENISA RANCOVÁ") ink above the leading-none line box, and
 // overflow-hidden was slicing the diacritic off. The padding seats the
-// text below the window's top edge so the accent has headroom INSIDE
-// the clip; the wrapper's own negative margin hands that height back to
+// text below the window’s top edge so the accent has headroom INSIDE
+// the clip; the wrapper’s own negative margin hands that height back to
 // the layout, so the line renders exactly where it used to. 0.25em is
 // measured, not guessed: canvas metrics put the Á overshoot at 0.175em
 // in Chromium (0.07em in WebKit).
@@ -87,7 +87,7 @@ export const kicker = (
 // The wrapper carries `classes` TOO, purely for its font-size: the
 // em-based pt/-mt must resolve against the DISPLAY size, not the
 // inherited body size — at 1rem the "headroom" was 4px, and the shear
-// showed up only once the reveal's composited layer (which leaks past
+// showed up only once the reveal’s composited layer (which leaks past
 // the overflow clip while the transform animates) handed back to normal
 // painting. That is the "renders, then gets cut" symptom.
 export const maskedLine = (
@@ -114,10 +114,10 @@ export const maskedLine = (
 
 // A chunky inline arrow for display-type CTAs. The text glyph "→" renders
 // hairline-thin next to Anton and sits on the baseline instead of the cap
-// centre. One filled silhouette rather than strokes — square line caps left
-// a nub poking past the head's point. Sized in em so it scales with the
+// center. One filled silhouette rather than strokes — square line caps left
+// a nub poking past the head’s point. Sized in em so it scales with the
 // type: the box spans baseline to cap height (~0.72em in Anton), so the
-// shaft lands on the optical centre of the uppercase line.
+// shaft lands on the optical center of the uppercase line.
 export const drawnRightArrow = (classes: string): Html =>
   h.svg(
     [
@@ -140,10 +140,10 @@ export const displayArrowSolo: Html = drawnRightArrow('inline-block h-[0.72em] w
 
 // The EXTERNAL-link mark (↗), for destinations outside our world (uefa.com,
 // social profiles) — the drawn right arrow stays reserved for our own
-// navigation. Deliberately NOT the display arrow's filled silhouette: this
-// mark only ever sits next to small body type (10–14px), so it's a line
-// drawing in the text glyph's register — a diagonal shaft and a simple
-// corner roof, stroked at the text's own weight (3.5 in-box ≈ 1–1.3px at
+// navigation. Deliberately NOT the display arrow’s filled silhouette: this
+// mark only ever sits next to small body type (10–14px), so it’s a line
+// drawing in the text glyph’s register — a diagonal shaft and a simple
+// corner roof, stroked at the text’s own weight (3.5 in-box ≈ 1–1.3px at
 // those sizes). Butt caps, like the menu glyph — hard edges everywhere.
 // `drawn-arrow-external`: the hover contract nudges it along its own
 // diagonal (styles.css).
@@ -163,7 +163,7 @@ export const drawnExternalArrow = (classes: string): Html =>
     [h.path([h.D('M2.5 21.5 L21.5 2.5 M10 2.5 H21.5 V14')], [])],
   );
 // Same 0.72em as the right arrow — next to the small body type of receipts
-// and handles the shaft then matches the text's own stroke weight, which is
+// and handles the shaft then matches the text’s own stroke weight, which is
 // exactly the quiet register these micro-links want.
 export const displayArrowExternal: Html = drawnExternalArrow(
   'ml-[0.22em] inline-block h-[0.72em] w-auto',
@@ -176,25 +176,25 @@ export const menuGlyph = (open: boolean): Html =>
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
       // Tight viewBox — the strokes' ink fills it edge to edge, so the CSS
-      // height IS the visible height. Sized against the wordmark: Anton's
+      // height IS the visible height. Sized against the wordmark: Anton’s
       // caps sit at exactly 0.875em, and the toggle button carries the
-      // wordmark's text size, so the glyph stands as tall as the SKÓREOVÁ
-      // letters — accents excluded, the lockup's optical cap line.
+      // wordmark’s text size, so the glyph stands as tall as the SKÓREOVÁ
+      // letters — accents excluded, the lockup’s optical cap line.
       h.ViewBox('0 0 24 20'),
       h.Class('h-[0.875em] w-auto'),
       h.Fill('none'),
       h.Stroke('currentColor'),
       // 3.43 in-box renders as a 3px bar (3.43 × 0.875) — up from the drawn
-      // arrow's 2.5px weight, closer to Anton's heft.
+      // arrow’s 2.5px weight, closer to Anton’s heft.
       h.StrokeWidth('3.43'),
-      // Flat butt caps — the site's whole graphic language is hard edges
+      // Flat butt caps — the site’s whole graphic language is hard edges
       // (Anton, square chips, the drawn arrow); rounded line ends read soft.
       h.AriaHidden(true),
     ],
     open
       ? [
           // Endpoints pulled in by the butt caps' perpendicular overhang
-          // (~1.2 in-box at this slope), so the X's ink spans the full 0–20
+          // (~1.2 in-box at this slope), so the X’s ink spans the full 0–20
           // height too — same cap line as the bars.
           h.line([h.X1('4'), h.Y1('1.2'), h.X2('20'), h.Y2('18.8')], []),
           h.line([h.X1('20'), h.Y1('1.2'), h.X2('4'), h.Y2('18.8')], []),
@@ -208,7 +208,7 @@ export const menuGlyph = (open: boolean): Html =>
 
 export const headerView = (model: Model): Html =>
   h.header(
-    // Translucent ink + blur — the platform header's device, mirrored here
+    // Translucent ink + blur — the platform header’s device, mirrored here
     // so the two apps read as one page (their headers are deliberate
     // duplicates of each other).
     [h.Class('fixed inset-x-0 top-0 z-50 bg-ink/90 text-paper backdrop-blur')],
@@ -221,7 +221,7 @@ export const headerView = (model: Model): Html =>
             [
               h.a(
                 // Plain `/` — a soft in-app reset to the landing page top (the
-                // Navigate command scrolls to 0 when there's no fragment), not a
+                // Navigate command scrolls to 0 when there’s no fragment), not a
                 // `#top` anchor smooth-scroll.
                 [
                   h.Href(homeRouter()),
@@ -232,7 +232,7 @@ export const headerView = (model: Model): Html =>
                 ['Skóreová', h.span([h.Class('text-pink')], ['.'])],
               ),
               // The stage stamp — same pink-chip language as the AWAY chips.
-              // A sibling of the wordmark anchor, not a child: it's a status
+              // A sibling of the wordmark anchor, not a child: it’s a status
               // label, so it must not be clickable or inherit the pink hover.
               h.span(
                 [
@@ -242,8 +242,8 @@ export const headerView = (model: Model): Html =>
                 ],
                 [
                   // The pink sits on an inner INLINE span with cloned decoration:
-                  // the stamp is ALWAYS two lines (matching the platform header's
-                  // copy of it) and each line's pink must hug its own text — a
+                  // the stamp is ALWAYS two lines (matching the platform header’s
+                  // copy of it) and each line’s pink must hug its own text — a
                   // blockified (flex-item) box would paint one rectangle as wide
                   // as the longest line.
                   h.span(
@@ -261,7 +261,7 @@ export const headerView = (model: Model): Html =>
               // primary CTA) is on screen, sliding in once it scrolls away.
               // `is-visible` rides `model.heroPastHeader`, which the hero
               // observer feeds (see ObserveHeroPastHeader); rendering it from
-              // the Model means a header re-render can't wipe it. Phone-hidden.
+              // the Model means a header re-render can’t wipe it. Phone-hidden.
               // The hidden state is a real `visibility: hidden` (see
               // .header-cta in styles.css), so it leaves the tab order and the
               // accessibility tree instead of lurking invisibly in both.
@@ -291,7 +291,7 @@ export const headerView = (model: Model): Html =>
                       h.AriaControls('menu-overlay'),
                       // The text size exists for the glyph alone (the button has
                       // no text): menuGlyph is 0.875em tall, so tracking the
-                      // wordmark's text-xl/2xl keeps the two the same height.
+                      // wordmark’s text-xl/2xl keeps the two the same height.
                       h.Class(
                         'display flex cursor-pointer items-center text-xl text-paper transition-colors duration-300 hover:text-pink md:text-2xl',
                       ),
@@ -334,7 +334,7 @@ export const menuOverlayView = (model: Model): Html =>
         [
           // The platform CTA opens the list in pink — the destination the
           // menu exists to sell, and the one entry that leaves the site, so
-          // it doesn't blend in with the anchors below.
+          // it doesn’t blend in with the anchors below.
           h.li(
             [h.Class('menu-item border-b border-paper/15'), h.Style({ '--menu-index': '0' })],
             [
@@ -343,10 +343,10 @@ export const menuOverlayView = (model: Model): Html =>
                   h.Href(platformUrl),
                   // menu-anchor gives it the same sliding pink underlay as
                   // the section anchors (hover flips the type to ink — the
-                  // header CTA's language); active:text-paper stays as the
+                  // header CTA’s language); active:text-paper stays as the
                   // tap feedback on touch, where the hover-gated bar never
                   // runs. The arrow beckons (menu-platform-beckon). Margin/
-                  // padding pair = the underlay's left breathing room,
+                  // padding pair = the underlay’s left breathing room,
                   // matching the section anchors.
                   h.Class(
                     'menu-platform platform-beckon menu-anchor -ml-3 display block py-4 pl-3 text-fluid-5xl-8xl text-pink transition-colors duration-300 active:text-paper md:-ml-5 md:py-6 md:pl-5',
@@ -381,7 +381,7 @@ export const menuOverlayView = (model: Model): Html =>
                     // Hover = the sliding pink underlay (menu-anchor in
                     // styles.css), not a pink text flip — pink type stays
                     // reserved for the Platform entry. The negative
-                    // margin/padding pair pushes the underlay's left edge
+                    // margin/padding pair pushes the underlay’s left edge
                     // past the type, so the highlight breathes instead of
                     // starting flush on the first glyph; it eats into the
                     // container padding, so the resting alignment holds.

@@ -1,6 +1,6 @@
 // The view composition: routes a Model to its screen and wraps it in the
 // app shell. Every screen lives in its own module under ./page (reached
-// through that directory's barrel); the shared engines (standings,
+// through that directory’s barrel); the shared engines (standings,
 // schedule, stat tiles, …) live alongside.
 
 import { Array, Match as M, Option } from 'effect';
@@ -35,7 +35,7 @@ import {
 
 const h = html<Message>();
 
-// PROFILES — migrated from the landing page, restyled into the platform's
+// PROFILES — migrated from the landing page, restyled into the platform’s
 // panel idiom. Same anatomy as the drafts: a club shows its hero, league
 // standings, the cup run, and a top-scorer board with a current/all-time
 // toggle; a competition shows its hero, current standings, the format
@@ -126,8 +126,8 @@ const shellView = (model: Model): Html =>
     ],
   );
 
-// The open profile's name (club, then competition) titles the tab; away from
-// a profile it's the screen's own title, and the welcome screen is just the
+// The open profile’s name (club, then competition) titles the tab; away from
+// a profile it’s the screen’s own title, and the welcome screen is just the
 // brand.
 const documentTitle = (model: Model): string => {
   if (model.route._tag === 'NotFoundRoute') return 'Page not found — Skóreová Platform';

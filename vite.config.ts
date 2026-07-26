@@ -11,7 +11,7 @@ export default defineConfig({
     jsPlugins: [{ name: 'foldkit', specifier: '@foldkit/oxlint-plugin' }],
     options: {
       // `typeAware` routes the type-aware rules below through tsgolint;
-      // `typeCheck` additionally reports the TypeScript compiler's own
+      // `typeCheck` additionally reports the TypeScript compiler’s own
       // diagnostics. The two share ONE TypeScript program, which is why this
       // pair REPLACES a separate tsc/tsgo pass instead of duplicating it —
       // there is no `types:check` script any more, and no nx to fan one out.
@@ -19,17 +19,17 @@ export default defineConfig({
       // `typeAware` alone would be inert: `correctness: 'off'` plus an explicit
       // rule list means no type-aware rule runs unless it is named below.
       //
-      // Both are root-only. The same keys in an app's vite.config.ts are
+      // Both are root-only. The same keys in an app’s vite.config.ts are
       // silently ignored — not an error, just no effect — so they can only
       // live here.
       //
       // Turning `typeCheck` on was blocked until two blind spots closed, both
       // of which existed because tsgolint types every file it LINTS, a wider
-      // net than tsgo's project graph ever cast: `*.test.ts` was excluded from
+      // net than tsgo’s project graph ever cast: `*.test.ts` was excluded from
       // every tsconfig.app.json (so the tests were type-checked by nothing),
       // and the tests imported the bare 'vitest' identity, which is not
       // installed — Vite+ re-exports it as 'vite-plus/test'. Closing them
-      // caught a real defect on the first run: studio's story.test.ts read
+      // caught a real defect on the first run: studio’s story.test.ts read
       // `from`/`to` off a log-entry union that only one variant carries.
       typeAware: true,
       typeCheck: true,

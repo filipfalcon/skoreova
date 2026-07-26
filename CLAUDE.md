@@ -11,7 +11,7 @@ Five separate blockers in this repo shared one shape — CSS that is present, pl
 **The selector never matches.**
 
 - **`disabled:` needs the native attribute.** `@foldkit/ui`'s `Button` never emits it; `isDisabled` produces `aria-disabled="true"`, `data-disabled=""` and `tabindex="0"`. Style the blocked look off `data-disabled:` or off a second class string, never `disabled:`.
-- **Reduced motion is one universal `!important` block,** not a list of selectors. An animation whose last keyframe isn't its resting position opts out by name with `animation-name: none`.
+- **Reduced motion is one universal `!important` block,** not a list of selectors. An animation whose last keyframe isn’t its resting position opts out by name with `animation-name: none`.
 
 **A sibling utility defeats the declaration.**
 
@@ -19,7 +19,7 @@ Five separate blockers in this repo shared one shape — CSS that is present, pl
 
 **It loses the cascade at equal specificity.**
 
-- **Utilities emit in Tailwind's order, not the order you concatenate them.** Overlaying `cursor-not-allowed bg-neutral-400` on a string that already has `cursor-pointer bg-neutral-900` loses. Express mutually exclusive looks as two DISJOINT strings the caller picks between (`drawerSaveStyle`/`drawerSaveInertStyle` is the pattern).
+- **Utilities emit in Tailwind’s order, not the order you concatenate them.** Overlaying `cursor-not-allowed bg-neutral-400` on a string that already has `cursor-pointer bg-neutral-900` loses. Express mutually exclusive looks as two DISJOINT strings the caller picks between (`drawerSaveStyle`/`drawerSaveInertStyle` is the pattern).
 
 Where the two looks are disjoint strings, assert the class — a Scene test can reach `toHaveClass`, and picking the wrong string is what has broken every time. Where they are not, a class assertion proves nothing: with `outline-none outline-2` both classes are present, and reduced motion involves no class at all. Those want a compiled-CSS check or a measured value in the commentary.
 
@@ -29,6 +29,6 @@ And the look itself has to be checked against its own reason: the disjoint rewri
 
 Follow the Foldkit canon (Elm-style Model/update/view, Commands/Subscriptions/Mounts, `evo`, `Option`, keyed lists, Story/Scene tests).
 
-Verify from the repo root with `bunx vp lint`, `bunx vp fmt`, `bunx vp test run`, plus `bunx vite build` per app. There is no separate typecheck step and no task runner: `vp lint` runs `typeAware` + `typeCheck`, so it reports TypeScript's own diagnostics from the same program it lints with.
+Verify from the repo root with `bunx vp lint`, `bunx vp fmt`, `bunx vp test run`, plus `bunx vite build` per app. There is no separate typecheck step and no task runner: `vp lint` runs `typeAware` + `typeCheck`, so it reports TypeScript’s own diagnostics from the same program it lints with.
 
 Two rules that follow from that. Tests import Vitest as `vite-plus/test` (and `vite-plus/test/browser`) — never bare `vitest`, which is not installed; Vite+ re-exports it. And every source file must belong to a tsconfig project, or the linter types it without one and invents errors: `src/**/*.ts` per app, `alchemy.run.ts` via `tsconfig.tools.json`.

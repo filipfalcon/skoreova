@@ -1,6 +1,6 @@
 # Skóreová
 
-> Czech Women's Football Coverage: the first league, the second league, the
+> Czech Women’s Football Coverage: the first league, the second league, the
 > domestic cup, Czech clubs in European competitions (UWCL, UWEC), and the
 > national team. Made in Czechia, written in English.
 
@@ -21,9 +21,9 @@ standings, top scorers, club and player profiles).
 
 ## Key facts
 
-- Czechia's three biggest cities all have top-flight women's football.
+- Czechia’s three biggest cities all have top-flight women’s football.
 - Sparta Praha are the reigning champions: the 2025/2026 domestic double and
-  a semifinal run in the UEFA Women's Europa Cup.
+  a semifinal run in the UEFA Women’s Europa Cup.
 - The national team plays the 2027 World Cup qualifying play-offs
   (Round 1: Czechia — Scotland, October 2026).
 

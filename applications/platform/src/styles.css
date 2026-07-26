@@ -5,14 +5,14 @@
   --color-panel: #151313;
   --color-paper: #f3efe8;
   --color-pink: #ff2f8e;
-  /* Market movement colors — the ticker's up/down states. Deliberately a
+  /* Market movement colors — the ticker’s up/down states. Deliberately a
      RED red (not magenta) so a fall can never be mistaken for brand pink. */
   --color-rise: #16c784;
   --color-fall: #ea3943;
   /* Standings qualification zones (user-picked). Brand pink is already the
      highlight row, the points column and every chip, so a pink band reads
-     as "brand", not as a prize. Same licence as rise/fall: data-only hues.
-     These now sit on PAPER (the club profile's data half went light).
+     as "brand", not as a prize. Same license as rise/fall: data-only hues.
+     These now sit on PAPER (the club profile’s data half went light).
      Navy and purple survived the move untouched — 8.9:1 and 7.2:1 against
      paper — but the lime did not, so it has an -ink variant used for BOTH
      its bar and its label. */
@@ -20,12 +20,12 @@
   --color-uec: #d5fe00;
   --color-drop: #6d17c0;
   /* MEASURED at 1.02:1 against paper — the ribbon was not dim, it was
-     gone. #d5fe00 is a colour for black backgrounds. Darkened along the
+     gone. #d5fe00 is a color for black backgrounds. Darkened along the
      same hue until the bar reads as a bar and the 10px label reads as
      type; --color-uec keeps the original for any dark surface. */
   --color-uec-ink: #6b7a00;
-  /* Same story, less extreme, for the promotion green and the calendar's
-     W letter (1.9:1). The ticker's --color-rise stays untouched — it
+  /* Same story, less extreme, for the promotion green and the calendar’s
+     W letter (1.9:1). The ticker’s --color-rise stays untouched — it
      still runs on black. */
   --color-rise-ink: #0b8f5c;
   --font-display: 'Anton', 'Arial Narrow', sans-serif;
@@ -34,12 +34,12 @@
 
 html {
   /* The platform runs LIGHT (user call — the all-dark build read as sad
-     next to the landing's confident paper): paper surface, ink type, the
+     next to the landing’s confident paper): paper surface, ink type, the
      dark chrome (header, tab bar, market tape) pops on top. */
   /* Split overscroll: rubber-banding above the header reveals BLACK (the
-     header's own world), below the page it stays paper. */
+     header’s own world), below the page it stays paper. */
   background: linear-gradient(to bottom, #000 0%, #000 50%, var(--color-paper) 50%);
-  /* Also keeps the welcome ticker's 100vw margin trick from spawning a
+  /* Also keeps the welcome ticker’s 100vw margin trick from spawning a
      horizontal scrollbar (vw includes the scrollbar gutter). */
   overflow-x: hidden;
   overflow-x: clip;
@@ -68,7 +68,7 @@ body {
 
 /* Default placeholder tone is tuned for the DARK header inputs; layered
    as base so light-surface inputs can override it with a placeholder:*
-   utility (unlayered rules would always win over Tailwind's utilities). */
+   utility (unlayered rules would always win over Tailwind’s utilities). */
 @layer base {
   ::placeholder {
     color: color-mix(in srgb, var(--color-paper) 35%, transparent);
@@ -135,7 +135,7 @@ body {
   }
 }
 
-/* Overflow strips (the header's section rail in the md band) scroll
+/* Overflow strips (the header’s section rail in the md band) scroll
    without showing a scrollbar. */
 .no-scrollbar {
   scrollbar-width: none;
@@ -211,7 +211,7 @@ body {
 @supports (animation-timeline: scroll()) {
   @media (prefers-reduced-motion: no-preference) {
     /* scroll(root), NOT scroll(): the bare form binds to the NEAREST
-       scroll container, and the profile's own overflow-hidden wrapper is
+       scroll container, and the profile’s own overflow-hidden wrapper is
        one — it never scrolls, so the timeline sat inactive. The page
        scroller is the document root. */
     .club-hero-art {
@@ -228,8 +228,8 @@ body {
   }
 }
 
-/* The commentary's opening quote LEVITATES — the landing page's "alive
-   emblem" treatment (its knight mascot and champion's crest), ported with
+/* The commentary’s opening quote LEVITATES — the landing page’s "alive
+   emblem" treatment (its knight mascot and champion’s crest), ported with
    the same curve and period so the two sites bob at one rhythm. A slow
    drift UP only: the mark sits above a fixed block of text, and dipping
    down would close the gap to the first line and read as a wobble rather
@@ -254,20 +254,20 @@ body {
   }
 }
 
-/* The honours chip cycles its line like the landing page's pitchside AD
+/* The honors chip cycles its line like the landing page’s pitchside AD
    BOARD, and borrows that grammar exactly: the incoming line ROLLS DOWN
    from the top and pushes the previous one out of the bottom — one
    motor-driven motion, not a crossfade (which reads as corporate
    carousel). Every line stacks in the same grid cell, so the chip is as
-   wide as the LONGEST honour and its width never jumps mid-rotation; the
-   chip's own overflow does the clipping. Loop = honours × 2s slot, offset
-   per line by --honour-index; the -0.45s shift parks the first line at
-   its rolled-in rest frame so the page doesn't load mid-roll.
-   Tuned for THREE honours (the curated count): the slot percentages below
+   wide as the LONGEST honor and its width never jumps mid-rotation; the
+   chip’s own overflow does the clipping. Loop = honors × 2s slot, offset
+   per line by --honor-index; the -0.45s shift parks the first line at
+   its rolled-in rest frame so the page doesn’t load mid-roll.
+   Tuned for THREE honors (the curated count): the slot percentages below
    are 1/3 of the loop. A club with a different number still reads fine —
    it just holds each line for a different share — but re-derive these if
    a club ever ships two or four. */
-@keyframes honour-roll {
+@keyframes honor-roll {
   0% {
     animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
     opacity: 1;
@@ -307,33 +307,33 @@ body {
 
 /* Without the loop (no support, or reduced motion) the first line shows
    and the chip is simply static. */
-.honour-roll > li {
+.honor-roll > li {
   opacity: 0;
 }
 
-.honour-roll > li:first-child {
+.honor-roll > li:first-child {
   opacity: 1;
 }
 
-.honour-static {
+.honor-static {
   display: none;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .honour-roll > li {
-    animation: honour-roll 6s infinite;
-    animation-delay: calc(var(--honour-index) * 2s - 0.45s);
+  .honor-roll > li {
+    animation: honor-roll 6s infinite;
+    animation-delay: calc(var(--honor-index) * 2s - 0.45s);
   }
 }
 
-/* A rotator that cannot rotate would hide two thirds of the honours, so
+/* A rotator that cannot rotate would hide two thirds of the honors, so
    reduced motion swaps in the full row of chips instead. */
 @media (prefers-reduced-motion: reduce) {
-  .honour-roll {
+  .honor-roll {
     display: none;
   }
 
-  .honour-static {
+  .honor-static {
     display: flex;
   }
 }

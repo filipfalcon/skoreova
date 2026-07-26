@@ -4,23 +4,23 @@ import { defineConfig } from 'vite-plus';
 
 // The Foldkit plugin runs in tests too, WITHOUT the DevTools MCP port. The
 // port is what could not be shared (it clashed across test/browser workers, and
-// studio's relay kept the Vitest process alive after a run — every workspace
+// studio’s relay kept the Vitest process alive after a run — every workspace
 // config loads when tests boot), but the plugin also brands view-function
 // identity, in dev and in build alike. Dropping it wholesale meant tests
-// exercised the differ's positional fallback while production ran branded — the
-// one difference a view test can't see.
+// exercised the differ’s positional fallback while production ran branded — the
+// one difference a view test can’t see.
 const testing = process.env['VITEST'] === 'true';
 
 export default defineConfig({
   plugins: [tailwindcss(), foldkit(testing ? {} : { devToolsMcpPort: 9988 })],
-  // Alchemy's deploy captures the build output through a `buildApp` post
+  // Alchemy’s deploy captures the build output through a `buildApp` post
   // hook, but Vite 8 only runs the default environment builds AFTER all
   // buildApp hooks when no real `builder.buildApp` exists — the hook then
   // fires before anything is built and the deploy dies with "Vite build
   // produced neither assets nor server output". Declaring the build here
   // restores the pre-8 ordering (build first, post hooks after). Client
   // only: this app is a static SPA, and the default `ssr` environment has
-  // no entry (building it dies with rolldown's INVALID_OPTION).
+  // no entry (building it dies with rolldown’s INVALID_OPTION).
   builder: {
     buildApp: async (builder) => {
       await builder.build(builder.environments['client']!);
@@ -33,10 +33,10 @@ export default defineConfig({
     // IPv4 loopback, explicitly: under `alchemy dev` all three apps' inner
     // vite servers race for ports, and a dual-stack bind lets two of them
     // "own" the same port (one v4, one v6) — the workerd proxy then routes
-    // one app's traffic to another. On one family the collision is real
+    // one app’s traffic to another. On one family the collision is real
     // and vite increments to a free port instead.
     host: '127.0.0.1',
-    // The gateway (localhost:1340) doesn't send CORS headers, so proxy it
+    // The gateway (localhost:1340) doesn’t send CORS headers, so proxy it
     // through the dev server instead of calling it cross-origin from the
     // browser. See api.ts for the corresponding relative base URL.
     proxy: {
@@ -76,11 +76,11 @@ export default defineConfig({
     // falls back to when a project config names nothing.
     name: 'studio',
     include: ['src/**/*.test.ts'],
-    // The app's own update/view/init are pure (the ECharts touch lives inside a
+    // The app’s own update/view/init are pure (the ECharts touch lives inside a
     // Mount effect that Scene intercepts rather than runs), but the @foldkit/ui
     // components rendered in the view use browser globals (CSS.escape when
     // building id selectors), so scene tests run under happy-dom rather than
-    // bare Node. This matches @foldkit/ui's own test setup.
+    // bare Node. This matches @foldkit/ui’s own test setup.
     environment: 'happy-dom',
     setupFiles: ['./src/vitest-setup.ts'],
     // Foldkit and ECharts ship as ESM with subpath exports; inline them so

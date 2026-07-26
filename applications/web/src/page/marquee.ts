@@ -6,8 +6,8 @@ import type { Message } from '../message';
 
 const h = html<Message>();
 
-// The marquee's own four-point spark. The "✦" TEXT glyph came from a
-// fallback font, rode that font's baseline metrics (visibly below the Anton
+// The marquee’s own four-point spark. The "✦" TEXT glyph came from a
+// fallback font, rode that font’s baseline metrics (visibly below the Anton
 // caps' optical center) and rendered differently per platform. Drawn once
 // instead: sized against the cap band (0.55em of the 0.875em Anton caps)
 // and lifted off the baseline so its center sits on the caps' center.
@@ -15,7 +15,7 @@ const drawnSpark: Html = h.svg(
   [
     h.Xmlns('http://www.w3.org/2000/svg'),
     h.ViewBox('0 0 24 24'),
-    // 0.07em, not the geometric 0.16: the inline SVG's bottom doesn't sit
+    // 0.07em, not the geometric 0.16: the inline SVG’s bottom doesn’t sit
     // exactly on the baseline, so the lift is MEASURED against the caps'
     // center in the rendered page (was 0.089em too high at 0.16).
     h.Class('inline-block h-[0.55em] w-auto -translate-y-[0.07em]'),

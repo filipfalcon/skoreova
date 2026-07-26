@@ -3,7 +3,7 @@ import { Schema as S } from 'effect';
 import { GATEWAY_BASE_URL } from './api';
 import type { Column } from './api';
 
-// Mirrors GET /teams from the backend's OpenAPI spec (fetched 2026-07-04).
+// Mirrors GET /teams from the backend’s OpenAPI spec (fetched 2026-07-04).
 export const TeamKind = S.Literals(['CLUB', 'NATIONAL']);
 export type TeamKind = typeof TeamKind.Type;
 
@@ -23,7 +23,7 @@ export const TeamsResponse = S.Array(TeamResponse);
 export const teamsUrl = (kind: TeamKind): string => `${GATEWAY_BASE_URL}/teams?kind=${kind}`;
 
 // GET /teams/{id} — lets a shared record link resolve a single team even if
-// it isn't in the currently loaded list (e.g. a cold visit to the link).
+// it isn’t in the currently loaded list (e.g. a cold visit to the link).
 export const teamByIdUrl = (id: string): string => `${GATEWAY_BASE_URL}/teams/${id}`;
 
 // Column order shown in the Clubs/Nationals lists and drawer; keep in sync

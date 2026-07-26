@@ -46,7 +46,7 @@ describe('view', () => {
     );
   });
 
-  // The round pager's end-stops are the app's one blocked control, and the
+  // The round pager’s end-stops are the app’s one blocked control, and the
   // blocked half is what has broken elsewhere in this repo — a state announced
   // through an attribute the markup never carried, or styled through a selector
   // that never matched. On matchday 1 "Previous round" must be announced as
@@ -81,11 +81,11 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.with(clubsModel),
-      // Each card carries its crest, so the alt text is the grid's identity.
+      // Each card carries its crest, so the alt text is the grid’s identity.
       Scene.expect(Scene.altText('Sparta Praha crest')).toExist(),
       Scene.type(Scene.label('Search clubs'), 'slovacko'),
       // Diacritics-insensitive, so an ASCII query still finds Slovácko —
-      // and every club it doesn't name leaves the grid.
+      // and every club it doesn’t name leaves the grid.
       Scene.expect(Scene.altText('Slovácko crest')).toExist(),
       Scene.expect(Scene.altText('Sparta Praha crest')).toBeAbsent(),
     );

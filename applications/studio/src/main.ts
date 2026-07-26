@@ -98,7 +98,7 @@ export { view } from './view';
 // UPDATE
 
 // A fresh signed-out model. Every section starts Idle — nothing is fetched
-// until sign-in, and there's no mock seed data.
+// until sign-in, and there’s no mock seed data.
 const initialModel = (): Model => ({
   session: Anonymous({ emailInput: '', passwordInput: '' }),
   route: HomeRoute(),
@@ -135,10 +135,10 @@ const upsertEntry = (rows: ReadonlyArray<Entry>, entry: Entry): ReadonlyArray<En
   entry,
 ];
 
-// Evolves ONE section's AsyncData field by name. The field names match the
+// Evolves ONE section’s AsyncData field by name. The field names match the
 // Section literals, but `evo` needs a literal key, so the switch is what turns
 // a runtime section into the right field — every handler that touches a
-// section's rows goes through here rather than naming the field itself.
+// section’s rows goes through here rather than naming the field itself.
 const evolveSection = (
   model: Model,
   section: Section,
@@ -160,15 +160,15 @@ const evolveSection = (
   }
 };
 
-// LOCAL EDITS THE WIRE DOESN'T KNOW ABOUT. Deletes are soft and creates are
+// LOCAL EDITS THE WIRE DOESN’T KNOW ABOUT. Deletes are soft and creates are
 // client-side — neither ever reaches the backend, because there is no write
-// endpoint yet. So any response that REPLACES a section's rows would undo both:
+// endpoint yet. So any response that REPLACES a section’s rows would undo both:
 // a Refresh, a Retry, or a fetch already in flight when the editor pressed
 // delete. Fixing only the Back-button path (see applyRoute) left those open.
 //
 // The deleted ids come from the MODEL, not from the rows on hand. Deriving them
 // from the loaded rows works for the five sections that load whole and fails on
-// the one that doesn't: Players pages server-side, so a merge against page 2
+// the one that doesn’t: Players pages server-side, so a merge against page 2
 // never sees the id deleted on page 1 and quietly drops the marker.
 //
 // Locally created rows ride along on every page of a paged section, which is
@@ -198,7 +198,7 @@ const mergeLocalEdits = (
 const drawerColumns = (drawer: Model['drawer']): ReadonlyArray<Column> =>
   drawer._tag === 'Closed' ? [] : sectionData[drawer.section].columns;
 
-// IS THIS RECORD DELETED? Ask the LEDGER, not the rows. The row's `isDeleted`
+// IS THIS RECORD DELETED? Ask the LEDGER, not the rows. The row’s `isDeleted`
 // flag is a render signal and a fallback: the row can be absent entirely — a
 // list response that no longer carries it — while the ledger still knows. Both
 // the route guard and the by-id response used `findRecord` alone, so once a
@@ -208,9 +208,9 @@ const isLedgerDeleted = (model: Model, section: Section, id: string): boolean =>
   model.deletedRecordIds.includes(deletedKey(section, id)) ||
   findRecord(model, section, id)?.isDeleted === true;
 
-// Upserts a record into a section's rows, forcing the section to Success —
+// Upserts a record into a section’s rows, forcing the section to Success —
 // the row has to be there whatever state the list is in. Both callers need
-// that: a deep-linked record can arrive before the section's list has been
+// that: a deep-linked record can arrive before the section’s list has been
 // fetched, and a newly created one can be saved after that fetch failed.
 const upsertRecord = (data: SectionData, entry: Entry): SectionData =>
   SectionData.Success({
@@ -220,7 +220,7 @@ const upsertRecord = (data: SectionData, entry: Entry): SectionData =>
     ),
   });
 
-// Maps a section's loaded rows in place (no-op unless it holds data).
+// Maps a section’s loaded rows in place (no-op unless it holds data).
 const mapSectionRows = (
   data: SectionData,
   f: (rows: ReadonlyArray<Entry>) => ReadonlyArray<Entry>,
@@ -236,7 +236,7 @@ const withUpdateReturn = M.withReturnType<UpdateReturn>();
 // nav closed, and the drawer shut for real — the Dialog submodel included, so
 // a back button out of an open record releases the scroll lock and focus trap
 // rather than leaving them behind. Home, NotFound, Section and the
-// record-that-can't-be-opened fallback are all this.
+// record-that-can’t-be-opened fallback are all this.
 const showList = (model: Model, route: AppRoute): UpdateReturn => {
   const [withDialog, dialogCommands] = closeDialog(model);
   return [
@@ -257,8 +257,8 @@ const showList = (model: Model, route: AppRoute): UpdateReturn => {
 // browser back/forward (ChangedUrl). Deep-linking to a specific record is
 // fully reliable for Clubs/Nationals (fetched by id via GET /teams/{id} if
 // not already loaded); other sections have no single-record endpoint, so a
-// link only opens the record if it's already in the currently loaded list —
-// otherwise it falls back to that section's list.
+// link only opens the record if it’s already in the currently loaded list —
+// otherwise it falls back to that section’s list.
 const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
   M.value(route).pipe(
     withUpdateReturn,
@@ -270,7 +270,7 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
       RecordRoute: ({ section, id }) => {
         const found = findRecord(model, section, id);
         // A row that IS loaded and soft-deleted is not the same as one that
-        // isn't loaded, and collapsing the two RESURRECTED it: the id fetch
+        // isn’t loaded, and collapsing the two RESURRECTED it: the id fetch
         // below still succeeds (the delete is mock-only and never reached the
         // backend), and SucceededFetchTeamById upserts what comes back as
         // live. Delete a club, land on the section list, press Back — the
@@ -301,14 +301,14 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
               route: () => route,
               isMenuOpen: () => false,
             }),
-            // Not while signed out: the shell isn't on screen to show the
+            // Not while signed out: the shell isn’t on screen to show the
             // record, and sign-in re-applies this very route — which fetched
             // the same team a second time for nothing.
             model.session._tag === 'Anonymous' ? [] : [fetchTeamById(section, id)],
           ];
         }
-        // No single-record endpoint for this section (or it's mock-only) —
-        // fall back to the section's list instead of a broken "open" state
+        // No single-record endpoint for this section (or it’s mock-only) —
+        // fall back to the section’s list instead of a broken "open" state
         // (routeSection still selects the list to show).
         return showList(model, route);
       },
@@ -317,7 +317,7 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
 
 // The browsable sections and the fetch each kicks off at sign-in. Driving the
 // fan-out from this list keeps SubmittedSignIn declarative instead of an
-// imperative push per section. (Participations isn't here — it has no section
+// imperative push per section. (Participations isn’t here — it has no section
 // UI and is fetched alongside.)
 const SIGN_IN_SECTIONS: ReadonlyArray<{
   readonly section: Section;
@@ -332,7 +332,7 @@ const SIGN_IN_SECTIONS: ReadonlyArray<{
 ];
 
 // A retry transitions the section to Refreshing (if it holds data) or Loading
-// and re-fetches; if it's already pending, revalidateOrLoad returns None and
+// and re-fetches; if it’s already pending, revalidateOrLoad returns None and
 // nothing happens (no double-fetch).
 const retrySection = (
   model: Model,
@@ -344,8 +344,8 @@ const retrySection = (
     onSome: (next) => [evolveSection(model, section, () => next), commands],
   });
 
-// Programmatic Dialog open/close from the drawer's domain handlers, lifting
-// the component's Commands into the parent Message. The Dialog's OutMessage is
+// Programmatic Dialog open/close from the drawer’s domain handlers, lifting
+// the component’s Commands into the parent Message. The Dialog’s OutMessage is
 // dropped here: these run from handlers that already evolve the drawer state
 // themselves (the OutMessage path is for user-initiated closes — see
 // GotDialogMessage). Both are no-ops when the dialog is already in the target
@@ -393,9 +393,9 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ],
       // NOTE: mock sign-in — there is no backend authentication endpoint
       // yet, so any credentials (including empty ones) are accepted. Signing
-      // in kicks off every section's first fetch.
+      // in kicks off every section’s first fetch.
       SubmittedSignIn: () => {
-        // Fan out over the section list: every section that isn't already in
+        // Fan out over the section list: every section that isn’t already in
         // flight gets fetched, flipping to Loading — or to Refreshing, which
         // keeps what it holds on screen meanwhile. Fetching only the IDLE
         // sections stranded any section a pre-sign-in deep link had already
@@ -425,7 +425,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           (entry) => !isInFlight(model[entry.section]),
         ).map((entry) => entry.fetch(model));
         // Participations gets the same treatment for the same reason: an
-        // Idle-only guard stranded a Failure (or a pre-auth deep link's
+        // Idle-only guard stranded a Failure (or a pre-auth deep link’s
         // forced Success) until someone hit Retry by hand.
         const participationsFetch = isInFlight(model.participations) ? [] : [fetchParticipations()];
         const signedIn = evo(model, {
@@ -443,7 +443,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         });
         // Re-apply the route now that the shell is on screen: a deep link that
         // arrived before sign-in parked its RecordRoute in the model, but the
-        // drawer couldn't be presented from behind the login view (openDialog
+        // drawer couldn’t be presented from behind the login view (openDialog
         // no-ops while Anonymous). This is what finally opens it.
         const [routed, routeCommands] = applyRoute(signedIn, signedIn.route);
         return [
@@ -452,8 +452,8 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         ];
       },
       // Signing out swaps in the fresh model but keeps the live dialog
-      // submodel: the login view doesn't render the dialog, so if the drawer
-      // was open its element unmounts and the component's Unmounted backstop
+      // submodel: the login view doesn’t render the dialog, so if the drawer
+      // was open its element unmounts and the component’s Unmounted backstop
       // reclaims the scroll lock and focus trap (a fresh closed dialog model
       // would skip that release). The date filter pickers survive too — they
       // are seeded once by FetchToday at boot. The URL returns home with the
@@ -479,7 +479,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             clientPage: () => 1,
             linkError: () => '',
             // Fresh closed instances, so a dropdown left open on the previous
-            // section can't carry its open state across.
+            // section can’t carry its open state across.
             filterListboxes: () => initialFilterListboxes(),
           }),
           [...dialogCommands, navigate(sectionRouter({ section }))],
@@ -496,8 +496,8 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ],
       ToggledMenu: () => [evo(model, { isMenuOpen: (open) => !open }), []],
       UpdatedSearch: ({ value }) => [evo(model, { search: () => value, clientPage: () => 1 }), []],
-      // A dropdown column's exact-match choice; '' (the "All" option) drops
-      // the column's filter entirely.
+      // A dropdown column’s exact-match choice; '' (the "All" option) drops
+      // the column’s filter entirely.
       SelectedFilter: ({ column, value }) => {
         const { [column]: _removed, ...rest } = model.filters;
         return [
@@ -508,9 +508,9 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           [],
         ];
       },
-      // Delegates to a checkbox column's filter Listbox. Its Selected
-      // OutMessage flips the value's membership in that column's *excluded*
-      // (unchecked) set. An emptied set drops the column's filter — nothing
+      // Delegates to a checkbox column’s filter Listbox. Its Selected
+      // OutMessage flips the value’s membership in that column’s *excluded*
+      // (unchecked) set. An emptied set drops the column’s filter — nothing
       // excluded = all checked (the default).
       GotFilterListboxMessage: ({ column, message }) => {
         const listbox = model.filterListboxes[column];
@@ -544,14 +544,14 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           },
         });
       },
-      // Today's date arrived from the clock at boot — seed the date filter
+      // Today’s date arrived from the clock at boot — seed the date filter
       // DatePickers with it so their calendar grids open onto it.
       FetchedToday: ({ today }) => [
         evo(model, { dateFilterPickers: () => initialDateFilterPickers(today) }),
         [],
       ],
-      // Delegates to one bound of a date column's filter DatePicker. Its
-      // SelectedDate OutMessage commits that bound of the column's range;
+      // Delegates to one bound of a date column’s filter DatePicker. Its
+      // SelectedDate OutMessage commits that bound of the column’s range;
       // ChangedViewMonth is just the visible month moving.
       GotDateFilterMessage: ({ column, bound, message }) => {
         const pair = model.dateFilterPickers[column];
@@ -588,7 +588,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           ),
         });
       },
-      // Drops both bounds of a date column's range. Purely parent-side — the
+      // Drops both bounds of a date column’s range. Purely parent-side — the
       // DatePickers hold no selection state to reset.
       ClearedDateFilter: ({ column }) => {
         const { [column]: _removed, ...rest } = model.dateFilters;
@@ -611,7 +611,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             ];
           },
         }),
-      // Open the profile drawer with a working copy of the record's values.
+      // Open the profile drawer with a working copy of the record’s values.
       ClickedRecord: ({ section, id }) => {
         const entry = findRecord(model, section, id);
         if (!entry) return [model, []];
@@ -626,7 +626,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           [...dialogCommands, navigate(recordRouter({ section, id }))],
         ];
       },
-      // Every keystroke is judged by the column's own rules, and the verdict is
+      // Every keystroke is judged by the column’s own rules, and the verdict is
       // what the Model holds — so the view renders an error without deciding
       // what an error is, and the save asks the same question the field already
       // answered rather than re-implementing it.
@@ -653,8 +653,8 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         const drawer = model.drawer;
         if (drawer._tag === 'Creating') {
           const { section } = drawer;
-          // A derived column's draft cell holds the PARENT'S ID — creating is
-          // the one mode where it's editable, and the drawer renders it as a
+          // A derived column’s draft cell holds the PARENT’S ID — creating is
+          // the one mode where it’s editable, and the drawer renders it as a
           // picker over the referenced section. Lifting it into parentId is
           // what actually files the record under its parent: a new edition
           // used to be born with parentId '' and no way to fix it, since the
@@ -693,7 +693,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
               nextLocalId: (n) => n + 1,
               drawer: () => DrawerClosed(),
               // The record exists NOW; its History entry needs a clock, which
-              // `update` can't read. StampSave answers with SavedRecordAt, and
+              // `update` can’t read. StampSave answers with SavedRecordAt, and
               // the drawer is closed by then — that is how the handler knows a
               // create is what it is stamping (see SavedRecordAt).
               pendingLogRecordId: () => entry.id,
@@ -750,9 +750,9 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           [...dialogCommands, navigate(sectionRouter({ section }))],
         ];
       },
-      // Delegates to the Dialog submodel. Its Closed OutMessage is the user's
+      // Delegates to the Dialog submodel. Its Closed OutMessage is the user’s
       // close intent (Escape, backdrop click, the ✕/Cancel controls) — fold it
-      // back into the drawer state and return to the section's list URL.
+      // back into the drawer state and return to the section’s list URL.
       GotDialogMessage: ({ message }) => {
         const [dialog, dialogCommands, maybeOutMessage] = Dialog.update(model.dialog, message);
         const commands = Command.mapMessages(dialogCommands, (message) =>
@@ -765,7 +765,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             withUpdateReturn,
             M.tagsExhaustive({
               Opened: () => [withDialog, commands],
-              // Closing returns to the current section's list URL — or the
+              // Closing returns to the current section’s list URL — or the
               // dashboard if no section route is active.
               Closed: () =>
                 Option.match(routeSection(model.route), {
@@ -844,8 +844,8 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           [...dialogCommands, stampDelete(), navigate(sectionRouter({ section }))],
         ];
       },
-      // Once a chart's host element is mounted, push the current record's
-      // data into it (mirrors Foldkit's charting example: Mount only creates
+      // Once a chart’s host element is mounted, push the current record’s
+      // data into it (mirrors Foldkit’s charting example: Mount only creates
       // the chart instance, Command feeds it data). Two hosts share this
       // message — branch on which one just mounted.
       DeletedRecordAt: ({ at }) => [
@@ -875,7 +875,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       FailedMountChart: ({ reason }) => [evo(model, { chartError: () => Option.some(reason) }), []],
       SucceededSyncChart: () => [model, []],
       FailedSyncChart: ({ reason }) => [evo(model, { chartError: () => Option.some(reason) }), []],
-      // A fetched page replaces the section's rows (one page at a time, not the
+      // A fetched page replaces the section’s rows (one page at a time, not the
       // running total). settle folds the result into the AsyncData: success →
       // Success, failure → Failure or, if a prior page is still shown, Stale.
       SucceededFetchPlayers: ({ entries, total }) => [
@@ -1023,10 +1023,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ChangedUrl: ({ url }) => applyRoute(model, urlToAppRoute(url)),
       CompletedNavigate: () => [model, []],
       CompletedLoad: () => [model, []],
-      // The record wasn't in the currently loaded list, so it was fetched
+      // The record wasn’t in the currently loaded list, so it was fetched
       // directly by id — insert it into its section and open its drawer.
       SucceededFetchTeamById: ({ entry }) => {
-        // The response is authoritative about the record's FIELDS and knows
+        // The response is authoritative about the record’s FIELDS and knows
         // nothing about the editor deleting it — and this fetch can still be in
         // flight when they do. Landing it as live would resurrect the record and
         // reopen its drawer, which is the same defect the route guard fixes from
@@ -1052,7 +1052,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
 
 // INIT
 
-// Boot applies the initial URL and fetches today's date for the date filter
+// Boot applies the initial URL and fetches today’s date for the date filter
 // pickers (see FetchedToday).
 export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => {
   const [model, commands] = applyRoute(initialModel(), urlToAppRoute(url));

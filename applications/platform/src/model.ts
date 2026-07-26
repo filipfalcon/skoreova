@@ -4,9 +4,9 @@ import { AppRoute } from './route';
 
 // A MOCK of the platform: the shell, the navigation, and every screen are
 // real Foldkit views, but all data is hardcoded placeholder. There is NO
-// account gate — the platform's free plan is open to everyone, so every
+// account gate — the platform’s free plan is open to everyone, so every
 // deep link from the landing page drops straight onto content. The model
-// carries the route and nothing but the state the route can't express: the
+// carries the route and nothing but the state the route can’t express: the
 // per-screen pickers, the clubs search, and the two lists a visitor builds
 // by tapping (followed clubs, pinned boards).
 
@@ -24,31 +24,31 @@ export type Screen = typeof Screen.Type;
 export const Metric = S.Literals(['Goals', 'Attendance', 'Conversion']);
 export type Metric = typeof Metric.Type;
 
-// Which competition the club profile's TOP SCORERS board shows — one
+// Which competition the club profile’s TOP SCORERS board shows — one
 // component, scoped by chips (user call).
 export const ScorerScope = S.Literals(['All', 'League', 'Cup']);
 export type ScorerScope = typeof ScorerScope.Type;
 
 export const Model = S.Struct({
-  // The current route is THE source of truth for what's on screen — the
+  // The current route is THE source of truth for what’s on screen — the
   // visible screen and any open club/competition slug are derived from it in
   // the view (see screenOf / routeClubSlug / routeCompetitionSlug), so the
   // impossible states a screen+slug pair allowed (a slug set on the wrong
-  // screen, both slugs at once) can't be represented.
+  // screen, both slugs at once) can’t be represented.
   route: AppRoute,
-  // Which of the open competition's EDITIONS is showing (None = the current
+  // Which of the open competition’s EDITIONS is showing (None = the current
   // one). Every competition is a series of editions — one per season — and
   // the profile carries a picker; the backend exposes them via
   // /editions?competitionId= once real data lands.
   competitionEdition: S.Option(S.String),
-  // Which matchday each competition's matches panel shows, keyed by the
-  // competition slug (a missing key = that competition's current matchday).
+  // Which matchday each competition’s matches panel shows, keyed by the
+  // competition slug (a missing key = that competition’s current matchday).
   // Keyed rather than one shared field because /matches renders BOTH league
   // panels at once: a single round made them page in lockstep, and it could
   // only ever be clamped against whatever competition the route had open —
   // which on /matches is none, so every pick collapsed to round 1.
   competitionRounds: S.Record(S.String, S.Number),
-  // The clubs directory's search box ('' = show everything).
+  // The clubs directory’s search box ('' = show everything).
   clubQuery: S.String,
   // Which of the featured EUROPEAN CONTENDERS the clubs carousel shows.
   featuredClub: S.Number,

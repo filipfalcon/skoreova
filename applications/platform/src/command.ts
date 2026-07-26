@@ -21,17 +21,17 @@ export const Load = Command.define(
   CompletedLoad,
 )(({ href }) => load(href).pipe(Effect.as(CompletedLoad())));
 
-// ——— THE PINS PORT. Every read and write of a visitor's pins goes through
+// ——— THE PINS PORT. Every read and write of a visitor’s pins goes through
 // this ONE object, so the whole app is blind to where pins actually live.
 // Today that is localStorage, which needs no account — a guest keeps their
 // pins on their own device.
 //
 // When accounts arrive, ONLY this object changes: `load`/`save` become
-// calls to the pins API (a signed-in visitor's list belongs on the server,
+// calls to the pins API (a signed-in visitor’s list belongs on the server,
 // keyed by their id). For that, KV is the fit — one small JSON value per
 // user, read far more than written; D1 only earns its place if pins ever
 // need cross-user queries ("who else pinned this"), and R2 never, it is for
-// blobs. On first sign-in the guest's local list merges up into the
+// blobs. On first sign-in the guest’s local list merges up into the
 // account, then this device defers to the server. None of the view or the
 // update code has to know any of that happened.
 const PINS_KEY = 'skoreova-pins';

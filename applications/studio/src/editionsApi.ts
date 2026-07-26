@@ -3,7 +3,7 @@ import { Schema as S } from 'effect';
 import { GATEWAY_BASE_URL } from './api';
 import type { Column } from './api';
 
-// Mirrors GET /editions from the backend's OpenAPI spec (fetched 2026-07-05).
+// Mirrors GET /editions from the backend’s OpenAPI spec (fetched 2026-07-05).
 // An edition is one running (one season) of a competition — no name of its
 // own, just the date range and the competition it belongs to.
 export const EditionResponse = S.Struct({
@@ -16,14 +16,14 @@ export type EditionResponse = typeof EditionResponse.Type;
 
 export const EditionsResponse = S.Array(EditionResponse);
 
-// Every edition across all competitions — the drawer resolves a competition's
+// Every edition across all competitions — the drawer resolves a competition’s
 // own editions from the loaded list, so nothing asks the endpoint to filter.
 export const editionsUrl = (): string => `${GATEWAY_BASE_URL}/editions`;
 
 // Column order shown in the Editions list and drawer; keep in sync with the
 // values produced by `editionToRow` below. "Competition" holds the bare
 // competitionId the response gives — a `derived` column, resolved to the
-// competition's name at RENDER time (see resolveDerivedCells in data.ts), so
+// competition’s name at RENDER time (see resolveDerivedCells in data.ts), so
 // editions and competitions can arrive in either order.
 export const editionColumns: ReadonlyArray<Column> = [
   { label: 'Edition', kind: 'title' },

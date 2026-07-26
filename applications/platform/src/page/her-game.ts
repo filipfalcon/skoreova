@@ -22,7 +22,7 @@ import type { StatEntry } from '../stat-tiles';
 
 const h = html<Message>();
 
-// The chart studio's metric selector: three mutually-exclusive options, so a
+// The chart studio’s metric selector: three mutually-exclusive options, so a
 // real radiogroup rather than a row of independent buttons. Selected state is
 // color-only, driven by the `data-checked` the component sets.
 const metricRadioGroup = (model: Model): Html =>
@@ -52,7 +52,7 @@ const metricRadioGroup = (model: Model): Html =>
 // Fixed geometry, in viewBox units: bars rise CHART_PLOT_HEIGHT above the
 // CHART_BASELINE_Y axis line, one bar per BAR_STEP with the axis labels a
 // hair under the baseline. The WIDTH is derived, not fixed — it was 560 for
-// fourteen bars, and when the series came back to the canon's twelve the last
+// fourteen bars, and when the series came back to the canon’s twelve the last
 // bar ended at 472 while the baseline, gridlines and average line still ran
 // the full 560.
 const CHART_HEIGHT = 244;
@@ -134,7 +134,7 @@ const studioChart = (series: MetricSeries): Html => {
       ),
       // Every OTHER matchday gets a label, counted back from the END so the
       // CURRENT matchday always carries one — anchoring to the start left the
-      // most recent bar as the only unlabelled one on an even-length series,
+      // most recent bar as the only unlabeled one on an even-length series,
       // which is exactly the bar a reader looks for. flatMap emits nothing for
       // the rest rather than an empty placeholder element.
       ...series.values.flatMap((_, index) =>
@@ -144,7 +144,7 @@ const studioChart = (series: MetricSeries): Html => {
                 [
                   h.X(`${index * BAR_STEP + BAR_STEP / 2}`),
                   h.Y(`${AXIS_LABEL_Y}`),
-                  // No dedicated helper for text-anchor — it's a styleable SVG
+                  // No dedicated helper for text-anchor — it’s a styleable SVG
                   // property, so the inline style does the same job.
                   h.Class('fill-ink/30 text-[10px]'),
                   h.Style({ 'text-anchor': 'middle' }),
@@ -173,16 +173,16 @@ const chartSummary = (series: MetricSeries): Html =>
   );
 
 // The chart is KEYED per metric, on a LITERAL key — the identity of that
-// metric's chart, never a value derived from model data — so switching metrics
+// metric’s chart, never a value derived from model data — so switching metrics
 // swaps whole subtrees, teardown plus the bars' grow-in replay, instead of
-// patching one series' bars into another's.
+// patching one series' bars into another’s.
 //
 // The summary above deliberately is NOT keyed: a live region announces a text
 // CHANGE inside an element the reader is already on, and this one used to sit
 // inside the keyed wrapper, so every metric switch tore the region down and
 // inserted a new one. Assistive tech does not reliably announce a live region
 // that did not exist a moment ago — which defeated the entire point of adding
-// it. It lives beside the chart now, one element for the panel's whole life,
+// it. It lives beside the chart now, one element for the panel’s whole life,
 // and only its sentence changes.
 const keyedChart = (key: string, series: MetricSeries): Html =>
   h.div([h.Key(key)], [studioChart(series)]);
@@ -316,11 +316,11 @@ const pinRegistry: ReadonlyArray<PinnedTile> = [
 ];
 
 // One pinned tile in the feed: its own TITLE above the real card (user
-// call). The title is the tile's self-description; the card below is
+// call). The title is the tile’s self-description; the card below is
 // unchanged from the home screen, and carries its own pin control for
 // unpinning, so the header stays a label.
 // Keyed by the pin id: unpinning tile N must remove tile N, not positionally
-// patch tile N+1's card (and its pin control) up into N's slot under the
+// patch tile N+1's card (and its pin control) up into N’s slot under the
 // pointer.
 const pinnedTileView = (model: Model, tile: PinnedTile): Html =>
   h.keyed('div')(
@@ -361,7 +361,7 @@ const pinnedFeed = (model: Model): Html => {
   );
 };
 
-// HER GAME — the platform's personal section (the former charts screen).
+// HER GAME — the platform’s personal section (the former charts screen).
 // For now it holds the chart studio and saved charts; the custom feed of
 // followed clubs, players, and competitions lands here next.
 export const view = (model: Model): Html =>

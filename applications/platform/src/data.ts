@@ -124,10 +124,10 @@ export const routeClubSlug = (route: AppRoute): string =>
 export const routeCompetitionSlug = (route: AppRoute): string =>
   route._tag === 'CompetitionRoute' ? route.slug : '';
 
-// ONE POINT PER MATCHDAY PLAYED — the chart's x axis is the season canon, so
+// ONE POINT PER MATCHDAY PLAYED — the chart’s x axis is the season canon, so
 // the series run to MATCHDAYS_PLAYED and no further. They used to carry
 // fourteen points each, which drew two bars for matchdays that have not been
-// played and labelled them 13 and 14 while every competition screen said
+// played and labeled them 13 and 14 while every competition screen said
 // "Matchday 12 of 14". data.test.ts asserts the length now.
 //
 // AND THE TWO THAT HAVE A SOURCE ARE COMBINATIONS OF IT, matchday by
@@ -161,7 +161,7 @@ export const metricSeries: Record<Metric, MetricSeries> = {
 
 // Anyone and ANYTHING can trend (user call) â players, clubs, coaches,
 // referees, matches, officials alike. The canonical mock list (user-
-// supplied); rendered on the welcome hero's board AND the dashboard.
+// supplied); rendered on the welcome hero’s board AND the dashboard.
 // No percentages here (user call) — the rank IS the story; the tape above
 // carries the movement numbers.
 export const trending: ReadonlyArray<TrendingEntry> = [
@@ -185,7 +185,7 @@ export const trending: ReadonlyArray<TrendingEntry> = [
   },
   {
     id: 'pardubice',
-    // The clubs table's name, not "FK Pardubice" — the tile links to the
+    // The clubs table’s name, not "FK Pardubice" — the tile links to the
     // profile, and the profile, its standings row and the crest rail all say
     // "Pardubice". A trending tile is free-text because anything can trend,
     // so nothing derived this; the ticker quoting the same wrong name is what
@@ -201,15 +201,15 @@ export const trending: ReadonlyArray<TrendingEntry> = [
 
 // THE SEASON CANON. Every league number on every screen comes from this
 // table: the standings (played and points are arithmetic on the record —
-// see standingsFor), the clubs screen's form bars, the club profile's
+// see standingsFor), the clubs screen’s form bars, the club profile’s
 // statement line, and the round-robin the fixtures are generated from.
 // Written as plain literals rather than through a ten-argument factory, so
-// a club's record is readable at the point it is authored.
+// a club’s record is readable at the point it is authored.
 //
 // The records are mock but LEAGUE-CONSISTENT: within a league the wins and
-// losses balance (every win is somebody's defeat), the draw counts sum even
+// losses balance (every win is somebody’s defeat), the draw counts sum even
 // (a draw is two clubs' draw), the goals scored and conceded sum to the same
-// total, and each club's games add up to the matchdays it has actually
+// total, and each club’s games add up to the matchdays it has actually
 // played — twelve in the First League, and eleven in the Second, where
 // eleven clubs mean one club sits out each matchday (Sparta Praha B has
 // taken two byes so far, hence its ten).
@@ -563,7 +563,7 @@ export const officials: ReadonlyArray<Official> = [
 // Current state of a competition, shown on its profile page: either a
 // league table or a list of ties/participations (cups and Europe).
 
-// One season's running of a competition. `detail` is the one-liner the
+// One season’s running of a competition. `detail` is the one-liner the
 // archive shows — the champion for finished editions, the stage for the
 // current one.
 
@@ -593,10 +593,10 @@ export const competitions: ReadonlyArray<Competition> = [
     // champion/runner-up split it used to claim.
     //
     // NOT `clubEurope`, which an earlier version of this note wrongly cited as
-    // agreeing: that map is LAST season's qualification, so it has Liberec
+    // agreeing: that map is LAST season’s qualification, so it has Liberec
     // (7th now) in the UWEC and nothing for Slovácko, who currently hold the
     // third-place band. The two are different seasons on purpose — this
-    // year's bands pay out next year.
+    // year’s bands pay out next year.
     format: [
       'Eight clubs, everyone plays everyone home and away — 14 rounds.',
       'The top two enter UWCL qualifying; third gets the Europa Cup path.',
@@ -763,7 +763,7 @@ export const leagueCompetitions: ReadonlyArray<Competition> = competitions.filte
   (competition) => competition.standings._tag === 'TableStandings',
 );
 
-// Standings + cup-run + top-scorer mock, migrated from the landing page's
+// Standings + cup-run + top-scorer mock, migrated from the landing page’s
 // profile pages. Replace with API data when it exists.
 
 export const POINTS_WIN = 3;
@@ -773,15 +773,15 @@ export const POINTS_DRAW = 1;
 const descendingBy = (key: (row: StandingsRow) => number): Order.Order<StandingsRow> =>
   Order.mapInput(Order.Number, (row: StandingsRow) => -key(row));
 
-// A league's clubs in AUTHORING order — the seeding the round-robin
+// A league’s clubs in AUTHORING order — the seeding the round-robin
 // generator pairs off (see leagueRounds). Deliberately not the table order:
-// a club climbing the standings must not reshuffle the season's fixtures.
+// a club climbing the standings must not reshuffle the season’s fixtures.
 export const leagueTeams = (league: string): ReadonlyArray<string> =>
   clubs.filter((club) => club.league === league).map((club) => club.name);
 
 // The standings table backing a league, COMPUTED from the club records
-// above: played and points are arithmetic, so the table can't drift from the
-// form bars, and a hand-typed points column can't quietly exceed what the
+// above: played and points are arithmetic, so the table can’t drift from the
+// form bars, and a hand-typed points column can’t quietly exceed what the
 // fixtures allow (the old one did — 170 points across eight clubs when
 // fourteen rounds can only pay out 168).
 export const standingsFor = (league: string): ReadonlyArray<StandingsRow> =>
@@ -807,7 +807,7 @@ export const standingsFor = (league: string): ReadonlyArray<StandingsRow> =>
 
 // EUROPEAN CONTENDERS (clubs screen) — the featured-club carousel entries.
 // Lives here (not in the view) so `update` can wrap SelectedFeaturedClub
-// against the list's length.
+// against the list’s length.
 export type FeaturedClub = Readonly<{
   slug: string;
   // The Universe-style kicker line above the name.
@@ -827,11 +827,11 @@ export const featuredClubs: ReadonlyArray<FeaturedClub> = [
 // This was one club-agnostic list rendered on every profile, so Prague
 // Raptors — bottom of the league — and Plzeň both advertised a semifinal that
 // the Domestic Cup page, two clicks away, gives to Sparta, Slovácko, Slavia
-// and Baník. A profile is where a reader checks a club's season; it cannot be
+// and Baník. A profile is where a reader checks a club’s season; it cannot be
 // the one page that invents one.
 //
 // Hand-authored because the cup canon only publishes the semifinal PAIRINGS,
-// not each club's earlier rounds — so data.test.ts ties these keys back to the
+// not each club’s earlier rounds — so data.test.ts ties these keys back to the
 // clubs those pairings name, and a change to either side fails there.
 export const clubCupRun: Record<string, ReadonlyArray<CupTie>> = {
   'sparta-praha': [
@@ -872,13 +872,13 @@ export const scorerPool: ReadonlyArray<string> = [
 export const hashSlug = (slug: string): number =>
   Math.abs(Array.reduce([...slug], 0, (hash, char) => (hash * 31 + char.charCodeAt(0)) | 0));
 
-// Top three per scope, goals strictly descending; Sparta's all-comps
+// Top three per scope, goals strictly descending; Sparta’s all-comps
 // leader is the canonical Rancová.
 export const scorersFor = (target: Club, scope: ScorerScope): ReadonlyArray<Scorer> => {
   const seed = hashSlug(`${scope}:${target.slug}`);
-  // A league tally can't exceed what the club scored in the league (the
-  // table's own number); the cup and all-comps ceilings sit above it because
-  // those goals aren't in the table.
+  // A league tally can’t exceed what the club scored in the league (the
+  // table’s own number); the cup and all-comps ceilings sit above it because
+  // those goals aren’t in the table.
   const ceiling = scope === 'Cup' ? 6 : scope === 'League' ? Math.min(13, target.scored) : 17;
   const generated = [0, 1, 2].map((rank) => ({
     name: scorerPool[(seed + rank * 5) % scorerPool.length] ?? '—',

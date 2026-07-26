@@ -82,7 +82,7 @@ test('each competition keeps its own round, clamped against its own schedule', (
     update,
     Story.with(welcomeModel),
     // Both league panels are on screen at once on /matches: a pick past one
-    // league's end-stop clamps to THAT league's last round, and neither
+    // league’s end-stop clamps to THAT league’s last round, and neither
     // pick moves the other panel.
     Story.message(SelectedCompetitionRound({ slug: 'first-league', round: 11 })),
     Story.message(SelectedCompetitionRound({ slug: 'second-league', round: 99 })),
@@ -116,7 +116,7 @@ test('a route change clears the per-screen pickers and keeps the durable lists',
       expect(model.competitionEdition).toEqual(Option.none());
       // The scorers scope survives anything but opening a club profile.
       expect(model.scorerScope).toBe('Cup');
-      // Durable — a visitor's own lists outlive navigation.
+      // Durable — a visitor’s own lists outlive navigation.
       expect(model.followed).toEqual(['sparta-praha']);
       expect(model.pinned).toEqual(['trending:sparta-praha']);
     }),

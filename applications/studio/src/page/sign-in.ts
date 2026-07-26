@@ -53,7 +53,7 @@ export const view = (model: Model): Document => {
                       [
                         // The fields carry only a placeholder visually; the real
                         // <label> is sr-only so each is a properly labeled form
-                        // control without changing the card's look.
+                        // control without changing the card’s look.
                         Input.view({
                           id: 'signin-email',
                           type: 'email',
@@ -108,10 +108,10 @@ export const view = (model: Model): Document => {
                             'The Skóreová editorial workspace. Access is limited to members of the editorial team.',
                           ],
                         ),
-                        // No onClick: the form's OnSubmit is what fires, so
+                        // No onClick: the form’s OnSubmit is what fires, so
                         // this only needs Ui.Button for the submit type.
                         // Annotated: with no onClick there is no Message to
-                        // infer the component's type parameter from.
+                        // infer the component’s type parameter from.
                         Button.view<Message>({
                           type: 'submit',
                           toView: ({ button }) =>

@@ -34,10 +34,10 @@ export const view = (model: Model): Html =>
             [h.Class('mt-10 md:mt-16')],
             [maskedLine(model, 'star-headline', 'Denisa Rancová', 'text-fluid-6xl-9xl', 0)],
           ),
-          // She's the section — so she shows up immediately: the portrait
+          // She’s the section — so she shows up immediately: the portrait
           // is FIRST in the DOM (right under the headline on phones) and
           // spans the whole right column on desktop, standing on the
-          // section's bottom edge next to everything, not just the stats.
+          // section’s bottom edge next to everything, not just the stats.
           h.div(
             // No row gap: the top-scorer bar sits FLUSH under the portrait
             // cutout on phones (md runs two columns, so a row gap never
@@ -53,9 +53,9 @@ export const view = (model: Model): Html =>
                 [
                   // The height constraints moved from the img to this
                   // shrink-wrapping box so the crown can anchor to the
-                  // PHOTO's coordinates, not the whole column's. The box is
-                  // also the dock scrub's transform owner (motion.ts): it
-                  // rides 25rem high on the section's landing frame — her
+                  // PHOTO’s coordinates, not the whole column’s. The box is
+                  // also the dock scrub’s transform owner (motion.ts): it
+                  // rides 25rem high on the section’s landing frame — her
                   // face in the frame instead of a hairline — and sits
                   // down on the 06 boundary as it scrolls in; the crown
                   // rides along, the watermark stays put as backdrop.
@@ -63,7 +63,7 @@ export const view = (model: Model): Html =>
                     [
                       h.Class('relative h-[24rem] sm:h-[30rem] md:h-full md:max-h-[46rem]'),
                       h.DataAttribute('scrub-dock', ''),
-                      // Ceiling = header (4rem) + the crown's reach above
+                      // Ceiling = header (4rem) + the crown’s reach above
                       // her hair (~9.5rem) — the crown stays in view for the
                       // whole ride down.
                       h.Style({ '--dock-lift': '18rem', '--dock-ceiling': '13.5rem' }),
@@ -100,7 +100,7 @@ export const view = (model: Model): Html =>
                       // scribble that pens itself in above her head (same
                       // draw mechanism as the map: reveal on the SVG ROOT,
                       // unit-dash paths; see the map comment for why). The
-                      // delay waits out the portrait's whole entrance
+                      // delay waits out the portrait’s whole entrance
                       // (0.2s delay + 0.9s ride) — crowning an empty void
                       // read backwards; she arrives first, THEN the pen.
                       h.svg(
@@ -110,7 +110,7 @@ export const view = (model: Model): Html =>
                           h.Class(
                             // Phone seat measured against the rendered head:
                             // 96/32 hovers the crown a touch above her hair,
-                            // centered on the head's axis (user pick from a
+                            // centered on the head’s axis (user pick from a
                             // 96/100/104 ladder — 87 sat ON the hairline and
                             // read glued).
                             clsx(
@@ -151,13 +151,13 @@ export const view = (model: Model): Html =>
                   ),
                 ],
               ),
-              // Text column keeps the section's bottom padding for itself —
-              // the photo column intentionally doesn't, so the cutout
-              // stands on the section's bottom edge.
+              // Text column keeps the section’s bottom padding for itself —
+              // the photo column intentionally doesn’t, so the cutout
+              // stands on the section’s bottom edge.
               h.div(
                 // No top padding below md — the top-scorer bar must sit
                 // flush under the portrait cutout (user call: the jersey
-                // ends ON the bar's edge).
+                // ends ON the bar’s edge).
                 [h.Class('pb-16 md:order-1 md:pt-4 md:pb-24')],
                 [
                   h.div(
@@ -173,7 +173,7 @@ export const view = (model: Model): Html =>
                         [
                           h.Class(
                             // Below lg the claim runs the FULL width as the
-                            // portrait's plinth, label centered (user call).
+                            // portrait’s plinth, label centered (user call).
                             // lg+ keeps the content-sized chip.
                             // lg, not md: the copy column stays phone-width through
                             // the md band (the photo column eats the rest), so the
@@ -192,7 +192,7 @@ export const view = (model: Model): Html =>
                     ],
                   ),
                   // A plain list, not a <dl>: value-as-term read the pairs
-                  // backwards (the honors board's lesson).
+                  // backwards (the honors board’s lesson).
                   h.ul(
                     [
                       // Content-sized tracks spread with space-between, NOT
@@ -216,7 +216,7 @@ export const view = (model: Model): Html =>
                           // counters' "clickable + on" signal.
                           h.div([h.Class('mb-4 h-1 w-12 bg-paper')], []),
                           // Paper numbers, not pink: after the pink name
-                          // above, the section's pink budget belongs to the
+                          // above, the section’s pink budget belongs to the
                           // haul stamps and the CTA. (Nations-league stats
                           // set the base-color-numbers precedent.)
                           // Aria-hidden + sr-only twin: the count-up
@@ -322,7 +322,7 @@ export const view = (model: Model): Html =>
                                     ],
                                   ),
                                   // Her count as the 04 stamp element — the
-                                  // row's only pink; the match score is neutral
+                                  // row’s only pink; the match score is neutral
                                   // context in paper, venue labeled like every
                                   // score block on the page.
                                   h.span(
@@ -374,7 +374,7 @@ export const view = (model: Model): Html =>
                         ),
                       ),
                       // Centered and pushed off the table — the CTA is the
-                      // section's exit, not the third row of the list.
+                      // section’s exit, not the third row of the list.
                       h.div(
                         [h.Class('mt-16 flex justify-center md:mt-20')],
                         [

@@ -5,7 +5,7 @@ import type { Column } from './api';
 
 export const playersUrl = (page: number): string => paginatedUrl('/players', page);
 
-// Mirrors GET /players from the backend's OpenAPI spec (fetched 2026-07-04,
+// Mirrors GET /players from the backend’s OpenAPI spec (fetched 2026-07-04,
 // now paginated: `items` + `total`/`page`/`pageSize`).
 export const PrimaryPosition = S.Literals(['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD']);
 export const Sex = S.Literals(['FEMALE', 'MALE']);

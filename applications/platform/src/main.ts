@@ -90,7 +90,7 @@ export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
   [ReadPins()],
 ];
 
-// The round picker's bound, resolved from the competition the pick CAME
+// The round picker’s bound, resolved from the competition the pick CAME
 // FROM (the message carries its slug) rather than from the open route:
 // /matches pages two leagues at once and has no competition route at all.
 const roundBound = (slug: string): number =>
@@ -138,7 +138,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         }),
         [],
       ],
-      // Clamped HERE against that competition's own schedule — the Model
+      // Clamped HERE against that competition’s own schedule — the Model
       // never holds an out-of-range round (0 stays the "current" sentinel,
       // stored as a missing key so each panel keeps its own matchday).
       SelectedCompetitionRound: ({ slug, round }) => [
@@ -179,5 +179,5 @@ export const update = (model: Model, message: Message): UpdateReturn =>
 export { Load, Navigate, ReadPins, WritePins };
 
 // The view composition lives in view.ts; each screen in its own module under
-// page/, reached through that directory's barrel.
+// page/, reached through that directory’s barrel.
 export { view } from './view';

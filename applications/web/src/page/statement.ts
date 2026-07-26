@@ -58,7 +58,7 @@ const takeSegment = (
   );
 
 // One line of the analogy list — the pen crosses the EQUALS sign with the
-// same slash energy as the take's strike: an equal sign is exactly what
+// same slash energy as the take’s strike: an equal sign is exactly what
 // this section refuses. The visible line is aria-hidden (a screen reader
 // would read the struck '=' as plain equality — the opposite claim) and
 // the sr-only sibling carries the real sentence.
@@ -90,8 +90,8 @@ const equationLine = (
                 [
                   h.Class(
                     // Native translate/rotate compose with the strike
-                    // animation's transform (it only owns scaleX); origin
-                    // left = the pen draws along the slash's own axis.
+                    // animation’s transform (it only owns scaleX); origin
+                    // left = the pen draws along the slash’s own axis.
                     clsx(
                       'pointer-events-none absolute top-1/2 left-1/2 h-1 w-[130%] -translate-x-1/2 -translate-y-1/2 -rotate-[58deg] bg-pink md:h-1.5',
                       revealClass(model, `${key}-strike`),
@@ -114,7 +114,7 @@ const equationLine = (
     ],
   );
 
-// An unnumbered full-bleed interlude — the site's attitude in three beats:
+// An unnumbered full-bleed interlude — the site’s attitude in three beats:
 // the tired take, the stamp slammed over it, and the deadpan analogy.
 export const view = (model: Model): Html =>
   h.section(
@@ -126,14 +126,14 @@ export const view = (model: Model): Html =>
           // A 'late' reveal group: the strike and the rebuttal key off THIS
           // wrapper crossing mid-viewport, so they land as one beat no
           // matter where each sits on screen. The take itself is not late —
-          // it reveals early and gets read first; that's the joke's setup.
+          // it reveals early and gets read first; that’s the joke’s setup.
           h.div(
             [h.DataAttribute('reveal-group', 'late')],
             [
-              // The take gets STRUCK THROUGH once it's been read — the
+              // The take gets STRUCK THROUGH once it’s been read — the
               // strike slashes left-to-right when the block reaches
-              // mid-viewport (scroll-gated, so the pace is the reader's,
-              // not a clock's). On phones each wrapped line takes its own
+              // mid-viewport (scroll-gated, so the pace is the reader’s,
+              // not a clock’s). On phones each wrapped line takes its own
               // slash, the second landing a beat after the first — one pen,
               // two strokes.
               h.h2(
@@ -193,7 +193,7 @@ export const view = (model: Model): Html =>
           // The analogy list ("Do not compare women to men." spelled out
           // as arithmetic): different games, different rides, different
           // sports — the pen refuses every equals sign. Also scroll-gated
-          // so the list can't beat the stamp to the screen.
+          // so the list can’t beat the stamp to the screen.
           h.div(
             [h.Class('mt-14 space-y-3 md:mt-20')],
             [

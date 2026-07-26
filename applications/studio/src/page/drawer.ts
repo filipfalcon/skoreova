@@ -67,29 +67,29 @@ export const view = (model: Model): Html => {
   const isConfirmingDelete =
     drawerState._tag === 'Editing' ? drawerState.isConfirmingDelete : false;
   const editingId = drawerState._tag === 'Editing' ? drawerState.id : '';
-  // The section this drawer is scoped to: the record's own section when
+  // The section this drawer is scoped to: the record’s own section when
   // editing, or the target section when creating a new one.
   const drawerSection = drawerState._tag === 'Closed' ? undefined : drawerState.section;
   const columns = drawerSection ? sectionData[drawerSection].columns : [];
 
-  // A derived cell (an edition's Competition) stores the parent's ID and is
+  // A derived cell (an edition’s Competition) stores the parent’s ID and is
   // resolved to a name for display, so it is never a free-text box: typing
   // there used to commit a "<uuid> → <text>" edit that the next render
   // resolved away — the change looked discarded, but the History tab kept it.
   //
   // Which control it gets depends on the mode, and that split is the point.
-  // EDITING shows the resolved name read-only — re-parenting a record isn't
-  // this drawer's job. CREATING has to offer the choice: a new edition with
+  // EDITING shows the resolved name read-only — re-parenting a record isn’t
+  // this drawer’s job. CREATING has to offer the choice: a new edition with
   // no competition is a record you can never fix, since the cell it needs is
   // the one that goes read-only the moment it exists. So creating gets a
-  // picker over the referenced section's own rows, and the draft carries the
+  // picker over the referenced section’s own rows, and the draft carries the
   // chosen id — exactly what a fetched row holds in that cell (see
   // ClickedSaveRecord, which lifts it into parentId).
-  // A select, so Ui.Button doesn't apply — but the same reasoning as the Save:
+  // A select, so Ui.Button doesn’t apply — but the same reasoning as the Save:
   // AriaDisabled, not the native attribute. A natively disabled control leaves
   // the tab order and takes its own explanation with it — and explaining
   // itself is the entire job of this one, which exists to say "still loading",
-  // "couldn't load" or "none exist yet". There is nothing to pick either way:
+  // "couldn’t load" or "none exist yet". There is nothing to pick either way:
   // it carries a single option and no OnChange.
   const inertSelect = (label: string): Html =>
     h.select(
@@ -117,7 +117,7 @@ export const view = (model: Model): Html => {
         [
           inertSelect(
             isFailed
-              ? `Couldn't load ${sectionLabels[section].toLowerCase()}`
+              ? `Couldn’t load ${sectionLabels[section].toLowerCase()}`
               : `Loading ${sectionLabels[section].toLowerCase()}…`,
           ),
           isFailed
@@ -172,10 +172,10 @@ export const view = (model: Model): Html => {
   // Creating with a derived cell left blank would file `parentId: ''` — and
   // Editing renders that cell read-only ("Set by the parent record"), so the
   // record could never be repaired afterwards. Making it merely avoidable
-  // wasn't the fix; Save refuses while one is unset, and says which.
+  // wasn’t the fix; Save refuses while one is unset, and says which.
   // What still stands between this draft and a save, asked of the fields
   // themselves — `unsatisfiedColumns` runs the same rules `update` refuses on,
-  // so the button and the commit can't disagree about what "ready" means.
+  // so the button and the commit can’t disagree about what "ready" means.
   const unsatisfied = creating && drawerSection ? unsatisfiedColumns(drawerSection, draft) : [];
 
   // The note has to match what the picker above it is actually showing. When
@@ -184,7 +184,7 @@ export const view = (model: Model): Html => {
   // the same moment, one in the field and one in the footer.
   const missingReferenceNote = (column: Column): string => {
     const section = column.derived;
-    // A plain field explains itself through its own rule's message.
+    // A plain field explains itself through its own rule’s message.
     if (section === undefined) {
       const index = columns.indexOf(column);
       const field = draft[index];
@@ -231,10 +231,10 @@ export const view = (model: Model): Html => {
     const isTeam = entry.section === 'clubs' || entry.section === 'nationals';
     const isCompetition = entry.section === 'competitions';
     const isEdition = entry.section === 'editions';
-    // Read-only field values with the edition's competition name resolved.
+    // Read-only field values with the edition’s competition name resolved.
     const displayValues = resolveDerivedCells(model, entry).values;
 
-    // A competition's own editions, each opening its own drawer on click.
+    // A competition’s own editions, each opening its own drawer on click.
     const editionsList = (): Html => {
       if (!isCompetition) return h.empty;
       const editions = sectionRows(model, 'editions').filter(
@@ -275,7 +275,7 @@ export const view = (model: Model): Html => {
       );
     };
 
-    // An edition's participating teams (Clubs/Nationals), resolved via
+    // An edition’s participating teams (Clubs/Nationals), resolved via
     // GET /participations — a join with no display fields of its own.
     const participatingTeamsList = (): Html => {
       if (!isEdition) return h.empty;
@@ -288,7 +288,7 @@ export const view = (model: Model): Html => {
             h.div(
               [h.Role('alert'), h.Class('flex flex-wrap items-center gap-3 text-sm text-rose-700')],
               [
-                h.span([], [`Couldn't load teams: ${model.participations.error}`]),
+                h.span([], [`Couldn’t load teams: ${model.participations.error}`]),
                 Button.view({
                   onClick: ClickedRetryParticipations(),
                   toView: ({ button }) =>
@@ -358,8 +358,8 @@ export const view = (model: Model): Html => {
       [
         // Keyed by record id so opening a different record from an already-open
         // drawer tears the host down and remounts it — OnMount refires, and the
-        // new record's data is synced in (an unkeyed host would keep the prior
-        // record's chart, since OnMount only fires once per element).
+        // new record’s data is synced in (an unkeyed host would keep the prior
+        // record’s chart, since OnMount only fires once per element).
         h.keyed('div')(
           `chart-${entry.id}`,
           [
@@ -369,7 +369,7 @@ export const view = (model: Model): Html => {
           ],
           [],
         ),
-        // Points-over-time only makes sense for a team's league campaign.
+        // Points-over-time only makes sense for a team’s league campaign.
         isTeam
           ? h.keyed('div')(
               `points-${entry.id}`,
@@ -480,7 +480,7 @@ export const view = (model: Model): Html => {
           RecordCreated: () => shell('Created', 'Added in the studio.'),
           // Reachable only if a deleted record is ever openable again — the
           // event is logged regardless, so the history is honest rather than
-          // shaped by what today's UI happens to show.
+          // shaped by what today’s UI happens to show.
           RecordDeleted: () => shell('Deleted', 'Removed from the list.'),
         }),
       );
@@ -544,9 +544,9 @@ export const view = (model: Model): Html => {
       toParentMessage: (message) => GotTabsMessage({ message }),
     });
 
-  // The panel's content, laid out with the Dialog's attribute bundles: the
+  // The panel’s content, laid out with the Dialog’s attribute bundles: the
   // heading carries the accessible name (`title`), the type pill the
-  // description, and the ✕/Cancel controls the component's close handler.
+  // description, and the ✕/Cancel controls the component’s close handler.
   const panel = (render: Dialog.RenderInfo): ReadonlyArray<Html> =>
     drawerSection
       ? [
@@ -602,7 +602,7 @@ export const view = (model: Model): Html => {
               h.button([...render.closeButton, h.Class(drawerCancelStyle)], ['Cancel']),
               // NOT Ui.Button, deliberately — the one control in the app that
               // opts out. An earlier note here gave the wrong reason: it said
-              // the component's only blocked mode was the native attribute and
+              // the component’s only blocked mode was the native attribute and
               // predicted a conversion once an aria-disabled mode arrived.
               // That mode is what `isDisabled` has always been — AriaDisabled,
               // data-disabled, `tabindex="0"` — and AriaDescribedBy rides fine

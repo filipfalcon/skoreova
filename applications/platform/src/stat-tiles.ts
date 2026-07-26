@@ -22,8 +22,8 @@ const h = html<Message>();
 // stat cards. `id` is `trending:<entry id>`.
 export const trendingTile = (model: Model, entry: TrendingEntry, index: number): Html => {
   const featured = entry.photo !== '';
-  // No col-span here: the leader's double width belongs to the grid CHILD,
-  // and that's the <li> this tile sits inside (see trendingTiles) — a span on
+  // No col-span here: the leader’s double width belongs to the grid CHILD,
+  // and that’s the <li> this tile sits inside (see trendingTiles) — a span on
   // the tile itself was inert.
   return h.div(
     [h.Class('relative')],
@@ -37,7 +37,7 @@ export const trendingTile = (model: Model, entry: TrendingEntry, index: number):
           // edge. Only the photoless fallback keeps the panel frame.
           // Without the rank row the content no longer props the tile
           // open — justify-end pins the name to the bottom edge and
-          // the min-heights carry the photo's presence.
+          // the min-heights carry the photo’s presence.
           // Phone: EVERY tile runs full-width landscape (paired
           // portrait tiles forced two-line names — the display type
           // only sings as a one-liner); the leader stays the tallest.
@@ -75,9 +75,9 @@ export const trendingTile = (model: Model, entry: TrendingEntry, index: number):
               ]
             : []),
           // Names WRAP instead of truncating — the long ones (KATEŘINA
-          // SVITKOVÁ) don't fit a half-width phone tile at this size,
-          // and an ellipsis on a person's name reads as a bug. No
-          // overflow clip also means Anton's accented caps need no
+          // SVITKOVÁ) don’t fit a half-width phone tile at this size,
+          // and an ellipsis on a person’s name reads as a bug. No
+          // overflow clip also means Anton’s accented caps need no
           // headroom hack here.
           h.p(
             [
@@ -119,12 +119,12 @@ export interface StatEntry {
   readonly focus: string;
 }
 
-// GOALS PER MATCHDAY, and the sums are not free: each league's rounds add up
+// GOALS PER MATCHDAY, and the sums are not free: each league’s rounds add up
 // to the goals its own standings table records as scored (data.test.ts asserts
 // it). The old numbers had the First League outscoring the Second, 210 to 146,
 // while the tables these tiles link to said the opposite — 147 to 199. The
 // Second League simply plays more football: eleven clubs is five matches a
-// round against the First League's four.
+// round against the First League’s four.
 export const goals: ReadonlyArray<StatEntry> = [
   {
     league: 'First League',
@@ -184,7 +184,7 @@ export const statSpark = (rounds: ReadonlyArray<number>): Html =>
   );
 
 // The pin for a PHOTO tile — icon-only, so it stays small in a corner,
-// and always solid-backed so it reads on any crop (the bordered chip's
+// and always solid-backed so it reads on any crop (the bordered chip’s
 // outline vanished on a dark photo). Sits over the tile as an absolute
 // sibling of the card link, never inside it.
 export const pinOverlay = (model: Model, id: string, label: string): Html => {
@@ -209,7 +209,7 @@ export const pinOverlay = (model: Model, id: string, label: string): Html => {
   });
 };
 
-// 'First League' -> 'first-league', so a card's pin id is stable and
+// 'First League' -> 'first-league', so a card’s pin id is stable and
 // readable (`attendance:first-league`).
 export const leagueSlug = (league: string): string => league.toLowerCase().replace(/\s+/g, '-');
 
@@ -242,7 +242,7 @@ export const statCard = (
           // FINAL anatomy: NO text ever sits on the photo. The photo
           // is a clean, untouched band up top; the stats live in a
           // solid ink footer with guaranteed contrast. The sharp seam
-          // between them is deliberate — it's the same hard edge the
+          // between them is deliberate — it’s the same hard edge the
           // paper panels use everywhere else.
           h.Class('trend-row group flex flex-col overflow-hidden bg-ink'),
           h.Style({ '--row-delay': `${0.3 + index * 0.08}s` }),
@@ -304,7 +304,7 @@ export const statCard = (
               ),
               // One figures row: round, season, sparkline — aligned
               // on a shared baseline. The round wears the PINK STAMP
-              // (the matches panel's score-chip grammar): this is the
+              // (the matches panel’s score-chip grammar): this is the
               // fresh number, everything else is context.
               h.div(
                 [h.Class('mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4')],
@@ -353,7 +353,7 @@ export const statCard = (
                     ],
                   ),
                   // Below `md` the sparkline ALWAYS takes its own
-                  // full-bleed strip along the card's bottom —
+                  // full-bleed strip along the card’s bottom —
                   // flex-wrap used to decide per card (wide First
                   // League figures wrapped, narrow Second League
                   // stayed inline) and the boards looked mismatched.
@@ -375,10 +375,10 @@ export const statCard = (
 };
 
 export interface BestRecord {
-  // Authored, like a trending tile's — the pin id's tail, and never derived
+  // Authored, like a trending tile’s — the pin id’s tail, and never derived
   // from `label`. See the note on TrendingEntry.id: display copy is edited,
   // persisted pins are not migrated, and a slugified label made every rewording
-  // of a record's caption a silent unpinning.
+  // of a record’s caption a silent unpinning.
   readonly id: string;
   readonly value: string;
   // Counts take the drawn multiplication mark. Scorelines, totals and
@@ -391,7 +391,7 @@ export interface BestRecord {
 // One all-time record — its own pinnable unit (user call: split the board).
 // Frameless like before, but the pin tick becomes the pin BUTTON: the pink
 // tick was always decorative, so making it the control adds no clutter.
-// `standalone` left-aligns it for the Her Game feed (the home grid centres on
+// `standalone` left-aligns it for the Her Game feed (the home grid centers on
 // phones); the id is `best:<record id>`.
 export const bestRecord = (model: Model, record: BestRecord, standalone: boolean): Html => {
   const pinned = model.pinned.includes(`best:${record.id}`);
@@ -415,7 +415,7 @@ export const bestRecord = (model: Model, record: BestRecord, standalone: boolean
                 pinned ? `Unpin ${record.label} from Her Game` : `Pin ${record.label} to Her Game`,
               ),
               // The tick, now a hit target: pink bar at rest, growing a pin
-              // glyph beside it when pinned so the state reads without colour.
+              // glyph beside it when pinned so the state reads without color.
               h.Class(
                 clsx(
                   'flex cursor-pointer items-center gap-2 transition-colors',
@@ -443,7 +443,7 @@ export const bestRecord = (model: Model, record: BestRecord, standalone: boolean
 };
 
 // The record board: one entry per all-time best. Placeholder values in the
-// mock's spirit — replace with API data when it exists.
+// mock’s spirit — replace with API data when it exists.
 export const allTimeBests: ReadonlyArray<BestRecord> = [
   {
     id: 'league-titles',

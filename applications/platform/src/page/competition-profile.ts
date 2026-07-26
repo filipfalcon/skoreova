@@ -209,7 +209,7 @@ const competitionHistoryPanel = (competition: Competition): Html =>
   );
 
 // MATCHES, round by round — a round-robin generated straight from the
-// league's standings teams (circle method), so the schedule can never
+// league’s standings teams (circle method), so the schedule can never
 // drift from the table. Scores are deterministic mock (seeded by
 // competition + round + match); rounds past the current matchday show as
 // upcoming. The arrows page through the rounds.
@@ -229,7 +229,7 @@ const leagueMatchesPanel = (competition: Competition, league: string, model: Mod
   const total = rounds.length;
   // Always in range — SelectedCompetitionRound clamps in `update` (no entry
   // for this competition = its current matchday). Reading the round under
-  // the competition's own slug is what lets the two panels on /matches page
+  // the competition’s own slug is what lets the two panels on /matches page
   // independently.
   const open = Option.getOrElse(
     Record.get(model.competitionRounds, competition.slug),
@@ -238,11 +238,11 @@ const leagueMatchesPanel = (competition: Competition, league: string, model: Mod
   const matches = rounds[open - 1] ?? [];
   const arrow = (target: number, glyph: string, label: string): Html => {
     const blocked = target < 1 || target > total;
-    // Ui.Button's isDisabled is exactly this end-stop's contract: aria-disabled
+    // Ui.Button’s isDisabled is exactly this end-stop’s contract: aria-disabled
     // and no click handler, but NEVER the native attribute — an end-stop that
     // drops out of the tab order mid-interaction strands keyboard focus. The two
     // looks are disjoint strings for the reason CLAUDE.md records: overlaying the
-    // blocked colours on the live ones loses Tailwind's emit order.
+    // blocked colors on the live ones loses Tailwind’s emit order.
     return Button.view({
       isDisabled: blocked,
       ...(blocked
@@ -347,7 +347,7 @@ const editionRadioGroup = (competition: Competition, model: Model): Html => {
   });
 };
 
-// A finished edition's card — the champion holds the stage until the full
+// A finished edition’s card — the champion holds the stage until the full
 // per-season archive lands with the real data.
 const editionArchivePanel = (competition: Competition, open: Edition): Html =>
   h.section(

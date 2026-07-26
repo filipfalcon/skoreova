@@ -13,14 +13,14 @@ import { Entry } from './model';
 
 export const UpdatedEmail = m('UpdatedEmail', { value: S.String });
 export const UpdatedPassword = m('UpdatedPassword', { value: S.String });
-// The sign-in form's submit — fired by the arrow button and by Enter in
+// The sign-in form’s submit — fired by the arrow button and by Enter in
 // either field (the view is a real h.form with OnSubmit).
 export const SubmittedSignIn = m('SubmittedSignIn');
 export const ClickedSignOut = m('ClickedSignOut');
 export const SelectedSection = m('SelectedSection', { section: Section });
 export const ToggledMenu = m('ToggledMenu');
 export const UpdatedSearch = m('UpdatedSearch', { value: S.String });
-// A dropdown column's exact-match choice ('' clears it back to "All").
+// A dropdown column’s exact-match choice ('' clears it back to "All").
 export const SelectedFilter = m('SelectedFilter', { column: S.String, value: S.String });
 export const ClickedAddNew = m('ClickedAddNew');
 export const ClickedRecord = m('ClickedRecord', { section: Section, id: S.String });
@@ -32,12 +32,12 @@ export const SavedRecordAt = m('SavedRecordAt', { at: S.String });
 // Same shape for the delete: its own Command reads the clock, so the History
 // event carries a real timestamp instead of one invented in `update`.
 export const DeletedRecordAt = m('DeletedRecordAt', { at: S.String });
-// Wraps a Dialog submodel message for delegation. The drawer's close controls
+// Wraps a Dialog submodel message for delegation. The drawer’s close controls
 // (✕, Cancel, backdrop, Escape) all flow through here as RequestedClose; the
-// close intent comes back out as the Dialog's Closed OutMessage.
+// close intent comes back out as the Dialog’s Closed OutMessage.
 export const GotDialogMessage = m('GotDialogMessage', { message: Dialog.Message });
 // Wraps a Tabs submodel message for delegation. A committed tab comes back out
-// as the Tabs' Selected OutMessage, folded into DrawerEditing's `tab`.
+// as the Tabs' Selected OutMessage, folded into DrawerEditing’s `tab`.
 export const GotTabsMessage = m('GotTabsMessage', { message: Tabs.Message });
 export const SucceededMountChart = m('SucceededMountChart', { hostId: S.String });
 export const FailedMountChart = m('FailedMountChart', { reason: S.String });
@@ -89,7 +89,7 @@ export const FailedFetchTeamById = m('FailedFetchTeamById', { reason: S.String }
 export const ClickedDashboard = m('ClickedDashboard');
 // Wraps a checkbox filter Listbox message for delegation, keyed by the
 // column the instance belongs to. A toggled value comes back out as the
-// Listbox's Selected OutMessage, folded into that column's excluded set.
+// Listbox’s Selected OutMessage, folded into that column’s excluded set.
 export const GotFilterListboxMessage = m('GotFilterListboxMessage', {
   column: S.String,
   message: Listbox.Message,
@@ -99,14 +99,14 @@ export const GotFilterListboxMessage = m('GotFilterListboxMessage', {
 export const FetchedToday = m('FetchedToday', { today: Calendar.CalendarDate });
 // Wraps a date filter DatePicker message for delegation, keyed by the column
 // and which bound of its range the instance edits. A committed date comes
-// back out as the DatePicker's SelectedDate OutMessage, folded into
+// back out as the DatePicker’s SelectedDate OutMessage, folded into
 // `dateFilters`.
 export const GotDateFilterMessage = m('GotDateFilterMessage', {
   column: S.String,
   bound: S.Literals(['from', 'to']),
   message: DatePicker.Message,
 });
-// Clears both bounds of a date column's range filter. Purely parent-side:
+// Clears both bounds of a date column’s range filter. Purely parent-side:
 // the DatePickers hold no selection state to reset.
 export const ClearedDateFilter = m('ClearedDateFilter', { column: S.String });
 

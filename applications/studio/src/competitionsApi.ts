@@ -3,7 +3,7 @@ import { Schema as S } from 'effect';
 import { GATEWAY_BASE_URL, titleCase } from './api';
 import type { Column } from './api';
 
-// Mirrors GET /competitions from the backend's OpenAPI spec (fetched
+// Mirrors GET /competitions from the backend’s OpenAPI spec (fetched
 // 2026-07-05). Not paginated — returns everything in one array.
 export const CompetitionTeamKind = S.Literals(['CLUB', 'NATIONAL']);
 

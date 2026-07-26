@@ -11,7 +11,7 @@ import { type Message, ToggledPin } from './message';
 import { type NavEntry, navEntries, screenOf, screenTitles } from './data';
 import { welcomeRouter } from './route';
 
-// The message-typed HTML builder for this module's views.
+// The message-typed HTML builder for this module’s views.
 const h = html<Message>();
 
 // VIEW HELPERS
@@ -47,8 +47,8 @@ export const pinGlyph = (classes: string): Html =>
   );
 
 // The PIN control — one button, on every board heading and chart card.
-// Pinned reads as a filled pink chip (the site's "this is mine / act on
-// it" colour, the same as a highlighted row or an honour badge); unpinned
+// Pinned reads as a filled pink chip (the site’s "this is mine / act on
+// it" color, the same as a highlighted row or an honor badge); unpinned
 // is a quiet outline that fills on hover so the affordance is obvious. The
 // label names the target so a screen reader hears "Pin Goals to Her Game",
 // not a bare "pin".
@@ -126,10 +126,10 @@ export const sparkline = (values: ReadonlyArray<number>): Html => {
 // section links on a rail below. Below `md` the top bar carries the brand
 // + account and navigation lives in the bottom tab bar.
 
-// The stage stamp — the landing header's device (pink chip, 9/10px
-// uppercase, box-decoration-clone so each line's pink hugs its own text).
-// ALWAYS two lines here: this header's brand column is tighter than the
-// landing's, and the one-line form re-wrapped mid-phrase. A status label,
+// The stage stamp — the landing header’s device (pink chip, 9/10px
+// uppercase, box-decoration-clone so each line’s pink hugs its own text).
+// ALWAYS two lines here: this header’s brand column is tighter than the
+// landing’s, and the one-line form re-wrapped mid-phrase. A status label,
 // never a link — always a SIBLING of the wordmark anchor, not a child.
 export const previewStamp = (): Html =>
   h.span(
@@ -146,7 +146,7 @@ export const previewStamp = (): Html =>
     ],
   );
 
-// A stroked person mark for the account section — drawn like the app's
+// A stroked person mark for the account section — drawn like the app’s
 // other glyphs (currentColor strokes, no icon font).
 export const personGlyph: Html = h.svg(
   [
@@ -165,7 +165,7 @@ export const personGlyph: Html = h.svg(
 );
 
 // NOTE: deliberately inert mock — accounts arrive with the paid tiers; the
-// free platform never demands one. Ui.Button's isDisabled is what announces
+// free platform never demands one. Ui.Button’s isDisabled is what announces
 // that honestly: aria-disabled plus data-disabled, and NO click handler, while
 // the control keeps its place in the tab order so a keyboard reader still
 // meets it and hears why it does nothing yet.
@@ -262,7 +262,7 @@ export const desktopNavLink = (model: Model, entry: NavEntry): Html => {
       h.Href(entry.href),
       ...(active ? [h.AriaCurrent('page')] : []),
       // Below `md` the tab is an ICON (label hidden, aria-label carries
-      // the name); from `md` up it's the plain uppercase label.
+      // the name); from `md` up it’s the plain uppercase label.
       h.AriaLabel(entry.label),
       h.Class(
         clsx(
@@ -275,7 +275,7 @@ export const desktopNavLink = (model: Model, entry: NavEntry): Html => {
   );
 };
 
-// The header bar is a DUPLICATE of the landing page's header — same fixed
+// The header bar is a DUPLICATE of the landing page’s header — same fixed
 // shell, same container (max-w-7xl px-5/10), same h-14/h-16 bar, same
 // wordmark size and pink hover, same translucent ink + blur — deliberately
 // copied, not shared (user call): the two apps should FEEL like one page,
@@ -284,8 +284,8 @@ export const desktopNavLink = (model: Model, entry: NavEntry): Html => {
 export const headerView = (model: Model): Html =>
   h.header(
     // The hairline TERMINATES the backdrop blur. backdrop-filter samples
-    // beyond the element's own box, so over a bright backdrop — the club
-    // profile's header photo starts exactly where this bar ends — the blur
+    // beyond the element’s own box, so over a bright backdrop — the club
+    // profile’s header photo starts exactly where this bar ends — the blur
     // smears the picture a few pixels UP into the bar and the boundary
     // reads as a soft halo instead of an edge. A 1px rule gives the eye a
     // hard line to stop at; the glass stays.
@@ -297,7 +297,7 @@ export const headerView = (model: Model): Html =>
     [
       h.div(
         [
-          // The landing's container + bar: brand on the left, account on the
+          // The landing’s container + bar: brand on the left, account on the
           // right. Global search will land here once the search backend
           // exists; until then there is no control (a focusable box that
           // does nothing is worse than none).
@@ -326,8 +326,8 @@ export const headerView = (model: Model): Html =>
       ),
       // The section rail — every breakpoint (user call: phones navigate
       // under the header too; the bottom tab bar died).
-      // no-scrollbar + overflow: the six labels outgrow the md band's
-      // width, and wrapped labels would change the header's height (the
+      // no-scrollbar + overflow: the six labels outgrow the md band’s
+      // width, and wrapped labels would change the header’s height (the
       // content offset is a hard 111px). CENTERED via `mx-auto` on the
       // inner wrapper, NOT `justify-content: center` on the scroller —
       // auto margins collapse to 0 when the content overflows, so the md
@@ -361,7 +361,7 @@ export const headerView = (model: Model): Html =>
 
 // ——— Shared drawn glyphs and the club-profile section wrapper. ———
 
-// The landing page's drawn arrow, ported with its hover contract intact
+// The landing page’s drawn arrow, ported with its hover contract intact
 // (`drawn-arrow` nudges right inside any hovered link or button — see
 // styles.css). Filled silhouette, not a text glyph: it sits next to display
 // type here, the same register it does over there.
@@ -378,25 +378,25 @@ export const drawnRightArrow = (classes: string): Html =>
   );
 
 // The multiplication mark, DRAWN for the same reason (user call: next to
-// Anton's caps the text × all but disappeared — it is a light maths glyph
+// Anton’s caps the text × all but disappeared — it is a light maths glyph
 // in a face whose letters are anything but, so it reads as a smudge
-// between the number and the word). Built to Anton's weight instead:
+// between the number and the word). Built to Anton’s weight instead:
 // arms a fifth of the box thick, cut at 45°.
 //
-// Sized against Anton's MEASURED figures, not against a generic em. The
+// Sized against Anton’s MEASURED figures, not against a generic em. The
 // face runs abnormally large on the body — x-height 0.73em, figures
 // 0.86em — which is exactly why the text × vanished: a maths glyph drawn
 // for a normal face is far too small beside characters this big. At
 // 0.52em the mark is a little over half the figure height, which holds
 // its own without reading as a letter.
 //
-// Centred on the FIGURE axis rather than the usual x-height one, because
+// Centered on the FIGURE axis rather than the usual x-height one, because
 // this mark only ever lands between digits and caps ("22× LEAGUE") and
 // never beside lowercase — on the x-height axis it sat a visible pixel
 // low against the numerals. An inline-block baselines on its BOTTOM
 // MARGIN EDGE, so the margin is the control: mb + height/2 ≈ half the
 // figure height. Both are em, so it holds at any size it inherits — it
-// renders at 18px in the honours chip and 36px in the history grid.
+// renders at 18px in the honors chip and 36px in the history grid.
 export const drawnTimes = (classes = ''): Html =>
   h.svg(
     [
@@ -431,9 +431,9 @@ export const CLUB_CHIP =
 // A chip anchors its OWN section (user call) — it does not leave the
 // profile. Clicking one jumps to that block and puts #<anchor> in the
 // address bar, so any part of a club page is linkable. No drawn arrow:
-// the arrow is the landing page's "go somewhere else" gesture, and these
+// the arrow is the landing page’s "go somewhere else" gesture, and these
 // go nowhere else. The hover carries the affordance instead — pink to ink,
-// rather than the landing's pink to paper, which on this paper surface
+// rather than the landing’s pink to paper, which on this paper surface
 // would have dissolved the chip into the page.
 export const clubChip = (text: string, anchor: string): Html =>
   h.a(

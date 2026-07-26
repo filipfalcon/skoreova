@@ -38,15 +38,15 @@ import { tickerQuotes } from '../ticker';
 
 const h = html<Message>();
 
-// HOME — the platform's ONE front page at `/` (the former welcome and
+// HOME — the platform’s ONE front page at `/` (the former welcome and
 // dashboard screens, merged): the ticker, a mock-personalized greeting,
-// the club crests, the weekend's results, trending, the chart studio
-// card, what's new, and the platform's numbers. There is no account gate —
+// the club crests, the weekend’s results, trending, the chart studio
+// card, what’s new, and the platform’s numbers. There is no account gate —
 // every visitor lands straight in the data.
 
-// What the platform gained lately — the home page's proof that the
+// What the platform gained lately — the home page’s proof that the
 // database is alive (user-supplied canonical list). Placeholder entries
-// in the mock's spirit.
+// in the mock’s spirit.
 interface RecentEntry {
   readonly kind: string;
   readonly title: string;
@@ -131,7 +131,7 @@ const trendingTiles = (model: Model): Html =>
       chipHeading('Trending'),
       // Three tiles (user call — five was a crowd): full-width strips on
       // phones, one row of three from `sm`. A real list — each tile is an
-      // item AT can count and step through. The leader's col-span rides the
+      // item AT can count and step through. The leader’s col-span rides the
       // li (the grid child) rather than the tile.
       h.ul(
         [h.Class('mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:gap-6')],
@@ -147,7 +147,7 @@ const trendingTiles = (model: Model): Html =>
 
 // A stat board = plain chip heading + the league cards. The pin now lives
 // on each CARD, not the heading (user call: the leagues must split), so a
-// board has no single pin of its own. `noun` builds each card's pin id and
+// board has no single pin of its own. `noun` builds each card’s pin id and
 // its accessible label (`attendance:first-league`, "First League
 // attendance").
 const statBoard = (
@@ -187,7 +187,7 @@ const attendanceTiles = (model: Model): Html =>
 // competitions on the tape, which is what lets every row resolve its name
 // from the clubs table.
 //
-// A quote as the tape draws it: the club's canonical name from the season
+// A quote as the tape draws it: the club’s canonical name from the season
 // table, plus its movement. The name is looked up rather than stored — see
 // ticker.ts for why.
 interface TapeQuote {
@@ -272,7 +272,7 @@ const crestChip = (entry: Club, delaySeconds: number): Html =>
     ],
   );
 
-// The rail's order is hand-set (user call), row by row of the phone
+// The rail’s order is hand-set (user call), row by row of the phone
 // formation: 5 — Sparta, Slavia, Slovan, Slovácko, Baník; 4 — Lokomotiva,
 // Plzeň, Raptors, Hradec; 5 — Pardubice, Artis, Č. Budějovice, Sigma,
 // Teplice; 2 — Braník, Jihlava.
@@ -295,15 +295,15 @@ const CREST_ORDER: ReadonlyArray<string> = [
   'vysocina-jihlava',
 ];
 
-// The honeycomb's row widths, alternating so the rows interlock — the last
+// The honeycomb’s row widths, alternating so the rows interlock — the last
 // row takes whatever is left (5-4-5-2 across the sixteen crests). Slicing by
 // these sizes replaces the old take-flipping loop and its running cell
-// counter: each row's first cell index IS the sum of the rows before it, so
+// counter: each row’s first cell index IS the sum of the rows before it, so
 // the stagger delays stay consecutive across rows.
 const CREST_ROW_SIZES: ReadonlyArray<number> = [5, 4, 5, 4];
 
 // Every A-side crest, one tap from its profile — B teams share their
-// parent's crest, so they'd only duplicate the artwork here. On phones the
+// parent’s crest, so they’d only duplicate the artwork here. On phones the
 // rail stacks into centered 5-4-5-… rows (user call — the staggered
 // formation reads like a lineup, and no row is left with an orphan flush
 // left); from `md` everything fits one straight row.
@@ -356,7 +356,7 @@ const welcomeHero = (): Html =>
     [
       h.h1([h.Class('sr-only')], ['Skóreová Platform — the data hub of Czech women’s football']),
       // The ticker kisses the header (the negative top margins cancel
-      // main's padding).
+      // main’s padding).
       h.div([h.Class('-mt-10 md:-mt-14')], [heroTicker()]),
       crestRail(),
     ],
@@ -471,7 +471,7 @@ export const view = (model: Model): Html =>
     [
       welcomeHero(),
       // The movers first (results wait for the sections — user call). The
-      // trending board's chip overflows its top edge, so the row gets
+      // trending board’s chip overflows its top edge, so the row gets
       // breathing room (mt covers the chip). Each board carries a pin that
       // sends it to Her Game.
       trendingTiles(model),
