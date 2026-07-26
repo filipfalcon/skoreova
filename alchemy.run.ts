@@ -11,8 +11,13 @@ export default Alchemy.Stack(
   Effect.gen(function* () {
     const studio = yield* Cloudflare.Website.Vite('Studio', {
       rootDir: 'applications/studio',
-      workersDev: false,
-      domains: ['beta.studio.skoreova.com', 'beta.studio.skoreova.cz'],
+      // workersDev: false,
+      // domains: ["beta.studio.skoreova.com", "beta.studio.skoreova.cz"],
+      subdomain: {
+        enabled: false,
+        previewsEnabled: false,
+      },
+      domain: ['beta.studio.skoreova.com', 'beta.studio.skoreova.cz'],
       dev: { host: '0.0.0.0', port: 5172 },
       assets: {
         notFoundHandling: 'single-page-application',
@@ -27,8 +32,13 @@ export default Alchemy.Stack(
 
     const platform = yield* Cloudflare.Website.Vite('Platform', {
       rootDir: 'applications/platform',
-      workersDev: false,
-      domains: ['beta.platform.skoreova.com', 'beta.platform.skoreova.cz'],
+      // workersDev: false,
+      // domains: ["beta.platform.skoreova.com", "beta.platform.skoreova.cz"],
+      subdomain: {
+        enabled: false,
+        previewsEnabled: false,
+      },
+      domain: ['beta.platform.skoreova.com', 'beta.platform.skoreova.cz'],
       dev: { host: '0.0.0.0', port: 5171 },
       // Custom Worker entry: /api/ticker from KV + assets pass-through,
       // plus the daily (04:00 UTC) scheduled refresh of the ticker key.
@@ -46,8 +56,13 @@ export default Alchemy.Stack(
 
     const web = yield* Cloudflare.Website.Vite('Web', {
       rootDir: 'applications/web',
-      workersDev: false,
-      domains: ['beta.skoreova.com', 'beta.skoreova.cz'],
+      // workersDev: false,
+      // domains: ["beta.skoreova.com", "beta.skoreova.cz"],
+      subdomain: {
+        enabled: false,
+        previewsEnabled: false,
+      },
+      domain: ['beta.skoreova.com', 'beta.skoreova.cz'],
       dev: { host: '0.0.0.0', port: 5170 },
       // Custom Worker entry: a Sentry-wrapped pass-through to the assets
       // binding, so edge-side failures get reported too (the browser SDK
@@ -64,9 +79,12 @@ export default Alchemy.Stack(
     });
 
     return {
-      studio: studio.allUrls,
-      web: web.allUrls,
-      platform: platform.allUrls,
+      studio: studio.url,
+      web: web.url,
+      platform: platform.url,
+      // studio: studio.allUrls,
+      // web: web.allUrls,
+      // platform: platform.allUrls,
     };
   }),
 );
