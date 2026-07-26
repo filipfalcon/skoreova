@@ -74,8 +74,8 @@
   </head>
   <body>
     <!-- @inline src/consent.ts -->
+    <script type="module" src="/src/entry.ts"></script>
     <div id="root"></div>
-    <script type="module" src="./src/entry.ts"></script>
     <!-- Cookie consent banner. Lives OUTSIDE the Foldkit root on purpose:
          it must survive route changes, fire gtag consent updates (a side
          effect the Elm model shouldn’t own), and keep working even if the
