@@ -56,8 +56,10 @@ const metricRadioGroup = (model: Model): Html =>
 
 // Fixed geometry, in viewBox units: bars rise CHART_PLOT_HEIGHT above the
 // CHART_BASELINE_Y axis line, one bar per BAR_STEP with the axis labels a
-// hair under the baseline.
-const CHART_WIDTH = 560;
+// hair under the baseline. The WIDTH is derived, not fixed — it was 560 for
+// fourteen bars, and when the series came back to the canon's twelve the last
+// bar ended at 472 while the baseline, gridlines and average line still ran
+// the full 560.
 const CHART_HEIGHT = 244;
 const CHART_BASELINE_Y = 220;
 const CHART_PLOT_HEIGHT = 190;
@@ -67,7 +69,10 @@ const BAR_WIDTH = 24;
 const AXIS_LABEL_Y = 238;
 const BAR_DELAY_STEP_SECONDS = 0.035;
 
+const chartWidth = (series: MetricSeries): number => series.values.length * BAR_STEP;
+
 const studioChart = (series: MetricSeries): Html => {
+  const CHART_WIDTH = chartWidth(series);
   const max = Math.max(...series.values);
   const average = Number.sumAll(series.values) / series.values.length;
   const averageY = CHART_BASELINE_Y - (average / max) * CHART_PLOT_HEIGHT;
