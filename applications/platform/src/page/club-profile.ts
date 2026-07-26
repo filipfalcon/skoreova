@@ -8,9 +8,9 @@ import spartaHeroPhoto from '../assets/clubs-hero/sparta-praha.webp';
 import commentaryAvatar from '../assets/commentary-avatar.png';
 import { clubMatchesSections } from '../club-matches';
 import { clubSection, timesCount } from '../components';
-import { cupRun, standingsFor, scorersFor } from '../data';
+import { clubCupRun, standingsFor, scorersFor } from '../data';
 import { MATCHDAYS_PLAYED, leagueRoundCount } from '../schedule';
-import type { Club, Scorer } from '../data';
+import type { Club, CupTie, Scorer } from '../data';
 import { SelectedScorerScope, ToggledFollow } from '../message';
 import type { Message } from '../message';
 import type { Model, ScorerScope } from '../model';
@@ -126,13 +126,13 @@ const clubEuropeSection = (target: Club, campaign: EuroCampaign): Html =>
     campaign.slug,
   );
 
-const clubCupSection = (): Html =>
+const clubCupSection = (run: ReadonlyArray<CupTie>): Html =>
   clubSection(
     'Domestic Cup',
     [
       h.ol(
         [h.Class('mt-6 flex flex-col')],
-        cupRun.map((tie) =>
+        run.map((tie) =>
           h.li(
             [
               h.Class(
@@ -372,6 +372,7 @@ export const view = (target: Club, model: Model): Html => {
   const heroArt = clubHeroPhotos[target.slug];
   const honours = clubHonours[target.slug] ?? [];
   const europe = clubEurope[target.slug];
+  const cupRun = clubCupRun[target.slug];
   const highlight = clubHighlights[target.slug] ?? {
     kicker: 'This season',
     statement: `${target.won} wins in ${target.won + target.drawn + target.lost} games — the numbers tell it straight.`,
@@ -660,7 +661,8 @@ export const view = (target: Club, model: Model): Html => {
       // Europe sits between the league and the cup — only for the clubs
       // actually in a continental campaign.
       ...(europe ? [clubEuropeSection(target, europe)] : []),
-      clubCupSection(),
+      // Same gate as Europe above: only the clubs actually still in the cup.
+      ...(cupRun ? [clubCupSection(cupRun)] : []),
       clubScorersSection(target, model),
       clubHistorySection(target),
       clubAllTimeStatsSection(),

@@ -4,7 +4,9 @@ import { expect, test } from 'vitest';
 import {
   POINTS_DRAW,
   POINTS_WIN,
+  clubCupRun,
   clubs,
+  competitions,
   leagueCompetitions,
   leagueTeams,
   metricSeries,
@@ -208,6 +210,30 @@ test('every hand-authored scoreline lands on a fixture that has been played', ()
   for (const seed of Object.keys(SCORE_OVERRIDES)) {
     expect(playedSeeds.has(seed), `${seed} is not a played fixture`).toBe(true);
   }
+});
+
+// The cup run on a club profile and the semifinal draw on the Domestic Cup
+// page are two views of one bracket, and until now the profile version was
+// club-agnostic: every club rendered the same "Semis — Coming up", so Prague
+// Raptors (bottom of the league) and Plzeň advertised a semifinal the cup page
+// gives to four other clubs. The pairings are the canon — the profiles follow.
+test('only the clubs the cup draw names carry a cup run', () => {
+  const cup = competitions.find((candidate) => candidate.slug === 'domestic-cup');
+  expect(cup?.standings._tag).toBe('TiesStandings');
+  if (cup?.standings._tag !== 'TiesStandings') return;
+
+  const semifinalists = cup.standings.rows.flatMap((row) => {
+    const match = row.primary.match(/^Semis — (.+) vs (.+)$/);
+    return match ? [match[1] ?? '', match[2] ?? ''] : [];
+  });
+  // Four clubs, or the pairing copy changed shape and the parse above went
+  // quietly empty — which would make the comparison vacuously true.
+  expect(semifinalists).toHaveLength(4);
+
+  const slugFor = (name: string): string =>
+    clubs.find((club) => club.name === name)?.slug ?? `unknown:${name}`;
+
+  expect(Object.keys(clubCupRun).sort()).toEqual(semifinalists.map(slugFor).sort());
 });
 
 test('every club sits in a league the schedule generator knows', () => {

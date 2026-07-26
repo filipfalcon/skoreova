@@ -811,11 +811,38 @@ export const featuredClubs: ReadonlyArray<FeaturedClub> = [
   { slug: 'slovan-liberec', epithet: 'The pride of the north', photo: '', focus: '50% 30%' },
 ];
 
-export const cupRun: ReadonlyArray<CupTie> = [
-  { round: 'Round of 16', result: 'Won 3:0', isUpcoming: false },
-  { round: 'Quarters', result: 'Won 2:1', isUpcoming: false },
-  { round: 'Semis', result: 'Coming up', isUpcoming: true },
-];
+// THE FOUR CLUBS STILL IN THE CUP, each with the run that got them there.
+// This was one club-agnostic list rendered on every profile, so Prague
+// Raptors — bottom of the league — and Plzeň both advertised a semifinal that
+// the Domestic Cup page, two clicks away, gives to Sparta, Slovácko, Slavia
+// and Baník. A profile is where a reader checks a club's season; it cannot be
+// the one page that invents one.
+//
+// Hand-authored because the cup canon only publishes the semifinal PAIRINGS,
+// not each club's earlier rounds — so data.test.ts ties these keys back to the
+// clubs those pairings name, and a change to either side fails there.
+export const clubCupRun: Record<string, ReadonlyArray<CupTie>> = {
+  'sparta-praha': [
+    { round: 'Round of 16', result: 'Won 6:0', isUpcoming: false },
+    { round: 'Quarters', result: 'Won 3:1', isUpcoming: false },
+    { round: 'Semis', result: 'Coming up', isUpcoming: true },
+  ],
+  slovacko: [
+    { round: 'Round of 16', result: 'Won 2:1', isUpcoming: false },
+    { round: 'Quarters', result: 'Won 1:0 (aet)', isUpcoming: false },
+    { round: 'Semis', result: 'Coming up', isUpcoming: true },
+  ],
+  'slavia-praha': [
+    { round: 'Round of 16', result: 'Won 4:0', isUpcoming: false },
+    { round: 'Quarters', result: 'Won 2:0', isUpcoming: false },
+    { round: 'Semis', result: 'Coming up', isUpcoming: true },
+  ],
+  'banik-ostrava': [
+    { round: 'Round of 16', result: 'Won 3:2', isUpcoming: false },
+    { round: 'Quarters', result: 'Won 4:3 (pens)', isUpcoming: false },
+    { round: 'Semis', result: 'Coming up', isUpcoming: true },
+  ],
+};
 
 // Deterministic per-club placeholder scorers, so every profile shows stable
 // but obviously replaceable content.
