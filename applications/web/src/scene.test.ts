@@ -1,6 +1,6 @@
 import { Option } from 'effect';
 import { Scene } from 'foldkit';
-import { describe, test } from 'vitest';
+import { describe, test } from 'vite-plus/test';
 
 import { landingModel, menuOpenModel } from './main.fixtures';
 import {

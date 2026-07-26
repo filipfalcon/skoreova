@@ -1,6 +1,6 @@
 import { Effect } from 'effect';
 import { Runtime } from 'foldkit';
-import { beforeAll, expect, test } from 'vitest';
+import { beforeAll, expect, test } from 'vite-plus/test';
 
 import { ChangedUrl, ClickedLink, Flags, Model, init, update, view } from './main';
 import './styles.css';
