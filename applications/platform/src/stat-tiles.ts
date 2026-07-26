@@ -118,18 +118,24 @@ export interface StatEntry {
   readonly focus: string;
 }
 
+// GOALS PER MATCHDAY, and the sums are not free: each league's rounds add up
+// to the goals its own standings table records as scored (data.test.ts asserts
+// it). The old numbers had the First League outscoring the Second, 210 to 146,
+// while the tables these tiles link to said the opposite — 147 to 199. The
+// Second League simply plays more football: eleven clubs is five matches a
+// round against the First League's four.
 export const goals: ReadonlyArray<StatEntry> = [
   {
     league: 'First League',
     href: competitionRouter({ slug: 'first-league' }),
-    rounds: [14, 18, 11, 21, 16, 19, 13, 22, 17, 15, 20, 24],
+    rounds: [14, 12, 9, 15, 11, 13, 10, 16, 12, 11, 13, 11],
     photo: firstLeagueGoalsPhoto,
     focus: '50% 22%',
   },
   {
     league: 'Second League',
     href: competitionRouter({ slug: 'second-league' }),
-    rounds: [9, 12, 8, 14, 11, 13, 10, 15, 12, 16, 14, 12],
+    rounds: [16, 18, 14, 19, 15, 17, 13, 20, 16, 18, 15, 18],
     photo: secondLeagueGoalsPhoto,
     focus: '50% 24%',
   },
