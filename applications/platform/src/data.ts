@@ -568,9 +568,14 @@ export const competitions: ReadonlyArray<Competition> = [
     stage: 'Matchday 12 of 14',
     progress: 86,
     tagline: 'The top flight of Czech women’s football',
+    // The European line states the bands `zoneFor` actually paints — 1–2
+    // UWCL, 3 UWEC — not the champion/runner-up split it used to claim. Those
+    // bands are also what `clubEurope` enters clubs under (Sparta and Slavia
+    // in the UWCL, Liberec in the UWEC), so the prose was the only piece
+    // disagreeing and the only piece that should move.
     format: [
       'Eight clubs, everyone plays everyone home and away — 14 rounds.',
-      'The champion enters UWCL qualifying; the runner-up gets the Europa Cup path.',
+      'The top two enter UWCL qualifying; third gets the Europa Cup path.',
       'The bottom club faces a relegation playoff against the Second League winner.',
     ],
     history: [
