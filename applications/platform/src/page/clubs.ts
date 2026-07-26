@@ -294,16 +294,17 @@ export const view = (model: Model): Html => {
               h.input([
                 ...attributes.input,
                 h.Class(
-                  // The house focus grammar (see studio's inputStyle): the
-                  // native outline goes, a pink border marks focus of any
-                  // kind, and a real focus-visible ring comes back for the
-                  // keyboard — outline-none on its own left a keyboard user
-                  // with nothing but a 2px border tint to find the field by.
-                  // `outline-solid` is load-bearing: Tailwind 4's
-                  // `outline-none` also sets `--tw-outline-style: none`, which
-                  // `outline-2` then substitutes into `outline-style`, so the
-                  // width alone rendered no ring whatsoever.
-                  'w-full border-2 border-ink/15 bg-transparent px-5 py-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink/35 focus:border-pink focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink',
+                  // NO outline utilities here, deliberately. The pink focus
+                  // ring is global: styles.css declares `:focus-visible`
+                  // OUTSIDE any `@layer`, and unlayered rules outrank
+                  // everything Tailwind puts in `@layer utilities` — so
+                  // `outline-none` never took effect and neither would a
+                  // replacement ring. (An earlier pass added four such
+                  // utilities on the theory that they were needed; they were
+                  // inert. Studio is the app that genuinely needed them: its
+                  // stylesheet is a bare `@import` with no focus rule.) The
+                  // border tint is the field's own addition on top.
+                  'w-full border-2 border-ink/15 bg-transparent px-5 py-3.5 text-base text-ink transition-colors placeholder:text-ink/35 focus:border-pink',
                 ),
               ]),
             ],
