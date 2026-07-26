@@ -1,5 +1,4 @@
 import { defineConfig } from 'vite-plus';
-import packageJson from './package.json';
 
 export default defineConfig({
   fmt: {
@@ -45,6 +44,9 @@ export default defineConfig({
       '.nx/',
       '**/*.d.ts',
       '**/vite.config.ts',
+      // Sidecar project configs (applications/web/vite.browser.config.ts) are
+      // config files like any other and are exempt on the same grounds.
+      '**/vite.*.config.ts',
       '**/vitest.config.ts',
       '**/*.config.js',
       '**/*.config.mjs',
@@ -54,8 +56,25 @@ export default defineConfig({
     '*': 'vp check --fix',
   },
   test: {
-    // TODO: https://github.com/vitest-dev/vitest/issues/10593
-    projects: packageJson.workspaces,
+    // A project is a runner — one Vite server, one environment, one plugin
+    // set, one file list — not a package. This was `packageJson.workspaces`
+    // until web needed two runners for one package (happy-dom for the pure
+    // Story/Scene tests, a real browser for the motion guards), which no
+    // workspaces field can express; the upstream request to derive this list
+    // natively was withdrawn for the same reason.
+    //
+    // Naming config files rather than globbing directories also closes two
+    // traps that only fire later. A `applications/*` glob matches FILES too,
+    // so a stray applications/README.md aborts the entire run at startup; and
+    // a workspace directory without a vite config is registered anyway, as a
+    // project with no plugins, no setup and no environment — green for reasons
+    // no one intended.
+    projects: [
+      'applications/platform/vite.config.ts',
+      'applications/studio/vite.config.ts',
+      'applications/web/vite.config.ts',
+      'applications/web/vite.browser.config.ts',
+    ],
     coverage: {
       provider: 'v8',
       thresholds: {
