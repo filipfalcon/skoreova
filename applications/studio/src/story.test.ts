@@ -636,6 +636,36 @@ test('the ledger outranks a list that no longer carries the deleted record', () 
   );
 });
 
+test('a by-id response in flight when the delete happens cannot land the record', () => {
+  Story.story(
+    update,
+    Story.with(clubRecordModel),
+    Story.message(ClickedDeleteRecord()),
+    Story.message(ClickedConfirmDelete()),
+    Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
+    Story.Command.resolve(StampDelete, DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
+    Story.Command.resolve(Navigate, CompletedNavigate()),
+    // The list drops the record entirely, so nothing on screen carries the
+    // `isDeleted` flag any more — from here only the LEDGER remembers, which
+    // is the half of `isLedgerDeleted` this story is about.
+    Story.message(ClickedRetryClubs()),
+    Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [] })),
+    Story.Command.resolve(FetchHealth, SucceededFetchHealth()),
+    // And NOW the by-id request that a deep link fired before any of this
+    // finally answers. It is the wire's view of the record and the wire never
+    // heard about the delete, so it reports the record alive. The route guard
+    // cannot help here: it ran before the delete, which is exactly why this
+    // handler needs its own guard rather than trusting the one upstream.
+    Story.message(SucceededFetchTeamById({ entry: sampleClub })),
+    Story.model((model) => {
+      expect(Option.getOrElse(AsyncData.getData(model.clubs), () => [])).toHaveLength(0);
+      expect(model.drawer._tag).toBe('Closed');
+      expect(model.linkError).toBe('That record was deleted.');
+    }),
+    Story.Command.expectNone(),
+  );
+});
+
 test('the column rules decide what saves, and the same rules refuse in update', () => {
   Story.story(
     update,
