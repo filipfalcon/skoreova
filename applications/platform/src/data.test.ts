@@ -1,4 +1,4 @@
-import { Number } from 'effect';
+import { Array, Number } from 'effect';
 import { expect, test } from 'vite-plus/test';
 
 import {
@@ -7,11 +7,14 @@ import {
   clubCupRun,
   clubs,
   competitions,
+  featuredClubs,
   leagueCompetitions,
   leagueTeams,
   metricSeries,
   standingsFor,
 } from './data';
+import { contenderPhrases } from './page/clubs';
+import { clubEurope } from './standings';
 import { attendance, goals } from './stat-tiles';
 import {
   MATCHDAYS_PLAYED,
@@ -258,6 +261,39 @@ test('the ticker quotes real clubs, under the names the season table gives them'
   // Both sides quote the same clubs in the same order — the worker's document
   // is what the tape will fetch once it stops rendering the local copy.
   expect(BASE.map((entry) => entry.slug)).toEqual(tickerQuotes.map((quote) => quote.slug));
+});
+
+// The clubs hero's tape is the OTHER surface that used to name clubs from
+// literals — "Sparta Praha", "Slavia Praha", "Slovan Liberec", "UWCL 2025/26",
+// typed inside the function that resolves names from the table three lines
+// above. The names went stale-able and the competition line went wrong:
+// Liberec plays the Europa Cup. Both halves derive now, and this is what says
+// so out loud.
+test("the contenders tape names the featured clubs and only the cups they're in", () => {
+  for (const entry of featuredClubs) {
+    const club = clubs.find((candidate) => candidate.slug === entry.slug);
+    expect(club, `${entry.slug} is not a club`).toBeDefined();
+    if (!club) continue;
+    expect(contenderPhrases, `the tape drops ${club.name}`).toContain(club.name);
+  }
+
+  // Every competition the tape advertises is one a featured club actually
+  // plays, and every one they play is advertised — the single hardcoded
+  // "UWCL" failed the first half, and dropping Liberec's UWEC the second.
+  const played = Array.dedupe(
+    featuredClubs.flatMap((entry) => {
+      const campaign = clubEurope[entry.slug];
+      return campaign === undefined ? [] : [campaign.slug.toUpperCase()];
+    }),
+  );
+  expect(played.length).toBeGreaterThan(1);
+  const cups = contenderPhrases[contenderPhrases.length - 1] ?? '';
+  for (const cup of played) {
+    expect(cups, `the tape omits ${cup}`).toContain(cup);
+  }
+  for (const cup of ['UWCL', 'UWEC']) {
+    if (!played.includes(cup)) expect(cups).not.toContain(cup);
+  }
 });
 
 test('every club sits in a league the schedule generator knows', () => {
