@@ -9,6 +9,7 @@ import type { Column } from '../api';
 import {
   countryFlags,
   draftOf,
+  draftValues,
   drawerRecord,
   resolveDerivedCells,
   retryBySection,
@@ -16,6 +17,7 @@ import {
   sectionLabels,
   sectionRows,
   sectionSingularLabels,
+  unsatisfiedColumns,
 } from '../data';
 import {
   ClickedCancelDelete,
@@ -60,6 +62,7 @@ export const view = (model: Model): Html => {
   // or if it has since gone).
   const entry = drawerRecord(model);
   const draft = draftOf(drawerState);
+  const values = draftValues(drawerState);
   const tab = drawerState._tag === 'Editing' ? drawerState.tab : 'Overview';
   const isConfirmingDelete =
     drawerState._tag === 'Editing' ? drawerState.isConfirmingDelete : false;
@@ -95,7 +98,7 @@ export const view = (model: Model): Html => {
     );
 
   const referencePicker = (section: Section, index: number): Html => {
-    const chosen = draft[index] ?? '';
+    const chosen = values[index] ?? '';
     const singular = sectionSingularLabels[section].toLowerCase();
     const data = model[section];
     const option = (value: string, label: string): Html =>
@@ -169,9 +172,10 @@ export const view = (model: Model): Html => {
   // Editing renders that cell read-only ("Set by the parent record"), so the
   // record could never be repaired afterwards. Making it merely avoidable
   // wasn't the fix; Save refuses while one is unset, and says which.
-  const missingReferences = creating
-    ? columns.filter((column, index) => column.derived !== undefined && (draft[index] ?? '') === '')
-    : [];
+  // What still stands between this draft and a save, asked of the fields
+  // themselves — `unsatisfiedColumns` runs the same rules `update` refuses on,
+  // so the button and the commit can't disagree about what "ready" means.
+  const unsatisfied = creating && drawerSection ? unsatisfiedColumns(drawerSection, draft) : [];
 
   // The note has to match what the picker above it is actually showing. When
   // the referenced section is empty there is nothing to choose, so telling the
@@ -179,7 +183,12 @@ export const view = (model: Model): Html => {
   // the same moment, one in the field and one in the footer.
   const missingReferenceNote = (column: Column): string => {
     const section = column.derived;
-    if (section === undefined) return '';
+    // A plain field explains itself through its own rule's message.
+    if (section === undefined) {
+      const index = columns.indexOf(column);
+      const field = draft[index];
+      return field?._tag === 'Invalid' ? (field.errors[0] ?? '') : `${column.label} is required.`;
+    }
     const label = column.label.toLowerCase();
     return sectionRows(model, section).some((row) => !row.isDeleted)
       ? `Choose a ${label} to save this record.`
@@ -194,7 +203,7 @@ export const view = (model: Model): Html => {
         column.derived === undefined
           ? h.input([
               h.Type('text'),
-              h.Value(draft[index] ?? ''),
+              h.Value(values[index] ?? ''),
               h.OnInput((value) => UpdatedDraftField({ index, value })),
               h.Class(drawerInputStyle),
             ])
@@ -519,7 +528,7 @@ export const view = (model: Model): Html => {
                   h.Class('flex items-center gap-2 text-lg font-semibold text-neutral-900'),
                 ],
                 [
-                  creating ? `New ${sectionSingularLabels[drawerSection]}` : (draft[0] ?? ''),
+                  creating ? `New ${sectionSingularLabels[drawerSection]}` : (values[0] ?? ''),
                   h.span(
                     [...render.description, h.Class(drawerTypePillStyle)],
                     [sectionSingularLabels[drawerSection]],
@@ -557,7 +566,7 @@ export const view = (model: Model): Html => {
                   h.Role('status'),
                   h.Class('mr-auto text-xs text-neutral-500'),
                 ],
-                missingReferences.map(missingReferenceNote),
+                unsatisfied.map(missingReferenceNote),
               ),
               h.button([...render.closeButton, h.Class(drawerCancelStyle)], ['Cancel']),
               h.button(
@@ -569,11 +578,11 @@ export const view = (model: Model): Html => {
                   // WHY could never reach the note describing it. The button
                   // stays focusable and inert; `update` is what actually
                   // refuses the save (see ClickedSaveRecord).
-                  ...(Array.isReadonlyArrayNonEmpty(missingReferences)
+                  ...(Array.isReadonlyArrayNonEmpty(unsatisfied)
                     ? [h.AriaDisabled(true), h.AriaDescribedBy('drawer-save-note')]
                     : []),
                   h.Class(
-                    Array.isReadonlyArrayNonEmpty(missingReferences)
+                    Array.isReadonlyArrayNonEmpty(unsatisfied)
                       ? drawerSaveInertStyle
                       : drawerSaveStyle,
                   ),

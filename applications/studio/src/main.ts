@@ -17,6 +17,7 @@ import {
   urlToAppRoute,
 } from './route';
 import { PAGE_SIZE } from './api';
+import type { Column } from './api';
 import { Section } from './section';
 export { Section } from './section';
 import {
@@ -38,8 +39,14 @@ import {
   SignedIn,
 } from './model';
 
+import * as FieldValidation from 'foldkit/fieldValidation';
+
 import {
+  columnRules,
   draftOf,
+  draftValues,
+  emptyDraft,
+  isDraftSavable,
   drawerRecord,
   editRecord,
   findRecord,
@@ -181,6 +188,10 @@ const mergeLocalEdits = (
     ...localOnly,
   ];
 };
+
+// The column descriptors behind whichever drawer state is open ([] when shut).
+const drawerColumns = (drawer: Model['drawer']): ReadonlyArray<Column> =>
+  drawer._tag === 'Closed' ? [] : sectionData[drawer.section].columns;
 
 // IS THIS RECORD DELETED? Ask the LEDGER, not the rows. The row's `isDeleted`
 // flag is a render signal and a fallback: the row can be absent entirely — a
@@ -585,11 +596,10 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         Option.match(routeSection(model.route), {
           onNone: () => [model, []],
           onSome: (section) => {
-            const columns = sectionData[section].columns;
             const [withDialog, dialogCommands] = openDialog(model);
             return [
               evo(withDialog, {
-                drawer: () => DrawerCreating({ section, draft: columns.map(() => '') }),
+                drawer: () => DrawerCreating({ section, draft: emptyDraft(section) }),
                 chartError: () => Option.none(),
               }),
               dialogCommands,
@@ -611,13 +621,23 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           [...dialogCommands, navigate(recordRouter({ section, id }))],
         ];
       },
+      // Every keystroke is judged by the column's own rules, and the verdict is
+      // what the Model holds — so the view renders an error without deciding
+      // what an error is, and the save asks the same question the field already
+      // answered rather than re-implementing it.
       UpdatedDraftField: ({ index, value }) => [
         evo(model, {
-          drawer: (drawer) =>
-            withDraft(
+          drawer: (drawer) => {
+            const column = drawerColumns(drawer)[index];
+            const judge = (text: string): FieldValidation.Field<string> =>
+              column === undefined
+                ? FieldValidation.NotValidated({ value: text })
+                : FieldValidation.validate(columnRules(column))(text);
+            return withDraft(
               drawer,
-              draftOf(drawer).map((current, i) => (i === index ? value : current)),
-            ),
+              draftOf(drawer).map((current, i) => (i === index ? judge(value) : current)),
+            );
+          },
         }),
         [],
       ],
@@ -634,23 +654,24 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           // what actually files the record under its parent: a new edition
           // used to be born with parentId '' and no way to fix it, since the
           // cell goes read-only the moment the record exists.
+          const columns = sectionData[section].columns;
+          const values = draftValues(drawer);
           const referenceIndex = Array.findFirstIndex(
-            sectionData[section].columns,
+            columns,
             (column) => column.derived !== undefined,
           );
           const parentId = pipe(
             referenceIndex,
-            Option.flatMap((index) => Array.get(drawer.draft, index)),
+            Option.flatMap((index) => Array.get(values, index)),
             Option.getOrElse(() => ''),
           );
-          // The drawer disables Save while a reference is unset, and this is
-          // the same rule on the update side: a held Enter or a replayed
-          // message must not file a record whose parent cell every later
-          // render shows read-only.
-          if (Option.isSome(referenceIndex) && parentId === '') return [model, []];
+          // The same question the drawer asks to block Save, asked of the same
+          // rules — not a second implementation of it. A held Enter or a
+          // replayed message must not file a record the form would refuse.
+          if (!isDraftSavable(section, drawer.draft)) return [model, []];
           const entry: Entry = {
             section,
-            values: drawer.draft,
+            values,
             isDeleted: false,
             id: `${LOCAL_ID_PREFIX}${model.nextLocalId}`,
             parentId,
@@ -679,10 +700,11 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       SavedRecordAt: ({ at }) => {
         const drawer = model.drawer;
         if (drawer._tag !== 'Editing') return [model, []];
-        const { section, id, draft } = drawer;
+        const { section, id } = drawer;
         const entry = findRecord(model, section, id);
         if (!entry) return [model, []];
 
+        const draft = draftValues(drawer);
         const columns = sectionData[section].columns;
         const changes: ReadonlyArray<LogEntry> = columns.flatMap((column, i) => {
           const from = entry.values[i] ?? '';

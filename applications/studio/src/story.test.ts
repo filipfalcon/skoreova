@@ -1,6 +1,7 @@
 import { Option } from 'effect';
 import { Dialog } from '@foldkit/ui';
 import { AsyncData, Story } from 'foldkit';
+import { NotValidated } from 'foldkit/fieldValidation';
 import { fromString } from 'foldkit/url';
 import { expect, test } from 'vitest';
 
@@ -474,7 +475,9 @@ test('saving an edited record defers to the clock, then commits with that timest
         section: 'players',
         id: samplePlayer.id,
         tab: 'Overview',
-        draft: ['Sierra Pennock', 'Slavia Praha', 'Forward', '12', '5'],
+        draft: ['Sierra Pennock', 'Slavia Praha', 'Forward', '12', '5'].map((value) =>
+          NotValidated({ value }),
+        ),
         isConfirmingDelete: false,
       }),
     }),
@@ -577,7 +580,7 @@ test('a delete on one players page survives paging away and back', () => {
         section: 'players',
         id: samplePlayer.id,
         tab: 'Overview',
-        draft: [...samplePlayer.values],
+        draft: samplePlayer.values.map((value) => NotValidated({ value })),
         isConfirmingDelete: true,
       }),
     }),
@@ -623,5 +626,42 @@ test('the ledger outranks a list that no longer carries the deleted record', () 
       expect(model.linkError).toBe('That record was deleted.');
     }),
     Story.Command.expectNone(),
+  );
+});
+
+test('the column rules decide what saves, and the same rules refuse in update', () => {
+  Story.story(
+    update,
+    Story.with(editionsListModel),
+    Story.message(ClickedAddNew()),
+    Story.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
+    // Edition (title, required), Competition (reference, required), then two
+    // dates. A malformed date is Invalid, so the draft is not savable even
+    // though every cell has been filled in.
+    Story.message(UpdatedDraftField({ index: 0, value: '2026/2027' })),
+    Story.message(UpdatedDraftField({ index: 1, value: sampleCompetition.id })),
+    Story.message(UpdatedDraftField({ index: 2, value: 'next August' })),
+    Story.model((model) => {
+      const drawer = model.drawer;
+      expect(drawer._tag).toBe('Creating');
+      if (drawer._tag !== 'Creating') return;
+      expect(drawer.draft[2]?._tag).toBe('Invalid');
+    }),
+    Story.message(ClickedSaveRecord()),
+    Story.model((model) => {
+      // Refused: still creating, nothing filed.
+      expect(model.drawer._tag).toBe('Creating');
+      expect(Option.getOrElse(AsyncData.getData(model.editions), () => [])).toHaveLength(1);
+    }),
+    // Correct the date and the same draft goes through.
+    Story.message(UpdatedDraftField({ index: 2, value: '2026-08-01' })),
+    Story.message(UpdatedDraftField({ index: 3, value: '2027-05-31' })),
+    Story.message(ClickedSaveRecord()),
+    Story.model((model) => {
+      const editions = Option.getOrElse(AsyncData.getData(model.editions), () => []);
+      expect(editions.find((row) => row.id === 'local-1')?.parentId).toBe(sampleCompetition.id);
+    }),
+    Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
+    Story.Command.resolve(Navigate, CompletedNavigate()),
   );
 });
