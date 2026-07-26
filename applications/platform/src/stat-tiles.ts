@@ -18,7 +18,7 @@ const h = html<Message>();
 
 // One trending tile — its own pinnable unit (user call: split the boards).
 // The pin rides over it as an overlay sibling of the card link, like the
-// stat cards. `id` is `trending:<name>`.
+// stat cards. `id` is `trending:<entry id>`.
 export const trendingTile = (model: Model, entry: TrendingEntry, index: number): Html => {
   const featured = entry.photo !== '';
   // No col-span here: the leader's double width belongs to the grid CHILD,
@@ -27,7 +27,7 @@ export const trendingTile = (model: Model, entry: TrendingEntry, index: number):
   return h.div(
     [h.Class('relative')],
     [
-      pinOverlay(model, `trending:${slugify(entry.name)}`, entry.name),
+      pinOverlay(model, `trending:${entry.id}`, entry.name),
       h.a(
         [
           h.Href(entry.href),
@@ -209,17 +209,6 @@ export const pinOverlay = (model: Model, id: string, label: string): Html => {
 // readable (`attendance:first-league`).
 export const leagueSlug = (league: string): string => league.toLowerCase().replace(/\s+/g, '-');
 
-// A stable, accent-folded slug for any name — the tail of a pin id
-// (`trending:katerina-svitkova`, `best:most-goals`). Folded so a rename of
-// the DISPLAY text that keeps the same ascii shape does not orphan a pin.
-export const slugify = (text: string): string =>
-  text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-
 // ONE league card of a stat board — its own pinnable tile (user call: the
 // leagues must split, First League pinnable apart from Second). The card
 // is a LINK; the pin rides over it as an overlay sibling, so a tap on the
@@ -382,6 +371,11 @@ export const statCard = (
 };
 
 export interface BestRecord {
+  // Authored, like a trending tile's — the pin id's tail, and never derived
+  // from `label`. See the note on TrendingEntry.id: display copy is edited,
+  // persisted pins are not migrated, and a slugified label made every rewording
+  // of a record's caption a silent unpinning.
+  readonly id: string;
   readonly value: string;
   // Counts take the drawn multiplication mark. Scorelines, totals and
   // attendances do not — "15:1" is not fifteen times anything.
@@ -394,9 +388,9 @@ export interface BestRecord {
 // Frameless like before, but the pin tick becomes the pin BUTTON: the pink
 // tick was always decorative, so making it the control adds no clutter.
 // `standalone` left-aligns it for the Her Game feed (the home grid centres on
-// phones); the id is `best:<label>`.
+// phones); the id is `best:<record id>`.
 export const bestRecord = (model: Model, record: BestRecord, standalone: boolean): Html => {
-  const pinned = model.pinned.includes(`best:${slugify(record.label)}`);
+  const pinned = model.pinned.includes(`best:${record.id}`);
   return h.li(
     [
       h.Class(
@@ -409,7 +403,7 @@ export const bestRecord = (model: Model, record: BestRecord, standalone: boolean
       h.button(
         [
           h.Type('button'),
-          h.OnClick(ToggledPin({ id: `best:${slugify(record.label)}` })),
+          h.OnClick(ToggledPin({ id: `best:${record.id}` })),
           h.AriaPressed(pinned ? 'true' : 'false'),
           h.AriaLabel(
             pinned ? `Unpin ${record.label} from Her Game` : `Pin ${record.label} to Her Game`,
@@ -444,10 +438,27 @@ export const bestRecord = (model: Model, record: BestRecord, standalone: boolean
 // The record board: one entry per all-time best. Placeholder values in the
 // mock's spirit — replace with API data when it exists.
 export const allTimeBests: ReadonlyArray<BestRecord> = [
-  { value: '22', isCount: true, holder: 'Sparta Praha', label: 'League titles' },
-  { value: '11', isCount: true, holder: 'Sparta Praha', label: 'Domestic cup wins' },
-  { value: '168', holder: 'Iveta Dudová', label: 'Most goals' },
-  { value: '15:1', holder: 'Sparta Praha × FC Praha', label: 'Biggest win' },
-  { value: '6,882', holder: 'Eden Arena', label: 'Record attendance' },
-  { value: '86', holder: 'Natálie Čampišová', label: 'Matches officiated' },
+  {
+    id: 'league-titles',
+    value: '22',
+    isCount: true,
+    holder: 'Sparta Praha',
+    label: 'League titles',
+  },
+  {
+    id: 'domestic-cup-wins',
+    value: '11',
+    isCount: true,
+    holder: 'Sparta Praha',
+    label: 'Domestic cup wins',
+  },
+  { id: 'most-goals', value: '168', holder: 'Iveta Dudová', label: 'Most goals' },
+  { id: 'biggest-win', value: '15:1', holder: 'Sparta Praha × FC Praha', label: 'Biggest win' },
+  { id: 'record-attendance', value: '6,882', holder: 'Eden Arena', label: 'Record attendance' },
+  {
+    id: 'matches-officiated',
+    value: '86',
+    holder: 'Natálie Čampišová',
+    label: 'Matches officiated',
+  },
 ];

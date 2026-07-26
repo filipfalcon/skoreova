@@ -15,7 +15,6 @@ import {
   bestRecord,
   goals,
   leagueSlug,
-  slugify,
   statCard,
   trendingTile,
 } from '../stat-tiles';
@@ -290,14 +289,14 @@ const pinRegistry: ReadonlyArray<PinnedTile> = [
   ...statTilesFor('attendance', attendance),
   ...trending.map(
     (entry, index): PinnedTile => ({
-      id: `trending:${slugify(entry.name)}`,
+      id: `trending:${entry.id}`,
       title: `Trending · ${entry.name}`,
       render: (model: Model) => trendingTile(model, entry, index),
     }),
   ),
   ...allTimeBests.map(
     (record): PinnedTile => ({
-      id: `best:${slugify(record.label)}`,
+      id: `best:${record.id}`,
       title: `All-time best · ${record.label}`,
       render: (model: Model) => bestRecord(model, record, true),
     }),
