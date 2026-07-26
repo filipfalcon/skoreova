@@ -1,4 +1,4 @@
-import { Input } from '@foldkit/ui';
+import { Button, Input } from '@foldkit/ui';
 import { html } from 'foldkit/html';
 import type { Document } from 'foldkit/html';
 
@@ -108,10 +108,18 @@ export const view = (model: Model): Document => {
                             'The Skóreová editorial workspace. Access is limited to members of the editorial team.',
                           ],
                         ),
-                        h.button(
-                          [h.Type('submit'), h.AriaLabel('Sign in'), h.Class(submitStyle)],
-                          ['→'],
-                        ),
+                        // No onClick: the form's OnSubmit is what fires, so
+                        // this only needs Ui.Button for the submit type.
+                        // Annotated: with no onClick there is no Message to
+                        // infer the component's type parameter from.
+                        Button.view<Message>({
+                          type: 'submit',
+                          toView: ({ button }) =>
+                            h.button(
+                              [...button, h.AriaLabel('Sign in'), h.Class(submitStyle)],
+                              ['→'],
+                            ),
+                        }),
                       ],
                     ),
                   ],
