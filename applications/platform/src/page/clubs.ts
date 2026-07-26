@@ -357,15 +357,16 @@ export const view = (model: Model): Html => {
                     [h.Class('bg-pink'), h.Style({ width: `${(entry.won / played) * 100}%` })],
                     [],
                   ),
+                  // INK tints, not paper. These segments date from the dark
+                  // build; on the paper panel this card actually sits on,
+                  // `bg-paper/40` and `bg-paper/10` are invisible, so the form
+                  // bar read as a pink stub that stopped short of the card.
                   h.div(
-                    [
-                      h.Class('bg-paper/40'),
-                      h.Style({ width: `${(entry.drawn / played) * 100}%` }),
-                    ],
+                    [h.Class('bg-ink/40'), h.Style({ width: `${(entry.drawn / played) * 100}%` })],
                     [],
                   ),
                   h.div(
-                    [h.Class('bg-paper/10'), h.Style({ width: `${(entry.lost / played) * 100}%` })],
+                    [h.Class('bg-ink/10'), h.Style({ width: `${(entry.lost / played) * 100}%` })],
                     [],
                   ),
                 ],
