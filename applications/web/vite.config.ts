@@ -1,6 +1,5 @@
 import { foldkit } from '@foldkit/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
-import { playwright } from 'vite-plus/test/browser-playwright';
 import { defineConfig } from 'vite-plus';
 
 // The Foldkit plugin runs in tests too, WITHOUT the DevTools MCP port. The
@@ -11,12 +10,13 @@ import { defineConfig } from 'vite-plus';
 // plugin wholesale left these tests diffing on tag and position alone while
 // production diffed on identity too.
 //
-// It needs `optimizeDeps.include: ['foldkit/brand']` below to work here. The
-// transform injects that import into every module, so vite's browser runner
-// discovers a brand-new bare dependency mid-run, pre-bundles it, and reloads
-// the page — which tears down the in-flight dynamic import of the test file
-// itself ("Failed to fetch dynamically imported module", both engines).
-// Pre-declaring it means the optimizer already has it before the run starts.
+// It needs `optimizeDeps.include: ['foldkit/brand']` below to work under the
+// browser runner (vite.browser.config.ts). The transform injects that import
+// into every module, so vite's browser runner discovers a brand-new bare
+// dependency mid-run, pre-bundles it, and reloads the page — which tears down
+// the in-flight dynamic import of the test file itself ("Failed to fetch
+// dynamically imported module", both engines). Pre-declaring it means the
+// optimizer already has it before the run starts.
 const testing = process.env['VITEST'] === 'true';
 
 export default defineConfig({
@@ -56,23 +56,34 @@ export default defineConfig({
     // test runner reloads mid-import and every test file fails to load.
     include: ['foldkit/brand'],
   },
+  // The fast half of this app's suite. Story, Scene and the view-identity
+  // canary are pure — update/view never touch the DOM at call time — so they
+  // have no business paying for two browser engines. The guards that DO need a
+  // real one (computed styles, painted geometry, IntersectionObserver, a
+  // parsed stylesheet) are `*.browser.test.ts` and run from
+  // vite.browser.config.ts. The suffix IS the switch: it decides which runner
+  // claims a file, so a new test picks its environment by what it is named.
+  //
+  // `include` deliberately lives here and in the browser config rather than in
+  // anything shared: a project that `extends` another CONCATENATES the array,
+  // so a shared include would hand both runners the whole suite.
   test: {
+    name: 'web',
     include: ['src/**/*.test.ts'],
+    exclude: ['src/**/*.browser.test.ts'],
+    // The app's own update/view/init never touch the DOM at call time, but the
+    // @foldkit/ui components rendered in the view do (CSS.escape when building
+    // id selectors), so these run under happy-dom rather than bare Node. This
+    // matches @foldkit/ui's own test setup, and platform's and studio's.
+    environment: 'happy-dom',
     // Registers Foldkit's Scene matchers for story.test.ts / scene.test.ts.
-    // These model/view tests are pure (update/view never touch the DOM at call
-    // time) so they'd run in any environment, but they ride along in the same
-    // browser project as the motion-regression guards — one runner, no split.
     setupFiles: ['./src/vitest-setup.ts'],
-    browser: {
-      enabled: true,
-      provider: playwright(),
-      headless: true,
-      // WebKit is Safari's engine, so the overlay's transform/visibility CSS
-      // is verified there too. Note: neither engine renders the browser's own
-      // toolbar, so this can't reproduce the original mobile-Safari safe-area
-      // residue — it guards the fix's invariant (a closed overlay is never
-      // painted), which is the browser-agnostic root cause of that bug.
-      instances: [{ browser: 'chromium' }, { browser: 'webkit' }],
-    },
+    // Foldkit ships as ESM with subpath exports (foldkit/struct, foldkit/test/*);
+    // inline it so Vitest transforms it instead of externalizing to the bun
+    // isolated store, where the subpath resolution trips. @foldkit/ui must be
+    // inlined alongside foldkit: externalized it would natively import a second
+    // foldkit instance, whose render-dispatch singleton is not the one Scene
+    // drives (its submodel views then throw "built outside a view").
+    server: { deps: { inline: ['foldkit', '@foldkit/ui'] } },
   },
 });
