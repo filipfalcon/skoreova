@@ -848,9 +848,12 @@ body {
   animation-delay: 7.55s;
 }
 
-/* Reduced motion: the reveal system never stamps `.is-in`, so the loop
-   never starts — the tile just shows the first print. The first-child
-   rule alone carries that static state. */
+/* Reduced motion: `.is-in` IS stamped — revealClass returns it immediately, so
+   the reveal is instant rather than absent — which means the cycle would start.
+   The `animation: none` below is what actually stops it, and it works where the
+   blanket rule can't: the blanket overrides duration longhands, and `none` here
+   clears the animation-name the blanket never touches. The first-child rule
+   then holds the tile on the first print. */
 @media (prefers-reduced-motion: reduce) {
   .photo-cycle.is-in > img {
     animation: none;
