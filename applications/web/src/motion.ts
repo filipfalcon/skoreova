@@ -3,7 +3,7 @@ import { Mount } from 'foldkit';
 import { m } from 'foldkit/message';
 
 // The page's scroll and pointer choreography, in two mounts. The PER-FRAME
-// work (MountMotion: parallax, scrubs, marquee, tilt, neon) is deliberately
+// work (MountMotion: parallax, scrubs, marquee, neon) is deliberately
 // outside the Elm model — those effects fire every frame, and routing them
 // through `update` would re-render the page constantly. The DISCRETE reveal
 // state is not: ObserveReveals only watches (IntersectionObserver) and
@@ -34,11 +34,9 @@ import { m } from 'foldkit/message';
 //                        backward unwinds (desktop only; phones force all
 //                        steps on)
 // - [data-marquee]       ticker whose speed/direction reacts to scroll velocity
-// - [data-tilt]          3D card tilt following the pointer while hovered
 //
 // With `prefers-reduced-motion`, everything is revealed immediately, numbers
-// show their final value, and no listeners or loops are installed. Pointer
-// effects additionally require a fine pointer (no touch devices).
+// show their final value, and no listeners or loops are installed.
 
 export const CompletedMountMotion = m('CompletedMountMotion');
 export const FailedMountMotion = m('FailedMountMotion', { reason: S.String });
@@ -62,7 +60,6 @@ const MARQUEE_BASE_SPEED = 90; // px/s leftward drift with no scrolling
 const MARQUEE_VELOCITY_GAIN = 0.4; // how much scroll velocity feeds the ticker
 const MARQUEE_MAX_SPEED = 700;
 const MARQUEE_FLIP_WINDOW = 150; // px/s of upward velocity over which the base drift flips sign
-const TILT_MAX_DEGREES = 6;
 
 const lerp = (from: number, to: number, factor: number): number => from + (to - from) * factor;
 
@@ -155,16 +152,6 @@ interface ParallaxLayer {
 interface MarqueeTrack {
   readonly element: HTMLElement;
   offset: number;
-}
-
-interface Tilt {
-  readonly element: HTMLElement;
-  hovered: boolean;
-  targetX: number;
-  targetY: number;
-  x: number;
-  y: number;
-  settled: boolean;
 }
 
 // The reveal subsystem: IntersectionObservers watching every keyed
@@ -692,7 +679,6 @@ const setUpReveals = (
 
 const setUpMotion = (root: HTMLElement): (() => void) => {
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const finePointer = window.matchMedia('(pointer: fine)').matches;
   const cleanups: Array<() => void> = [];
 
   // iOS Safari only engages CSS `:active` states on touch once the page has
@@ -960,43 +946,6 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
     }
   });
 
-  // ----- Tilt cards ---------------------------------------------------------
-
-  const tilts: Array<Tilt> = finePointer
-    ? Array.from(root.querySelectorAll<HTMLElement>('[data-tilt]')).map((element) => {
-        const tilt: Tilt = {
-          element,
-          hovered: false,
-          targetX: 0,
-          targetY: 0,
-          x: 0,
-          y: 0,
-          settled: true,
-        };
-        const onMove = (event: MouseEvent): void => {
-          const rect = element.getBoundingClientRect();
-          const relX = (event.clientX - rect.left) / rect.width;
-          const relY = (event.clientY - rect.top) / rect.height;
-          tilt.hovered = true;
-          tilt.targetY = (relX * 2 - 1) * TILT_MAX_DEGREES;
-          tilt.targetX = -(relY * 2 - 1) * TILT_MAX_DEGREES;
-        };
-        const onLeave = (): void => {
-          tilt.hovered = false;
-          tilt.targetX = 0;
-          tilt.targetY = 0;
-        };
-        element.addEventListener('mousemove', onMove, { passive: true });
-        element.addEventListener('mouseleave', onLeave, { passive: true });
-        cleanups.push(() => {
-          element.removeEventListener('mousemove', onMove);
-          element.removeEventListener('mouseleave', onLeave);
-          element.style.transform = '';
-        });
-        return tilt;
-      })
-    : [];
-
   // Smooth wheel scrolling (Lenis-style inertia) used to live here too, but a
   // window-level wheel listener with preventDefault and a per-frame
   // window.scrollTo is a window event source, not element-scoped Mount work —
@@ -1121,21 +1070,6 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
         // Keep the offset in (-half, 0] so the two copies swap seamlessly.
         marquee.offset = -(((-(marquee.offset + speed * dt) % half) + half) % half);
         marquee.element.style.transform = `translate3d(${marquee.offset.toFixed(1)}px, 0, 0)`;
-      }
-    }
-
-    for (const tilt of tilts) {
-      tilt.x = lerp(tilt.x, tilt.targetX, 0.14);
-      tilt.y = lerp(tilt.y, tilt.targetY, 0.14);
-      const resting = !tilt.hovered && Math.abs(tilt.x) < 0.05 && Math.abs(tilt.y) < 0.05;
-      if (resting) {
-        if (!tilt.settled) {
-          tilt.element.style.transform = '';
-          tilt.settled = true;
-        }
-      } else {
-        tilt.element.style.transform = `perspective(700px) rotateX(${tilt.x.toFixed(2)}deg) rotateY(${tilt.y.toFixed(2)}deg)`;
-        tilt.settled = false;
       }
     }
 
