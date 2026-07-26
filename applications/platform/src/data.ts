@@ -692,7 +692,7 @@ export const competitions: ReadonlyArray<Competition> = [
       { value: '12', label: 'Wins on European away trips' },
     ],
     standings: TiesStandings.make({
-      rows: [{ primary: 'Sparta Praha — Quarters vs Young Boys', secondary: 'First leg Mar 18' }],
+      rows: [{ primary: 'Slovan Liberec — Quarters vs Young Boys', secondary: 'First leg Mar 18' }],
     }),
   },
   {
