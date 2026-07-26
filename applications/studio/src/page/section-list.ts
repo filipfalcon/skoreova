@@ -1,4 +1,4 @@
-import { DatePicker, Input } from '@foldkit/ui';
+import { Button, DatePicker, Input } from '@foldkit/ui';
 import type { Calendar as UiCalendar } from '@foldkit/ui';
 import { Array, Match as M, Option } from 'effect';
 import { AsyncData, Calendar } from 'foldkit';
@@ -116,7 +116,11 @@ export const view = (model: Model): Document => {
             h.div(
               [h.Class('flex items-center gap-3')],
               [
-                h.button([h.OnClick(ClickedDashboard()), h.Class(brandButtonStyle)], ['Skóreová']),
+                Button.view({
+                  onClick: ClickedDashboard(),
+                  toView: ({ button }) =>
+                    h.button([...button, h.Class(brandButtonStyle)], ['Skóreová']),
+                }),
                 h.span([h.Class(dashboardChipStyle)], ['Studio']),
               ],
             ),
@@ -127,16 +131,24 @@ export const view = (model: Model): Document => {
                   [h.Class('hidden text-sm text-neutral-500 sm:inline')],
                   [`Signed in as ${account}`],
                 ),
-                h.button([h.OnClick(ClickedSignOut()), h.Class(signOutStyle)], ['Sign out']),
-                h.button(
-                  [
-                    h.OnClick(ToggledMenu()),
-                    h.AriaLabel('Menu'),
-                    h.AriaExpanded(model.isMenuOpen),
-                    h.Class(menuToggleStyle),
-                  ],
-                  [model.isMenuOpen ? '✕' : '☰'],
-                ),
+                Button.view({
+                  onClick: ClickedSignOut(),
+                  toView: ({ button }) =>
+                    h.button([...button, h.Class(signOutStyle)], ['Sign out']),
+                }),
+                Button.view({
+                  onClick: ToggledMenu(),
+                  toView: ({ button }) =>
+                    h.button(
+                      [
+                        ...button,
+                        h.AriaLabel('Menu'),
+                        h.AriaExpanded(model.isMenuOpen),
+                        h.Class(menuToggleStyle),
+                      ],
+                      [model.isMenuOpen ? '✕' : '☰'],
+                    ),
+                }),
               ],
             ),
           ],
@@ -165,13 +177,14 @@ const sidebar = (current: Option.Option<Section>, open: boolean): Html => {
   const currentSection = Option.getOrUndefined(current);
 
   const leafItem = (leaf: MenuLeaf): Html =>
-    h.button(
-      [
-        h.OnClick(SelectedSection({ section: leaf.section })),
-        h.Class(leaf.section === currentSection ? navItemActiveStyle : navItemStyle),
-      ],
-      [leaf.label],
-    );
+    Button.view({
+      onClick: SelectedSection({ section: leaf.section }),
+      toView: ({ button }) =>
+        h.button(
+          [...button, h.Class(leaf.section === currentSection ? navItemActiveStyle : navItemStyle)],
+          [leaf.label],
+        ),
+    });
 
   const node = (entry: MenuNode): Html =>
     'group' in entry
@@ -184,13 +197,14 @@ const sidebar = (current: Option.Option<Section>, open: boolean): Html => {
         )
       : leafItem(entry.leaf);
 
-  const dashboardItem: Html = h.button(
-    [
-      h.OnClick(ClickedDashboard()),
-      h.Class(Option.isNone(current) ? navItemActiveStyle : navItemStyle),
-    ],
-    ['Dashboard'],
-  );
+  const dashboardItem: Html = Button.view({
+    onClick: ClickedDashboard(),
+    toView: ({ button }) =>
+      h.button(
+        [...button, h.Class(Option.isNone(current) ? navItemActiveStyle : navItemStyle)],
+        ['Dashboard'],
+      ),
+  });
 
   return h.nav(
     [h.Class(clsx(open ? 'flex' : 'hidden', 'w-full flex-col gap-6 md:flex md:w-56 md:shrink-0'))],
@@ -212,13 +226,17 @@ const dashboardHome = (model: Model): Html => {
 
   const card = (section: Section): Html => {
     const count = countFor(section);
-    return h.button(
-      [h.OnClick(SelectedSection({ section })), h.Class(homeCardStyle)],
-      [
-        h.span([h.Class(homeCardCountStyle)], [count.toString()]),
-        h.span([h.Class(homeCardLabelStyle)], [sectionLabels[section]]),
-      ],
-    );
+    return Button.view({
+      onClick: SelectedSection({ section }),
+      toView: ({ button }) =>
+        h.button(
+          [...button, h.Class(homeCardStyle)],
+          [
+            h.span([h.Class(homeCardCountStyle)], [count.toString()]),
+            h.span([h.Class(homeCardLabelStyle)], [sectionLabels[section]]),
+          ],
+        ),
+    });
   };
 
   return h.main(
@@ -321,19 +339,22 @@ const content = (model: Model, current: Section): Html => {
       entry.id,
       [],
       [
-        h.button(
-          [
-            h.OnClick(ClickedRecord({ section: entry.section, id: entry.id })),
-            h.Class(entryCardStyle),
-          ],
-          [
-            h.span([h.Class('font-medium text-neutral-900')], [entry.values[0] ?? '']),
-            h.div(
-              [h.Class('mt-1 flex flex-wrap items-center gap-2')],
-              columns.slice(1).map((column, i) => fieldBadge(column, entry.values[i + 1] ?? '')),
+        Button.view({
+          onClick: ClickedRecord({ section: entry.section, id: entry.id }),
+          toView: ({ button }) =>
+            h.button(
+              [...button, h.Class(entryCardStyle)],
+              [
+                h.span([h.Class('font-medium text-neutral-900')], [entry.values[0] ?? '']),
+                h.div(
+                  [h.Class('mt-1 flex flex-wrap items-center gap-2')],
+                  columns
+                    .slice(1)
+                    .map((column, i) => fieldBadge(column, entry.values[i + 1] ?? '')),
+                ),
+              ],
             ),
-          ],
-        ),
+        }),
       ],
     );
 
@@ -392,14 +413,14 @@ const content = (model: Model, current: Section): Html => {
         h.span([h.Class('text-sm text-neutral-400')], ['–']),
         picker('to'),
         hasRange
-          ? h.button(
-              [
-                h.OnClick(ClearedDateFilter({ column })),
-                h.AriaLabel(`Clear ${column} filter`),
-                h.Class(filterClearStyle),
-              ],
-              ['✕'],
-            )
+          ? Button.view({
+              onClick: ClearedDateFilter({ column }),
+              toView: ({ button }) =>
+                h.button(
+                  [...button, h.AriaLabel(`Clear ${column} filter`), h.Class(filterClearStyle)],
+                  ['✕'],
+                ),
+            })
           : h.empty,
       ],
     );
@@ -484,7 +505,14 @@ const content = (model: Model, current: Section): Html => {
       : visible.slice((clientPage - 1) * PAGE_SIZE, clientPage * PAGE_SIZE);
 
   const pageButton = (label: string, disabled: boolean, onClick: Message): Html =>
-    h.button([h.OnClick(onClick), h.Disabled(disabled), h.Class(paginationButtonStyle)], [label]);
+    // NATIVE disabled here, on purpose: an end-stop arrow has nothing to
+    // explain, so removing it from the tab order is the right answer rather
+    // than the aria-disabled treatment the drawer's Save needs.
+    Button.view({
+      onClick,
+      isDisabled: disabled,
+      toView: ({ button }) => h.button([...button, h.Class(paginationButtonStyle)], [label]),
+    });
 
   const pagination = (): Html => {
     if (current === 'players') {
@@ -553,7 +581,10 @@ const content = (model: Model, current: Section): Html => {
           [h.Class('text-sm text-rose-700')],
           [`Couldn't load ${label.toLowerCase()}: ${failureError}`],
         ),
-        h.button([h.OnClick(retry), h.Class(retryButtonStyle)], ['Retry']),
+        Button.view({
+          onClick: retry,
+          toView: ({ button }) => h.button([...button, h.Class(retryButtonStyle)], ['Retry']),
+        }),
       ],
     );
   };
@@ -614,18 +645,30 @@ const content = (model: Model, current: Section): Html => {
                     ],
                     [],
                   ),
-                  h.button(
-                    [
-                      h.OnClick(retry),
-                      h.Disabled(pending),
-                      h.AriaLive('polite'),
-                      h.Class(refreshButtonStyle),
-                    ],
-                    [pending ? 'Refreshing…' : model.serverHealth === 'Down' ? 'Retry' : 'Refresh'],
-                  ),
+                  Button.view({
+                    onClick: retry,
+                    // Native disabled: the label itself already reads
+                    // "Refreshing…", so nothing is lost by leaving the tab
+                    // order while the fetch is in flight.
+                    isDisabled: pending,
+                    toView: ({ button }) =>
+                      h.button(
+                        [...button, h.AriaLive('polite'), h.Class(refreshButtonStyle)],
+                        [
+                          pending
+                            ? 'Refreshing…'
+                            : model.serverHealth === 'Down'
+                              ? 'Retry'
+                              : 'Refresh',
+                        ],
+                      ),
+                  }),
                 ],
               ),
-              h.button([h.OnClick(ClickedAddNew()), h.Class(addNewStyle)], ['+ Add new']),
+              Button.view({
+                onClick: ClickedAddNew(),
+                toView: ({ button }) => h.button([...button, h.Class(addNewStyle)], ['+ Add new']),
+              }),
             ],
           ),
         ],

@@ -1,4 +1,4 @@
-import { Dialog } from '@foldkit/ui';
+import { Button, Dialog } from '@foldkit/ui';
 import { Array, Match as M, Option } from 'effect';
 import { AsyncData } from 'foldkit';
 import { html } from 'foldkit/html';
@@ -85,7 +85,7 @@ export const view = (model: Model): Html => {
   // picker over the referenced section's own rows, and the draft carries the
   // chosen id — exactly what a fetched row holds in that cell (see
   // ClickedSaveRecord, which lifts it into parentId).
-  // A picker with nothing to offer, in the same grammar as the blocked Save:
+  // A select, so Ui.Button doesn't apply — but the same reasoning as the Save:
   // AriaDisabled, not the native attribute. A natively disabled control leaves
   // the tab order and takes its own explanation with it — and explaining
   // itself is the entire job of this one, which exists to say "still loading",
@@ -128,10 +128,11 @@ export const view = (model: Model): Html => {
                 ],
                 [
                   h.span([], [data.error]),
-                  h.button(
-                    [h.OnClick(retryBySection[section]), h.Class(retryButtonStyle)],
-                    ['Retry'],
-                  ),
+                  Button.view({
+                    onClick: retryBySection[section],
+                    toView: ({ button }) =>
+                      h.button([...button, h.Class(retryButtonStyle)], ['Retry']),
+                  }),
                 ],
               )
             : h.empty,
@@ -252,13 +253,19 @@ export const view = (model: Model): Html => {
                     row.id,
                     [],
                     [
-                      h.button(
-                        [
-                          h.OnClick(ClickedRecord({ section: row.section, id: row.id })),
-                          h.Class(entryCardStyle),
-                        ],
-                        [h.span([h.Class('font-medium text-neutral-900')], [row.values[0] ?? ''])],
-                      ),
+                      Button.view({
+                        onClick: ClickedRecord({ section: row.section, id: row.id }),
+                        toView: ({ button }) =>
+                          h.button(
+                            [...button, h.Class(entryCardStyle)],
+                            [
+                              h.span(
+                                [h.Class('font-medium text-neutral-900')],
+                                [row.values[0] ?? ''],
+                              ),
+                            ],
+                          ),
+                      }),
                     ],
                   ),
                 ),
@@ -282,10 +289,11 @@ export const view = (model: Model): Html => {
               [h.Role('alert'), h.Class('flex flex-wrap items-center gap-3 text-sm text-rose-700')],
               [
                 h.span([], [`Couldn't load teams: ${model.participations.error}`]),
-                h.button(
-                  [h.OnClick(ClickedRetryParticipations()), h.Class(retryButtonStyle)],
-                  ['Retry'],
-                ),
+                Button.view({
+                  onClick: ClickedRetryParticipations(),
+                  toView: ({ button }) =>
+                    h.button([...button, h.Class(retryButtonStyle)], ['Retry']),
+                }),
               ],
             ),
           ],
@@ -323,13 +331,19 @@ export const view = (model: Model): Html => {
                     row.id,
                     [],
                     [
-                      h.button(
-                        [
-                          h.OnClick(ClickedRecord({ section: row.section, id: row.id })),
-                          h.Class(entryCardStyle),
-                        ],
-                        [h.span([h.Class('font-medium text-neutral-900')], [row.values[0] ?? ''])],
-                      ),
+                      Button.view({
+                        onClick: ClickedRecord({ section: row.section, id: row.id }),
+                        toView: ({ button }) =>
+                          h.button(
+                            [...button, h.Class(entryCardStyle)],
+                            [
+                              h.span(
+                                [h.Class('font-medium text-neutral-900')],
+                                [row.values[0] ?? ''],
+                              ),
+                            ],
+                          ),
+                      }),
                     ],
                   ),
                 ),
@@ -411,20 +425,23 @@ export const view = (model: Model): Html => {
               [h.Class('mt-3 flex items-center gap-3')],
               [
                 h.span([h.Class('text-sm font-medium text-rose-900')], ['Delete this record?']),
-                h.button(
-                  [h.OnClick(ClickedConfirmDelete()), h.Class(dangerConfirmStyle)],
-                  ['Yes, delete'],
-                ),
-                h.button(
-                  [h.OnClick(ClickedCancelDelete()), h.Class(dangerCancelStyle)],
-                  ['Cancel'],
-                ),
+                Button.view({
+                  onClick: ClickedConfirmDelete(),
+                  toView: ({ button }) =>
+                    h.button([...button, h.Class(dangerConfirmStyle)], ['Yes, delete']),
+                }),
+                Button.view({
+                  onClick: ClickedCancelDelete(),
+                  toView: ({ button }) =>
+                    h.button([...button, h.Class(dangerCancelStyle)], ['Cancel']),
+                }),
               ],
             )
-          : h.button(
-              [h.OnClick(ClickedDeleteRecord()), h.Class(dangerButtonStyle)],
-              ['Delete record'],
-            ),
+          : Button.view({
+              onClick: ClickedDeleteRecord(),
+              toView: ({ button }) =>
+                h.button([...button, h.Class(dangerButtonStyle)], ['Delete record']),
+            }),
       ],
     );
 
@@ -583,6 +600,12 @@ export const view = (model: Model): Html => {
                 unsatisfied.map(missingReferenceNote),
               ),
               h.button([...render.closeButton, h.Class(drawerCancelStyle)], ['Cancel']),
+              // NOT Ui.Button, deliberately — the one control in the app that
+              // opts out. Its only disabled mode is the native attribute, and
+              // this button must stay in the tab order while blocked so the
+              // note explaining why can be reached. Everything else here is
+              // Ui.Button; when the component grows an aria-disabled mode,
+              // this becomes the last conversion.
               h.button(
                 [
                   h.OnClick(ClickedSaveRecord()),
