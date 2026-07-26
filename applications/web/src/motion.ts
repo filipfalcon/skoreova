@@ -402,7 +402,9 @@ const setUpReveals = (
 
   // ----- Model-driven recounts ---------------------------------------------
   // The land counters react to the league filter: the view stamps
-  // `data-recount` with the filter state plus the fresh target. Watching
+  // `data-recount` with the fresh target FIRST and the filter state second
+  // (`${count}|${mapLeague}` in page/clubs.ts) — the order matters, because
+  // the split below reads field 0 as the number. Watching
   // that attribute instead of the text fixes two things text-diffing
   // couldn't: the spin fires even when the VALUE stays the same (every
   // recount should visibly spin), and it can't lose a change to an
