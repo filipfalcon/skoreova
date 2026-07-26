@@ -1,7 +1,7 @@
 import { page } from 'vitest/browser';
 import { Effect } from 'effect';
 import { Runtime } from 'foldkit';
-import { beforeAll, expect, test } from 'vitest';
+import { afterAll, beforeAll, expect, test } from 'vitest';
 
 import { ChangedUrl, ClickedLink, Flags, Model, init, update, view } from './main';
 import './styles.css';
@@ -70,13 +70,15 @@ beforeAll(async () => {
   await waitUntil(() => wrapper.classList.contains('is-in'));
   // Let the reveal transition (0.1s delay + 0.9s) fully land.
   await new Promise((resolve) => setTimeout(resolve, 1400));
+});
 
-  const image = knight();
-  console.log(
-    `[knight] asset=${image.currentSrc} natural=${image.naturalWidth}x${image.naturalHeight}`,
-  );
-  console.log(`[knight] img rect=${JSON.stringify(image.getBoundingClientRect())}`);
-  console.log(`[knight] section rect=${JSON.stringify(section.getBoundingClientRect())}`);
+// Same contract as map-collisions.test.ts: the viewport is PAGE state shared
+// across files in one browser run, and this file pins a desktop size. Put the
+// runner's 414×896 default back, or the next file inherits a layout it never
+// asked for — motion.ts snapshots `desktopViewport` at mount time, so it does
+// not merely look different, it takes a different code path.
+afterAll(async () => {
+  await page.viewport(414, 896);
 });
 
 test('no ancestor clips the mascot box', () => {
