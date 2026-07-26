@@ -1,7 +1,8 @@
 {
   "name": "Skóreová — Czech Women’s Football Coverage",
   "short_name": "Skóreová",
-  "description": "Czech Women’s Football Coverage.",
+  "description": "Czech women’s football, covered end to end — the top two leagues, the domestic cup, Europe, and the national team. Club by club, season by season.",
+  "lang": "en-US",
   "start_url": "/",
   "display": "browser",
   "background_color": "#0d0c0c",

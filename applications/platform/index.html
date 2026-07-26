@@ -1,15 +1,19 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-US">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Skóreová Platform</title>
+
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0d0c0c" />
+
+    <link rel="canonical" href="https://beta.platform.skoreova.com/" />
     <meta
       name="description"
-      content="Skóreová Platform — the data hub of Czech women's football. Build your own charts and follow every club, player, competition, and referee."
+      content="Skóreová Platform — the data hub of Czech women’s football. Build your own charts and follow every club, player, competition, and referee."
     />
-    <link rel="canonical" href="https://beta.platform.skoreova.com/" />
-    <meta name="robots" content="index, follow, max-image-preview:large" />
-    <meta name="theme-color" content="#0d0c0c" />
+    <meta name="robots" content="max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 
     <!-- Icons + manifest — the same set as the landing site. -->
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -25,7 +29,7 @@
     <meta property="og:title" content="Skóreová Platform — Her Game. Her Numbers." />
     <meta
       property="og:description"
-      content="The data hub of Czech women's football. Follow every club, player, competition, and referee."
+      content="The data hub of Czech women’s football. Follow every club, player, competition, and referee."
     />
     <meta property="og:image" content="https://beta.platform.skoreova.com/og.png" />
     <meta property="og:image:width" content="1200" />
@@ -35,7 +39,7 @@
     <meta name="twitter:title" content="Skóreová Platform — Her Game. Her Numbers." />
     <meta
       name="twitter:description"
-      content="The data hub of Czech women's football. Follow every club, player, competition, and referee."
+      content="The data hub of Czech women’s football. Follow every club, player, competition, and referee."
     />
     <meta name="twitter:image" content="https://beta.platform.skoreova.com/og.png" />
     <!-- Consent Mode v2 + GA4. The SAME stream as the landing site
@@ -46,7 +50,7 @@
     <script>
       // Measurement runs ONLY on the production hostname — everything else
       // (localhost, LAN phone testing, preview deploys, tunnels) hits
-      // Google's official kill switch: gtag.js loads but records nothing.
+      // Google’s official kill switch: gtag.js loads but records nothing.
       window.skoreovaAnalyticsOff = ![
         'beta.platform.skoreova.com',
         'beta.platform.skoreova.cz',
@@ -79,11 +83,10 @@
       gtag('config', 'G-PJ131P52RX');
     </script>
     <link href="/src/styles.css" rel="stylesheet" />
-    <title>Skóreová Platform</title>
   </head>
   <body>
     <div id="root"></div>
-    <!-- SAME-PAGE ANCHORS (#section, e.g. the club profile's section chips).
+    <!-- SAME-PAGE ANCHORS (#section, e.g. the club profile’s section chips).
          The app runtime intercepts EVERY same-origin link click and
          preventDefaults it, so a bare hash link would be handled as a route
          change: the route resolves to the page you are already on, the view
@@ -120,7 +123,7 @@
           history.replaceState(null, '', location.pathname + location.search + href);
         });
 
-        // A deep link arrives before the app has rendered, so the browser's
+        // A deep link arrives before the app has rendered, so the browser’s
         // own jump finds nothing. Retry until the target exists, then stop —
         // capped so a hash that never resolves cannot spin forever.
         if (location.hash.length > 1) {
@@ -138,7 +141,7 @@
          answers with HTML, and strict module MIME checking kills the app.
          The production build rewrites this either way. -->
     <script type="module" src="/src/entry.ts"></script>
-    <!-- Cookie consent banner — same device as the landing site's (see the
+    <!-- Cookie consent banner — same device as the landing site’s (see the
          comment there): outside the app root, brand-styled inline, choice
          persisted per origin. The panel tone matches the dashboard cards. -->
     <aside id="cookie-consent" aria-label="Cookie consent" hidden>
@@ -309,7 +312,7 @@
           banner.hidden = false;
         }
 
-        // The app's footer renders a plain "#cookie-settings" link — catch
+        // The app’s footer renders a plain "#cookie-settings" link — catch
         // it here and reopen the banner so a choice can be changed anytime.
         document.addEventListener('click', function (event) {
           var target =
