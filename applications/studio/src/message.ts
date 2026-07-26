@@ -29,6 +29,9 @@ export const ClickedSaveRecord = m('ClickedSaveRecord');
 // Carries the edit-log timestamp fetched from the clock by StampSave, so the
 // commit stays out of `update`'s pure path.
 export const SavedRecordAt = m('SavedRecordAt', { at: S.String });
+// Same shape for the delete: its own Command reads the clock, so the History
+// event carries a real timestamp instead of one invented in `update`.
+export const DeletedRecordAt = m('DeletedRecordAt', { at: S.String });
 // Wraps a Dialog submodel message for delegation. The drawer's close controls
 // (✕, Cancel, backdrop, Escape) all flow through here as RequestedClose; the
 // close intent comes back out as the Dialog's Closed OutMessage.
@@ -121,6 +124,7 @@ export const Message = S.Union([
   UpdatedDraftField,
   ClickedSaveRecord,
   SavedRecordAt,
+  DeletedRecordAt,
   GotDialogMessage,
   GotTabsMessage,
   SucceededMountChart,

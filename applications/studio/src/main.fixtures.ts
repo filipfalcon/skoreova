@@ -82,6 +82,7 @@ export const signedOutModel = Model.make({
   serverHealth: 'Unknown',
   clientPage: 1,
   deletedRecordIds: [],
+  pendingLogRecordId: '',
   linkError: '',
   filterListboxes: initialFilterListboxes(),
   dateFilters: {},

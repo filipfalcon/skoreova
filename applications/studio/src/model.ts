@@ -113,13 +113,22 @@ export type DrawerState = typeof DrawerState.Type;
 // One recorded change to a field, for the drawer's History tab. Keyed by the
 // record's id (not its row index), so the log stays attached to its record
 // across refetches.
-export const LogEntry = S.Struct({
+// THE RECORD'S HISTORY, as tagged events rather than one struct shaped like a
+// field edit. Creating and deleting are not field changes — they have no field,
+// no from and no to — so logging them through that shape meant either lying
+// with empty strings or not logging them at all, and it was the second. Every
+// event carries a clock-stamped `at`: each intent has its own Command, so none
+// of them has to invent a timestamp inside `update`.
+export const FieldChanged = ts('FieldChanged', {
   recordId: S.String,
   field: S.String,
   from: S.String,
   to: S.String,
   at: S.String,
 });
+export const RecordCreated = ts('RecordCreated', { recordId: S.String, at: S.String });
+export const RecordDeleted = ts('RecordDeleted', { recordId: S.String, at: S.String });
+export const LogEntry = S.Union([FieldChanged, RecordCreated, RecordDeleted]);
 export type LogEntry = typeof LogEntry.Type;
 
 // A section's fetch is a six-state AsyncData: Idle before sign-in, Loading on
@@ -199,6 +208,10 @@ export const Model = S.Struct({
   // isn't present to be preserved. Deleting on page 1 and paging to page 2 lost
   // the marker outright. This ledger outlives any page (see mergeLocalEdits).
   deletedRecordIds: S.Array(S.String),
+  // The record a clock read is in flight for: a create or a delete has already
+  // committed, and its History event is waiting on StampSave/StampDelete to
+  // answer with a timestamp. '' when nothing is pending.
+  pendingLogRecordId: S.String,
   // Set when a shared record link couldn't be resolved (e.g. a deleted team,
   // or a player not on the currently loaded page — see FetchTeamById).
   linkError: S.String,

@@ -34,6 +34,7 @@ import {
   FailedSyncChart,
   FetchedToday,
   SavedRecordAt,
+  DeletedRecordAt,
   SucceededFetchAssociations,
   SucceededFetchClubs,
   SucceededFetchCompetitions,
@@ -332,6 +333,17 @@ export const StampSave = Command.define(
   ),
 );
 
+// The delete's own clock read. One Command per intent rather than one shared
+// stamp the handler has to disambiguate from the drawer's state.
+export const StampDelete = Command.define(
+  'StampDelete',
+  DeletedRecordAt,
+)(
+  Clock.currentTimeMillis.pipe(
+    Effect.map((millis) => DeletedRecordAt({ at: new Date(millis).toLocaleString('en-US') })),
+  ),
+);
+
 // ROUTING
 //
 // Navigate/Load are the two effects any URL change eventually goes through:
@@ -411,6 +423,8 @@ export const fetchTeamById = (
 export const fetchToday = (): Command.Command<Message> => FetchToday();
 
 export const stampSave = (): Command.Command<Message> => StampSave();
+
+export const stampDelete = (): Command.Command<Message> => StampDelete();
 
 export const syncChart = (
   args: Readonly<{

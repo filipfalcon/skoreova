@@ -32,8 +32,11 @@ import {
   ExcludedFilter,
   FilterListbox,
   LOCAL_ID_PREFIX,
+  FieldChanged,
   LogEntry,
   Model,
+  RecordCreated,
+  RecordDeleted,
   ParticipationsData,
   SectionData,
   SignedIn,
@@ -71,6 +74,7 @@ import {
   fetchToday,
   load,
   navigate,
+  stampDelete,
   stampSave,
   syncChart,
   syncPointsChart,
@@ -120,6 +124,7 @@ const initialModel = (): Model => ({
   clientPage: 1,
   deletedRecordIds: [],
   linkError: '',
+  pendingLogRecordId: '',
   filterListboxes: initialFilterListboxes(),
   dateFilters: {},
   dateFilterPickers: {},
@@ -687,8 +692,13 @@ export const update = (model: Model, message: Message): UpdateReturn =>
               route: () => SectionRoute({ section }),
               nextLocalId: (n) => n + 1,
               drawer: () => DrawerClosed(),
+              // The record exists NOW; its History entry needs a clock, which
+              // `update` can't read. StampSave answers with SavedRecordAt, and
+              // the drawer is closed by then — that is how the handler knows a
+              // create is what it is stamping (see SavedRecordAt).
+              pendingLogRecordId: () => entry.id,
             }),
-            [...dialogCommands, navigate(sectionRouter({ section }))],
+            [...dialogCommands, stampSave(), navigate(sectionRouter({ section }))],
           ];
         }
         if (drawer._tag !== 'Editing') return [model, []];
@@ -698,6 +708,17 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         return [model, [stampSave()]];
       },
       SavedRecordAt: ({ at }) => {
+        // A create left its id behind and closed the drawer; an edit still has
+        // it open. One stamp, two events.
+        if (model.pendingLogRecordId !== '') {
+          return [
+            evo(model, {
+              editLog: (log) => [RecordCreated({ recordId: model.pendingLogRecordId, at }), ...log],
+              pendingLogRecordId: () => '',
+            }),
+            [],
+          ];
+        }
         const drawer = model.drawer;
         if (drawer._tag !== 'Editing') return [model, []];
         const { section, id } = drawer;
@@ -709,7 +730,9 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         const changes: ReadonlyArray<LogEntry> = columns.flatMap((column, i) => {
           const from = entry.values[i] ?? '';
           const to = draft[i] ?? '';
-          return from === to ? [] : [{ recordId: id, field: column.label, from, to, at }];
+          return from === to
+            ? []
+            : [FieldChanged({ recordId: id, field: column.label, from, to, at })];
         });
 
         const withRows = evolveSection(model, section, (data) =>
@@ -816,14 +839,25 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             drawer: () => DrawerClosed(),
             // The ledger, not the row flag, is what survives a refetch.
             deletedRecordIds: (ids) => [...ids, deletedKey(section, id)],
+            pendingLogRecordId: () => id,
           }),
-          [...dialogCommands, navigate(sectionRouter({ section }))],
+          [...dialogCommands, stampDelete(), navigate(sectionRouter({ section }))],
         ];
       },
       // Once a chart's host element is mounted, push the current record's
       // data into it (mirrors Foldkit's charting example: Mount only creates
       // the chart instance, Command feeds it data). Two hosts share this
       // message — branch on which one just mounted.
+      DeletedRecordAt: ({ at }) => [
+        evo(model, {
+          editLog: (log) =>
+            model.pendingLogRecordId === ''
+              ? log
+              : [RecordDeleted({ recordId: model.pendingLogRecordId, at }), ...log],
+          pendingLogRecordId: () => '',
+        }),
+        [],
+      ],
       SucceededMountChart: ({ hostId }) => {
         const entry = drawerRecord(model);
         if (!entry) return [evo(model, { chartError: () => Option.none() }), []];
