@@ -3,6 +3,7 @@
 import { Schema as S } from 'effect';
 import { DatePicker, Dialog, Listbox, Tabs } from '@foldkit/ui';
 import { AsyncData, Calendar } from 'foldkit';
+import { Field } from 'foldkit/fieldValidation';
 import { ts } from 'foldkit/schema';
 
 import { ParticipationResponse } from './participationsApi';
@@ -88,16 +89,22 @@ export type DateRangeFilter = typeof DateRangeFilter.Type;
 // record that isn't open). An open record is addressed by its stable
 // section+id, NOT a row index, so a background refetch that rebuilds `rows`
 // can't repoint the drawer at a different record.
+// The draft carries each cell's VALIDATION STATE, not a bare string — the
+// four-state Field the framework models a form cell with (see
+// foldkit/fieldValidation). The rules live beside the column descriptors in
+// data.ts; this is where the answer for the value currently typed lives, so
+// the view can render an error without re-deriving it and the save can refuse
+// without a bespoke check of its own.
 export const DrawerClosed = ts('Closed');
 export const DrawerCreating = ts('Creating', {
   section: Section,
-  draft: S.Array(S.String),
+  draft: S.Array(Field(S.String)),
 });
 export const DrawerEditing = ts('Editing', {
   section: Section,
   id: S.String,
   tab: DrawerTab,
-  draft: S.Array(S.String),
+  draft: S.Array(Field(S.String)),
   isConfirmingDelete: S.Boolean,
 });
 export const DrawerState = S.Union([DrawerClosed, DrawerCreating, DrawerEditing]);

@@ -4,6 +4,7 @@
 import { Array, Option, String as Str } from 'effect';
 import { DatePicker, Listbox } from '@foldkit/ui';
 import { AsyncData, Calendar } from 'foldkit';
+import * as FieldValidation from 'foldkit/fieldValidation';
 import { evo } from 'foldkit/struct';
 
 import type { Column, ColumnKind } from './api';
@@ -46,15 +47,55 @@ export const drawerRecord = (model: Model): Entry | undefined => {
 };
 
 // The edit buffer of whichever open drawer state carries one ([] when closed).
-export const draftOf = (drawer: DrawerState): ReadonlyArray<string> =>
+export const draftOf = (drawer: DrawerState): ReadonlyArray<FieldValidation.Field<string>> =>
   drawer._tag === 'Closed' ? [] : drawer.draft;
 
+// The raw text of each cell, for the consumers that want the value rather than
+// its validation state (the save path, the drawer's own inputs).
+export const draftValues = (drawer: DrawerState): ReadonlyArray<string> =>
+  draftOf(drawer).map((field) => field.value);
+
 // Replaces the draft on whichever open drawer state carries one.
-export const withDraft = (drawer: DrawerState, draft: ReadonlyArray<string>): DrawerState => {
+export const withDraft = (
+  drawer: DrawerState,
+  draft: ReadonlyArray<FieldValidation.Field<string>>,
+): DrawerState => {
   if (drawer._tag === 'Creating') return evo(drawer, { draft: () => draft });
   if (drawer._tag === 'Editing') return evo(drawer, { draft: () => draft });
   return drawer;
 };
+
+// WHAT EACH COLUMN REQUIRES, derived from the descriptor rather than written
+// per section — a derived column holds a reference the record can't do without
+// (see the save gate), a title names the record, and a date has a shape. The
+// rules live here next to the columns they belong to; the four-state answer
+// for the value currently typed lives in the Model (DrawerState.draft).
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+export const columnRules = (column: Column): FieldValidation.Rules<string> => {
+  if (column.derived !== undefined) {
+    return FieldValidation.makeRules({
+      required: `Choose a ${column.label.toLowerCase()} — this record has to belong to one.`,
+    });
+  }
+  if (column.kind === 'title') {
+    return FieldValidation.makeRules({
+      required: `${column.label} can't be empty.`,
+      isEmpty: (value) => value.trim() === '',
+    });
+  }
+  if (column.kind === 'date') {
+    return FieldValidation.makeRules({
+      rules: [FieldValidation.Rule.pattern(ISO_DATE, `${column.label} must read YYYY-MM-DD.`)],
+    });
+  }
+  return FieldValidation.makeRules();
+};
+
+// A record's cells as a fresh draft: existing values start NotValidated —
+// nothing has been typed yet, so nothing has been judged.
+const toDraft = (values: ReadonlyArray<string>): ReadonlyArray<FieldValidation.Field<string>> =>
+  values.map((value) => FieldValidation.NotValidated({ value }));
 
 // Opens the drawer on an existing record, populating the edit buffer from it.
 export const editRecord = (entry: Entry): DrawerState =>
@@ -62,8 +103,37 @@ export const editRecord = (entry: Entry): DrawerState =>
     section: entry.section,
     id: entry.id,
     tab: 'Overview',
-    draft: [...entry.values],
+    draft: toDraft(entry.values),
     isConfirmingDelete: false,
+  });
+
+// A blank draft for a new record in `section`, one cell per column.
+export const emptyDraft = (section: Section): ReadonlyArray<FieldValidation.Field<string>> =>
+  toDraft(sectionData[section].columns.map(() => ''));
+
+// Is this draft fit to save? Every cell judged against its own column's rules,
+// which is the one place that question is answered — the drawer blocks Save on
+// it and `update` refuses on it, so the two can't drift into disagreeing.
+// NotValidated counts as acceptable for an optional cell and not for a required
+// one, which is exactly `isValid`'s contract.
+export const isDraftSavable = (
+  section: Section,
+  draft: ReadonlyArray<FieldValidation.Field<string>>,
+): boolean =>
+  sectionData[section].columns.every((column, index) => {
+    const field = draft[index];
+    return field === undefined ? false : FieldValidation.isValid(columnRules(column))(field);
+  });
+
+// The cells a draft is still missing, as their columns — what the blocked Save
+// explains, in the order the form shows them.
+export const unsatisfiedColumns = (
+  section: Section,
+  draft: ReadonlyArray<FieldValidation.Field<string>>,
+): ReadonlyArray<Column> =>
+  sectionData[section].columns.filter((column, index) => {
+    const field = draft[index];
+    return field === undefined || !FieldValidation.isValid(columnRules(column))(field);
   });
 
 // A DERIVED cell stores a reference — the record's parentId — and displays the

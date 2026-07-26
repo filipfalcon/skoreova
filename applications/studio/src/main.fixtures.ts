@@ -1,5 +1,6 @@
 import { Option } from 'effect';
 import { Dialog, Tabs } from '@foldkit/ui';
+import { NotValidated } from 'foldkit/fieldValidation';
 
 import { initialDateFilterPickers, initialFilterListboxes } from './data';
 import {
@@ -130,7 +131,7 @@ export const clubRecordModel = Model.make({
     section: 'clubs',
     id: sampleClub.id,
     tab: 'Overview',
-    draft: [...sampleClub.values],
+    draft: sampleClub.values.map((value) => NotValidated({ value })),
     isConfirmingDelete: false,
   }),
   dialog: Dialog.init({ id: DRAWER_DIALOG_ID, isOpen: true }),
@@ -145,7 +146,7 @@ export const playerRecordModel = Model.make({
     section: 'players',
     id: samplePlayer.id,
     tab: 'Overview',
-    draft: [...samplePlayer.values],
+    draft: samplePlayer.values.map((value) => NotValidated({ value })),
     isConfirmingDelete: false,
   }),
   // The drawer's content only renders while its Dialog is open.
