@@ -1,0 +1,23 @@
+{
+  "language_servers": ["oxlint", "oxfmt", "!eslint", "!typescript-language-server", "..."],
+  "formatter": { "language_server": { "name": "oxfmt" } },
+  "code_actions_on_format": {
+    "source.fixAll.oxc": true
+  },
+  "lsp": {
+    "oxlint": {
+      "initialization_options": {
+        "settings": {
+          "run": "onType",
+          "fixKind": "safe_fix",
+          "unusedDisableDirectives": "deny"
+        }
+      }
+    },
+    "oxfmt": {
+      "initialization_options": {
+        "settings": { "run": "onSave" }
+      }
+    }
+  }
+}
