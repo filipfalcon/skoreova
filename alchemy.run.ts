@@ -9,55 +9,14 @@ export default Alchemy.Stack(
     state: Cloudflare.state(),
   },
   Effect.gen(function* () {
-    const studio = yield* Cloudflare.Website.Vite('Studio', {
-      rootDir: 'applications/studio',
-      subdomain: {
-        enabled: false,
-        previewsEnabled: false,
-      },
-      domain: ['beta.studio.skoreova.com', 'beta.studio.skoreova.cz'],
-      dev: { host: '0.0.0.0', port: 5172 },
-      assets: {
-        notFoundHandling: 'single-page-application',
-      },
-    });
-
-    // The ticker's club percentages — ONE KV key holding all clubs as one
-    // JSON document ('ticker:clubs'). The platform Worker below both
-    // refreshes it (daily cron) and serves it (/api/ticker), so reads stay
-    // a single KV get per pageview behind the edge cache.
-    const tickerKv = yield* Cloudflare.KV.Namespace('Ticker');
-
-    const platform = yield* Cloudflare.Website.Vite('Platform', {
-      rootDir: 'applications/platform',
-      subdomain: {
-        enabled: false,
-        previewsEnabled: false,
-      },
-      domain: ['beta.platform.skoreova.com', 'beta.platform.skoreova.cz'],
-      dev: { host: '0.0.0.0', port: 5171 },
-      // Custom Worker entry: /api/ticker from KV + assets pass-through,
-      // plus the daily (04:00 UTC) scheduled refresh of the ticker key.
-      // Mock numbers for now — see the TODO(prod) in worker.ts. Workers
-      // Cache lets the /api/ticker Cache-Control header actually cache at
-      // the edge, so most reads never invoke the Worker or KV.
-      main: 'src/worker.ts',
-      crons: ['0 4 * * *'],
-      cache: { enabled: true },
-      env: { TICKER: tickerKv },
-      assets: {
-        notFoundHandling: 'single-page-application',
-      },
-    });
-
-    const web = yield* Cloudflare.Website.Vite('Web', {
+    const landingPage = yield* Cloudflare.Website.Vite('LandingPage', {
       rootDir: 'applications/web',
       subdomain: {
         enabled: false,
         previewsEnabled: false,
       },
       domain: ['beta.skoreova.com', 'beta.skoreova.cz'],
-      dev: { host: '0.0.0.0', port: 5170 },
+      dev: { host: '127.0.0.1', port: 5180, strictPort: true },
       // Custom Worker entry: a Sentry-wrapped pass-through to the assets
       // binding, so edge-side failures get reported too (the browser SDK
       // in entry.ts covers the client). Builds through the `ssr` Vite
@@ -72,10 +31,51 @@ export default Alchemy.Stack(
       },
     });
 
+    // The ticker’s club percentages — ONE KV key holding all clubs as one
+    // JSON document ('ticker:clubs'). The platform Worker below both
+    // refreshes it (daily cron) and serves it (/api/ticker), so reads stay
+    // a single KV get per pageview behind the edge cache.
+    const tickerKv = yield* Cloudflare.KV.Namespace('Ticker');
+
+    const platform = yield* Cloudflare.Website.Vite('Platform', {
+      rootDir: 'applications/platform',
+      subdomain: {
+        enabled: false,
+        previewsEnabled: false,
+      },
+      domain: ['beta.platform.skoreova.com', 'beta.platform.skoreova.cz'],
+      dev: { host: '127.0.0.1', port: 5181, strictPort: true },
+      // Custom Worker entry: /api/ticker from KV + assets pass-through,
+      // plus the daily (04:00 UTC) scheduled refresh of the ticker key.
+      // Mock numbers for now — see the TODO(prod) in worker.ts. Workers
+      // Cache lets the /api/ticker Cache-Control header actually cache at
+      // the edge, so most reads never invoke the Worker or KV.
+      main: 'src/worker.ts',
+      crons: ['0 4 * * *'],
+      cache: { enabled: true },
+      env: { TICKER: tickerKv },
+      assets: {
+        notFoundHandling: 'single-page-application',
+      },
+    });
+
+    const studio = yield* Cloudflare.Website.Vite('Studio', {
+      rootDir: 'applications/studio',
+      subdomain: {
+        enabled: false,
+        previewsEnabled: false,
+      },
+      domain: ['beta.studio.skoreova.com', 'beta.studio.skoreova.cz'],
+      dev: { host: '127.0.0.1', port: 5182, strictPort: true },
+      assets: {
+        notFoundHandling: 'single-page-application',
+      },
+    });
+
     return {
-      studio: studio.url,
-      web: web.url,
+      landingPage: landingPage.url,
       platform: platform.url,
+      studio: studio.url,
     };
   }),
 );
