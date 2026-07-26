@@ -119,6 +119,36 @@ export const formatCount = (
     useGrouping: shape.grouped,
   });
 
+// The PEAK a count flies to before settling, in the number's own least
+// significant unit. Pure and exported because it is the part of the animation
+// that has been wrong twice and the part no screenshot can catch: it only
+// exists between the first frame and the last.
+//
+// The reach scales with the NUMBER'S SIZE (scaling by the DELTA was tried twice
+// and read as stutter), floored bold enough that a 0↔1 land counter still pops
+// to ~6, and CAPPED at a thousand quanta. The cap is the half that was missing:
+// at 12% unbounded, the EURO attendance total spun to 736,166 — half again the
+// world record printed two tiles below it, a plausible wrong number rather than
+// a blur. A thousand quanta keeps a six-figure crowd churning its low digits
+// (657,291 → 658,291) while leaving every smaller counter exactly as bold as it
+// was: "1015 minutes" still flies ~120 over, a per-90 rate ~0.18.
+const OVERSHOOT_FLOOR_QUANTA = 5;
+const OVERSHOOT_CAP_QUANTA = 1000;
+
+export const countPeak = (
+  shape: Pick<CountShape, 'decimals'>,
+  from: number,
+  target: number,
+): number => {
+  const quantum = 10 ** -shape.decimals;
+  const highest = Math.max(from, target);
+  const scaled = Math.round((highest * 0.12) / quantum) * quantum;
+  return (
+    highest +
+    Math.min(OVERSHOOT_CAP_QUANTA * quantum, Math.max(OVERSHOOT_FLOOR_QUANTA * quantum, scaled))
+  );
+};
+
 interface CountUp {
   readonly element: HTMLElement;
   // Re-parsed from the element every time the animation (re)starts — the
@@ -218,19 +248,14 @@ const setUpReveals = (
   const animateCount = (countUp: CountUp, from: number, milliseconds: number): void => {
     window.cancelAnimationFrame(countUp.frame);
     const target = countUp.target;
-    // The reach scales with the NUMBER'S SIZE, floored at a bold minimum:
-    // a 0↔1 land counter still pops to ~6, while "1015 minutes" flies
-    // ~120 over before settling. (Scaling by the DELTA was tried twice and
-    // read as stutter/clumsy — the magnitude is the right knob.)
-    // Everything below counts in the number's OWN least significant digit, so
-    // a per-90 rate written to two places moves in hundredths and the bold
-    // floor is 0.05 rather than the 5 that sent "1.51" spinning to "6.51".
-    // For the integers this started life on, the quantum is 1 and the maths
-    // is unchanged.
+    // Every value below counts in the number's OWN least significant digit, so
+    // a per-90 rate written to two places moves in hundredths — the floor is
+    // 0.05 rather than the 5 that sent "1.51" spinning to "6.51". For the
+    // integers this started life on the quantum is 1 and the maths is
+    // unchanged. countPeak owns the reach (and its cap).
     const quantum = 10 ** -countUp.decimals;
     const quantize = (value: number): number => Math.round(value / quantum) * quantum;
-    const overshootStep = Math.max(5 * quantum, quantize(Math.max(from, target) * 0.12));
-    const peak = Math.max(from, target) + overshootStep;
+    const peak = countPeak(countUp, from, target);
     // Split the duration roughly by distance so both legs move at a similar
     // clip: a long climb gets most of the time, a short wind-up pops fast
     // and leaves room for the descent.
