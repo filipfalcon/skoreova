@@ -86,6 +86,25 @@ describe('view', () => {
     );
   });
 
+  // f6ee49d's view contract: the gate is visible and explained, and the
+  // button stays reachable so the explanation can be read.
+  test('creating a record without its reference offers a blocked, explained Save', () => {
+    Scene.scene(
+      { update, view },
+      Scene.with(editionsListModel),
+      Scene.click(Scene.role('button', { name: '+ Add new' })),
+      Scene.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
+      // AriaDisabled, not the native attribute — a disabled button leaves the
+      // tab order and takes its own description with it.
+      Scene.expect(Scene.role('button', { name: 'Save' })).toHaveAttr('aria-disabled', 'true'),
+      // …and NOT natively disabled, which is what keeps it focusable.
+      Scene.expect(Scene.role('button', { name: 'Save' })).not.toHaveAttr('disabled'),
+      Scene.expect(Scene.role('button', { name: 'Save' })).toHaveAccessibleDescription(
+        /Choose a competition/,
+      ),
+    );
+  });
+
   // The exact flow the charting example demonstrates: the view renders a bare
   // host, `Mount.resolve` acknowledges the ECharts mount (no real canvas is
   // created in the test), and the resulting SyncChart Command is resolved.

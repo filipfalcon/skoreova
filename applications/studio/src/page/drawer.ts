@@ -38,7 +38,9 @@ import {
   dangerConfirmStyle,
   drawerCancelStyle,
   drawerCloseStyle,
+  drawerInputInertStyle,
   drawerInputStyle,
+  drawerSaveInertStyle,
   drawerSaveStyle,
   drawerTabActiveStyle,
   drawerTabStyle,
@@ -99,7 +101,7 @@ export const view = (model: Model): Html => {
         [h.Class('flex flex-col gap-2')],
         [
           h.select(
-            [h.Disabled(true), h.Class(`${drawerInputStyle} cursor-not-allowed bg-neutral-100`)],
+            [h.Disabled(true), h.Class(drawerInputInertStyle)],
             [
               option(
                 '',
@@ -128,6 +130,28 @@ export const view = (model: Model): Html => {
       );
     }
 
+    const choices = sectionRows(model, section).filter((row) => !row.isDeleted);
+
+    // Loaded, and there is genuinely nothing to point at (an empty section, or
+    // every row deleted). Offering a lone placeholder here would leave the
+    // editor staring at a Save button that can never enable, told to choose
+    // something that does not exist.
+    if (Array.isReadonlyArrayEmpty(choices)) {
+      return h.div(
+        [h.Class('flex flex-col gap-2')],
+        [
+          h.select(
+            [h.Disabled(true), h.Class(drawerInputInertStyle)],
+            [option('', `No ${sectionLabels[section].toLowerCase()} yet`)],
+          ),
+          h.p(
+            [h.Class('text-xs text-neutral-500')],
+            [`Create a ${singular} first — this record has to belong to one.`],
+          ),
+        ],
+      );
+    }
+
     return h.select(
       [
         h.OnChange((value) => UpdatedDraftField({ index, value })),
@@ -139,9 +163,7 @@ export const view = (model: Model): Html => {
         // would file a parent nobody chose. Save is the gate instead — see
         // `missingReferences`.
         option('', `Select a ${singular}…`),
-        ...sectionRows(model, section)
-          .filter((row) => !row.isDeleted)
-          .map((row) => option(row.id, row.values[0] ?? row.id)),
+        ...choices.map((row) => option(row.id, row.values[0] ?? row.id)),
       ],
     );
   };
@@ -173,7 +195,7 @@ export const view = (model: Model): Html => {
                 h.Value(entry ? (resolveDerivedCells(model, entry).values[index] ?? '') : ''),
                 h.Readonly(true),
                 h.AriaDescribedBy(`drawer-field-${index}-note`),
-                h.Class(`${drawerInputStyle} cursor-not-allowed bg-neutral-100 text-neutral-500`),
+                h.Class(drawerInputInertStyle),
               ]),
         column.derived !== undefined && !creating
           ? h.span(
@@ -517,24 +539,40 @@ export const view = (model: Model): Html => {
               ),
             ],
             [
-              Array.isReadonlyArrayNonEmpty(missingReferences)
-                ? h.p(
-                    [h.Id('drawer-save-note'), h.Class('mr-auto text-xs text-neutral-500')],
-                    [
+              // Role('status') so the reason is ANNOUNCED when it appears,
+              // not just present in the DOM for whoever thinks to go looking.
+              h.p(
+                [
+                  h.Id('drawer-save-note'),
+                  h.Role('status'),
+                  h.Class('mr-auto text-xs text-neutral-500'),
+                ],
+                Array.isReadonlyArrayNonEmpty(missingReferences)
+                  ? [
                       `Choose a ${missingReferences
                         .map((column) => column.label.toLowerCase())
                         .join(' and a ')} to save this record.`,
-                    ],
-                  )
-                : h.empty,
+                    ]
+                  : [],
+              ),
               h.button([...render.closeButton, h.Class(drawerCancelStyle)], ['Cancel']),
               h.button(
                 [
                   h.OnClick(ClickedSaveRecord()),
+                  // AriaDisabled, not Disabled: a natively disabled button
+                  // leaves the tab order, taking its own explanation with it —
+                  // the keyboard and screen-reader users who most need to know
+                  // WHY could never reach the note describing it. The button
+                  // stays focusable and inert; `update` is what actually
+                  // refuses the save (see ClickedSaveRecord).
                   ...(Array.isReadonlyArrayNonEmpty(missingReferences)
-                    ? [h.Disabled(true), h.AriaDescribedBy('drawer-save-note')]
+                    ? [h.AriaDisabled(true), h.AriaDescribedBy('drawer-save-note')]
                     : []),
-                  h.Class(drawerSaveStyle),
+                  h.Class(
+                    Array.isReadonlyArrayNonEmpty(missingReferences)
+                      ? drawerSaveInertStyle
+                      : drawerSaveStyle,
+                  ),
                 ],
                 ['Save'],
               ),
