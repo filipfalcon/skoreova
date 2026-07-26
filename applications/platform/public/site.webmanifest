@@ -1,7 +1,7 @@
 {
   "name": "Skóreová Platform",
   "short_name": "Skóreová",
-  "description": "Skóreová Platform — the data hub of Czech women’s football. Build your own charts and follow every club, player, competition, and referee.",
+  "description": "The data hub of Czech women’s football. Build your own charts and follow every club, player, competition, and referee.",
   "lang": "en-US",
   "start_url": "/",
   "display": "browser",
