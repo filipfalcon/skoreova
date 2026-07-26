@@ -383,7 +383,8 @@
           // settle (keyframes `hero-photo`, 2.4s) is its longest beat and the
           // corner captions land ~0.2s later, so wait for the settle's end
           // plus a small breath. The timer is the fallback for pages without
-          // a hero, reduced motion (animation: none — the event never fires),
+          // a hero, reduced motion (the animation runs to its end frame in
+          // ~0, so animationend can fire far sooner than this timer),
           // or a failed app boot.
           var shown = false;
           var reveal = function () {
