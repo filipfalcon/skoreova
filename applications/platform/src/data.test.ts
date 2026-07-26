@@ -10,7 +10,14 @@ import {
   metricSeries,
   standingsFor,
 } from './data';
-import { MATCHDAYS_PLAYED, leagueRoundCount, leagueRounds } from './schedule';
+import { goals } from './stat-tiles';
+import {
+  MATCHDAYS_PLAYED,
+  SCORE_OVERRIDES,
+  fixtureSeed,
+  leagueRoundCount,
+  leagueRounds,
+} from './schedule';
 
 // THE SEASON CANON'S ARITHMETIC. The league numbers are mock, but a reader
 // can add them up — and the version before this one didn't survive that: the
@@ -114,6 +121,21 @@ test.each(LEAGUES)('%s: the stage, progress and format copy match the schedule',
   expect(competition.format[0]).toContain(`${rounds} rounds`);
 });
 
+test.each(LEAGUES)("%s: the home board's goals per matchday add up to the table", (league) => {
+  // The board links straight to the standings, so the two have to agree on
+  // how much football the league has produced. They didn't: the boards had the
+  // First League ahead 210 to 146 while the tables said 147 to 199.
+  const board = goals.find((entry) => entry.league === league);
+  expect(board).toBeDefined();
+  if (!board) return;
+
+  const scored = Number.sumAll(
+    clubs.filter((club) => club.league === league).map((club) => club.scored),
+  );
+  expect(Number.sumAll(board.rounds)).toBe(scored);
+  expect(board.rounds).toHaveLength(MATCHDAYS_PLAYED);
+});
+
 test('every metric series carries exactly one point per matchday played', () => {
   // The Her Game chart draws one bar per value and labels it with its index,
   // so a series longer than the canon invents matchdays: it used to carry
@@ -121,6 +143,28 @@ test('every metric series carries exactly one point per matchday played', () => 
   // header.
   for (const series of Object.values(metricSeries)) {
     expect(series.values).toHaveLength(MATCHDAYS_PLAYED);
+  }
+});
+
+test('every hand-authored scoreline lands on a fixture that has been played', () => {
+  // An override keyed past the current matchday renders nowhere: every screen
+  // gates scores on `round <= MATCHDAYS_PLAYED`. The derby override sat on
+  // round 14 for exactly that reason — authored, invisible, and the round-7
+  // derby that IS on screen showed the generic hash score instead. Comparing
+  // against the seeds the generator itself produces also catches a wrong
+  // venue: home and away are part of the seed.
+  const playedSeeds = new Set(
+    LEAGUES.flatMap((league) =>
+      leagueRounds(league)
+        .slice(0, MATCHDAYS_PLAYED)
+        .flatMap((fixtures, index) =>
+          fixtures.map(([home, away]) => fixtureSeed(league, index + 1, home, away)),
+        ),
+    ),
+  );
+
+  for (const seed of Object.keys(SCORE_OVERRIDES)) {
+    expect(playedSeeds.has(seed), `${seed} is not a played fixture`).toBe(true);
   }
 });
 

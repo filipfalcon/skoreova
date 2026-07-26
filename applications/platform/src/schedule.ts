@@ -77,10 +77,13 @@ export const fixtureSeed = (league: string, round: number, home: string, away: s
 // filler, but a specific scoreline someone asked for has to survive any
 // change to the hash — hence an explicit override rather than fishing for a
 // seed that happens to produce it.
-const SCORE_OVERRIDES: Record<string, readonly [number, number]> = {
-  // Sparta win the derby at Slavia — round 14 is the return fixture at
-  // Slavia's ground, the one this canon calls the derby.
-  [fixtureSeed('First League', 14, 'Slavia Praha', 'Sparta Praha')]: [0, 1],
+export const SCORE_OVERRIDES: Record<string, readonly [number, number]> = {
+  // Sparta take the derby at Letná. Round 7 is the FIRST meeting and the one
+  // that has been played; the return at Slavia's ground is round 14, past the
+  // current matchday, so an override keyed there renders nowhere — which is
+  // where this one used to sit while the derby people can actually see showed
+  // a hash score. data.test.ts now refuses a key past MATCHDAYS_PLAYED.
+  [fixtureSeed('First League', 7, 'Sparta Praha', 'Slavia Praha')]: [1, 0],
 };
 
 export const mockScore = (seed: string): readonly [number, number] => {
