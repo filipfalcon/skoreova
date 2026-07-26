@@ -1,6 +1,6 @@
 import { expect, test } from 'vite-plus/test';
 
-import { formatCount, parseCount } from './motion';
+import { countPeak, formatCount, parseCount } from './motion';
 import { honors, starStats, unstoppableProof } from './data';
 
 // WHAT ESCAPED EVERY PREVIOUS PASS. The count-up read a display string with
@@ -36,21 +36,64 @@ test('a display string parses to the number it denotes, not its first digit run'
 // The general form of the same defect: whatever the parser leaves in the
 // suffix is text it will NOT animate. Digits stranded there are digits the
 // reader watches sit still while the ones beside them spin.
-test('no count-up value leaves digits outside the number', () => {
-  const values = [
-    ...starStats.map((stat) => stat.value),
-    ...honors.map((honor) => honor.count),
-    // `countup: false` values take the scramble path instead — "€1B" has one
-    // significant digit and is deliberately not counted.
-    ...unstoppableProof.filter((stat) => stat.countup !== false).map((stat) => stat.value),
-  ];
+// Every string the landing page actually counts.
+const countValues: ReadonlyArray<string> = [
+  ...starStats.map((stat) => stat.value),
+  ...honors.map((honor) => honor.count),
+  // `countup: false` values take the scramble path instead — "€1B" has one
+  // significant digit and is deliberately not counted.
+  ...unstoppableProof.filter((stat) => stat.countup !== false).map((stat) => stat.value),
+];
 
-  for (const value of values) {
+test('no count-up value leaves digits outside the number', () => {
+  for (const value of countValues) {
     const shape = parseCount(value);
     expect(shape, `${value} does not parse as a number at all`).toBeDefined();
     if (!shape) continue;
     expect(/\d/.test(shape.suffix), `${value} strands "${shape.suffix}" outside the count`).toBe(
       false,
+    );
+  }
+});
+
+// The OTHER half of the same defect, and the half the parser fix left standing:
+// the reach past the target scaled with the number and was never capped, so the
+// attendance total — parsed correctly now — still flew to 736,166, half again
+// the world record printed two tiles below it. A reader cannot tell an
+// exaggerated frame from a claim at that size; they can at 658,291, where only
+// the low digits move.
+test('a count flies past its target boldly, but never into a different number', () => {
+  const cases: ReadonlyArray<readonly [string, number]> = [
+    // The two the cap exists for. Uncapped these were 736,166 and 102,645.
+    ['657,291', 658291],
+    ['91,648', 92648],
+    // …and everything smaller keeps the reach it was tuned with: 12% of the
+    // number, or the bold floor of five when 12% is smaller than that.
+    ['1015', 1137],
+    ['17', 22],
+    ['1.51', 1.69],
+    ['22×', 27],
+  ];
+
+  for (const [text, peak] of cases) {
+    const shape = parseCount(text);
+    expect(shape, text).toBeDefined();
+    if (!shape) continue;
+    // Rounded because a hundredths quantum lands on binary fractions.
+    expect(Math.round(countPeak(shape, 0, shape.value) * 100) / 100, text).toBe(peak);
+  }
+});
+
+test('no authored count can peak more than a thousand of its own units high', () => {
+  for (const value of countValues) {
+    const shape = parseCount(value);
+    expect(shape, `${value} does not parse as a number at all`).toBeDefined();
+    if (!shape) continue;
+    // A count that recounts to the same value winds UP from its resting number,
+    // so `from` and `target` both matter — the cap has to hold either way.
+    const reach = countPeak(shape, shape.value, shape.value) - shape.value;
+    expect(reach, `${value} overshoots by ${reach}`).toBeLessThanOrEqual(
+      1000 * 10 ** -shape.decimals,
     );
   }
 });
