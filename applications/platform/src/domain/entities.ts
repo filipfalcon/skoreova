@@ -63,6 +63,14 @@ export const CupTie = S.Struct({
 export type CupTie = typeof CupTie.Type;
 
 export const TrendingEntry = S.Struct({
+  // The tile's IDENTITY, and the tail of its pin id (`trending:pardubice`).
+  // Authored rather than slugified from `name`, because pins persist: the id
+  // used to be `slugify(name)`, so renaming this row's display text from "FK
+  // Pardubice" to the table's "Pardubice" silently orphaned every pin a visitor
+  // had already saved for it — `trending:fk-pardubice` matched no tile any more
+  // and the tile simply vanished from their Her Game. Display copy changes; an
+  // id, once authored, does not.
+  id: S.String,
   name: S.String,
   kind: S.String,
   // Where the row leads — every trending row is a door into the data.

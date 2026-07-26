@@ -166,6 +166,7 @@ export const metricSeries: Record<Metric, MetricSeries> = {
 // carries the movement numbers.
 export const trending: ReadonlyArray<TrendingEntry> = [
   {
+    id: 'sierra-pennock',
     name: 'Sierra Pennock',
     kind: 'Player',
     href: playersRouter(),
@@ -174,6 +175,7 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     focus: '50% 22%',
   },
   {
+    id: 'sparta-praha',
     name: 'Sparta Praha',
     kind: 'Club',
     href: clubRouter({ slug: 'sparta-praha' }),
@@ -182,6 +184,7 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     focus: '50% 35%',
   },
   {
+    id: 'pardubice',
     // The clubs table's name, not "FK Pardubice" — the tile links to the
     // profile, and the profile, its standings row and the crest rail all say
     // "Pardubice". A trending tile is free-text because anything can trend,

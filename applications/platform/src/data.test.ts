@@ -12,10 +12,11 @@ import {
   leagueTeams,
   metricSeries,
   standingsFor,
+  trending,
 } from './data';
 import { contenderPhrases } from './page/clubs';
 import { clubEurope } from './standings';
-import { attendance, goals } from './stat-tiles';
+import { allTimeBests, attendance, goals } from './stat-tiles';
 import {
   MATCHDAYS_PLAYED,
   SCORE_OVERRIDES,
@@ -293,6 +294,25 @@ test("the contenders tape names the featured clubs and only the cups they're in"
   }
   for (const cup of ['UWCL', 'UWEC']) {
     if (!played.includes(cup)) expect(cups).not.toContain(cup);
+  }
+});
+
+// Pin ids are the only strings in this app that outlive the render that wrote
+// them — they go to localStorage and come back on the next visit. That is why
+// they are authored rather than slugified from display copy (renaming a trending
+// tile from "FK Pardubice" to "Pardubice" orphaned every pin already saved for
+// it), and it is why they cannot collide: two tiles sharing an id would pin and
+// unpin as one. The shape check stands in for what slugify used to guarantee —
+// no spaces, no accents, nothing empty.
+test('every pinnable tile carries its own well-formed id', () => {
+  const ids = [
+    ...trending.map((entry) => `trending:${entry.id}`),
+    ...allTimeBests.map((record) => `best:${record.id}`),
+  ];
+
+  expect(Array.dedupe(ids)).toEqual(ids);
+  for (const id of ids) {
+    expect(id, `${id} is not a usable pin id`).toMatch(/^[a-z]+:[a-z0-9]+(-[a-z0-9]+)*$/);
   }
 });
 
