@@ -47,6 +47,10 @@ export default defineConfig({
     entries: ['src/entry.ts'],
   },
   test: {
+    // Without a name the project is called after the package, so filtering
+    // reads `--project '@skoreova/platform-application'`. That is what Vitest
+    // falls back to when a project config names nothing.
+    name: 'platform',
     include: ['src/**/*.test.ts'],
     // The app's own update/view/init never touch the DOM at call time, but the
     // @foldkit/ui components rendered in the view do (CSS.escape when building
