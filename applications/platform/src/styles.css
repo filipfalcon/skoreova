@@ -55,6 +55,12 @@ body {
   color: var(--color-ink);
 }
 
+/* THE focus ring for the whole app, and deliberately unlayered: unlayered
+   author rules outrank every `@layer utilities` declaration, so this wins
+   over any `outline-*` utility a component might carry. That is the point —
+   one ring, one place — but it also means an element CANNOT opt out or
+   restyle its ring with utilities. Move this into `@layer base` on the day
+   one needs to. */
 :focus-visible {
   outline: 2px solid var(--color-pink);
   outline-offset: 2px;
