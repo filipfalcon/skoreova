@@ -101,7 +101,12 @@ const listButtonShape = 'px-4 py-2 text-sm transition';
 
 export const refreshButtonStyle = `${listButtonShape} cursor-pointer text-neutral-700 hover:bg-neutral-100`;
 
-export const refreshButtonInertStyle = `${listButtonShape} cursor-not-allowed text-neutral-400`;
+// neutral-500 (4.74:1 on white), not the 400 the first version of this split
+// used: 400 is 2.58:1, which is WORSE than the opacity-50 it replaced, so the
+// disjoint rewrite made the blocked label harder to read while claiming to fix
+// exactly that. Its live twin is neutral-700 at 10.37:1 — two full steps of
+// contrast still read as blocked without dropping the label under 4.5:1.
+export const refreshButtonInertStyle = `${listButtonShape} cursor-not-allowed text-neutral-500`;
 
 export const retryButtonStyle =
   'cursor-pointer rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 transition hover:bg-rose-100';
@@ -112,8 +117,9 @@ export const paginationButtonStyle = `${paginationButtonShape} cursor-pointer bo
 
 // An end-stop arrow dims rather than fading to 50%: at that opacity the glyph
 // on white lands under 3:1, and the thing a pager most needs to say is which
-// way it can still go.
-export const paginationButtonInertStyle = `${paginationButtonShape} cursor-not-allowed border-neutral-200 text-neutral-400`;
+// way it can still go. neutral-500 for the same reason as Refresh above — the
+// 400 this shipped with was 2.58:1, below the opacity it was meant to rescue.
+export const paginationButtonInertStyle = `${paginationButtonShape} cursor-not-allowed border-neutral-200 text-neutral-500`;
 
 export const searchInputStyle =
   'w-full rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-900 placeholder-neutral-400 outline-none transition focus:border-neutral-500 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500';
