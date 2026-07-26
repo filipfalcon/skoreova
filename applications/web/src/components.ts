@@ -432,7 +432,7 @@ export const footerView = (isMenuOpen: boolean): Html =>
             [h.Class('display text-base tracking-wide text-paper')],
             ['Skóreová', h.span([h.Class('text-pink')], ['.'])],
           ),
-          h.span([], ['Independent coverage of Czech women’s football']),
+          h.span([], ['Czech Women’s Football Coverage']),
           // Reopens the consent banner — index.html owns the handler (the
           // banner lives outside the app; see the script there).
           h.a(
