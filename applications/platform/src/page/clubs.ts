@@ -10,8 +10,39 @@ import { SelectedFeaturedClub, UpdatedClubQuery } from '../message';
 import type { Message } from '../message';
 import type { Model } from '../model';
 import { clubRouter } from '../route';
+import { clubEurope } from '../standings';
 
 const h = html<Message>();
+
+const clubBySlug = (slug: string): Club | undefined =>
+  clubs.find((candidate) => candidate.slug === slug);
+
+// THE MARQUEE TAPE, derived twice over. The hero's bottom edge loops the
+// contenders' names on a tilted PINK TAPE — the landing marquee's louder
+// cousin — and it used to hand-type them: "Sparta Praha", "Slavia Praha",
+// "Slovan Liberec", "UWCL 2025/26", four literals inside a function that
+// already resolves names from the clubs table three lines above. Both halves
+// had gone wrong. A typed name drifts against the table (the ticker's "FK
+// Pardubice" did, for a club the table calls "Pardubice"), and the single UWCL
+// line was flatly wrong for Liberec: clubEurope puts them in the Europa Cup,
+// as does the UWEC page a click away. Reading the names off the table and the
+// competitions off clubEurope makes both mistakes unrepresentable — the tape
+// cannot name a club the season canon doesn't, or a competition its clubs
+// aren't in.
+const contenderCompetitions: ReadonlyArray<string> = Array.dedupe(
+  featuredClubs.flatMap((entry) => {
+    const campaign = clubEurope[entry.slug];
+    return campaign === undefined ? [] : [campaign.slug.toUpperCase()];
+  }),
+);
+
+// The empty join drops out rather than leaving a leading space, so a featured
+// club with no European campaign costs the tape a name, not its shape.
+export const contenderPhrases: ReadonlyArray<string> = [
+  'European contenders',
+  ...featuredClubs.map((entry) => clubBySlug(entry.slug)?.name ?? ''),
+  [contenderCompetitions.join(' & '), '2025/26'].filter((part) => part !== '').join(' '),
+];
 
 const featuredArtwork = (entry: FeaturedClub, club: Club | undefined): Html =>
   entry.photo === ''
@@ -55,8 +86,7 @@ const europeanContenders = (model: Model): Html => {
   const next = (active + 1) % count;
   const entryAt = (index: number): FeaturedClub =>
     featuredClubs[index] ?? { slug: '', epithet: '', photo: '', focus: '50% 50%' };
-  const clubAt = (index: number): Club | undefined =>
-    clubs.find((candidate) => candidate.slug === entryAt(index).slug);
+  const clubAt = (index: number): Club | undefined => clubBySlug(entryAt(index).slug);
   const ghost = (index: number, alignment: string): Html =>
     h.div(
       [h.Class(`hidden min-w-0 flex-1 flex-col gap-2 lg:flex ${alignment}`)],
@@ -71,19 +101,10 @@ const europeanContenders = (model: Model): Html => {
         ),
       ],
     );
-  // The marquee run — the hero's bottom edge is a tilted PINK TAPE
-  // looping the contenders' names, the landing marquee's louder cousin.
-  const marqueePhrases = [
-    'European contenders',
-    'Sparta Praha',
-    'Slavia Praha',
-    'Slovan Liberec',
-    'UWCL 2025/26',
-  ];
   const marqueeRun = (hidden: boolean): Html =>
     h.div(
       [h.Class('flex items-center gap-6 pr-6'), ...(hidden ? [h.AriaHidden(true)] : [])],
-      marqueePhrases.flatMap((phrase) => [
+      contenderPhrases.flatMap((phrase) => [
         h.span(
           [
             h.Class(
