@@ -24,7 +24,7 @@ import { defineConfig } from 'vite-plus';
 // stylesheet rules, foldkit because the identity branding must match what a
 // build produces.
 export default defineConfig({
-  plugins: [tailwindcss(), foldkit()],
+  plugins: [...tailwindcss(), ...foldkit()],
   optimizeDeps: {
     // See the plugin note at the top of vite.config.ts — without this the
     // browser runner reloads mid-import and every test file fails to load.
