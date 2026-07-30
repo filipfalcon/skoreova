@@ -47,7 +47,7 @@ export default Alchemy.Stack(
       dev: { host: '127.0.0.1', port: 5181, strictPort: true },
       // Custom Worker entry: /api/ticker from KV + assets pass-through,
       // plus the daily (04:00 UTC) scheduled refresh of the ticker key.
-      // Mock numbers for now — see the TODO(prod) in worker.ts. Workers
+      // Mock numbers for now. Workers
       // Cache lets the /api/ticker Cache-Control header actually cache at
       // the edge, so most reads never invoke the Worker or KV.
       main: 'src/worker.ts',

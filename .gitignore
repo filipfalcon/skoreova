@@ -20,8 +20,10 @@ coverage/
 # Alchemy
 .alchemy/
 
-# Agents
-.claude/
+# Agents. Skills are authored for this repo and version with it; everything
+# else under .claude/ is local state (worktrees, per-machine settings).
+.claude/*
+!.claude/skills/
 
 # Vitest browser-mode failure screenshots
 __screenshots__/

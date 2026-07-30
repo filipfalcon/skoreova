@@ -56,10 +56,13 @@ export const ChangedReveals = m('ChangedReveals', {
 
 const REVEAL_CLIPPED_VARIANTS = new Set(['mask', 'wipe']);
 const COUNT_UP_MILLISECONDS = 1000;
-const MARQUEE_BASE_SPEED = 90; // px/s leftward drift with no scrolling
-const MARQUEE_VELOCITY_GAIN = 0.4; // how much scroll velocity feeds the ticker
+// px/s leftward drift with no scrolling
+const MARQUEE_BASE_SPEED = 90;
+// how much scroll velocity feeds the ticker
+const MARQUEE_VELOCITY_GAIN = 0.4;
 const MARQUEE_MAX_SPEED = 700;
-const MARQUEE_FLIP_WINDOW = 150; // px/s of upward velocity over which the base drift flips sign
+// px/s of upward velocity over which the base drift flips sign
+const MARQUEE_FLIP_WINDOW = 150;
 
 const lerp = (from: number, to: number, factor: number): number => from + (to - from) * factor;
 
@@ -335,7 +338,8 @@ const setUpReveals = (
     interval: number;
   }
 
-  const SCRAMBLE_MILLISECONDS = COUNT_UP_MILLISECONDS; // one shared tempo
+  // one shared tempo
+  const SCRAMBLE_MILLISECONDS = COUNT_UP_MILLISECONDS;
   const SCRAMBLE_TICK_MS = 60;
   // Pool per character KIND, keyed off the character the roll locks onto:
   // a digit rolls digits, a currency sign rolls currency signs (limited to
