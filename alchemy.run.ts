@@ -11,11 +11,14 @@ export default Alchemy.Stack(
   Effect.gen(function* () {
     const landingPage = yield* Cloudflare.Website.Vite('LandingPage', {
       rootDir: 'applications/web',
-      subdomain: {
+      workersDev: {
         enabled: false,
         previewsEnabled: false,
       },
-      domain: ['beta.skoreova.com', 'beta.skoreova.cz'],
+      domain: {
+        name: 'beta.skoreova.com',
+        aliases: ['beta.skoreova.cz'],
+      },
       dev: { host: '127.0.0.1', port: 5180, strictPort: true },
       // Custom Worker entry: a Sentry-wrapped pass-through to the assets
       // binding, so edge-side failures get reported too (the browser SDK
@@ -39,11 +42,14 @@ export default Alchemy.Stack(
 
     const platform = yield* Cloudflare.Website.Vite('Platform', {
       rootDir: 'applications/platform',
-      subdomain: {
+      workersDev: {
         enabled: false,
         previewsEnabled: false,
       },
-      domain: ['beta.platform.skoreova.com', 'beta.platform.skoreova.cz'],
+      domain: {
+        name: 'beta.platform.skoreova.com',
+        aliases: ['beta.platform.skoreova.cz'],
+      },
       dev: { host: '127.0.0.1', port: 5181, strictPort: true },
       // Custom Worker entry: /api/ticker from KV + assets pass-through,
       // plus the daily (04:00 UTC) scheduled refresh of the ticker key.
@@ -61,11 +67,14 @@ export default Alchemy.Stack(
 
     const studio = yield* Cloudflare.Website.Vite('Studio', {
       rootDir: 'applications/studio',
-      subdomain: {
+      workersDev: {
         enabled: false,
         previewsEnabled: false,
       },
-      domain: ['beta.studio.skoreova.com', 'beta.studio.skoreova.cz'],
+      domain: {
+        name: 'beta.studio.skoreova.com',
+        aliases: ['beta.studio.skoreova.cz'],
+      },
       dev: { host: '127.0.0.1', port: 5182, strictPort: true },
       assets: {
         notFoundHandling: 'single-page-application',
