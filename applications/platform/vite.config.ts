@@ -2,14 +2,12 @@ import { foldkit } from '@foldkit/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite-plus';
 
-// The Foldkit plugin runs in tests too, WITHOUT the DevTools MCP port. The
-// port is what could not be shared (it clashed across test/browser workers, and
-// studio’s relay kept the Vitest process alive after a run — every workspace
-// config loads when tests boot), but the plugin also brands view-function
-// identity, in dev and in build alike. Dropping it wholesale meant tests
-// exercised the differ’s positional fallback while production ran branded — the
-// one difference a view test can’t see.
-const testing = process.env['VITEST'] === 'true';
+// The Foldkit plugin runs in tests too, DevTools MCP port and all — see the
+// note in applications/studio/vite.config.ts for what the port used to cost and
+// what fixed it. The plugin brands view-function identity, and that IS the
+// differ's second axis: without it the tests diffed on tag and position while
+// production diffed on identity too — the one difference a view test cannot
+// see.
 
 export default defineConfig({
   // IPv4 loopback, explicitly: under `alchemy dev` all three apps' inner
@@ -19,7 +17,7 @@ export default defineConfig({
   // vite increments to a free port instead.
   server: { host: '127.0.0.1' },
   // Studio claims 9988, web 9989 — each app needs its own DevTools MCP port.
-  plugins: [tailwindcss(), foldkit(testing ? {} : { devToolsMcpPort: 9990 })],
+  plugins: [...tailwindcss(), ...foldkit({ devToolsMcpPort: 9990 })],
   // Alchemy’s deploy captures the build output through a `buildApp` post
   // hook, but Vite 8 only runs the default environment builds AFTER all
   // buildApp hooks when no real `builder.buildApp` exists — the hook then

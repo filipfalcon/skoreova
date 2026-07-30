@@ -2,17 +2,29 @@ import { foldkit } from '@foldkit/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite-plus';
 
-// The Foldkit plugin runs in tests too, WITHOUT the DevTools MCP port. The
-// port is what could not be shared (it clashed across test/browser workers, and
-// studio’s relay kept the Vitest process alive after a run — every workspace
-// config loads when tests boot), but the plugin also brands view-function
-// identity, in dev and in build alike. Dropping it wholesale meant tests
-// exercised the differ’s positional fallback while production ran branded — the
-// one difference a view test can’t see.
-const testing = process.env['VITEST'] === 'true';
+// The Foldkit plugin runs everywhere — dev, build, and tests — with its
+// DevTools MCP port in all three. Tests used to get a portless plugin: the relay
+// hung its shutdown off `server.httpServer`, which is null when Vite runs as
+// middleware, so it outlived the run and every suite paid Vitest's ten-second
+// close timeout, and a restarted dev server hit EADDRINUSE against the server it
+// was replacing. @foldkit/vite-plugin 0.11.2 shuts the relay down in middleware
+// mode and retries the bind while the port hands over.
+//
+// Keeping the plugin under test was never optional, only its port: the plugin
+// brands view-function identity, and that IS the differ's second axis. Without
+// it the tests diffed on tag and position while production diffed on identity
+// too — the one difference a view test cannot see.
 
+// Both factories return ARRAYS of plugins and are spread rather than nested.
+// Vite flattens either form, so this is purely for the type checker: a nested
+// array sends tsgo down PluginOption's recursive branch and every config then
+// reported a TS2769 overload cascade on top of the TS2321 below. Spreading
+// leaves the one error that is genuinely upstream — tsgo overflows comparing
+// Vite 8's `Plugin` against `UserConfig`, which is why `**/vite.config.ts` sits
+// in oxlint's ignorePatterns. Removing `plugins` clears it; removing `test`
+// does not.
 export default defineConfig({
-  plugins: [tailwindcss(), foldkit(testing ? {} : { devToolsMcpPort: 9988 })],
+  plugins: [...tailwindcss(), ...foldkit({ devToolsMcpPort: 9988 })],
   // Alchemy’s deploy captures the build output through a `buildApp` post
   // hook, but Vite 8 only runs the default environment builds AFTER all
   // buildApp hooks when no real `builder.buildApp` exists — the hook then

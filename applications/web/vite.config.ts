@@ -106,13 +106,12 @@ const inlineConsent = (root: string): Plugin => ({
   },
 });
 
-// The Foldkit plugin runs in tests too, WITHOUT the DevTools MCP port. The
-// port is the only part that can’t be shared — it clashes across browser
-// workers — but the plugin also brands view-function identity, in dev and in
-// build alike, and that IS the differ’s second axis: an identity mismatch
-// replaces a node where a bare tag match would have patched it. Dropping the
-// plugin wholesale left these tests diffing on tag and position alone while
-// production diffed on identity too.
+// The Foldkit plugin runs in tests too, DevTools MCP port and all — see the note
+// in applications/studio/vite.config.ts for what the port used to cost and what
+// fixed it. The plugin brands view-function identity, and that IS the differ's
+// second axis: an identity mismatch replaces a node where a bare tag match would
+// have patched it. Dropping the plugin wholesale left these tests diffing on tag
+// and position alone while production diffed on identity too.
 //
 // It needs `optimizeDeps.include: ['foldkit/brand']` below to work under the
 // browser runner (vite.browser.config.ts). The transform injects that import
@@ -121,8 +120,6 @@ const inlineConsent = (root: string): Plugin => ({
 // the in-flight dynamic import of the test file itself ("Failed to fetch
 // dynamically imported module", both engines). Pre-declaring it means the
 // optimizer already has it before the run starts.
-const testing = process.env['VITEST'] === 'true';
-
 export default defineConfig({
   // IPv4 loopback, explicitly: under `alchemy dev` all three apps' inner
   // vite servers race for ports, and a dual-stack bind lets two of them
@@ -132,8 +129,8 @@ export default defineConfig({
   server: { host: '127.0.0.1' },
   // Studio claims 9988 — each app needs its own DevTools MCP port.
   plugins: [
-    tailwindcss(),
-    foldkit(testing ? {} : { devToolsMcpPort: 9989 }),
+    ...tailwindcss(),
+    ...foldkit({ devToolsMcpPort: 9989 }),
     inlineConsent(import.meta.dirname),
   ],
   // Alchemy’s deploy captures the build output through a `buildApp` post
