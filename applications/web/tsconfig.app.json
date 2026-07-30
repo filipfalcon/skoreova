@@ -4,6 +4,7 @@
   "references": [],
   "compilerOptions": {
     "outDir": "./tsbuild",
-    "lib": ["esnext", "dom", "dom.iterable"]
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "types": ["gtag.js"]
   }
 }

@@ -5,7 +5,7 @@ import * as Sentry from '@sentry/browser';
 import { Effect } from 'effect';
 import { Runtime } from 'foldkit';
 
-import { isMeasurementOff } from './analytics';
+import { isMeasurementOff } from '#analytics/config';
 import {
   ChangedUrl,
   ClickedLink,
@@ -22,7 +22,7 @@ import {
 // defaults — so the cookie banner’s "analytics only, we count visits"
 // promise stays true; crash reports are legitimate-interest telemetry,
 // not analytics. Same kill switch as gtag, from the same source of truth
-// (analytics.ts) rather than a global set by a script in index.html:
+// (analytics/config.ts) rather than a global set by a script in index.html:
 // localhost, LAN phone testing, and preview deploys stay silent.
 Sentry.init({
   dsn: 'https://e4a8e88469481b1b99170df7523983b9@o4511717331107840.ingest.de.sentry.io/4511717341790288',
@@ -113,10 +113,10 @@ const application = Runtime.makeApplication({
     onUrlRequest: (request) => ClickedLink({ request }),
     onUrlChange: (url) => ChangedUrl({ url }),
   },
-  devTools: {
-    overlay,
-    Message,
-  },
+  // The package declares `sideEffects: false`, so folding this to `undefined`
+  // in a production build leaves `overlay` unreferenced and the dependency is
+  // dropped rather than shipped unused.
+  ...(import.meta.env.DEV ? { devTools: { overlay, Message } } : {}),
 });
 
 Runtime.run(application);

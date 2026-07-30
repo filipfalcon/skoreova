@@ -6,10 +6,10 @@ import { defineConfig } from 'vite-plus';
 
 // CONSENT MODE, INLINED FROM TYPESCRIPT.
 //
-// src/consent.ts must run BEFORE gtag.js initializes, and it must not wait on
-// the app bundle. Neither of the obvious routes gives both:
+// src/analytics/start.ts must run BEFORE gtag.js initializes, and it must not
+// wait on the app bundle. Neither of the obvious routes gives both:
 //
-// - `<script type="module" src="./src/consent.ts">` is deferred AND Vite merges
+// - `<script type="module" src="./src/analytics/start.ts">` is deferred AND Vite merges
 //   it into the single app chunk, so consent would not register until ~570kB had
 //   downloaded and parsed. Enabling `codeSplitting` does not separate them.
 // - A hand-written inline script in index.html runs at the right moment but is
@@ -20,9 +20,12 @@ import { defineConfig } from 'vite-plus';
 // stays a normal typed module under src/; the shipped page gets a blocking
 // inline script with no extra request. `configFile: false` keeps this nested
 // build from re-entering this config.
-// Every module inlined this way. The placeholder is the literal comment written
-// in index.html; `entry` is the source it is replaced with.
-const INLINE_ENTRIES: ReadonlyArray<string> = ['src/consent.ts', 'src/banner.ts'];
+// Every module inlined this way. `entry` is the source the placeholder comment
+// in index.html is replaced with; `after` is markup that entry reads at run
+// time, which fixes how early in the document the placeholder may sit.
+const INLINE_ENTRIES: ReadonlyArray<{ entry: string; after?: string }> = [
+  { entry: 'src/analytics/start.ts', after: 'id="cookie-consent"' },
+];
 
 const placeholderFor = (entry: string): string => `<!-- @inline ${entry} -->`;
 
@@ -55,27 +58,46 @@ const bundleEntry = async (root: string, entry: string): Promise<string> => {
 
 // Deliberately NOT cached: in dev every edit is a full reload (the foldkit
 // plugin cannot hot-swap an Elm runtime), so a cache would have to be
-// invalidated on changes to consent.ts AND analytics.ts. Rebuilding costs a few
-// hundred ms on a reload that is already doing a full page load, and it can
-// never go stale. In a production build this runs exactly once.
+// invalidated on changes to any module the inlined entry reaches. Rebuilding
+// costs a few hundred ms on a reload that is already doing a full page load,
+// and it can never go stale. In a production build this runs exactly once.
 const inlineConsent = (root: string): Plugin => ({
   name: 'skoreova:inline-consent',
   transformIndexHtml: {
     order: 'post',
     handler: async (html: string): Promise<string> => {
       let out = html;
-      for (const entry of INLINE_ENTRIES) {
+      for (const { entry, after } of INLINE_ENTRIES) {
         const placeholder = placeholderFor(entry);
         // THROW rather than pass the html through. A missing placeholder used to
         // be a silent no-op: the build succeeded and the page shipped without
         // consent defaults or without the banner, with nothing visibly different.
         // An HTML comment looks deletable and a reflow could break the match, so
         // the failure has to be loud.
-        const occurrences = out.split(placeholder).length - 1;
+        //
+        // Both checks read `html`, never the partly-rewritten `out`: an already
+        // inlined bundle carries the selectors it queries as string literals,
+        // which would satisfy a later entry’s `after` from inside a <script>.
+        const occurrences = html.split(placeholder).length - 1;
         if (occurrences !== 1) {
           throw new Error(
             `inlineConsent: expected exactly one ${placeholder} in index.html, found ${occurrences}.`,
           );
+        }
+        // The bundle is a blocking classic script, so it runs against the
+        // document as parsed so far. Ahead of the markup it queries, every
+        // lookup returns null and the feature is silently absent — the banner
+        // never binds, the page still builds and still boots.
+        if (after !== undefined) {
+          const markupAt = html.indexOf(after);
+          if (markupAt === -1) {
+            throw new Error(`inlineConsent: ${entry} needs ${after} in index.html; it is missing.`);
+          }
+          if (markupAt > html.indexOf(placeholder)) {
+            throw new Error(
+              `inlineConsent: ${placeholder} precedes ${after} in index.html; ${entry} reads that markup and would find nothing.`,
+            );
+          }
         }
         out = out.replace(placeholder, `<script>\n${await bundleEntry(root, entry)}\n</script>`);
       }
