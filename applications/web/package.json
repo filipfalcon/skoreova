@@ -3,26 +3,30 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#*": "./src/*.ts"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@effect/platform-browser": "4.0.0-beta.100",
-    "@foldkit/devtools": "0.131.0",
-    "@foldkit/ui": "0.131.0",
+    "@effect/platform-browser": "4.0.0-beta.102",
+    "@foldkit/devtools": "0.133.0",
+    "@foldkit/ui": "0.133.0",
     "@fontsource-variable/archivo": "5.2.8",
     "@fontsource/anton": "5.2.7",
     "@sentry/browser": "10.64.0",
     "@sentry/cloudflare": "10.64.0",
     "clsx": "2.1.1",
-    "effect": "4.0.0-beta.100",
-    "foldkit": "0.131.0"
+    "effect": "4.0.0-beta.102",
+    "foldkit": "0.133.0"
   },
   "devDependencies": {
-    "@foldkit/vite-plugin": "0.11.0",
+    "@foldkit/vite-plugin": "0.11.2",
     "@tailwindcss/vite": "4.3.3",
+    "@types/gtag.js": "0.0.20",
     "@vitest/browser-playwright": "4.1.10",
     "playwright": "1.61.1",
     "tailwindcss": "4.3.3",
