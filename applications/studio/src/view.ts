@@ -8,5 +8,8 @@ import type { Document } from 'foldkit/html';
 import type { Model } from './model';
 import { SectionList, SignIn } from './page';
 
-export const view = (model: Model): Document =>
-  model.session._tag === 'SignedIn' ? SectionList.view(model) : SignIn.view(model);
+export const view = (model: Model): Document => ({
+  ...(model.session._tag === 'SignedIn' ? SectionList.view(model) : SignIn.view(model)),
+  // American English, the language every string in this app is written in; the runtime writes it after the first render, so what a crawler reads is whatever the served document already carried.
+  lang: 'en-US',
+});

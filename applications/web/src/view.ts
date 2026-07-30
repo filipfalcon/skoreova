@@ -63,6 +63,8 @@ export const view = (model: Model): Document => {
   const rootKey = `motion-${model.prefersReducedMotion}`;
   return {
     title: 'Skóreová — Czech Women’s Football Coverage',
+    // American English, the language every string in this app is written in; the runtime writes it after the first render, so what a crawler reads is whatever the served document already carried.
+    lang: 'en-US',
     // The root is keyed on the reduced-motion flag: flipping the OS setting
     // tears both motion mounts down (symmetric release) and re-runs their
     // setup with the fresh value — no stale mount-time snapshot. The reveal

@@ -144,5 +144,7 @@ const documentTitle = (model: Model): string => {
 
 export const view = (model: Model): Document => ({
   title: documentTitle(model),
+  // American English, the language every string in this app is written in; the runtime writes it after the first render, so what a crawler reads is whatever the served document already carried.
+  lang: 'en-US',
   body: h.div([h.Class('bg-paper font-body text-ink antialiased')], [shellView(model)]),
 });
