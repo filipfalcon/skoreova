@@ -292,7 +292,7 @@ const clubPin = (model: Model, club: Club): Html => {
                   h.AriaExpanded(selected),
                   h.Class(
                     clsx(
-                      'club-pin-chip absolute flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-[scale,box-shadow] delay-[250ms] duration-300 group-hover:scale-110 group-hover:delay-0 group-hover:duration-150 sm:h-10 sm:w-10 sm:p-2 md:h-16 md:w-16 md:p-3',
+                      'club-pin-chip absolute flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-[scale,box-shadow] delay-[250ms] duration-300 group-hover:scale-110 group-hover:delay-0 group-hover:duration-150 sm:h-14 sm:w-14 sm:p-2.5 md:h-16 md:w-16 md:p-3',
                       { 'scale-110 ring-2 ring-pink delay-0 md:ring-[3px]': selected },
                     ),
                   ),
@@ -470,15 +470,16 @@ export const view = (model: Model): Html =>
     // photo-textured ink, champions after it is paper).
     [h.Id('across-the-lands'), h.Class('relative bg-ink py-16 text-paper md:py-24')],
     [
-      // The lands scout, md+ only — the knight-mascot treatment (section
+      // The lands scout, lg+ only — the knight-mascot treatment (section
       // 01): a decorative accent anchored to the section’s right edge,
       // behind the copy (the container below is z-10), sliding in from the
       // right and idle-floating. She surveys the headline and the counters
       // through her spyglass. Narrower caps than the knight — the figure is
       // a tall 1:2 portrait, so the knight’s widths would blow her up huge.
-      // Phones give her an in-flow stage inside the container instead (the
-      // 01 grammar): the absolute corner seat has no room there and she sat
-      // on the kicker.
+      // Below lg she gets the in-flow stage inside the container instead
+      // (the 01 grammar): the absolute corner seat has no room there — she
+      // sat on the kicker on phones and crowded the headline’s last word
+      // through the md band.
       h.div(
         [
           h.Class(
@@ -486,7 +487,7 @@ export const view = (model: Model): Html =>
             // width — the figure is a tall 1:2 portrait, so width parity
             // would still blow her up huge (sizes unified, user call).
             clsx(
-              'pointer-events-none absolute z-0 hidden select-none md:top-12 md:right-10 md:block md:w-[19%] md:max-w-[260px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
+              'pointer-events-none absolute z-0 hidden select-none lg:top-12 lg:right-10 lg:block lg:w-[19%] lg:max-w-[260px] xl:right-[calc((100vw-80rem)/2+2.5rem)]',
               revealClass(model, 'clubs-scout'),
             ),
           ),
@@ -611,12 +612,14 @@ export const view = (model: Model): Html =>
           // row is a two-column composition: the counters stack vertically
           // on the left and the scout stands at the knight’s scale on the
           // right (the 01 grammar — in-flow, full color, no animations);
-          // md+ returns the three-column grid and its floating corner emblem.
+          // the composition holds through md (the corner emblem crowded the
+          // headline there), lg+ returns the three-column grid and the
+          // floating corner emblem.
           h.div(
             // justify-center + fixed column widths: the pair sits centered
             // with the SAME air to both container edges, and only a small
             // gutter between them.
-            [h.Class('mt-8 flex items-center justify-center gap-3 md:mt-10 md:block')],
+            [h.Class('mt-8 flex items-center justify-center gap-3 md:mt-10 lg:block')],
             [
               // The geography of the coverage, in the same count-up device
               // as the "On the rise" receipts — the lands' imbalance IS the
@@ -630,7 +633,7 @@ export const view = (model: Model): Html =>
               h.div(
                 [
                   h.Class(
-                    'grid w-1/3 shrink-0 grid-cols-1 gap-8 md:w-auto md:grid-cols-3 md:gap-12',
+                    'grid w-1/3 shrink-0 grid-cols-1 gap-8 lg:w-auto lg:grid-cols-3 lg:gap-12',
                   ),
                 ],
                 (
@@ -688,9 +691,11 @@ export const view = (model: Model): Html =>
                 }),
               ),
               // The scout’s phone stage — w-[60%] puts her at the knight’s
-              // rendered height (~470px against 01's 467).
+              // rendered height (~470px against 01's 467) at the narrowest
+              // crop, and the max-w cap holds her there as the viewport
+              // widens (uncapped she filled most of a 640 screen).
               h.div(
-                [h.Class('w-[60%] shrink-0 md:hidden')],
+                [h.Class('w-[60%] max-w-[13.5rem] shrink-0 lg:hidden')],
                 [
                   h.img([
                     h.Src(landsScoutImage),
@@ -724,23 +729,31 @@ export const view = (model: Model): Html =>
               mapLeagueFilter(model),
               h.div(
                 // The chips row above owns the band spacing; the stage keeps
-                // only a tight gap so the filter reads as part of the map.
+                // a tight gap on phones so the filter reads as part of the
+                // map. From md the gap must clear the northern pins instead:
+                // their crests float ABOVE the SVG’s top edge (the fan lifts
+                // every crest off its dot), and at the md chip size they
+                // reached into the filter row.
                 // On phones the map is NOT squeezed into the viewport: the
                 // stage runs 180% of the screen inside this full-bleed
                 // horizontal pan (the 01 photo-strip mechanism, minus the
                 // snap) — crests keep their touch size and the country stays
                 // legible. overflow-y-hidden so the reveals' translateY can’t
                 // make the pan vertically scrollable (the 01 lesson); the
-                // vertical padding keeps edge pins inside that clip. From md
-                // up the wrapper dissolves back into the plain centered stage.
+                // vertical padding keeps edge pins inside that clip, and
+                // grows with the sm band’s longer fan reach. From sm
+                // the 180% stage already matches the viewport (180% of a
+                // phone ≈ 100% of 640), so the stage goes full width and the
+                // pan retires; from md up the wrapper dissolves back into
+                // the plain centered stage.
                 [
                   h.Class(
-                    'no-scrollbar -mx-5 mt-4 overflow-x-auto overflow-y-hidden px-5 py-6 md:mx-auto md:mt-5 md:max-w-5xl md:overflow-visible md:p-0',
+                    'no-scrollbar -mx-5 mt-4 overflow-x-auto overflow-y-hidden px-5 py-6 sm:py-12 md:mx-auto md:mt-20 md:max-w-5xl md:overflow-visible md:p-0',
                   ),
                 ],
                 [
                   h.div(
-                    [h.Class('map-stage relative w-[180%] md:w-auto')],
+                    [h.Class('map-stage relative w-[180%] sm:w-full md:w-auto')],
                     [
                       // The draw-in reveal lives on the SVG ROOT: stroke-dasharray
                       // and stroke-dashoffset are inherited properties, so the
