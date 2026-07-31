@@ -9,7 +9,10 @@ import { PRODUCTION_HOSTNAMES } from './config';
 // on a domain that is serving traffic, and nothing else looks wrong. A comment
 // cannot fail. This can.
 
-const WEB_DOMAINS = /rootDir: 'applications\/web',[\s\S]*?domain: \[([^\]]*)\]/;
+// The beta.66 website options renamed the domain shape from a flat array to
+// `domain: { name, aliases }` — the capture spans the whole object, and the
+// quoted-string sweep below collects the name and every alias alike.
+const WEB_DOMAINS = /rootDir: 'applications\/web',[\s\S]*?domain: \{([^}]*)\}/;
 
 const deployedHostnames = (): ReadonlyArray<string> => {
   const match = WEB_DOMAINS.exec(deploySource);
