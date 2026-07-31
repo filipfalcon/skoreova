@@ -15,7 +15,17 @@ const h = html<Message>();
 const competitionCard = (model: Model, competition: Competition): Html =>
   h.article(
     [
-      h.Class(revealClass(model, `competition-card-${competition.slug}`)),
+      // From sm to lg the card is a media row — a 2/5 photo with the label
+      // and copy in a column beside it: a full-width square was all photo
+      // and no answer, and the three-column grid squeezed at these widths
+      // until the labels wrapped over their photos. Phones and the lg grid
+      // keep the stacked card.
+      h.Class(
+        clsx(
+          'sm:flex sm:items-center sm:gap-6 lg:block',
+          revealClass(model, `competition-card-${competition.slug}`),
+        ),
+      ),
       h.DataAttribute('reveal', 'up'),
       h.DataAttribute('reveal-key', `competition-card-${competition.slug}`),
     ],
@@ -23,7 +33,7 @@ const competitionCard = (model: Model, competition: Competition): Html =>
       // The photo is NOT a link — only the label button below navigates, so
       // it alone carries the hover state and the arrow.
       h.div(
-        [h.Class('relative')],
+        [h.Class('relative sm:w-2/5 sm:shrink-0 lg:w-auto')],
         [
           // The zoom reveal’s clip lives one layer down, NOT on the
           // positioning wrapper — the badge below straddles the photo’s
@@ -76,21 +86,42 @@ const competitionCard = (model: Model, competition: Competition): Html =>
       // clickable system. Paper-on-pink is 3.03:1 — AA for LARGE text only,
       // which this display size is; don’t copy this pairing to small type.
       // Hover flips to paper bg + ink text, same as the other CTAs.
-      h.h3(
-        [h.Class('relative z-10 -mt-6 ml-4 inline-block')],
+      // The wrapper exists for the row band alone (the text column beside
+      // the photo); `lg:contents` dissolves it so the grid card's own flow —
+      // the straddling label over the photo, the copy under it — is
+      // untouched.
+      h.div(
+        [h.Class('sm:min-w-0 sm:flex-1 lg:contents')],
         [
-          h.a(
+          h.h3(
+            // On the row band the label keeps the cards' poking-into-space
+            // grammar sideways: it reaches back across the photo's right
+            // edge instead of over its bottom.
+            [h.Class('relative z-10 -mt-6 ml-4 inline-block sm:mt-0 sm:-ml-10 lg:-mt-6 lg:ml-4')],
             [
-              h.Href(`${platformUrl}/competitions/${competition.slug}`),
-              h.Class(
-                'display inline-block bg-pink px-4 py-2 text-fluid-3xl-4xl text-paper transition-colors duration-300 hover:bg-paper hover:text-ink active:bg-paper active:text-ink',
+              h.a(
+                [
+                  h.Href(`${platformUrl}/competitions/${competition.slug}`),
+                  // The lg override sizes the label to its GRID COLUMN, not
+                  // the fluid step: the widest label (CHAMPIONS LEAGUE) plus
+                  // its arrow needs ~9.5em against a third of the container,
+                  // and the plain fluid size wrapped it at 1024. 2.6vw rides
+                  // the column as the viewport grows; the 2.25rem cap stops
+                  // it where the container itself stops growing.
+                  h.Class(
+                    'display inline-block bg-pink px-4 py-2 text-fluid-3xl-4xl text-paper transition-colors duration-300 hover:bg-paper hover:text-ink active:bg-paper active:text-ink lg:text-[min(2.6vw,2.25rem)]',
+                  ),
+                ],
+                [competition.label, displayArrow],
               ),
             ],
-            [competition.label, displayArrow],
+          ),
+          h.p(
+            [h.Class('mt-4 text-sm leading-relaxed text-paper sm:mt-3 sm:text-base')],
+            [competition.copy],
           ),
         ],
       ),
-      h.p([h.Class('mt-4 text-sm leading-relaxed text-paper md:text-base')], [competition.copy]),
     ],
   );
 
@@ -158,7 +189,7 @@ export const view = (model: Model): Html =>
                 // Same step as kicker → headline (mt-10/16): with no subhead
                 // in between, the cards are the headline’s direct answer and
                 // follow on the same beat.
-                [h.Class('mt-10 grid gap-10 md:mt-16 md:grid-cols-3')],
+                [h.Class('mt-10 grid gap-10 md:mt-16 lg:grid-cols-3')],
                 competitions.map((competition) => competitionCard(model, competition)),
               ),
               h.div(
