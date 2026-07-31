@@ -282,7 +282,11 @@ body {
 
 @media (min-width: 640px) {
   .club-pin {
-    --chip-r: 1.25rem;
+    /* The sm band keeps the phone anchors but carries near-md chip sizes,
+       so the fan opens most of the way — at the phone half-reach the
+       bigger crests overlapped in the crowded cities. */
+    --fan-scale: 0.75;
+    --chip-r: 1.75rem;
   }
 }
 
@@ -318,7 +322,7 @@ body {
      the rim perpendicular (radially). sin/cos of the fan angle project
      that extra radius along the line; downward fans fall out of the same
      math (cos flips negative). --chip-r mirrors the chip size classes in
-     page/clubs.ts: h-8 → sm:h-10 → md:h-16. */
+     page/clubs.ts: h-8 → sm:h-14 → md:h-16. */
   left: calc(var(--fx) * var(--fan-scale) + var(--chip-r) * sin(var(--fangle)));
   top: calc((var(--fy) * var(--fan-scale) + var(--chip-r) * cos(var(--fangle))) * -1);
   translate: -50% -50%;
