@@ -27,6 +27,13 @@
   --text-fluid-3xl-6xl--line-height: 1;
   --text-fluid-4xl-6xl: clamp(2.25rem, 1.6071rem + 2.6786vw, 3.75rem);
   --text-fluid-4xl-6xl--line-height: 1;
+  --text-fluid-4xl-8xl: clamp(2.25rem, 0.6429rem + 6.6964vw, 6rem);
+  --text-fluid-4xl-8xl--line-height: 1;
+  /* The menu's Platform CTA: a hair above the section anchors' 4xl-8xl
+     (~1.1× at both ends) — enough to lead the list, not enough to read as
+     a different scale. */
+  --text-fluid-menu-platform: clamp(2.5rem, 0.7857rem + 7.1429vw, 6.5rem);
+  --text-fluid-menu-platform--line-height: 1;
   --text-fluid-5xl-7xl: clamp(3rem, 2.3571rem + 2.6786vw, 4.5rem);
   --text-fluid-5xl-7xl--line-height: 1;
   --text-fluid-5xl-8xl: clamp(3rem, 1.7143rem + 5.3571vw, 6rem);
@@ -1021,18 +1028,67 @@ body {
   pointer-events: auto;
 }
 
+/* Opening, the anchors fall out from behind the header: each one starts
+   (index + 1) of its own heights above its resting spot — the anchors are
+   one line each, so the column collapses into a single stack parked over
+   the list's top edge — minus another 3.5rem so the whole stack hides
+   above the header's cap. No opacity: the items are simply covered until
+   they drop. The fall accelerates the whole way (ease-in cubic) and stops
+   dead — the landing is the event. The pile builds bottom-up: the deepest
+   anchor is released first and each delay walks the reverse rank
+   (--menu-count - 1 - --menu-index), while durations still stretch with
+   the fall distance — the 0.08s delay step outpaces the 0.05s duration
+   step, so touchdowns run strictly last-to-first. The first release goes
+   with the click itself — the cascade falls WHILE the panel is still
+   sliding in, and the deepest anchor touches down before the panel
+   finishes arriving. Closing plays
+   no item motion: the panel leaves as one piece, and the reset back to
+   the stacked pose runs at zero duration DELAYED past the slide (0.6s),
+   once the overlay is already off screen. */
 .menu-overlay .menu-item {
-  opacity: 0;
-  transform: translateY(2rem);
-  transition:
-    opacity 0.5s ease,
-    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(calc((var(--menu-index, 0) + 1) * -100% - 3.5rem));
+  transition: transform 0s linear 0.6s;
 }
 
 .menu-overlay.is-open .menu-item {
-  opacity: 1;
   transform: none;
-  transition-delay: calc(0.25s + var(--menu-index, 0) * 0.07s);
+  transition-timing-function: cubic-bezier(0.32, 0, 0.67, 0);
+  transition-duration: calc(0.28s + var(--menu-index, 0) * 0.05s);
+  transition-delay: calc((var(--menu-count, 1) - 1 - var(--menu-index, 0)) * 0.08s);
+}
+
+/* The menu toggle's hamburger ⇄ X morph: the outer bars swing about their
+   own centers onto the X's diagonals while sliding to the middle row
+   (8.285 = the outer rows' distance to center), and the middle bar dims
+   away. 47.73° = atan(17.6/16): at that slope the butt caps' perpendicular
+   overhang carries the swung bars' ink across the full 0–20 box — the same
+   cap line the resting bars hold. The overlay's easing curve, so glyph and
+   panel move as one gesture. */
+.menu-glyph line {
+  transform-box: view-box;
+  transition:
+    transform 0.4s cubic-bezier(0.76, 0, 0.24, 1),
+    opacity 0.25s ease;
+}
+
+.menu-glyph .menu-glyph-top {
+  transform-origin: 12px 1.715px;
+}
+
+.menu-glyph .menu-glyph-bottom {
+  transform-origin: 12px 18.285px;
+}
+
+.menu-glyph.is-open .menu-glyph-top {
+  transform: translateY(8.285px) rotate(47.73deg);
+}
+
+.menu-glyph.is-open .menu-glyph-mid {
+  opacity: 0;
+}
+
+.menu-glyph.is-open .menu-glyph-bottom {
+  transform: translateY(-8.285px) rotate(-47.73deg);
 }
 
 /* Platform CTAs sell the click through their arrow: a double nudge to the
@@ -1073,8 +1129,8 @@ body {
    push. "Knock only while nobody is pointing at you" said in the selector. */
 
 /* The menu’s arrow knocks only while the overlay is up; its delay waits
-   out the item’s stagger fade-in (0.25s delay + 0.5s fade), so the first
-   knock lands right as the row finishes arriving. */
+   out the panel’s 0.6s slide, so the first knock lands right after the
+   menu finishes arriving. */
 .menu-overlay.is-open .menu-platform:not(:hover):not(:active) svg {
   animation: platform-beckon 2s ease-in-out 0.7s infinite;
 }

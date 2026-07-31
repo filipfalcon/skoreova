@@ -169,8 +169,10 @@ export const displayArrowExternal: Html = drawnExternalArrow(
   'ml-[0.22em] inline-block h-[0.72em] w-auto',
 );
 
-// The two-/three-line glyph shown inside the menu toggle — a hamburger when
-// closed, an X when open.
+// The glyph shown inside the menu toggle — a hamburger when closed, an X
+// when open. The three bars persist across the toggle; the morph between
+// the two poses is CSS (menu-glyph / is-open in styles.css), so a state
+// flip animates instead of swapping geometry.
 export const menuGlyph = (open: boolean): Html =>
   h.svg(
     [
@@ -181,7 +183,7 @@ export const menuGlyph = (open: boolean): Html =>
       // wordmark’s text size, so the glyph stands as tall as the SKÓREOVÁ
       // letters — accents excluded, the lockup’s optical cap line.
       h.ViewBox('0 0 24 20'),
-      h.Class('h-[0.875em] w-auto'),
+      h.Class(clsx('menu-glyph h-[0.875em] w-auto', { 'is-open': open })),
       h.Fill('none'),
       h.Stroke('currentColor'),
       // 3.43 in-box renders as a 3px bar (3.43 × 0.875) — up from the drawn
@@ -191,19 +193,14 @@ export const menuGlyph = (open: boolean): Html =>
       // (Anton, square chips, the drawn arrow); rounded line ends read soft.
       h.AriaHidden(true),
     ],
-    open
-      ? [
-          // Endpoints pulled in by the butt caps' perpendicular overhang
-          // (~1.2 in-box at this slope), so the X’s ink spans the full 0–20
-          // height too — same cap line as the bars.
-          h.line([h.X1('4'), h.Y1('1.2'), h.X2('20'), h.Y2('18.8')], []),
-          h.line([h.X1('20'), h.Y1('1.2'), h.X2('4'), h.Y2('18.8')], []),
-        ]
-      : [
-          h.line([h.X1('0'), h.Y1('1.715'), h.X2('24'), h.Y2('1.715')], []),
-          h.line([h.X1('0'), h.Y1('10'), h.X2('24'), h.Y2('10')], []),
-          h.line([h.X1('0'), h.Y1('18.285'), h.X2('24'), h.Y2('18.285')], []),
-        ],
+    [
+      h.line([h.Class('menu-glyph-top'), h.X1('0'), h.Y1('1.715'), h.X2('24'), h.Y2('1.715')], []),
+      h.line([h.Class('menu-glyph-mid'), h.X1('0'), h.Y1('10'), h.X2('24'), h.Y2('10')], []),
+      h.line(
+        [h.Class('menu-glyph-bottom'), h.X1('0'), h.Y1('18.285'), h.X2('24'), h.Y2('18.285')],
+        [],
+      ),
+    ],
   );
 
 export const headerView = (model: Model): Html =>
@@ -309,8 +306,8 @@ export const headerView = (model: Model): Html =>
   );
 
 // NOTE: this overlay deliberately hand-rolls what Ui.Dialog would provide.
-// The full-screen menu is a brand moment (staggered anchors, the sliding
-// pink underlays, its own scroll), not a boxed dialog — and the dialog
+// The full-screen menu is a brand moment (the monolithic slide from behind
+// the header, the sliding pink underlays, its own scroll), not a boxed dialog — and the dialog
 // contract is already covered by hand: the page behind goes `inert`
 // (view.ts), Escape closes via the menuEscape subscription, focus returns
 // to the toggle (FocusMenuToggle), and the toggle carries
@@ -322,11 +319,14 @@ export const menuOverlayView = (model: Model): Html =>
       h.Id('menu-overlay'),
       h.Class(
         clsx(
-          'menu-overlay fixed inset-0 z-40 flex flex-col justify-between gap-y-8 overflow-y-auto bg-ink pt-24 pb-10',
+          'menu-overlay fixed inset-0 z-40 flex flex-col overflow-y-auto bg-ink pt-14 md:pt-16',
           { 'is-open': model.isMenuOpen },
         ),
       ),
       h.AriaHidden(!model.isMenuOpen),
+      // The fall choreography (styles.css) lands the anchors bottom-up; the
+      // count lets each item's delay derive its own reverse rank.
+      h.Style({ '--menu-count': `${menuEntries.length + 1}` }),
     ],
     [
       h.ul(
@@ -349,7 +349,7 @@ export const menuOverlayView = (model: Model): Html =>
                   // padding pair = the underlay’s left breathing room,
                   // matching the section anchors.
                   h.Class(
-                    'menu-platform platform-beckon menu-anchor -ml-3 display block py-4 pl-3 text-fluid-5xl-8xl text-pink transition-colors duration-300 active:text-paper md:-ml-5 md:py-6 md:pl-5',
+                    'menu-platform platform-beckon menu-anchor -ml-3 display block pt-2 pb-3.5 pl-3 text-fluid-menu-platform tracking-wide text-pink transition-colors duration-300 active:text-paper md:-ml-5 md:pt-3 md:pb-5 md:pl-5',
                   ),
                 ],
                 ['Platform', displayArrow],
@@ -386,7 +386,7 @@ export const menuOverlayView = (model: Model): Html =>
                     // starting flush on the first glyph; it eats into the
                     // container padding, so the resting alignment holds.
                     h.Class(
-                      'menu-anchor -ml-3 display block py-4 pl-3 text-fluid-5xl-8xl text-paper transition-colors duration-300 md:-ml-5 md:py-6 md:pl-5',
+                      'menu-anchor -ml-3 display block py-3.5 pl-3 text-fluid-4xl-8xl tracking-wide text-paper transition-colors duration-300 md:-ml-5 md:py-5 md:pl-5',
                     ),
                   ],
                   [entry.label, ...(active ? [h.span([h.Class('text-pink')], ['.'])] : [])],
@@ -398,22 +398,46 @@ export const menuOverlayView = (model: Model): Html =>
       ),
       h.div(
         [
-          h.Class(`${container} menu-item flex flex-wrap gap-x-6 gap-y-2`),
-          h.Style({ '--menu-index': `${menuEntries.length + 1}` }),
+          // flex-1: the block owns everything from the FOLLOW hairline down
+          // to the viewport bottom, so the content inside can center in that
+          // whole band instead of hugging the hairline.
+          h.Class(`${container} flex flex-1 flex-col`),
         ],
-        socialChannels.map((channel) =>
-          h.a(
+        [
+          // The hairline sits on this inner box, not the container — the
+          // container's own px would paint it wider than the rules between
+          // the menu items above.
+          h.div(
             [
-              h.Href(channel.href),
-              h.Target('_blank'),
-              h.Rel('noopener noreferrer'),
+              // Grid below md: the six channels wrap into two rows of three,
+              // and the columns keep a shared left edge (flex-wrap would
+              // stagger the second row by the first row's widths).
+              // Content-sized tracks with the set centered — 1fr columns
+              // would hug the container's left edge and open uneven visual
+              // gaps. One centered row from md.
               h.Class(
-                'text-sm tracking-[0.2em] uppercase text-paper/60 transition-colors duration-300 hover:text-pink',
+                // py-4 is the floor: when the list outgrows the viewport and
+                // the overlay scrolls, flex-1 collapses to content height and
+                // the centering has nothing to center in — the padding keeps
+                // the section rhythm around the block on every device height.
+                'grid flex-1 grid-cols-[repeat(3,auto)] content-center items-center justify-center gap-x-8 gap-y-4 border-t border-paper/15 py-4 sm:gap-x-12 sm:gap-y-5 md:flex md:flex-wrap md:gap-x-8 md:py-6 min-[56.25rem]:gap-x-12',
               ),
             ],
-            [channel.name],
+            socialChannels.map((channel) =>
+              h.a(
+                [
+                  h.Href(channel.href),
+                  h.Target('_blank'),
+                  h.Rel('noopener noreferrer'),
+                  h.Class(
+                    'text-xs tracking-[0.2em] uppercase text-paper/60 transition-colors duration-300 hover:text-pink sm:text-sm min-[56.25rem]:text-base',
+                  ),
+                ],
+                [channel.name],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     ],
   );
