@@ -226,7 +226,7 @@ export const headerView = (model: Model): Html =>
                 [
                   h.Href(homeRouter()),
                   h.Class(
-                    'display text-xl tracking-wide text-paper transition-colors duration-300 hover:text-pink md:text-2xl',
+                    'display text-2xl tracking-wide text-paper transition-colors duration-300 hover:text-pink md:text-3xl',
                   ),
                 ],
                 ['Skóreová', h.span([h.Class('text-pink')], ['.'])],
@@ -293,7 +293,7 @@ export const headerView = (model: Model): Html =>
                       // no text): menuGlyph is 0.875em tall, so tracking the
                       // wordmark’s text-xl/2xl keeps the two the same height.
                       h.Class(
-                        'display flex cursor-pointer items-center text-xl text-paper transition-colors duration-300 hover:text-pink md:text-2xl',
+                        'display flex cursor-pointer items-center text-2xl text-paper transition-colors duration-300 hover:text-pink md:text-3xl',
                       ),
                     ],
                     // The hamburger/X glyph on every breakpoint — the aria-label
