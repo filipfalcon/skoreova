@@ -267,7 +267,7 @@ export const headerView = (model: Model): Html =>
                   h.Href(platformUrl),
                   h.Class(
                     clsx(
-                      'header-cta platform-beckon display hidden bg-pink px-4 py-1 text-lg tracking-[0.08em] text-ink hover:bg-paper active:bg-paper md:inline-block',
+                      'header-cta platform-beckon display hidden bg-pink px-4 py-1 text-lg tracking-[0.08em] text-ink hover:bg-paper active:bg-paper sm:inline-block',
                       { 'is-visible': model.heroPastHeader },
                     ),
                   ),
