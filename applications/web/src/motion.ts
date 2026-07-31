@@ -224,6 +224,55 @@ const setUpReveals = (
     });
   }
 
+  // ----- Fixed flight space ------------------------------------------------
+  // Every rolling text carries a PERMANENT min-width sized to the widest
+  // frame its animation can render: the flight rewrites the text dozens of
+  // times a second, the counter grids size their tracks by content, and a
+  // box reserved only while a flight runs still let the widest
+  // intermediates breathe the layout. The bound comes from the value's own
+  // shapes — the resting text, the overshoot peak, and both with every
+  // digit swapped for the face's widest — and is written in em, so the
+  // fluid display sizes keep the reservation true across resizes without
+  // remeasuring. Measured through canvas: layout never has to hold the
+  // candidate strings.
+  const measureContext = document.createElement('canvas').getContext('2d');
+  const widestEm = (element: HTMLElement, candidates: ReadonlyArray<string>): number => {
+    if (!measureContext) return 0;
+    const style = getComputedStyle(element);
+    measureContext.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    // Canvas ignores the element's tracking unless told — the display face
+    // tracks slightly negative, and at counter sizes that is real pixels.
+    measureContext.letterSpacing = style.letterSpacing === 'normal' ? '0px' : style.letterSpacing;
+    const fontPx = Number.parseFloat(style.fontSize);
+    if (!(fontPx > 0)) return 0;
+    return Math.max(...candidates.map((text) => measureContext.measureText(text).width)) / fontPx;
+  };
+  const widestDigitFor = (element: HTMLElement): string => {
+    let widest = '0';
+    let width = 0;
+    for (const digit of '0123456789') {
+      const measured = widestEm(element, [digit]);
+      if (measured > width) {
+        widest = digit;
+        width = measured;
+      }
+    }
+    return widest;
+  };
+  const reserveCountSpace = (countUp: CountUp): void => {
+    const digit = widestDigitFor(countUp.element);
+    const shapes = [
+      formatCount(countUp, countUp.target),
+      formatCount(countUp, countPeak(countUp, 0, countUp.target)),
+    ];
+    const candidates = shapes.flatMap((shape) => [
+      `${countUp.prefix}${shape}${countUp.suffix}`,
+      `${countUp.prefix}${shape.replace(/\d/g, digit)}${countUp.suffix}`,
+    ]);
+    const reserved = widestEm(countUp.element, candidates);
+    if (reserved > 0) countUp.element.style.minWidth = `${reserved.toFixed(3)}em`;
+  };
+
   const renderCount = (countUp: CountUp, value: number): void => {
     const text = `${countUp.prefix}${formatCount(countUp, value)}${countUp.suffix}`;
     const node = countUp.element.firstChild;
@@ -363,6 +412,39 @@ const setUpReveals = (
       interval: 0,
     });
   }
+
+  // The slot-machine variant of the fixed flight space: every character can
+  // render as any glyph of its own pool mid-roll, so the reservation takes
+  // the widest pool member per position.
+  const reserveScrambleSpace = (scramble: Scramble): void => {
+    const reserved = [...scramble.final]
+      .map((character) => {
+        const pool = scramblePoolFor(character);
+        let widest = character;
+        let width = widestEm(scramble.element, [character]);
+        for (const candidate of pool) {
+          const measured = widestEm(scramble.element, [candidate]);
+          if (measured > width) {
+            widest = candidate;
+            width = measured;
+          }
+        }
+        return widest;
+      })
+      .join('');
+    const width = widestEm(scramble.element, [scramble.final, reserved]);
+    if (width > 0) scramble.element.style.minWidth = `${width.toFixed(3)}em`;
+  };
+
+  // At setup the web font may still be loading and canvas would measure the
+  // fallback face — reserve now for a first approximation, then again once
+  // the real glyphs are in. Both passes are idempotent writes.
+  const reserveAll = (): void => {
+    for (const countUp of countUps.values()) reserveCountSpace(countUp);
+    for (const scramble of scrambles.values()) reserveScrambleSpace(scramble);
+  };
+  reserveAll();
+  void document.fonts.ready.then(reserveAll);
 
   const renderScramble = (scramble: Scramble, text: string): void => {
     // Mutate the existing text node — the same Foldkit-patcher constraint
@@ -522,12 +604,23 @@ const setUpReveals = (
 
     // Scroll direction at reveal time — some draw reveals only ANIMATE on
     // the way down (see data-draw-replay below); coming back up they must
-    // stand complete, so the reader never watches the same pen twice.
-    // The direction is STICKY across callbacks at the same position:
-    // several observers share this handler, and the second callback of a
-    // scroll step would otherwise read "no movement" and lose the sign.
+    // stand complete, so the reader never watches the same pen twice. Tracked by a
+    // live scroll listener, NOT from the delta between observer callbacks:
+    // callbacks can be far apart, and after a long downward travel the net
+    // delta stays positive through the whole upward return — the entry
+    // then read as “scrolling down” and replayed anyway. The direction is
+    // STICKY at rest: an unchanged position keeps the last real sign.
     let lastRevealScrollY = window.scrollY;
     let revealScrollWasUp = false;
+    const onDirectionScroll = (): void => {
+      const y = window.scrollY;
+      if (y !== lastRevealScrollY) {
+        revealScrollWasUp = y < lastRevealScrollY;
+        lastRevealScrollY = y;
+      }
+    };
+    window.addEventListener('scroll', onDirectionScroll, { passive: true });
+    cleanups.push(() => window.removeEventListener('scroll', onDirectionScroll));
 
     // A `once` group asks a different question from every other proxy: not
     // "is it on screen" but "has it ever been", so its reveal never comes back
@@ -561,10 +654,9 @@ const setUpReveals = (
     };
 
     const onReveal = (entries: ReadonlyArray<IntersectionObserverEntry>): void => {
-      if (window.scrollY !== lastRevealScrollY) {
-        revealScrollWasUp = window.scrollY < lastRevealScrollY;
-        lastRevealScrollY = window.scrollY;
-      }
+      // Catch up before reading: the observer can fire ahead of the scroll
+      // listener within the same frame.
+      onDirectionScroll();
       const scrollingUp = revealScrollWasUp;
       const revealed: Array<string> = [];
       const concealed: Array<string> = [];
