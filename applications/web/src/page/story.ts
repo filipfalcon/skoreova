@@ -122,7 +122,7 @@ export const view = (model: Model): Html =>
                     // load (user call). Same lede idiom as the other body
                     // paragraphs; max-w-2xl keeps the measure readable now
                     // that the glyphs are body-sized.
-                    [h.Class('max-w-2xl text-lg leading-relaxed md:text-xl')],
+                    [h.Class('max-w-[34rem] text-lg leading-relaxed md:max-w-[38rem] md:text-xl')],
                     [
                       // "For women and girls" is UEFA’s own Unstoppable-strategy
                       // vocabulary — it also dodges doubling "women’s" in one line.
@@ -166,7 +166,7 @@ export const view = (model: Model): Html =>
                       // (only the phone layout is flex; md’s block layout
                       // ignores align-self).
                       h.Class(
-                        'mt-6 inline-block self-center border-2 border-ink px-4 py-2 text-xs tracking-[0.12em] uppercase text-ink transition-colors duration-300 hover:bg-ink hover:text-paper md:tracking-[0.2em]',
+                        'mt-6 inline-block self-center border-2 border-ink px-4 py-2 text-xs tracking-[0.12em] uppercase text-ink transition-colors duration-300 hover:bg-ink hover:text-paper sm:px-6 sm:py-3 sm:text-sm md:tracking-[0.2em]',
                       ),
                     ],
                     ['UEFA Women’s Football Strategy', displayArrowExternal],
@@ -192,13 +192,18 @@ export const view = (model: Model): Html =>
             unstoppableProof.map((stat, index) =>
               h.li(
                 [
-                  h.Class(revealClass(model, `story-stat-${index}`)),
+                  // sm only: centered on the knight/button axis — the single
+                  // column reads intentional instead of leaving the right
+                  // half empty. Phones stay left (approved), md grids again.
+                  h.Class(
+                    clsx('sm:text-center md:text-left', revealClass(model, `story-stat-${index}`)),
+                  ),
                   h.DataAttribute('reveal', 'up'),
                   h.DataAttribute('reveal-key', `story-stat-${index}`),
                   h.Style({ '--reveal-delay': `${index * 0.15}s` }),
                 ],
                 [
-                  h.div([h.Class('mb-4 h-1 w-12 bg-ink')], []),
+                  h.div([h.Class('mb-4 h-1 w-12 bg-ink sm:mx-auto md:mx-0')], []),
                   // Aria-hidden + sr-only twin: mid-animation the visible
                   // text is a rolling intermediate, not the stat.
                   h.span(
@@ -237,7 +242,7 @@ export const view = (model: Model): Html =>
                                 h.Target('_blank'),
                                 h.Rel('noopener noreferrer'),
                                 h.Class(
-                                  'mt-2 block w-fit text-[10px] tracking-[0.2em] text-ink/50 uppercase transition-colors duration-300 hover:text-pink',
+                                  'mt-2 block w-fit text-[10px] tracking-[0.2em] text-ink/50 uppercase transition-colors duration-300 hover:text-pink sm:mx-auto md:mx-0',
                                 ),
                               ],
                               ['uefa.com', displayArrowExternal],
@@ -294,9 +299,15 @@ export const view = (model: Model): Html =>
               h.DataAttribute('reveal-key', 'story-imperative'),
               h.Style({ '--reveal-delay': '0.2s' }),
             ],
-            // The imperative gets its own line — two beats, not one sentence
-            // that happens to wrap.
-            ['This generation is make-or-break.', h.br([]), 'Don’t sleep on it.'],
+            // The imperative gets its own line on phones — two beats, not
+            // one sentence that happens to wrap. From sm the measure fits
+            // both beats on one line and the forced break read as an
+            // accident, so the break is phone-only.
+            [
+              'This generation is make-or-break.',
+              h.br([h.Class('sm:hidden')]),
+              ' Don’t sleep on it.',
+            ],
           ),
           // Phones: a swipeable scroll-snap strip — one big photo with the
           // next peeking in from the right edge (the peek IS the affordance),
@@ -358,7 +369,7 @@ export const view = (model: Model): Html =>
                     ],
                   ),
                   h.figcaption(
-                    [h.Class('mt-3 text-xs leading-relaxed')],
+                    [h.Class('mt-3 text-xs leading-relaxed sm:text-sm')],
                     [
                       // The pyramid-level kicker — full ink, the caption
                       // fades instead (swapped on the user’s call: the LEVEL
@@ -369,7 +380,7 @@ export const view = (model: Model): Html =>
                       h.span(
                         [
                           h.Class(
-                            'mb-1 block text-[10px] tracking-[0.2em] text-ink uppercase select-none',
+                            'mb-1 block text-[10px] tracking-[0.2em] text-ink uppercase select-none sm:text-xs',
                           ),
                         ],
                         [photo.level],
