@@ -18,14 +18,22 @@ const h = html<Message>();
 // whole thing by HEIGHT — the hero is a fixed one-viewport box with
 // overflow-hidden, and on wide-but-short windows an uncapped line grows
 // past what the box can hold and the CTA + scroll cue get clipped off its
-// bottom. The cap has two tiers only because the LAYOUT does: below sm
-// the headline starts at 36svh (under the players' chins) and three lines
-// must fit in what remains; from sm the lockup parks at the bottom of the
-// frame, the 36svh headroom is free, and the cap can relax to 16svh. At
-// the 640 boundary the active leg is the blend on both sides, so the cap
+// bottom. The cap has two tiers only because the LAYOUT does. Below sm
+// the headline starts at 36svh (under the players' chins), so a line may
+// take at most a third of what that leaves: (100svh - 3.5rem header)
+// - 36svh - ~151px of CTA + gaps + cue = 64svh - 207px, i.e. 21.33svh -
+// 69px per line — a fixed percentage can't express this (12svh fit
+// ~700px-tall windows and overflowed 550px ones). From sm the lockup
+// parks at the bottom of the frame, the 36svh headroom is free, and a
+// plain 16svh holds at any height the bottom-parked layout produces —
+// which is why the sub-600px-tall windows that bottom-park the phone
+// layout (the max-height variant on the h1) carry the 16svh cap too: the
+// derived cap models the 36svh start, and keeping it after the start is
+// gone reopened a size jump at the sm boundary on short windows. At the
+// 640 boundary the active leg is the blend on both sides, so the cap
 // swap itself moves nothing.
 const heroText =
-  'text-[min(max(4.2219vw_+_59.17px,10vw),12svh)] sm:text-[min(max(4.2219vw_+_59.17px,10vw),16svh)]';
+  'text-[min(max(4.2219vw_+_59.17px,10vw),21.33svh_-_69px)] [@media(max-height:37.5rem)]:text-[min(max(4.2219vw_+_59.17px,10vw),16svh)] sm:text-[min(max(4.2219vw_+_59.17px,10vw),16svh)]';
 // The mask just clips the slide-up intro; the old headroom padding was only
 // for the (removed) Mexican-wave letters jumping above the line.
 const heroMask = `overflow-hidden ${heroText}`;
@@ -99,12 +107,15 @@ export const view = (): Html =>
         // No bottom padding below sm — the scroll cue centers itself in the
         // leftover space below the CTA (my-auto), and any padding here would
         // skew that split toward the top.
-        [h.Class('relative flex h-full flex-col sm:pb-8')],
+        [h.Class('relative flex h-full flex-col [@media(max-height:37.5rem)]:pb-8 sm:pb-8')],
         [
           // On phones the portrait crop leaves the players' faces in the top
           // ~40% — the headline starts right under their chins so the hook
           // is on screen immediately. From `sm` up the photo is landscape
-          // and `mt-auto` parks the headline near the bottom instead.
+          // and `mt-auto` parks the headline near the bottom instead — and
+          // so do sub-600px-tall windows at ANY width: the 36svh start plus
+          // three capped lines leaves the in-flow scroll cue nothing to
+          // live on there, and parking frees the start for it.
           h.h1(
             // Barely any side padding on phones so the headline runs almost
             // edge to edge. `gap` gives the three lines air (Anton’s 0.92
@@ -112,7 +123,7 @@ export const view = (): Html =>
             // lockup doesn’t loosen/tighten with viewport width.
             [
               h.Class(
-                'mt-[36svh] flex flex-col gap-2.5 px-0 text-center select-none sm:mt-auto sm:gap-[1vw] md:px-2',
+                'mt-[36svh] flex flex-col gap-2.5 px-0 text-center select-none [@media(max-height:37.5rem)]:mt-auto sm:mt-auto sm:gap-[1vw] md:px-2',
               ),
             ],
             [
@@ -192,13 +203,16 @@ export const view = (): Html =>
           // last, after the CTA has landed. On phones they live in the flow:
           // `my-auto` centers the cue in the leftover space, so the gap to
           // the CTA equals the gap to the section’s end at every viewport
-          // height. From `sm` up it’s the absolute corner strip, hugging
-          // the frame's base at every width — riding higher to flank the
-          // CTA crashed into the wide centered button on narrow windows.
+          // height. From `sm` up — and on sub-600px-tall windows at any
+          // width, which share sm's whole bottom-parked grammar — it’s the
+          // absolute corner strip, hugging the frame's base at every width:
+          // riding higher to flank the CTA crashed into the wide centered
+          // button on narrow windows, and staying in the flow let my-auto
+          // split the leftover space and shove the parked lockup back up.
           h.div(
             [
               h.Class(
-                'hero-fade pointer-events-none my-auto flex items-end justify-center px-5 text-[10px] tracking-[0.2em] uppercase text-paper/60 select-none sm:absolute sm:inset-x-0 sm:bottom-2 sm:my-0 sm:justify-between sm:px-3 md:text-xs',
+                'hero-fade pointer-events-none my-auto flex items-end justify-center px-5 text-[10px] tracking-[0.2em] uppercase text-paper/60 select-none [@media(max-height:37.5rem)]:absolute [@media(max-height:37.5rem)]:inset-x-0 [@media(max-height:37.5rem)]:bottom-2 [@media(max-height:37.5rem)]:my-0 sm:absolute sm:inset-x-0 sm:bottom-2 sm:my-0 sm:justify-between sm:px-3',
               ),
               h.Style({ '--hero-delay': '1.6s' }),
             ],
