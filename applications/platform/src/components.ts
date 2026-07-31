@@ -313,7 +313,7 @@ export const headerView = (model: Model): Html =>
                 [
                   h.Href(welcomeRouter()),
                   h.Class(
-                    'display flex items-baseline gap-3 text-xl tracking-wide text-paper transition-colors duration-300 hover:text-pink md:text-2xl',
+                    'display flex items-baseline gap-3 text-2xl tracking-wide text-paper transition-colors duration-300 hover:text-pink md:text-3xl',
                   ),
                 ],
                 [h.span([], ['Skóreová', h.span([h.Class('text-pink')], ['.'])])],
