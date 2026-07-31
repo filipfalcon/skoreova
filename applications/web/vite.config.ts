@@ -120,6 +120,23 @@ const inlineConsent = (root: string): Plugin => ({
 // the in-flight dynamic import of the test file itself ("Failed to fetch
 // dynamically imported module", both engines). Pre-declaring it means the
 // optimizer already has it before the run starts.
+// Pins the inner dev server's port under `alchemy dev` (web 5273, platform
+// 5274, studio 5275). Alchemy starts each app's vite with an inline
+// `server: { port: 0 }` meaning "any port" — Vite resolves the 0 to its
+// 5173 default, all three apps then race for it, and whoever loses silently
+// shifts one over, serving one app's traffic from another's URL. The inline
+// config outranks this file's `server.port`, so the pin rides a plugin
+// `config` hook, which Vite merges after the inline config. Gated on the
+// env marker alchemy sets around its vite runs, so `vp dev`, tests, and
+// builds keep Vite's own behavior.
+const pinAlchemyDevPort = (port: number): Plugin => ({
+  name: 'skoreova:pin-alchemy-dev-port',
+  config: () =>
+    process.env['ALCHEMY_CLOUDFLARE_VITE_INJECTED'] === '1'
+      ? { server: { port, strictPort: true } }
+      : {},
+});
+
 export default defineConfig({
   // IPv4 loopback, explicitly: under `alchemy dev` all three apps' inner
   // vite servers race for ports, and a dual-stack bind lets two of them
@@ -132,6 +149,7 @@ export default defineConfig({
     ...tailwindcss(),
     ...foldkit({ devToolsMcpPort: 9989 }),
     inlineConsent(import.meta.dirname),
+    pinAlchemyDevPort(5273),
   ],
   // Alchemy’s deploy captures the build output through a `buildApp` post
   // hook, but Vite 8 only runs the default environment builds AFTER all

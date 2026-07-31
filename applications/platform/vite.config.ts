@@ -1,5 +1,6 @@
 import { foldkit } from '@foldkit/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
+import type { Plugin } from 'vite';
 import { defineConfig } from 'vite-plus';
 
 // The Foldkit plugin runs in tests too, DevTools MCP port and all — see the
@@ -9,6 +10,18 @@ import { defineConfig } from 'vite-plus';
 // production diffed on identity too — the one difference a view test cannot
 // see.
 
+// Pins the inner dev server's port under `alchemy dev` — see the note on
+// this plugin in applications/web/vite.config.ts (alchemy's inline
+// `server: { port: 0 }` resolves to Vite's 5173 default and outranks this
+// file's `server.port`; a plugin `config` hook merges after it).
+const pinAlchemyDevPort = (port: number): Plugin => ({
+  name: 'skoreova:pin-alchemy-dev-port',
+  config: () =>
+    process.env['ALCHEMY_CLOUDFLARE_VITE_INJECTED'] === '1'
+      ? { server: { port, strictPort: true } }
+      : {},
+});
+
 export default defineConfig({
   // IPv4 loopback, explicitly: under `alchemy dev` all three apps' inner
   // vite servers race for ports, and a dual-stack bind lets two of them
@@ -17,7 +30,7 @@ export default defineConfig({
   // vite increments to a free port instead.
   server: { host: '127.0.0.1' },
   // Studio claims 9988, web 9989 — each app needs its own DevTools MCP port.
-  plugins: [...tailwindcss(), ...foldkit({ devToolsMcpPort: 9990 })],
+  plugins: [...tailwindcss(), ...foldkit({ devToolsMcpPort: 9990 }), pinAlchemyDevPort(5274)],
   // Alchemy’s deploy captures the build output through a `buildApp` post
   // hook, but Vite 8 only runs the default environment builds AFTER all
   // buildApp hooks when no real `builder.buildApp` exists — the hook then

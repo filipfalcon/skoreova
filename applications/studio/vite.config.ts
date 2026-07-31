@@ -1,5 +1,6 @@
 import { foldkit } from '@foldkit/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
+import type { Plugin } from 'vite';
 import { defineConfig } from 'vite-plus';
 
 // The Foldkit plugin runs everywhere — dev, build, and tests — with its
@@ -23,8 +24,20 @@ import { defineConfig } from 'vite-plus';
 // Vite 8's `Plugin` against `UserConfig`, which is why `**/vite.config.ts` sits
 // in oxlint's ignorePatterns. Removing `plugins` clears it; removing `test`
 // does not.
+// Pins the inner dev server's port under `alchemy dev` — see the note on
+// this plugin in applications/web/vite.config.ts (alchemy's inline
+// `server: { port: 0 }` resolves to Vite's 5173 default and outranks this
+// file's `server.port`; a plugin `config` hook merges after it).
+const pinAlchemyDevPort = (port: number): Plugin => ({
+  name: 'skoreova:pin-alchemy-dev-port',
+  config: () =>
+    process.env['ALCHEMY_CLOUDFLARE_VITE_INJECTED'] === '1'
+      ? { server: { port, strictPort: true } }
+      : {},
+});
+
 export default defineConfig({
-  plugins: [...tailwindcss(), ...foldkit({ devToolsMcpPort: 9988 })],
+  plugins: [...tailwindcss(), ...foldkit({ devToolsMcpPort: 9988 }), pinAlchemyDevPort(5275)],
   // Alchemy’s deploy captures the build output through a `buildApp` post
   // hook, but Vite 8 only runs the default environment builds AFTER all
   // buildApp hooks when no real `builder.buildApp` exists — the hook then
