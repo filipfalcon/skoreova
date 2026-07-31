@@ -9,9 +9,23 @@ import { ObserveHeroPastHeader } from '../motion';
 
 const h = html<Message>();
 
-// Big on phones (one column of huge type), smaller on desktop so the three
-// lines don’t cover the players' faces on wide, short windows.
-const heroText = 'text-[20vw] md:text-[10vw]';
+// ONE continuous size curve across every width — no breakpoint tiers, so
+// the lockup never steps when the viewport crosses a boundary. Three legs:
+// the linear blend (4.2219vw + 59.17px) runs 75px at 375 — the phone size
+// the design was approved at — up to 102.4px at 1024; from there the max()
+// hands over to the plain 10vw desktop slope (the two legs are equal at
+// exactly 1024, so the handoff is seamless); and the 12svh min() caps the
+// whole thing by HEIGHT — the hero is a fixed one-viewport box with
+// overflow-hidden, and on wide-but-short windows an uncapped line grows
+// past what the box can hold and the CTA + scroll cue get clipped off its
+// bottom. The cap has two tiers only because the LAYOUT does: below sm
+// the headline starts at 36svh (under the players' chins) and three lines
+// must fit in what remains; from sm the lockup parks at the bottom of the
+// frame, the 36svh headroom is free, and the cap can relax to 16svh. At
+// the 640 boundary the active leg is the blend on both sides, so the cap
+// swap itself moves nothing.
+const heroText =
+  'text-[min(max(4.2219vw_+_59.17px,10vw),12svh)] sm:text-[min(max(4.2219vw_+_59.17px,10vw),16svh)]';
 // The mask just clips the slide-up intro; the old headroom padding was only
 // for the (removed) Mexican-wave letters jumping above the line.
 const heroMask = `overflow-hidden ${heroText}`;
@@ -82,14 +96,14 @@ export const view = (): Html =>
       // headline, neon and CTA stay clean above it.
       h.div([h.Class('grain pointer-events-none absolute inset-0')], []),
       h.div(
-        // No bottom padding on phones — the scroll cue centers itself in the
+        // No bottom padding below sm — the scroll cue centers itself in the
         // leftover space below the CTA (my-auto), and any padding here would
         // skew that split toward the top.
-        [h.Class('relative flex h-full flex-col md:pb-8')],
+        [h.Class('relative flex h-full flex-col sm:pb-8')],
         [
           // On phones the portrait crop leaves the players' faces in the top
           // ~40% — the headline starts right under their chins so the hook
-          // is on screen immediately. From `md` up the photo is landscape
+          // is on screen immediately. From `sm` up the photo is landscape
           // and `mt-auto` parks the headline near the bottom instead.
           h.h1(
             // Barely any side padding on phones so the headline runs almost
@@ -98,7 +112,7 @@ export const view = (): Html =>
             // lockup doesn’t loosen/tighten with viewport width.
             [
               h.Class(
-                'mt-[36svh] flex flex-col gap-2.5 px-0 text-center select-none md:mt-auto md:gap-[1vw] md:px-2',
+                'mt-[36svh] flex flex-col gap-2.5 px-0 text-center select-none sm:mt-auto sm:gap-[1vw] md:px-2',
               ),
             ],
             [
@@ -178,16 +192,18 @@ export const view = (): Html =>
           // last, after the CTA has landed. On phones they live in the flow:
           // `my-auto` centers the cue in the leftover space, so the gap to
           // the CTA equals the gap to the section’s end at every viewport
-          // height. From `md` up it’s the absolute corner strip again.
+          // height. From `sm` up it’s the absolute corner strip, hugging
+          // the frame's base at every width — riding higher to flank the
+          // CTA crashed into the wide centered button on narrow windows.
           h.div(
             [
               h.Class(
-                'hero-fade pointer-events-none my-auto flex items-end justify-center px-5 text-[10px] tracking-[0.2em] uppercase text-paper/60 select-none md:absolute md:inset-x-0 md:bottom-7 md:my-0 md:justify-between md:px-8 md:text-xs',
+                'hero-fade pointer-events-none my-auto flex items-end justify-center px-5 text-[10px] tracking-[0.2em] uppercase text-paper/60 select-none sm:absolute sm:inset-x-0 sm:bottom-2 sm:my-0 sm:justify-between sm:px-3 md:text-xs',
               ),
               h.Style({ '--hero-delay': '1.6s' }),
             ],
             [
-              h.span([h.Class('hidden md:inline')], ['Independent media']),
+              h.span([h.Class('hidden sm:inline')], ['Independent media']),
               h.span([], ['Scroll for experience']),
             ],
           ),
