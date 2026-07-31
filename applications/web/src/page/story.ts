@@ -311,8 +311,12 @@ export const view = (model: Model): Html =>
           ),
           // Phones: a swipeable scroll-snap strip — one big photo with the
           // next peeking in from the right edge (the peek IS the affordance),
-          // bleeding to the viewport edges past the container padding.
-          // From `md` up it’s the three-column grid with the offset middle.
+          // bleeding to the viewport edges past the container padding. From
+          // `sm` the strip goes two-up (a 72% photo at that width is a wall):
+          // two full photos, the third peeking, snapping to the start so the
+          // resting frame is a clean pair instead of a centered photo with
+          // two half-cut neighbors. From `md` up it’s the three-column grid
+          // with the offset middle.
           // overflow-y-hidden is load-bearing: overflow-x auto alone computes
           // overflow-y to auto too, and the reveal transform (translateY)
           // makes the content overflow vertically — without it the strip is
@@ -320,7 +324,7 @@ export const view = (model: Model): Html =>
           h.div(
             [
               h.Class(
-                'no-scrollbar -mx-5 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden px-5 md:mx-0 md:mt-10 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0',
+                'no-scrollbar -mx-5 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden px-5 sm:scroll-pl-5 md:mx-0 md:mt-10 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0',
               ),
               // All three photos cascade in together the first time the
               // strip scrolls into view, and STAY revealed — swiping must
@@ -333,7 +337,7 @@ export const view = (model: Model): Html =>
                 [
                   h.Class(
                     clsx(
-                      `w-[72%] shrink-0 snap-center md:w-auto ${index === 1 ? 'md:mt-14' : ''}`,
+                      `w-[72%] shrink-0 snap-center sm:w-[44%] sm:snap-start md:w-auto ${index === 1 ? 'md:mt-14' : ''}`,
                       revealClass(model, `story-youth-${index}`),
                     ),
                   ),
