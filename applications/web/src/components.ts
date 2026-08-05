@@ -452,8 +452,10 @@ export const footerView = (isMenuOpen: boolean): Html =>
     [
       h.div(
         [
+          // One row from lg, NOT md: four spread items on a 768 measure
+          // each wrapped to two lines and the strip read as a broken grid.
           h.Class(
-            `${container} flex flex-col gap-4 text-xs tracking-[0.2em] uppercase text-paper/60 md:flex-row md:items-center md:justify-between`,
+            `${container} flex flex-col gap-4 text-xs tracking-[0.2em] uppercase text-paper/60 lg:flex-row lg:items-center lg:justify-between`,
           ),
         ],
         [
