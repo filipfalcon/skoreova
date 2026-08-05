@@ -20,22 +20,36 @@ export const view = (model: Model): Html =>
           kicker(model, '07', 'Week-in-week-out', true, '/#follow'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
-            [maskedLine(model, 'follow-headline', 'Follow the game.', 'text-fluid-5xl-9xl', 0)],
+            [
+              // The full stop wears the brand pink — the same mark the
+              // wordmark carries, closing the page the way the header
+              // opens it.
+              maskedLine(
+                model,
+                'follow-headline',
+                ['Follow the game', h.span([h.Class('text-pink')], ['.'])],
+                'text-fluid-5xl-9xl',
+                0,
+              ),
+            ],
           ),
           h.ul(
             // ONE reveal beat ('replay' group): on a menu-jump landing the
             // third row sits in the observer’s bottom dead zone and never
             // fired on its own (1280×800 first frame ended mid-list) — the
             // group keys every row off the list’s own entry instead.
-            [
-              h.Class('mt-14 border-t border-paper/15 md:mt-20'),
-              h.DataAttribute('reveal-group', 'replay'),
-            ],
+            [h.Class('mt-14 md:mt-20'), h.DataAttribute('reveal-group', 'replay')],
             socialChannels.map((channel, index) =>
               h.li(
                 [
+                  // Hairlines only BETWEEN rows — the list opens under the
+                  // headline and closes into the section’s edge, and rules
+                  // on those outer sides framed air (user call).
                   h.Class(
-                    clsx('border-b border-paper/15', revealClass(model, `follow-row-${index}`)),
+                    clsx(
+                      'border-b border-paper/15 last:border-b-0',
+                      revealClass(model, `follow-row-${index}`),
+                    ),
                   ),
                   h.DataAttribute('reveal', 'up'),
                   h.DataAttribute('reveal-key', `follow-row-${index}`),
