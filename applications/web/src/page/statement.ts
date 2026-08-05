@@ -71,10 +71,11 @@ const equationLine = (
 ): Html =>
   h.p(
     [
-      h.Class(clsx('display text-fluid-2xl-4xl', revealClass(model, key))),
+      // The phone floor stays a step lower — at 5xl the longest line
+      // ("Hockey ≠ floorball") outruns a 375 measure and wraps.
+      h.Class(clsx('display text-fluid-4xl-8xl sm:text-fluid-5xl-9xl', revealClass(model, key))),
       h.DataAttribute('reveal', 'up'),
       h.DataAttribute('reveal-key', key),
-      h.DataAttribute('reveal-late', ''),
       h.Style({ '--reveal-delay': `${delaySeconds}s` }),
     ],
     [
@@ -92,15 +93,27 @@ const equationLine = (
                     // Native translate/rotate compose with the strike
                     // animation’s transform (it only owns scaleX); origin
                     // left = the pen draws along the slash’s own axis.
+                    // That origin also means the ROTATION swings around
+                    // the bar’s left end, so a naive 50%/50% seat lands
+                    // the slash high-left of the glyph. The seat and
+                    // length here are measured against the rendered '='
+                    // (canvas glyph metrics + live rects): 72.5%/88% puts
+                    // the slash’s center on the glyph’s visual center —
+                    // Anton’s '=' rides well above the baseline — and
+                    // 160% crosses the glyph with a short overhang past
+                    // each bar. The seat values shift WITH the length
+                    // (the origin-left rotation folds width into the
+                    // final position), so the three numbers form one
+                    // tuned set. All-percentage values, so the seat holds
+                    // at every fluid size.
                     clsx(
-                      'pointer-events-none absolute top-1/2 left-1/2 h-1 w-[130%] -translate-x-1/2 -translate-y-1/2 -rotate-[58deg] bg-pink md:h-1.5',
+                      'pointer-events-none absolute top-[72.5%] left-[88%] h-1 w-[160%] -translate-x-1/2 -translate-y-1/2 -rotate-[58deg] bg-pink md:h-1.5',
                       revealClass(model, `${key}-strike`),
                     ),
                   ),
                   h.AriaHidden(true),
                   h.DataAttribute('reveal', 'strike'),
                   h.DataAttribute('reveal-key', `${key}-strike`),
-                  h.DataAttribute('reveal-late', ''),
                   h.Style({ '--reveal-delay': `${delaySeconds + 0.35}s` }),
                 ],
                 [],
@@ -146,13 +159,25 @@ export const view = (model: Model): Html =>
                   takeSegment(model, 'statement-take-1', 'She doesn’t play', 0, '0.25s'),
                   ' ',
                   takeSegment(model, 'statement-take-2', 'like men...', 0.08, '0.45s'),
-                  // From `md` up the take is one line — a single continuous
-                  // slash across the whole h2 replaces the per-line pair.
+                  // From `md` up a single continuous slash across the
+                  // whole h2 replaces the per-line pair. The take still
+                  // WRAPS to two lines through most of the md band, so
+                  // the slash runs steep — one stroke through both lines,
+                  // corner to corner. Like every strike, its pen
+                  // animation owns transform-origin:left, so the rotation
+                  // swings around the LEFT end: `top` places that anchor
+                  // (87% ≈ the second line’s heart) and the −9.5° lift
+                  // carries the right end up across the first line. At
+                  // 54rem the take starts fitting ONE line (the flip is
+                  // between 848 and 864px, measured live) and the flat
+                  // full-width −2° stroke takes over. Rem breakpoint, not
+                  // px — px arbitrary variants can’t sort against the rem
+                  // scale and land before `sm:` in the cascade.
                   h.span(
                     [
                       h.Class(
                         clsx(
-                          'pointer-events-none absolute inset-x-0 top-1/2 hidden h-1.5 -translate-y-1/2 -rotate-2 bg-pink md:block md:h-2.5',
+                          'pointer-events-none absolute top-[87%] left-[10%] right-[4%] hidden h-1.5 -translate-y-1/2 -rotate-[9.5deg] bg-pink md:block md:h-2.5 min-[54rem]:top-1/2 min-[54rem]:right-0 min-[54rem]:left-0 min-[54rem]:-rotate-2',
                           revealClass(model, 'statement-strike-full'),
                         ),
                       ),
@@ -192,28 +217,33 @@ export const view = (model: Model): Html =>
           ),
           // The analogy list ("Do not compare women to men." spelled out
           // as arithmetic): different games, different rides, different
-          // sports — the pen refuses every equals sign. Also scroll-gated
-          // so the list can’t beat the stamp to the screen.
+          // sports — the pen refuses every equals sign. Plain viewport
+          // reveals, not the late gate: gated to mid-viewport the list
+          // arrived visibly late on phones (user call — each line still
+          // slashes its own equals a beat after landing, so no sign ever
+          // stands unstruck long enough to read as equality).
           h.div(
-            [h.Class('mt-14 space-y-3 md:mt-20')],
+            [h.Class('mt-14 space-y-8 md:mt-20 md:space-y-10')],
             [
-              equationLine(model, 'statement-eq-hockey', 'Hockey', 'floorball', 0.5),
-              equationLine(model, 'statement-eq-train', 'Train', 'subway', 0.65),
-              equationLine(model, 'statement-eq-men', 'Men', 'women', 0.8),
+              equationLine(model, 'statement-eq-hockey', 'Hockey', 'floorball', 0.15),
+              equationLine(model, 'statement-eq-train', 'Train', 'subway', 0.3),
+              equationLine(model, 'statement-eq-men', 'Men', 'women', 0.45),
             ],
           ),
           h.p(
             [
               h.Class(
                 clsx(
-                  'mx-auto mt-8 max-w-xl text-base leading-relaxed text-paper/70 md:text-lg',
+                  'mx-auto mt-8 max-w-xl text-base leading-relaxed text-paper/70 sm:max-w-2xl sm:text-xl md:text-2xl',
                   revealClass(model, 'statement-standsalone'),
                 ),
               ),
               h.DataAttribute('reveal', 'up'),
               h.DataAttribute('reveal-key', 'statement-standsalone'),
-              h.DataAttribute('reveal-late', ''),
-              h.Style({ '--reveal-delay': '0.7s' }),
+              // No late gate and a short delay — gated it lost the race
+              // against the closing masked lines below and read as an
+              // afterthought arriving under an already-standing finale.
+              h.Style({ '--reveal-delay': '0.15s' }),
             ],
             ['Her game stands on its own — its own speed, its own tactics, its own rivalries.'],
           ),
@@ -228,12 +258,21 @@ export const view = (model: Model): Html =>
                 'text-fluid-3xl-6xl',
                 0,
               ),
-              maskedLine(
-                model,
-                'statement-close-2',
-                'Watch it rise to the top.',
-                'text-fluid-3xl-6xl text-pink',
-                0.2,
+              // The margin sits on a wrapper, not in the maskedLine
+              // classes — those land on the inner masked span too, where
+              // a top margin shifts the text inside the overflow-hidden
+              // mask and clips it.
+              h.div(
+                [h.Class('mt-4 md:mt-6')],
+                [
+                  maskedLine(
+                    model,
+                    'statement-close-2',
+                    'Watch it rise to the top.',
+                    'text-fluid-3xl-6xl text-pink',
+                    0.2,
+                  ),
+                ],
               ),
             ],
           ),
