@@ -774,6 +774,22 @@ body {
   animation: idle-float 4.5s ease-in-out infinite;
 }
 
+/* The float gated to lg — for emblems that sit IN the flow below lg (the
+   champion's crest): a bobbing element inside a stacked column reads as a
+   glitch, so the life switches on only where the emblem floats off the
+   rim. A separate class, not a `lg:` utility override: this rule is
+   unlayered, so a layered utility like `animate-none` would silently lose
+   to it. */
+.idle-float-lg {
+  animation: none;
+}
+
+@media (min-width: 64rem) {
+  .idle-float-lg {
+    animation: idle-float 4.5s ease-in-out infinite;
+  }
+}
+
 /* The national-team photo tile cycles through the matchday set like a
    pitchside AD BOARD: the incoming print ROLLS DOWN from the top and
    pushes the previous one out of the bottom — one motor-driven motion,

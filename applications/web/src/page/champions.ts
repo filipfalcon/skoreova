@@ -46,10 +46,11 @@ interface SingleMatch {
   readonly opponent: string;
   readonly logo: string;
   // The meta line, structured: `context` is the competition (plus phase),
-  // `stage` the round. Below lg they render as TWO lines (the row lives on
-  // a phone measure there — the md band included — and the joined string
-  // wrapped mid-phrase); from lg one line, em-dash joined. `stage: null`
-  // (the cup run’s plain stage words) renders context alone.
+  // `stage` the round. Below xl they render as TWO lines — the joined
+  // string outruns every measure narrower than the xl half column and
+  // wrapped mid-phrase, leaving an em dash hanging at a line end; from xl
+  // one line, em-dash joined. `stage: null` (the cup run’s plain stage
+  // words) renders context alone.
   readonly context: string;
   readonly stage: string | null;
   readonly score: string;
@@ -101,18 +102,19 @@ const singleMatchRow = (model: Model, keyPrefix: string, match: SingleMatch, ind
             // min-w floor, not min-w-0 — see the row comment above.
             [h.Class('min-w-[8rem] flex-1')],
             [
-              // lg, not md: from md these tables sit in half-width grid
-              // columns (~330px at 768 — phone measure), so the row keeps
-              // its phone scale through the md band; lg has real room.
-              h.p([h.Class('display text-xl lg:text-2xl')], [match.opponent]),
+              // The tables run full width from sm through the md band (the
+              // half-width grid columns start at lg), so the type steps up
+              // at sm and the small print steps back down where the lg
+              // columns squeeze the measure again.
+              h.p([h.Class('display text-xl sm:text-2xl')], [match.opponent]),
               h.p(
-                [h.Class('text-[10px] tracking-[0.2em] uppercase')],
+                [h.Class('text-[10px] tracking-[0.2em] uppercase sm:text-xs lg:text-[10px]')],
                 match.stage === null
                   ? [match.context]
                   : [
                       match.context,
-                      h.br([h.Class('lg:hidden')]),
-                      h.span([h.Class('hidden lg:inline')], [' — ']),
+                      h.br([h.Class('xl:hidden')]),
+                      h.span([h.Class('hidden xl:inline')], [' — ']),
                       match.stage,
                     ],
               ),
@@ -124,38 +126,41 @@ const singleMatchRow = (model: Model, keyPrefix: string, match: SingleMatch, ind
               // A shootout gets the euro table’s stamp treatment — the
               // same pink chip and hover flip as THROUGH, carrying the
               // deciding number; the big score stays the honest 0:0.
-              // lg+ ONLY — below lg it renders as a full-width second row
+              // xl+ ONLY — below xl it renders as a full-width second row
               // (the euro verdicts' grammar: the element that doesn’t fit
-              // inline on a phone measure gets promoted, not squeezed).
+              // inline gets promoted, not squeezed). The lg half column is
+              // a ~440px measure, no wider than a phone’s.
               ...(match.pens === null
                 ? []
                 : [
                     h.span(
                       [
                         h.Class(
-                          'display hidden shrink-0 bg-pink px-3 py-1.5 text-center text-sm tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper lg:block',
+                          'display hidden shrink-0 bg-pink px-3 py-1.5 text-center text-sm tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper xl:block',
                         ),
                       ],
                       [`Penalties ${match.pens}`],
                     ),
                   ]),
               h.div(
-                [h.Class('w-12 shrink-0 text-center lg:w-20')],
+                [h.Class('w-12 shrink-0 text-center sm:w-16 lg:w-20')],
                 [
                   // Pink = the winning scoreline (the euro table’s away-leg
                   // color). Both single-match tables list only wins, so
                   // every score here carries it; if a defeat ever lands in
-                  // one of them, gate this like the euro away leg.
+                  // one of them, gate this like the euro away leg. The
+                  // full-width bands (sm through md) carry the fixed 4xl
+                  // step — the fluid step is sized for the lg half columns.
                   h.p(
                     [
                       h.Class(
-                        'display text-fluid-2xl-4xl text-pink transition-colors duration-300 group-hover:text-ink',
+                        'display text-fluid-2xl-4xl text-pink transition-colors duration-300 group-hover:text-ink sm:text-4xl lg:text-fluid-2xl-4xl',
                       ),
                     ],
                     [...tabularScore(match.score)],
                   ),
                   h.p(
-                    [h.Class('text-[10px] tracking-[0.2em] uppercase md:text-[11px]')],
+                    [h.Class('text-[10px] tracking-[0.2em] uppercase sm:text-xs lg:text-[11px]')],
                     [match.away ? 'Away' : 'Home'],
                   ),
                 ],
@@ -174,7 +179,7 @@ const singleMatchRow = (model: Model, keyPrefix: string, match: SingleMatch, ind
               ),
             ],
           ),
-          // The shootout as its own full-width second row (below lg) — the
+          // The shootout as its own full-width second row (below xl) — the
           // euro verdicts' grammar; w-full forces the wrap inside the row’s
           // flex, the row’s gap-y provides the air.
           ...(match.pens === null
@@ -183,7 +188,7 @@ const singleMatchRow = (model: Model, keyPrefix: string, match: SingleMatch, ind
                 h.span(
                   [
                     h.Class(
-                      'display w-full bg-pink py-1.5 text-center text-xs tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper lg:hidden',
+                      'display w-full bg-pink py-1.5 text-center text-xs tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper sm:text-sm md:py-2 md:text-base lg:text-sm xl:hidden',
                     ),
                   ],
                   [`Penalties ${match.pens}`],
@@ -197,7 +202,11 @@ const singleMatchRow = (model: Model, keyPrefix: string, match: SingleMatch, ind
 const seasonReceiptsGrid = (model: Model): Html =>
   h.div(
     [
-      h.Class('mt-10 grid gap-12 md:mt-14 md:grid-cols-2 md:gap-16'),
+      // Two columns from lg, NOT md: a half column at 768 is a ~330px
+      // measure, and the euro rows carry TWO score blocks — the away leg
+      // (the loud one) fell off the right edge there. Both tables run full
+      // width through the md band instead.
+      h.Class('mt-10 grid gap-12 md:mt-14 lg:grid-cols-2 lg:gap-16'),
       // One 'replay' beat for BOTH tables: every match row animates
       // as soon as the grid shows up, instead of each row waiting
       // for its own viewport entry (phones fall back to per-item).
@@ -394,11 +403,18 @@ const seasonReceiptsGrid = (model: Model): Html =>
                             // ever runs short.
                             [h.Class('min-w-[8rem] flex-1')],
                             [
-                              h.p([h.Class('display text-xl md:text-2xl')], [tie.opponent]),
+                              h.p([h.Class('display text-xl sm:text-2xl')], [tie.opponent]),
                               // Full ink like the single-match rows'
                               // stage lines — no muting anywhere in
                               // the three tables.
-                              h.p([h.Class('text-[10px] tracking-[0.2em] uppercase')], [tie.stage]),
+                              h.p(
+                                [
+                                  h.Class(
+                                    'text-[10px] tracking-[0.2em] uppercase sm:text-xs lg:text-[10px]',
+                                  ),
+                                ],
+                                [tie.stage],
+                              ),
                             ],
                           ),
                           // Both legs from Sparta’s side; the away leg —
@@ -425,7 +441,7 @@ const seasonReceiptsGrid = (model: Model): Html =>
                                     // pink stamp flips to ink on the
                                     // row hover’s pink fill.
                                     clsx(
-                                      'display hidden w-24 shrink-0 py-1.5 text-center text-sm tracking-[0.15em] transition-colors duration-300 lg:block',
+                                      'display hidden w-24 shrink-0 py-1.5 text-center text-sm tracking-[0.15em] transition-colors duration-300 xl:block',
                                       tie.through
                                         ? 'bg-pink text-ink group-hover:bg-ink group-hover:text-paper'
                                         : 'bg-ink text-paper',
@@ -439,16 +455,20 @@ const seasonReceiptsGrid = (model: Model): Html =>
                               // pink alone marks the away leg as the
                               // loud one.
                               h.div(
-                                [h.Class('w-12 shrink-0 text-center md:w-20')],
+                                [h.Class('w-12 shrink-0 text-center sm:w-16 md:w-20')],
                                 [
                                   h.p(
-                                    [h.Class('display text-fluid-2xl-4xl')],
+                                    [
+                                      h.Class(
+                                        'display text-fluid-2xl-4xl sm:text-4xl lg:text-fluid-2xl-4xl',
+                                      ),
+                                    ],
                                     [...tabularScore(tie.homeLeg)],
                                   ),
                                   h.p(
                                     [
                                       h.Class(
-                                        'text-[10px] tracking-[0.2em] uppercase md:text-[11px]',
+                                        'text-[10px] tracking-[0.2em] uppercase sm:text-xs lg:text-[11px]',
                                       ),
                                     ],
                                     ['Home'],
@@ -456,7 +476,7 @@ const seasonReceiptsGrid = (model: Model): Html =>
                                 ],
                               ),
                               h.div(
-                                [h.Class('w-12 shrink-0 text-center md:w-20')],
+                                [h.Class('w-12 shrink-0 text-center sm:w-16 md:w-20')],
                                 [
                                   h.p(
                                     [
@@ -466,10 +486,13 @@ const seasonReceiptsGrid = (model: Model): Html =>
                                         // of WON ties. Hammarby’s away
                                         // defeat stays ink — pink on
                                         // the elimination would lie.
-                                        clsx('display text-fluid-2xl-4xl', {
-                                          'text-pink transition-colors duration-300 group-hover:text-ink':
-                                            tie.through,
-                                        }),
+                                        clsx(
+                                          'display text-fluid-2xl-4xl sm:text-4xl lg:text-fluid-2xl-4xl',
+                                          {
+                                            'text-pink transition-colors duration-300 group-hover:text-ink':
+                                              tie.through,
+                                          },
+                                        ),
                                       ),
                                     ],
                                     [...tabularScore(tie.awayLeg)],
@@ -477,7 +500,7 @@ const seasonReceiptsGrid = (model: Model): Html =>
                                   h.p(
                                     [
                                       h.Class(
-                                        'text-[10px] tracking-[0.2em] uppercase md:text-[11px]',
+                                        'text-[10px] tracking-[0.2em] uppercase sm:text-xs lg:text-[11px]',
                                       ),
                                     ],
                                     ['Away'],
@@ -510,7 +533,7 @@ const seasonReceiptsGrid = (model: Model): Html =>
                         [
                           h.Class(
                             clsx(
-                              'display mt-3 block py-1.5 text-center text-xs tracking-[0.15em] transition-colors duration-300 lg:hidden',
+                              'display mt-3 block py-1.5 text-center text-xs tracking-[0.15em] transition-colors duration-300 sm:text-sm md:py-2 md:text-base lg:text-sm xl:hidden',
                               tie.through
                                 ? 'bg-pink text-ink group-hover:bg-ink group-hover:text-paper'
                                 : 'bg-ink text-paper',
@@ -533,7 +556,9 @@ const seasonReceiptsGrid = (model: Model): Html =>
 const cupRunGrid = (model: Model): Html =>
   h.div(
     [
-      h.Class('mt-14 grid gap-12 md:mt-20 md:grid-cols-2 md:items-center md:gap-16'),
+      // Two columns from lg like the receipts grid above — one restructure
+      // for the whole md band: tables full width, photos on their own beat.
+      h.Class('mt-14 grid gap-12 md:mt-20 lg:grid-cols-2 lg:items-center lg:gap-16'),
       // Same one-beat treatment as the receipts grid above.
       h.DataAttribute('reveal-group', 'replay'),
     ],
@@ -603,10 +628,20 @@ const cupRunGrid = (model: Model): Html =>
           ),
         ],
       ),
-      // The payoff frame — both trophies, no fanfare, uncropped.
+      // The payoff frame — both trophies, no fanfare, uncropped. From sm
+      // up it matches the ASSEMBLED closing collage: the snap slides each
+      // half inward by half the column gap, so the finished picture spans
+      // the collage box minus one gap — full width minus 1rem on the sm
+      // band, the max-w-xl cap minus 1.5rem (34.5rem) on md, centered
+      // both ways. lg's grid column takes over from there.
       h.figure(
         [
-          h.Class(revealClass(model, 'champions-double-figure')),
+          h.Class(
+            clsx(
+              'sm:mx-auto sm:w-[calc(100%-1rem)] md:w-full md:max-w-[34.5rem] lg:mx-0 lg:max-w-none',
+              revealClass(model, 'champions-double-figure'),
+            ),
+          ),
           h.DataAttribute('reveal', 'up'),
           h.DataAttribute('reveal-key', 'champions-double-figure'),
         ],
@@ -646,7 +681,10 @@ const cupRunGrid = (model: Model): Html =>
 
 const honorsBoard = (model: Model): Html =>
   h.div(
-    [h.Class('mt-10 grid items-start gap-12 md:mt-14 md:grid-cols-2 md:items-center md:gap-16')],
+    // Two columns from lg like every other grid in the section — the md
+    // half column wrapped the honor labels AND the records CTA, and shrank
+    // the collage to a stamp.
+    [h.Class('mt-10 grid items-start gap-12 md:mt-14 lg:grid-cols-2 lg:items-center lg:gap-16')],
     [
       h.div(
         [],
@@ -699,7 +737,7 @@ const honorsBoard = (model: Model): Html =>
                             h.span(
                               [
                                 h.Class(
-                                  'ml-auto inline-block bg-ink px-2 py-1 text-sm leading-none text-paper md:text-base',
+                                  'ml-auto inline-block bg-ink px-2 py-1 text-sm leading-none text-paper sm:px-2.5 sm:text-base',
                                 ),
                               ],
                               ['#1'],
@@ -719,9 +757,6 @@ const honorsBoard = (model: Model): Html =>
               // content around them animates, same as everywhere.
               h.Href(platformUrl),
               h.Class(
-                // lg, not md: this CTA lives in the honors grid’s half
-                // column (~330px at 768), which stays phone-width
-                // through the md band.
                 'display mt-10 inline-block bg-ink px-8 py-4 text-xl tracking-[0.08em] text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink lg:text-2xl',
               ),
             ],
@@ -743,7 +778,11 @@ const honorsBoard = (model: Model): Html =>
       // own a separate wrapper — three transform owners that must
       // not overwrite each other.
       //
-      // From `md` the ASSEMBLED photo sits vertically CENTERED on
+      // On the md band the collage rides its own centered beat under
+      // the full-width honors list, capped at max-w-xl — the same
+      // band the Ellie payoff figure mirrors across the section.
+      //
+      // From `lg` the ASSEMBLED photo sits vertically CENTERED on
       // the honors TABLE across the aisle (top rule → last row
       // hairline). Anatomy of the centering, because the box lies:
       // the halves' ±mt-14 stagger stays in LAYOUT (the scrub only
@@ -752,7 +791,7 @@ const honorsBoard = (model: Model): Html =>
       // top and that layout slack IS the matching bottom air (no
       // pb!). With the box thus photo-symmetric, mb-26 hands back
       // the CTA block’s outer height (mt-10 40 + py-4 32 +
-      // text-2xl line 32 = 104px) and the md:items-center midpoint
+      // text-2xl line 32 = 104px) and the lg:items-center midpoint
       // climbs onto the table alone.
       h.div(
         // Phone stagger halved (±mt-10, pt-10): the full ±80px kept
@@ -760,7 +799,11 @@ const honorsBoard = (model: Model): Html =>
         // assembled photo (user call — "too much space"); the scrub
         // cancels whatever margin it finds, so the mechanism is
         // untouched, the travel is just shorter.
-        [h.Class('grid grid-cols-2 gap-4 pt-10 md:mb-26 md:gap-6 md:pt-14')],
+        [
+          h.Class(
+            'grid grid-cols-2 gap-4 pt-10 md:mx-auto md:w-full md:max-w-xl md:gap-6 md:pt-14 lg:mx-0 lg:mb-26 lg:max-w-none',
+          ),
+        ],
         [
           h.div(
             [h.Class('mt-10 md:mt-14'), h.DataAttribute('scrub-align', '')],
@@ -890,12 +933,16 @@ export const view = (model: Model): Html =>
                 [
                   // No brand full stop here — proper club names render bare
                   // everywhere else (the club-profile h1 uses `club.name` as is).
-                  // No md top margin: in the three-zone head the gap above the
-                  // title is justify-between’s job — a fixed margin would stack
-                  // on top of it and push the facts row past the fold on
-                  // shorter viewports.
+                  // The md band keeps the sections' canonical kicker→headline
+                  // step (the in-flow crest fills the frame there). From lg
+                  // the gap is mostly justify-between’s job in the
+                  // three-zone head, and the margin drops to a FLOOR: the
+                  // frame distributes only the slack a viewport has, so on a
+                  // short one it hands out nothing and the chip lands on the
+                  // headline. The floor stays small because it also spends
+                  // slack the frame would otherwise give the lower zones.
                   h.h2(
-                    [h.Class('mt-10 md:mt-0')],
+                    [h.Class('mt-10 md:mt-16 lg:mt-8')],
                     [
                       maskedLine(
                         model,
@@ -947,14 +994,14 @@ export const view = (model: Model): Html =>
                 ],
               ),
               // The champion’s crest — the knight-mascot treatment (slide in
-              // from the right + the shared idle float). Phones keep it IN the
-              // flow, centered between the headline and the honors board (an
-              // absolute corner anchor collided with the full-width headline
-              // there, and right-aligning left an accidental-looking empty
-              // half); from `md` up it floats big off the right rim, tucked
-              // behind its siblings (-z-10 stays inside the container’s own
-              // stacking context). The -top offset rides above the container’s
-              // start, level with the kicker.
+              // from the right + the shared idle float). Below lg it stays IN
+              // the flow, centered (an absolute corner anchor collided with
+              // the full-width headline on phones, and at the md band the
+              // floating crest sat on the headline’s last glyphs and ran
+              // through the lede); from `lg` up it floats big off the right
+              // rim, tucked behind its siblings (-z-10 stays inside the
+              // container’s own stacking context). The -top offset rides
+              // above the container’s start, level with the kicker.
               h.div(
                 [
                   h.Class(
@@ -964,12 +1011,9 @@ export const view = (model: Model): Html =>
                     // calc), top 48px under the section’s edge (-top-12
                     // from the head ≡ the knight’s top-12 from the
                     // section), and 31% of the head ≈ the knight’s 28% of
-                    // the viewport, same 360px cap. bottom-0 + flex-col:
-                    // the column spans the head’s full height, so the
-                    // CTA’s mt-auto pins its bottom edge to the head’s
-                    // floor — structurally level with the facts row.
+                    // the viewport, same 360px cap.
                     clsx(
-                      'pointer-events-none mx-auto mt-5 w-48 select-none md:absolute md:-top-12 md:right-0 md:bottom-0 md:mt-0 md:flex md:-z-10 md:w-[31%] md:max-w-[360px] md:flex-col',
+                      'pointer-events-none mx-auto mt-5 w-48 select-none md:w-56 lg:absolute lg:-top-12 lg:right-0 lg:mt-0 lg:-z-10 lg:w-[31%] lg:max-w-[360px]',
                       revealClass(model, 'champions-crest'),
                     ),
                   ),
@@ -984,30 +1028,31 @@ export const view = (model: Model): Html =>
                     h.Height('1202'),
                     h.Alt('AC Sparta Praha crest'),
                     h.Loading('lazy'),
-                    h.Class('idle-float block w-full md:mb-6'),
+                    h.Class('idle-float-lg block w-full lg:mb-6'),
                   ]),
                   // The wrapper is pointer-events-none (decorative emblem) —
                   // the CTA below the crest opts back in. It stays still while
-                  // the crest floats. md+ ONLY — on phones the CTA renders as
+                  // the crest floats. lg+ ONLY — below lg the CTA renders as
                   // its own element after the facts grid (user call: crest →
                   // facts → button reads better stacked), see below.
                   h.a(
                     [
                       h.Href(`${platformUrl}/clubs/sparta-praha`),
                       h.Class(
-                        // Full CTA spec (px-8/py-4, text-2xl at md) — the same
+                        // Full CTA spec (px-8/py-4, text-2xl) — the same
                         // size as the Discover buttons (user call; the old
                         // compact cut read as a lesser action). w-max +
                         // min-w-full + the left-1/2 translate: the label must
-                        // NOT wrap inside the narrow crest column (169px at
-                        // md), so the button takes its content width when
-                        // that’s wider than the column and stays centered
-                        // under the crest; on wide viewports min-w-full snaps
-                        // it back to the column width. md:mb-2 keeps its
-                        // CENTER level with the facts cells' center (their
-                        // tick→label stack is 84px to the button’s ~68 —
-                        // (84-68)/2 = 8).
-                        'display pointer-events-auto relative left-1/2 hidden w-max min-w-full -translate-x-1/2 bg-pink px-8 py-4 text-center whitespace-nowrap tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-ink hover:text-paper active:bg-ink active:text-paper md:mt-auto md:mb-2 md:block md:text-2xl',
+                        // NOT wrap inside the narrow crest column, so the
+                        // button takes its content width when that’s wider
+                        // than the column and stays centered under the
+                        // crest; on wide viewports min-w-full snaps it back
+                        // to the column width. It hangs directly off the
+                        // crest (the image’s own lg:mb-6 is the gap) rather
+                        // than riding mt-auto down to the head’s floor —
+                        // parked down there it read as a stray button, not
+                        // as the crest’s call to action.
+                        'display pointer-events-auto relative left-1/2 hidden w-max min-w-full -translate-x-1/2 bg-pink px-8 py-4 text-center whitespace-nowrap tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-ink hover:text-paper active:bg-ink active:text-paper lg:block lg:text-2xl',
                       ),
                     ],
                     ['Explore Sparta', displayArrow],
@@ -1028,11 +1073,18 @@ export const view = (model: Model): Html =>
                     // SIBLING it would swallow the CTA’s clicks — nothing in
                     // here is interactive, so let clicks fall through.
                     // Phones: an ALIGNED 2×2 grid (the free-wrap flex left the
-                    // second column ragged); md+ back to the wrap row and the
-                    // reserved crest lane (31%, 360px cap, plus a gutter) —
-                    // without it the cells flow under the crest and the
-                    // Explore CTA paints through them (768–1024 collision).
-                    'pointer-events-none mt-14 grid grid-cols-2 gap-x-6 gap-y-8 md:mt-0 md:flex md:flex-wrap md:items-start md:gap-x-14 md:pr-[calc(min(31%,360px)+1.5rem)] lg:gap-x-20',
+                    // second column ragged). From sm through md all four
+                    // cells fit ONE row — content-sized columns spread edge
+                    // to edge, the full-width measure carries them (a 2×2
+                    // set left half the band empty however it was aligned).
+                    // From lg the row reserves the floating crest’s lane
+                    // (31%, 360px cap, plus a gutter) — without it the cells
+                    // flow under the crest and the Explore CTA paints
+                    // through them — and the 2×2 grid returns, because what
+                    // the lane leaves at 1024 (~630px) can’t seat four
+                    // cells: the widest value is a stadium name. Only at xl
+                    // does the lane leave room for the four-across row.
+                    'pointer-events-none mt-14 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-[repeat(4,auto)] sm:justify-between lg:grid-cols-2 lg:pr-[calc(min(31%,360px)+1.5rem)] xl:flex xl:flex-wrap xl:items-start xl:gap-x-20',
                   ),
                 ],
                 [
@@ -1096,13 +1148,13 @@ export const view = (model: Model): Html =>
                   ),
                 ],
               ),
-              // The phone CTA — the head’s closing beat: crest → facts →
-              // button (the md CTA lives pinned inside the crest column
-              // instead; this one is its below-md sibling). Full CTA spec,
+              // The below-lg CTA — the head’s closing beat: crest → facts →
+              // button (the lg CTA lives pinned inside the crest column
+              // instead; this one is its below-lg sibling). Full CTA spec,
               // same as the Discover buttons — not the crest column’s
               // compact cut.
               h.div(
-                [h.Class('mt-10 flex justify-center md:hidden')],
+                [h.Class('mt-10 flex justify-center lg:hidden')],
                 [
                   h.a(
                     [
