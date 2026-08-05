@@ -106,6 +106,43 @@ const inlineConsent = (root: string): Plugin => ({
   },
 });
 
+// A <link rel="stylesheet"> is the built page's only render-blocking request: nothing paints until it arrives, a full round trip after the HTML. Replacing the tag with a <style> element holding the emitted CSS removes that request, at the cost of re-sending the CSS with every document instead of caching it separately — the right trade for a single-stylesheet SPA that fetches its document once per session.
+const inlineStylesheet = (): Plugin => ({
+  name: 'skoreova:inline-stylesheet',
+  transformIndexHtml: {
+    order: 'post',
+    handler: (html, { bundle }) => {
+      // Only a build carries a bundle; dev serves the source stylesheet straight from the link tag.
+      if (bundle === undefined) {
+        return html;
+      }
+      const links = html.match(/<link rel="stylesheet"[^>]*>/g) ?? [];
+      const link = links[0];
+      // More than one stylesheet would mean per-chunk CSS emission has begun; inlining only the first would ship the rest still render-blocking, with nothing visibly different.
+      if (links.length !== 1 || link === undefined) {
+        throw new Error(
+          `inlineStylesheet: expected exactly one stylesheet link in index.html, found ${links.length}.`,
+        );
+      }
+      const href = link.match(/href="\/([^"]+)"/)?.[1];
+      if (href === undefined) {
+        throw new Error(`inlineStylesheet: no root-relative href in ${link}.`);
+      }
+      const asset = bundle[href];
+      if (asset === undefined || asset.type !== 'asset' || typeof asset.source !== 'string') {
+        throw new Error(`inlineStylesheet: ${href} is not a text asset in the bundle.`);
+      }
+      // A literal </style> in the CSS would close the tag early and spill the remainder into the document as markup.
+      if (asset.source.includes('</style>')) {
+        throw new Error(`inlineStylesheet: ${href} contains "</style>" and cannot be inlined.`);
+      }
+      // Nothing references the file once the link is gone, so it stops being emitted.
+      delete bundle[href];
+      return html.replace(link, `<style>\n${asset.source}\n</style>`);
+    },
+  },
+});
+
 // The Foldkit plugin runs in tests too, DevTools MCP port and all — see the note
 // in applications/studio/vite.config.ts for what the port used to cost and what
 // fixed it. The plugin brands view-function identity, and that IS the differ's
@@ -149,6 +186,7 @@ export default defineConfig({
     ...tailwindcss(),
     ...foldkit({ devToolsMcpPort: 9989 }),
     inlineConsent(import.meta.dirname),
+    inlineStylesheet(),
     pinAlchemyDevPort(5273),
   ],
   // Alchemy’s deploy captures the build output through a `buildApp` post
