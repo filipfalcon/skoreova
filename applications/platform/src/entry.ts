@@ -15,10 +15,10 @@ const application = Runtime.makeApplication({
     onUrlRequest: (request) => ClickedLink({ request }),
     onUrlChange: (url) => ChangedUrl({ url }),
   },
-  devTools: {
-    overlay,
-    Message,
-  },
+  // The package declares `sideEffects: false`, so folding this to `undefined`
+  // in a production build leaves `overlay` unreferenced and the dependency is
+  // dropped rather than shipped unused.
+  ...(import.meta.env.DEV ? { devTools: { overlay, Message } } : {}),
 });
 
 Runtime.run(application);
