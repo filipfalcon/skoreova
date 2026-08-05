@@ -5,7 +5,7 @@ import { evo } from 'foldkit/struct';
 import { toString as urlToString } from 'foldkit/url';
 
 import type { AppRoute } from './route';
-import { urlToAppRoute } from './route';
+import { HomeRoute, urlToAppRoute } from './route';
 import type { Flags, Model, RevealState } from './model';
 import type { Message } from './message';
 import { detectActiveSection, focusMenuToggle, load, navigate, setScrollLock } from './command';
@@ -21,6 +21,7 @@ export { view } from './view';
 // UPDATE
 
 const initialModel: Model = {
+  route: HomeRoute(),
   isMenuOpen: false,
   activeSection: Option.none(),
   mapLeague: 'All',
@@ -39,12 +40,13 @@ const applyRoute = (model: Model, route: AppRoute): Model => {
     M.withReturnType<Model>(),
     M.tagsExhaustive({
       HomeRoute: () => evo(model, { isMenuOpen: () => false }),
+      PolicyRoute: () => evo(model, { isMenuOpen: () => false }),
       NotFoundRoute: () => evo(model, { isMenuOpen: () => false }),
     }),
   );
   // Any navigation closes the map’s club card — landing back on the page
   // with a stale card open would be odd.
-  return evo(next, { mapClub: () => Option.none() });
+  return evo(next, { route: () => route, mapClub: () => Option.none() });
 };
 
 export const init: Runtime.RoutingApplicationInit<Model, Message, Flags> = (flags, url) => [

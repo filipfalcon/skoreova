@@ -5,6 +5,7 @@ export * as Follow from './follow';
 export * as Hero from './hero';
 export * as Marquee from './marquee';
 export * as National from './national';
+export * as Policy from './policy';
 export * as Star from './star';
 export * as Statement from './statement';
 export * as Story from './story';

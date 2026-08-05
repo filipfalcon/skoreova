@@ -13,6 +13,7 @@ import {
   Hero,
   Marquee,
   National,
+  Policy,
   Star,
   Statement,
   Story,
@@ -60,9 +61,16 @@ const landingSections = (model: Model, rootKey: string): ReadonlyArray<Html> => 
 ];
 
 export const view = (model: Model): Document => {
-  const rootKey = `motion-${model.prefersReducedMotion}`;
+  // Keyed on the route tag as well as the motion flag: navigating between
+  // the landing and the policy page tears the motion mounts down and re-runs
+  // their setup against the page actually on screen — the choreography's
+  // element lists are captured at setup, so a mount surviving a page swap
+  // would drive detached nodes and leave the new page inert. NotFound renders
+  // the landing, and shares its key so the swap is a no-op.
+  const isPolicy = model.route._tag === 'PolicyRoute';
+  const rootKey = `motion-${model.prefersReducedMotion}-${isPolicy ? 'policy' : 'landing'}`;
   return {
-    title: 'Skóreová — Czech Women’s Football Coverage',
+    title: isPolicy ? 'Cookies & Privacy — Skóreová' : 'Skóreová — Czech Women’s Football Coverage',
     // American English, the language every string in this app is written in; the runtime writes it after the first render, so what a crawler reads is whatever the served document already carried.
     lang: 'en-US',
     // The root is keyed on the reduced-motion flag: flipping the OS setting
@@ -86,7 +94,7 @@ export const view = (model: Model): Document => {
         // is a boolean attribute: its mere presence would disable the page.
         h.main(
           [h.OnMount(MountMotion()), ...(model.isMenuOpen ? [h.Inert(true)] : [])],
-          landingSections(model, rootKey),
+          isPolicy ? [Policy.view()] : landingSections(model, rootKey),
         ),
         footerView(model.isMenuOpen),
       ],

@@ -1,9 +1,11 @@
 import { Option } from 'effect';
 
 import { Model } from './main';
+import { HomeRoute } from './route';
 
 // The landing page at rest — mirrors `initialModel` in main.ts.
 export const landingModel = Model.make({
+  route: HomeRoute(),
   isMenuOpen: false,
   activeSection: Option.none(),
   mapLeague: 'All',

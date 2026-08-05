@@ -475,6 +475,15 @@ export const footerView = (isMenuOpen: boolean): Html =>
             ],
             ['Cookie settings'],
           ),
+          h.a(
+            [
+              h.Href('/policy'),
+              h.Class(
+                'underline decoration-pink decoration-2 underline-offset-4 transition-colors duration-300 hover:text-paper',
+              ),
+            ],
+            ['Cookies, plainly'],
+          ),
           h.span([], ['© 2026 Skóreová — Made in Czechia']),
         ],
       ),
