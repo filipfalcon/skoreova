@@ -304,7 +304,7 @@ export const view = (model: Model): Html =>
               h.div(
                 [h.Class('md:min-h-[min(calc(100svh-10rem),40rem)]')],
                 [
-                  kicker(model, '06', 'Roar as one', false, '/#roar-as-one'),
+                  kicker(model, '06', 'Roar as one', 'pink', '/#roar-as-one'),
                   h.h2(
                     [h.Class('mt-10 md:mt-16')],
                     [

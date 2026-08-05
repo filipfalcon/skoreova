@@ -17,7 +17,7 @@ export const view = (model: Model): Html =>
       h.div(
         [h.Class(container)],
         [
-          kicker(model, '07', 'Week-in-week-out', true, '/#follow'),
+          kicker(model, '07', 'Week-in-week-out', 'ink', '/#follow'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [
