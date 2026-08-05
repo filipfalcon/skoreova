@@ -1,7 +1,6 @@
 import '@fontsource/anton/400.css';
 import '@fontsource-variable/archivo/index.css';
 import { overlay } from '@foldkit/devtools';
-import * as Sentry from '@sentry/browser';
 import { Effect } from 'effect';
 import { Runtime } from 'foldkit';
 
@@ -23,11 +22,47 @@ import {
 // promise stays true; crash reports are legitimate-interest telemetry,
 // not analytics. Same kill switch as gtag, from the same source of truth
 // (analytics/config.ts) rather than a global set by a script in index.html:
-// localhost, LAN phone testing, and preview deploys stay silent.
-Sentry.init({
-  dsn: 'https://e4a8e88469481b1b99170df7523983b9@o4511717331107840.ingest.de.sentry.io/4511717341790288',
-  enabled: !isMeasurementOff(),
-});
+// localhost, LAN phone testing, and preview deploys stay silent — here by
+// never loading the SDK at all.
+//
+// The SDK is imported once the browser is idle after boot rather than
+// bundled into the critical chunk, where it weighed 28 KiB gzipped — a
+// fifth of the download that gates first render — while executing only
+// when something breaks. Until it arrives, window-level listeners buffer
+// anything thrown, so a crash during boot — the report worth the most —
+// is replayed into the SDK instead of lost. The cap only guards against
+// an error loop filling memory before the SDK takes over.
+const pendingErrors: Array<unknown> = [];
+const bufferError = (event: ErrorEvent): void => {
+  if (pendingErrors.length < 20) pendingErrors.push(event.error ?? event.message);
+};
+const bufferRejection = (event: PromiseRejectionEvent): void => {
+  if (pendingErrors.length < 20) pendingErrors.push(event.reason);
+};
+if (!isMeasurementOff()) {
+  window.addEventListener('error', bufferError);
+  window.addEventListener('unhandledrejection', bufferRejection);
+  const startSentry = (): void => {
+    import('@sentry/browser')
+      .then((Sentry) => {
+        Sentry.init({
+          dsn: 'https://e4a8e88469481b1b99170df7523983b9@o4511717331107840.ingest.de.sentry.io/4511717341790288',
+        });
+        window.removeEventListener('error', bufferError);
+        window.removeEventListener('unhandledrejection', bufferRejection);
+        for (const error of pendingErrors) Sentry.captureException(error);
+        pendingErrors.length = 0;
+      })
+      // Monitoring is best effort — a failed chunk load must not surface as a page error of its own.
+      .catch(() => {});
+  };
+  // The timeout bounds the wait on pages that never go idle (the marquee and drift animations run forever); Safari has no requestIdleCallback, so it takes the plain timer.
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(startSentry, { timeout: 5000 });
+  } else {
+    window.setTimeout(startSentry, 2000);
+  }
+}
 
 // DEV ONLY: every edit is a full page reload (the Foldkit plugin can’t
 // hot-swap an Elm-style runtime — its handleHotUpdate always sends
