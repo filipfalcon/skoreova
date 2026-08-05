@@ -515,7 +515,7 @@ export const view = (model: Model): Html =>
       h.div(
         [h.Class(`${container} relative z-10`)],
         [
-          kicker(model, '03', 'Across the lands', true, '/#across-the-lands'),
+          kicker(model, '03', 'Across the lands', 'ink', '/#across-the-lands'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [

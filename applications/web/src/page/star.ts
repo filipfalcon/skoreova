@@ -29,7 +29,7 @@ export const view = (model: Model): Html =>
       h.div(
         [h.Class(container)],
         [
-          kicker(model, '05', 'Hail to the queen', true, '/#hail-to-the-queen'),
+          kicker(model, '05', 'Hail to the queen', 'ink', '/#hail-to-the-queen'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [maskedLine(model, 'star-headline', 'Denisa Rancová', 'text-fluid-6xl-9xl', 0)],

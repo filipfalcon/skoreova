@@ -78,7 +78,7 @@ export const view = (model: Model): Html =>
               // `dark: true` on a paper section is deliberate (user call):
               // 01 opens the page’s numbered run and the pink chip + ink
               // type reads stronger here than the ink chip variant.
-              kicker(model, '01', 'On the rise', true, '/#on-the-rise'),
+              kicker(model, '01', 'On the rise', 'paper', '/#on-the-rise'),
               // Slightly looser rhythm below md (mt-12/mt-10 vs the md
               // mt-16/mt-12 pattern’s phone halves): the cover has vertical
               // room to give, and the extra air shrinks the dead band under

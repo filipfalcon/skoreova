@@ -925,9 +925,7 @@ export const view = (model: Model): Html =>
               h.DataAttribute('reveal-group', 'replay'),
             ],
             [
-              // `dark: true` on a paper section is deliberate (user call,
-              // same as 01): the pink chip + ink type over paper.
-              kicker(model, '04', 'Meet our champion', true, '/#meet-our-champion'),
+              kicker(model, '04', 'Meet our champion', 'paper', '/#meet-our-champion'),
               h.div(
                 [],
                 [

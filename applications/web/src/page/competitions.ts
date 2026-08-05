@@ -162,7 +162,7 @@ export const view = (model: Model): Html =>
       h.div(
         [h.Class(`${container} relative`)],
         [
-          kicker(model, '02', 'Battling through', true, '/#battling-through'),
+          kicker(model, '02', 'Battling through', 'ink', '/#battling-through'),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [
