@@ -155,7 +155,7 @@ export const menuEntries: ReadonlyArray<MenuEntry> = [
 // Platform links deliberately open in the SAME tab — the platform is our own
 // product, so the jump is a continuation, not a departure. Only third-party
 // links (socials, UEFA, competition sites) get target=_blank + noopener.
-export const platformUrl = 'https://beta.platform.skoreova.com';
+export const platformUrl = 'https://platform.skoreova.com';
 
 // STORY (01 · On the rise)
 

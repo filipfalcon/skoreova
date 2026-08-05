@@ -19,7 +19,7 @@ describe('view', () => {
       // stable proof the shell mounted around the screen.
       Scene.expect(Scene.label('Account')).toExist(),
       Scene.expect(
-        Scene.text('Preview build — all data is placeholder while the platform wires up.'),
+        Scene.text('Beta version — all data is placeholder while the platform wires up.'),
       ).toExist(),
     );
   });

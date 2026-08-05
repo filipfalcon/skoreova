@@ -16,8 +16,8 @@ export default Alchemy.Stack(
         previewsEnabled: false,
       },
       domain: {
-        name: 'beta.skoreova.com',
-        aliases: ['beta.skoreova.cz'],
+        name: 'skoreova.com',
+        aliases: ['skoreova.cz'],
       },
       dev: { host: '127.0.0.1', port: 5180, strictPort: true },
       // Custom Worker entry: a Sentry-wrapped pass-through to the assets
@@ -47,8 +47,8 @@ export default Alchemy.Stack(
         previewsEnabled: false,
       },
       domain: {
-        name: 'beta.platform.skoreova.com',
-        aliases: ['beta.platform.skoreova.cz'],
+        name: 'platform.skoreova.com',
+        aliases: ['platform.skoreova.cz'],
       },
       dev: { host: '127.0.0.1', port: 5181, strictPort: true },
       // Custom Worker entry: /api/ticker from KV + assets pass-through,
@@ -72,8 +72,8 @@ export default Alchemy.Stack(
         previewsEnabled: false,
       },
       domain: {
-        name: 'beta.studio.skoreova.com',
-        aliases: ['beta.studio.skoreova.cz'],
+        name: 'studio.skoreova.com',
+        aliases: ['studio.skoreova.cz'],
       },
       dev: { host: '127.0.0.1', port: 5182, strictPort: true },
       assets: {
