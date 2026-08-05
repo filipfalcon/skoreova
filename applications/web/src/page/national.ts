@@ -60,14 +60,32 @@ const playoffTie = (home: string, away: string, czech: boolean, step: number): H
 
 // A bracket joint (desktop only — phones stack the bracket vertically):
 // the horizontal stub leaves its cell at the cell’s vertical center, and
-// the half-height bar runs toward the sibling joint — stretched 0.75rem
-// past the cell so the two halves meet across the md:gap-y-6 row gap.
-// 'none' is the plain pass-through stub (Round 2 → the prize).
+// the half-height bar runs toward the sibling joint — stretched 1rem past
+// the cell so the two halves OVERLAP across the md:gap-y-6 row gap
+// (16 + 16 over a 24px gap): each half’s end rounds to its own subpixel,
+// and meeting edge-to-edge left a hairline seam in the bar. 'none' is the
+// plain pass-through run (Round 2 → the prize) — it reaches one border
+// width into the dashed card itself, so the crossing needs no separate
+// port piece that could round one pixel away from it.
 const bracketJoint = (position: string, bridge: 'down' | 'up' | 'none', step: number): Html =>
   h.div(
     [h.Class(`relative hidden md:block ${position}`), h.DataAttribute('bracket-step', `${step}`)],
     [
-      h.div([h.Class('absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 bg-ink')], []),
+      h.div(
+        [
+          h.Class(
+            // A bridging joint turns at the middle of its column, so the
+            // stub out of the cell stops there and the next cell gets a
+            // run of its own to be entered by (the turn used to sit flush
+            // against that cell, which read as the bar grazing it rather
+            // than arriving). The pass-through carries the full width.
+            bridge === 'none'
+              ? 'absolute top-1/2 -left-1 right-0 h-1 -translate-y-1/2 bg-ink'
+              : 'absolute top-1/2 left-0 right-1/2 h-1 -translate-y-1/2 bg-ink',
+          ),
+        ],
+        [],
+      ),
       ...(bridge === 'none'
         ? []
         : [
@@ -75,19 +93,79 @@ const bracketJoint = (position: string, bridge: 'down' | 'up' | 'none', step: nu
               [
                 h.Class(
                   bridge === 'down'
-                    ? 'absolute top-1/2 right-0 -bottom-3 w-1 bg-ink'
-                    : 'absolute -top-3 right-0 bottom-1/2 w-1 bg-ink',
+                    ? 'absolute top-1/2 right-1/2 -bottom-4 w-1 translate-x-1/2 bg-ink'
+                    : 'absolute -top-4 right-1/2 bottom-1/2 w-1 translate-x-1/2 bg-ink',
                 ),
               ],
               [],
             ),
           ]),
+      // The converged run into the next round, drawn by the DOWN joint
+      // alone: its vertical center sits at the row gap’s center (cell
+      // bottom + half of md:gap-y-6), the same line the two bar halves
+      // meet on, and it reaches one border width into the neighboring
+      // card. One parent for elbow, bar, and run — pieces split across
+      // parents each round their own 50% and land a pixel apart.
+      ...(bridge === 'down'
+        ? [h.div([h.Class('absolute -right-1 -bottom-[0.875rem] left-1/2 h-1 bg-ink')], [])]
+        : []),
     ],
   );
 
 // The joint’s phone-sized sibling: a short centered drop between the
 // stacked bracket stages.
 const bracketDrop = (): Html => h.div([h.Class('mx-auto h-10 w-1 bg-ink md:hidden')], []);
+
+// The matchday PRINT PILE: five celebration photos hard-cutting through
+// one tile (the .photo-cycle loop in styles.css; reduced motion pins the
+// first). Photo grammar inside — the zoom clip rides an inner div. No
+// crest tile: the kit badges in the photos carry the identity.
+//
+// `key` names the pile’s reveal pair. The section renders two of them —
+// a corner stamp from md and an in-flow tile on phones — and each needs
+// its own keys, since a reveal key addresses one element in the Model.
+const matchdayPile = (model: Model, key: string): Html =>
+  h.div(
+    [h.Class('relative overflow-hidden')],
+    [
+      h.div(
+        [
+          h.Class(clsx('photo-cycle relative', revealClass(model, `${key}-photo`))),
+          h.DataAttribute('reveal', 'zoom'),
+          h.DataAttribute('reveal-key', `${key}-photo`),
+          h.Style({ '--reveal-delay': '0.15s' }),
+        ],
+        [
+          // First print sits in flow and sizes the tile; the rest stack
+          // over it and take their turn in the loop.
+          h.img([
+            h.Src(nationalHuddleImage),
+            h.Width('1100'),
+            h.Height('1100'),
+            h.Alt('Czech national team players celebrating together — a series of matchday photos'),
+            h.Loading('lazy'),
+            h.Class('aspect-square w-full object-cover'),
+          ]),
+          ...[
+            nationalCelebrationRedImage,
+            nationalHomeHuddleImage,
+            nationalAwayHighfiveImage,
+            nationalLineupImage,
+          ].map((image) =>
+            h.img([
+              h.Src(image),
+              h.Width('1100'),
+              h.Height('1100'),
+              h.Alt(''),
+              h.AriaHidden(true),
+              h.Loading('lazy'),
+              h.Class('absolute inset-0 h-full w-full object-cover'),
+            ]),
+          ),
+        ],
+      ),
+    ],
+  );
 
 // The national team’s ID card — the club pages' facts anatomy (tick →
 // value → label), values in PAPER: on this section’s pink ground paper is
@@ -106,23 +184,27 @@ const nationalIdCard = (model: Model, classes: string, cellReveals: boolean): Ht
         ['FIFA ranking', '33rd'],
         ['Nations League', 'League B'],
       ] as const
-    ).map(([label, value], index) =>
-      h.div(
+    ).map(([label, value], index) => {
+      // Three cells over two phone columns leave the last one alone on its
+      // row; spanning both keeps it from reading as a dropped column. The
+      // grid seat is inert once the card is a flex row from md.
+      const seat = clsx('text-center md:text-left', { 'col-span-2': index === 2 });
+      return h.div(
         cellReveals
           ? [
-              h.Class(revealClass(model, `national-id-${index}`)),
+              h.Class(clsx(seat, revealClass(model, `national-id-${index}`))),
               h.DataAttribute('reveal', 'up'),
               h.DataAttribute('reveal-key', `national-id-${index}`),
               h.Style({ '--reveal-delay': `${0.15 + index * 0.1}s` }),
             ]
-          : [],
+          : [h.Class(seat)],
         [
-          h.div([h.Class('mb-4 h-1 w-12 bg-ink')], []),
+          h.div([h.Class('mb-4 h-1 w-12 bg-ink mx-auto md:mx-0')], []),
           h.p([h.Class('display text-2xl text-paper md:text-3xl')], [value]),
           h.p([h.Class('mt-3 text-xs tracking-[0.2em] uppercase md:text-sm')], [label]),
         ],
-      ),
-    ),
+      );
+    }),
   );
 
 export const view = (model: Model): Html =>
@@ -193,53 +275,7 @@ export const view = (model: Model): Html =>
           h.DataAttribute('reveal', 'up'),
           h.DataAttribute('reveal-key', 'national-mascots'),
         ],
-        [
-          h.div(
-            [h.Class('relative overflow-hidden')],
-            [
-              h.div(
-                [
-                  h.Class(
-                    clsx('photo-cycle relative', revealClass(model, 'national-mascots-photo')),
-                  ),
-                  h.DataAttribute('reveal', 'zoom'),
-                  h.DataAttribute('reveal-key', 'national-mascots-photo'),
-                  h.Style({ '--reveal-delay': '0.15s' }),
-                ],
-                [
-                  // First print sits in flow and sizes the tile; the rest
-                  // stack over it and take their turn in the loop.
-                  h.img([
-                    h.Src(nationalHuddleImage),
-                    h.Width('1100'),
-                    h.Height('1100'),
-                    h.Alt(
-                      'Czech national team players celebrating together — a series of matchday photos',
-                    ),
-                    h.Loading('lazy'),
-                    h.Class('aspect-square w-full object-cover'),
-                  ]),
-                  ...[
-                    nationalCelebrationRedImage,
-                    nationalHomeHuddleImage,
-                    nationalAwayHighfiveImage,
-                    nationalLineupImage,
-                  ].map((image) =>
-                    h.img([
-                      h.Src(image),
-                      h.Width('1100'),
-                      h.Height('1100'),
-                      h.Alt(''),
-                      h.AriaHidden(true),
-                      h.Loading('lazy'),
-                      h.Class('absolute inset-0 h-full w-full object-cover'),
-                    ]),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+        [matchdayPile(model, 'national-mascots')],
       ),
       h.div(
         [h.Class(`${container} relative z-10`)],
@@ -300,7 +336,7 @@ export const view = (model: Model): Html =>
                         // right-aligned echo line ENDS where the card’s
                         // League B column ends — one shared right edge.
                         clsx(
-                          'display mt-8 max-w-2xl text-fluid-2xl-4xl leading-snug md:mt-12',
+                          'display mt-8 max-w-2xl text-fluid-2xl-4xl leading-snug md:mt-12 md:text-fluid-3xl-5xl',
                           revealClass(model, 'national-echo'),
                         ),
                       ),
@@ -309,20 +345,53 @@ export const view = (model: Model): Html =>
                     ],
                     [
                       // Staggered couplet (user layout): the answer line
-                      // steps to the right and ENDS on the card’s right
-                      // edge (phones keep a soft fixed step — a right
-                      // alignment reads accidental at one line’s width).
+                      // ENDS on the card’s right edge at every width. The
+                      // fixed indent it used to carry on phones cost it the
+                      // room it needed for its own line, so it wrapped and
+                      // the couplet came out as a three-step staircase.
                       h.span([h.Class('block')], ['Czech for lionesses...']),
                       h.span(
-                        [h.Class('block pl-16 text-paper md:pl-0 md:text-right')],
+                        [h.Class('block text-right text-paper')],
                         ['…but don’t translate the roar.'],
                       ),
                     ],
                   ),
-                  // max-w-2xl keeps the three cells inside the left column
-                  // (the lioness starts ~780px in at 1280) while
-                  // justify-between still spreads them into real columns.
-                  nationalIdCard(model, 'mt-12 flex md:mt-14 md:max-w-2xl', true),
+                  // Below md the print pile joins the flow above the ID
+                  // card — the corner stamp it wears from md is too small
+                  // to read there, and the card alone left the section’s
+                  // landing frame without a photograph in it. On the sm
+                  // band the two pair up as a media row (photo left, facts
+                  // beside it): the tile is square, so at full width its
+                  // height followed the whole measure and pushed the card
+                  // out of the frame. From md the wrapper dissolves back
+                  // into plain flow and only the card is left in it.
+                  h.div(
+                    [h.Class('sm:flex sm:items-center sm:gap-8 md:block')],
+                    [
+                      h.div(
+                        [
+                          h.Class(
+                            clsx(
+                              'mt-12 sm:mt-0 sm:w-2/5 sm:max-w-xs sm:shrink-0 md:hidden',
+                              revealClass(model, 'national-pile'),
+                            ),
+                          ),
+                          h.DataAttribute('reveal', 'up'),
+                          h.DataAttribute('reveal-key', 'national-pile'),
+                        ],
+                        [matchdayPile(model, 'national-pile')],
+                      ),
+                      // max-w-2xl keeps the three cells inside the left
+                      // column (the lioness starts ~780px in at 1280)
+                      // while justify-between still spreads them into real
+                      // columns.
+                      nationalIdCard(
+                        model,
+                        'mt-12 grid grid-cols-2 sm:mt-0 sm:min-w-0 sm:flex-1 sm:grid-cols-1 md:mt-14 md:flex md:max-w-2xl',
+                        true,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ],
@@ -413,28 +482,12 @@ export const view = (model: Model): Html =>
                           h.DataAttribute('bracket-step', '3'),
                         ],
                         [
-                          // Solid PORTS where the bracket’s bars land: the
-                          // bars only abutted the dashed outline, and when
-                          // the touch point fell into a dash gap the whole
-                          // junction read as coincidence, not a joint. Each
-                          // port overlaps the incoming bar AND the border,
-                          // so the ink runs continuous at any dash phase.
-                          h.div(
-                            [
-                              h.Class(
-                                'pointer-events-none absolute top-1/2 -left-3 hidden h-1 w-4 -translate-y-1/2 bg-ink md:block',
-                              ),
-                            ],
-                            [],
-                          ),
-                          h.div(
-                            [
-                              h.Class(
-                                'pointer-events-none absolute top-1/2 -right-3 hidden h-1 w-4 -translate-y-1/2 bg-ink md:block',
-                              ),
-                            ],
-                            [],
-                          ),
+                          // No ports of its own: both incoming lines are
+                          // drawn by the JOINTS and reach one border width
+                          // into this card themselves (the left run by the
+                          // down bridge, the right by the pass-through) —
+                          // a port here would sit at this card’s own 50%,
+                          // which rounds a pixel away from the joints’.
                           h.p(
                             [h.Class('text-[11px] tracking-[0.2em] uppercase')],
                             ['Round 2 · Nov 26 — Dec 5, 2026'],
