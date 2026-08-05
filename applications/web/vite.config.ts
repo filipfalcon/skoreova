@@ -143,6 +143,38 @@ const inlineStylesheet = (): Plugin => ({
   },
 });
 
+// The hero photo is requested by markup the app renders, so the preload scanner never sees it in the HTML and its fetch waits out the full bundle download, parse, and first render. A preload link in the head starts the download at parse time instead, in parallel with the bundle, so the photo is cached by the time the view mounts.
+const preloadHero = (): Plugin => ({
+  name: 'skoreova:preload-hero',
+  transformIndexHtml: {
+    order: 'post',
+    handler: (html, { bundle }) => {
+      // Only a build hashes assets; dev serves the source file the moment the view asks for it.
+      if (bundle === undefined) {
+        return html;
+      }
+      const heroes = Object.values(bundle).filter(
+        (item) =>
+          item.type === 'asset' &&
+          item.originalFileNames.some((name) => name.endsWith('src/assets/hero.webp')),
+      );
+      const hero = heroes[0];
+      if (heroes.length !== 1 || hero === undefined) {
+        throw new Error(
+          `preloadHero: expected exactly one emitted asset from src/assets/hero.webp, found ${heroes.length}.`,
+        );
+      }
+      if (!html.includes('</head>')) {
+        throw new Error('preloadHero: no </head> in index.html to inject the preload before.');
+      }
+      return html.replace(
+        '</head>',
+        `  <link rel="preload" as="image" href="/${hero.fileName}" fetchpriority="high">\n  </head>`,
+      );
+    },
+  },
+});
+
 // The Foldkit plugin runs in tests too, DevTools MCP port and all — see the note
 // in applications/studio/vite.config.ts for what the port used to cost and what
 // fixed it. The plugin brands view-function identity, and that IS the differ's
@@ -187,6 +219,7 @@ export default defineConfig({
     ...foldkit({ devToolsMcpPort: 9989 }),
     inlineConsent(import.meta.dirname),
     inlineStylesheet(),
+    preloadHero(),
     pinAlchemyDevPort(5273),
   ],
   // Alchemy’s deploy captures the build output through a `buildApp` post
