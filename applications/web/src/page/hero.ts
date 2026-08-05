@@ -69,8 +69,8 @@ export const view = (): Html =>
           // starts right at their hair.
           h.img([
             h.Src(heroImage),
-            h.Width('4000'),
-            h.Height('2667'),
+            h.Width('2560'),
+            h.Height('1707'),
             h.Alt('Four Czech players in dark red kits, arms crossed, facing the camera'),
             // Decode off the main thread and prioritize the fetch — it’s the
             // one above-the-fold image, so its decode shouldn’t block the

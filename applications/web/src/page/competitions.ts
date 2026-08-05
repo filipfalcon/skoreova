@@ -145,8 +145,8 @@ export const view = (model: Model): Html =>
         [
           h.img([
             h.Src(duoImage),
-            h.Width('2664'),
-            h.Height('2008'),
+            h.Width('1600'),
+            h.Height('1207'),
             h.Alt(''),
             h.Loading('lazy'),
             // On phones the visible slice is a ~6% column of the photo (the
