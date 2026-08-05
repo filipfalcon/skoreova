@@ -175,6 +175,44 @@ const preloadHero = (): Plugin => ({
   },
 });
 
+// The two latin woff2 subsets that paint the above-the-fold intro (Anton display lines, Archivo header/CTA text). The latin-ext and vietnamese subsets stay on demand: latin-ext first renders in below-fold club names where a swap is invisible, vietnamese never renders at all, and every font preload competes with the critical bundle for early bandwidth.
+const PRELOADED_FONTS: ReadonlyArray<string> = [
+  'anton-latin-400-normal.woff2',
+  'archivo-latin-wght-normal.woff2',
+];
+
+// The @font-face rules travel inside the app's CSS, so the browser requests a font file only after rendered text needs its glyphs — behind the full bundle download, parse, and first render. A preload link starts the download at parse time, in parallel with the bundle, so the intro's faces are ready by first paint instead of swapping in mid-ignition on slow connections.
+const preloadFonts = (): Plugin => ({
+  name: 'skoreova:preload-fonts',
+  transformIndexHtml: {
+    order: 'post',
+    handler: (html, { bundle }) => {
+      // Only a build hashes assets; dev serves the source files the moment the stylesheet asks for them.
+      if (bundle === undefined) {
+        return html;
+      }
+      if (!html.includes('</head>')) {
+        throw new Error('preloadFonts: no </head> in index.html to inject the preloads before.');
+      }
+      const links = PRELOADED_FONTS.map((font) => {
+        const matches = Object.values(bundle).filter(
+          (item) =>
+            item.type === 'asset' && item.originalFileNames.some((name) => name.endsWith(font)),
+        );
+        const asset = matches[0];
+        if (matches.length !== 1 || asset === undefined) {
+          throw new Error(
+            `preloadFonts: expected exactly one emitted asset for ${font}, found ${matches.length}.`,
+          );
+        }
+        // Font preloads fetch in CORS mode even same-origin; without `crossorigin` the preload's credential mode differs from the stylesheet's own request and the browser downloads the file twice.
+        return `  <link rel="preload" as="font" type="font/woff2" href="/${asset.fileName}" crossorigin>\n`;
+      });
+      return html.replace('</head>', `${links.join('')}  </head>`);
+    },
+  },
+});
+
 // The Foldkit plugin runs in tests too, DevTools MCP port and all — see the note
 // in applications/studio/vite.config.ts for what the port used to cost and what
 // fixed it. The plugin brands view-function identity, and that IS the differ's
@@ -220,6 +258,7 @@ export default defineConfig({
     inlineConsent(import.meta.dirname),
     inlineStylesheet(),
     preloadHero(),
+    preloadFonts(),
     pinAlchemyDevPort(5273),
   ],
   // Alchemy’s deploy captures the build output through a `buildApp` post
