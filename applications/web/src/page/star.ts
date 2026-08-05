@@ -41,8 +41,13 @@ export const view = (model: Model): Html =>
           h.div(
             // No row gap: the top-scorer bar sits FLUSH under the portrait
             // cutout on phones (md runs two columns, so a row gap never
-            // applied there anyway).
-            [h.Class('mt-16 grid gap-x-16 md:mt-8 md:grid-cols-2')],
+            // applied there anyway). From lg the row starts clear of the
+            // headline: the crown is drawn ABOVE the portrait box and
+            // reaches ~8rem past its top edge, so a tight top margin put
+            // the scribble across the name. The clearance shrinks again at
+            // xl, where the wider column carries the crown out from under
+            // the headline’s tail on its own.
+            [h.Class('mt-16 grid gap-x-16 md:mt-8 md:grid-cols-2 lg:mt-48 xl:mt-12')],
             [
               h.div(
                 [
@@ -55,18 +60,29 @@ export const view = (model: Model): Html =>
                   // shrink-wrapping box so the crown can anchor to the
                   // PHOTO’s coordinates, not the whole column’s. The box is
                   // also the dock scrub’s transform owner (motion.ts): it
-                  // rides 25rem high on the section’s landing frame — her
-                  // face in the frame instead of a hairline — and sits
-                  // down on the 06 boundary as it scrolls in; the crown
-                  // rides along, the watermark stays put as backdrop.
+                  // rides `--dock-lift` high on the section’s landing frame
+                  // — her face in the frame instead of a hairline — and
+                  // sits down on the 06 boundary as it scrolls in; the
+                  // crown rides along, the watermark stays put as backdrop.
+                  // The ceiling caps how high the ride can go: header
+                  // (4rem) + the crown’s reach above her hair (~9.5rem), so
+                  // the crown stays in view for the whole descent.
                   h.div(
                     [
-                      h.Class('relative h-[24rem] sm:h-[30rem] md:h-full md:max-h-[46rem]'),
+                      // Height, not width, sizes her — the portrait is a
+                      // 973×1600 cutout, so h-full inside a row as tall as
+                      // the text column blew her past her own half and over
+                      // the headline. Through the md band she keeps a fixed
+                      // height that fits the column; from lg the column is
+                      // wide enough for her to fill it.
+                      // 8rem, not the 18 this ride was authored with: the
+                      // headline crosses into her column at every width
+                      // where the two share a row, and the long ride
+                      // carried her face up into it.
+                      h.Class(
+                        'relative h-[24rem] [--dock-ceiling:13.5rem] [--dock-lift:8rem] sm:h-[30rem] md:h-[34rem] lg:h-full lg:max-h-[46rem]',
+                      ),
                       h.DataAttribute('scrub-dock', ''),
-                      // Ceiling = header (4rem) + the crown’s reach above
-                      // her hair (~9.5rem) — the crown stays in view for the
-                      // whole ride down.
-                      h.Style({ '--dock-lift': '18rem', '--dock-ceiling': '13.5rem' }),
                     ],
                     [
                       // Her real jersey number, extreme-sized and INSIDE the
@@ -113,8 +129,17 @@ export const view = (model: Model): Html =>
                             // centered on the head’s axis (user pick from a
                             // 96/100/104 ladder — 87 sat ON the hairline and
                             // read glued).
+                            //
+                            // The seat is the same everywhere — the band
+                            // rests at her hairline and the spikes stand
+                            // clear above the box. From lg the scribble
+                            // narrows: at the portrait’s desktop height the
+                            // md width drew a crown reaching a whole
+                            // crown-height past the box, into the
+                            // headline’s tail (the row’s lg top margin
+                            // carries the rest of that clearance).
                             clsx(
-                              'star-crown pointer-events-none absolute bottom-[96%] left-[32%] w-[34%] -rotate-6 text-pink md:bottom-[96%] md:left-[23%] md:w-[48%]',
+                              'star-crown pointer-events-none absolute bottom-[96%] left-[32%] w-[34%] -rotate-6 text-pink md:bottom-[96%] md:left-[23%] md:w-[48%] lg:left-[28%] lg:w-[40%]',
                               revealClass(model, 'star-crown'),
                             ),
                           ),
@@ -198,9 +223,14 @@ export const view = (model: Model): Html =>
                       // Content-sized tracks spread with space-between, NOT
                       // three equal ones — the values differ in width and
                       // equal tracks left the gutters visibly uneven (the
-                      // section 01 stats' lesson, same fix).
+                      // section 01 stats' lesson, same fix). On the sm band
+                      // the row owns the whole viewport (the photo column
+                      // only takes its half from md), and space-between put
+                      // the outer values hard against the container’s
+                      // padding — there the free space spreads evenly
+                      // instead, so the rims get air too.
                       h.Class(
-                        'mt-10 grid grid-cols-[auto_auto_auto] justify-between gap-x-6 gap-y-8 md:mt-14',
+                        'mt-10 grid grid-cols-[auto_auto_auto] justify-between gap-x-6 gap-y-8 sm:justify-evenly md:mt-14 md:justify-between',
                       ),
                     ],
                     starStats.map((stat, index) =>
