@@ -131,7 +131,7 @@ export const view = (): Html =>
                 [h.Class(`${heroMask} text-paper`)],
                 [
                   h.span(
-                    [h.Class('hero-line display block'), h.Style({ '--hero-delay': '0.25s' })],
+                    [h.Class('hero-line display block'), h.Style({ '--hero-delay': '0.15s' })],
                     ['Discover'],
                   ),
                 ],
@@ -147,7 +147,7 @@ export const view = (): Html =>
                 [h.Class(heroText)],
                 [
                   h.span(
-                    [h.Class('hero-neon display block'), h.Style({ '--hero-delay': '0.5s' })],
+                    [h.Class('hero-neon display block'), h.Style({ '--hero-delay': '0.25s' })],
                     // ONE glow filter for the whole line — the only structure
                     // WebKit renders sharp. The per-word ignition (motion.ts
                     // stepping `.hero-neon-late`) runs on non-WebKit engines
@@ -169,7 +169,7 @@ export const view = (): Html =>
                 [h.Class(`${heroMask} text-paper`)],
                 [
                   h.span(
-                    [h.Class('hero-line display block'), h.Style({ '--hero-delay': '0.55s' })],
+                    [h.Class('hero-line display block'), h.Style({ '--hero-delay': '0.3s' })],
                     ['In Czechia'],
                   ),
                 ],
@@ -182,7 +182,7 @@ export const view = (): Html =>
           h.div(
             [
               h.Class('hero-fade mt-9 flex justify-center md:mt-7'),
-              h.Style({ '--hero-delay': '1.3s' }),
+              h.Style({ '--hero-delay': '0.65s' }),
             ],
             [
               h.a(
@@ -214,7 +214,7 @@ export const view = (): Html =>
               h.Class(
                 'hero-fade pointer-events-none my-auto flex items-end justify-center px-5 text-[10px] tracking-[0.2em] uppercase text-paper/60 select-none [@media(max-height:37.5rem)]:absolute [@media(max-height:37.5rem)]:inset-x-0 [@media(max-height:37.5rem)]:bottom-2 [@media(max-height:37.5rem)]:my-0 sm:absolute sm:inset-x-0 sm:bottom-2 sm:my-0 sm:justify-between sm:px-3',
               ),
-              h.Style({ '--hero-delay': '1.6s' }),
+              h.Style({ '--hero-delay': '0.85s' }),
             ],
             [
               h.span([h.Class('hidden sm:inline')], ['Independent media']),

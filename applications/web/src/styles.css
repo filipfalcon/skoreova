@@ -703,7 +703,7 @@ body {
 
 /* The idle "Ken Burns" drift: an imperceptibly slow breathe that keeps the
    hero from reading as a still for viewers who don’t scroll immediately.
-   Takes over the instant the intro settle ends (2.4s) and alternates forever. */
+   Takes over the instant the intro settle ends (1.2s) and alternates forever. */
 @keyframes hero-drift {
   from {
     transform: scale(1.015);
@@ -714,7 +714,7 @@ body {
 }
 
 .hero-line {
-  animation: hero-line-up 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: hero-line-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: var(--hero-delay, 0.2s);
   /* Looser than the site’s default display tracking (-0.01em) — the hero
      headline gets a bit more air. Kept identical on the neon line below so
@@ -723,7 +723,7 @@ body {
 }
 
 .hero-fade {
-  animation: hero-fade 1s ease-out both;
+  animation: hero-fade 0.7s ease-out both;
   animation-delay: var(--hero-delay, 1s);
 }
 
@@ -958,8 +958,8 @@ body {
      visible speed, and still stops definitively at the end. */
   will-change: transform;
   animation:
-    hero-photo 2.4s cubic-bezier(0.3, 0.4, 0.2, 1) both,
-    hero-drift 26s ease-in-out 2.4s infinite alternate;
+    hero-photo 1.2s cubic-bezier(0.3, 0.4, 0.2, 1) both,
+    hero-drift 26s ease-in-out 1.2s infinite alternate;
   /* Scale downward only — a centered zoom would crop the top of the photo
      (the players' heads) during the intro settle, and the drift must never
      eat into their faces either. */

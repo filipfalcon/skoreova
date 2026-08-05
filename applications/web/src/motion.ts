@@ -838,31 +838,31 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       // "Her" igniting: two ULTRA-fast strikes (~45ms phases), a beat, then
       // the final one holds. Every "on" is full brightness — brightness play
       // is reserved for the winks after the sign is lit. The whole pattern is
-      // shifted late so "Her" settles just ~300ms before "game" answers —
+      // shifted late so "Her" settles just ~110ms before "game" answers —
       // the photo gets a beat alone, then the sign ignites in one cascade.
       const powerOn: ReadonlyArray<readonly [number, number]> = [
         [0, 0],
-        [345, 1],
-        [390, 0.1],
-        [435, 1],
-        [480, 0.12],
-        [705, 1],
+        [120, 1],
+        [165, 0.1],
+        [210, 1],
+        [255, 0.12],
+        [390, 1],
       ];
       // The "game" segment is wired separately, like on a real sign: it stays
       // dark while "Her" strikes, then runs a four-blink pattern — blink,
-      // ~300ms dark, blink, ultra-light pause, blink, ~300ms dark, final
-      // blink. The final one lands at 500 + 1900 = 2400ms on the intro
-      // clock: the exact moment the photo’s settle (`hero-photo`, 2.4s)
+      // ~130ms dark, blink, ultra-light pause, blink, ~60ms dark, final
+      // blink. The final one lands at 250 + 950 = 1200ms on the intro
+      // clock: the exact moment the photo’s settle (`hero-photo`, 1.2s)
       // comes to rest, and holds.
       const lateWordOn: ReadonlyArray<readonly [number, number]> = [
         [0, 0],
-        [1005, 1],
-        [1080, 0.1],
-        [1380, 1],
-        [1450, 0.1],
-        [1540, 1],
-        [1610, 0.14],
-        [1900, 1],
+        [500, 1],
+        [570, 0.1],
+        [700, 1],
+        [745, 0.1],
+        [810, 1],
+        [870, 0.14],
+        [950, 1],
       ];
       // The idle wink, once the sign is fully lit: the WHOLE sign sags and
       // recovers — one brightness dip, never a blackout, never per-segment.
@@ -878,8 +878,8 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
       // currentTime and fires the steps that are due. Timers drifted (mount
       // lag, timer throttling) and kept landing the finale off the zoom
       // settle; sampling the animation itself makes the two inseparable by
-      // construction. The 500ms lead is part of the same timeline.
-      const HERO_DELAY_MS = 500;
+      // construction. The 250ms lead is part of the same timeline.
+      const HERO_DELAY_MS = 250;
       interface NeonStep {
         readonly at: number;
         readonly element: HTMLElement;
