@@ -540,7 +540,10 @@ export const view = (model: Model): Html =>
                             [],
                           ),
                           h.p(
-                            [h.Class('text-[11px] tracking-[0.2em] text-pink uppercase')],
+                            // Ink, not the pink its sibling kickers wear: 11px pink
+                            // on paper is 3.0:1, under the 4.5:1 small text needs —
+                            // ink is the card's own scheme and reads at 15.5:1.
+                            [h.Class('text-[11px] tracking-[0.2em] text-ink uppercase')],
                             ['FIFA Women’s World Cup'],
                           ),
                           h.p([h.Class('display mt-4 text-fluid-3xl-5xl')], ['Brazil 2027.']),
