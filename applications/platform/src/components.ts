@@ -141,7 +141,7 @@ export const previewStamp = (): Html =>
     [
       h.span(
         [h.Class('box-decoration-clone bg-pink px-1.5 py-0.5')],
-        ['Preview Build', h.br([]), 'Work in progress'],
+        ['Beta Version', h.br([]), 'Work in progress'],
       ),
     ],
   );

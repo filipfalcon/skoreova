@@ -10,10 +10,10 @@ standings, top scorers, club and player profiles).
 
 ## Site structure
 
-- [Landing page](https://beta.skoreova.com/): why the sport matters,
+- [Landing page](https://skoreova.com/): why the sport matters,
   what we cover, the map of clubs, the reigning champion (Sparta Praha),
   the player spotlight, and the national team.
-- [Platform](https://beta.platform.skoreova.com/): the data product —
+- [Platform](https://platform.skoreova.com/): the data product —
   results, standings, charts, and profiles. Club profiles live at
   `/clubs/<slug>` (19 clubs across two leagues) and competition profiles
   at `/competitions/<slug>` (first-league, second-league, domestic-cup,

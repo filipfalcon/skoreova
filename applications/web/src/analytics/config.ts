@@ -9,10 +9,7 @@ export const MEASUREMENT_ID = 'G-PJ131P52RX';
  * `.com` is canonical and `.cz` the alias; both are live deploys. Everywhere else — localhost, LAN
  * testing, preview deploys, tunnels — stays silent, so development traffic never reaches the data.
  */
-export const PRODUCTION_HOSTNAMES: ReadonlyArray<string> = [
-  'beta.skoreova.com',
-  'beta.skoreova.cz',
-];
+export const PRODUCTION_HOSTNAMES: ReadonlyArray<string> = ['skoreova.com', 'skoreova.cz'];
 
 /**
  * Where the visitor's choice is kept between visits.

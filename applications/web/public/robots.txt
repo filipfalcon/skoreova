@@ -1,6 +1,8 @@
 # Skóreová — everything here is public and meant to be read.
 # Search engines, social preview fetchers, and AI crawlers are all welcome.
 
+Sitemap: https://skoreova.com/sitemap.xml
+
 User-agent: *
 Allow: /
 

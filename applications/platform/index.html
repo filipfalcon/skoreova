@@ -8,15 +8,12 @@
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#0d0c0c" />
 
-    <link rel="canonical" href="https://beta.platform.skoreova.com/" />
+    <link rel="canonical" href="https://platform.skoreova.com/" />
     <meta
       name="description"
       content="The data hub of Czech women’s football. Build your own charts and follow every club, player, competition, and referee."
     />
-    <meta
-      name="robots"
-      content="noindex, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
-    />
+    <meta name="robots" content="max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 
     <!-- Icons + manifest — the same set as the landing site. -->
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -28,13 +25,13 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Skóreová Platform" />
     <meta property="og:locale" content="en_US" />
-    <meta property="og:url" content="https://beta.platform.skoreova.com/" />
+    <meta property="og:url" content="https://platform.skoreova.com/" />
     <meta property="og:title" content="Her Game. Her Numbers." />
     <meta
       property="og:description"
       content="The data hub of Czech women’s football. Build your own charts and follow every club, player, competition, and referee."
     />
-    <meta property="og:image" content="https://beta.platform.skoreova.com/og.png" />
+    <meta property="og:image" content="https://platform.skoreova.com/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
@@ -53,8 +50,8 @@
             "@id": "https://skoreova.com/#organization",
             "name": "Skóreová",
             "alternateName": "Skoreova",
-            "url": "https://beta.skoreova.com/",
-            "logo": "https://beta.skoreova.com/icon-512.png",
+            "url": "https://skoreova.com/",
+            "logo": "https://skoreova.com/icon-512.png",
             "description": "Czech Women’s Football Coverage.",
             "sameAs": [
               "https://instagram.com/skoreova",
@@ -68,7 +65,7 @@
           {
             "@type": "WebSite",
             "@id": "https://platform.skoreova.com/#website",
-            "url": "https://beta.platform.skoreova.com/",
+            "url": "https://platform.skoreova.com/",
             "name": "Skóreová Platform",
             "alternateName": "Skoreova Platform",
             "publisher": { "@id": "https://skoreova.com/#organization" },
@@ -86,10 +83,9 @@
       // Measurement runs ONLY on the production hostname — everything else
       // (localhost, LAN phone testing, preview deploys, tunnels) hits
       // Google’s official kill switch: gtag.js loads but records nothing.
-      window.skoreovaAnalyticsOff = ![
-        'beta.platform.skoreova.com',
-        'beta.platform.skoreova.cz',
-      ].includes(location.hostname);
+      window.skoreovaAnalyticsOff = !['platform.skoreova.com', 'platform.skoreova.cz'].includes(
+        location.hostname,
+      );
       if (window.skoreovaAnalyticsOff) {
         window['ga-disable-G-PJ131P52RX'] = true;
       }
