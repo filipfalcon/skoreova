@@ -186,6 +186,24 @@ test('an internal link applies the route, pushes it, and releases the lock', () 
   );
 });
 
+test('the policy link routes to the policy page and back', () => {
+  Story.story(
+    update,
+    Story.with(landingModel),
+    Story.message(ClickedLink({ request: Internal({ url: url('/policy') }) })),
+    Story.model((model) => {
+      expect(model.route._tag).toBe('PolicyRoute');
+    }),
+    Story.Command.resolve(Navigate, CompletedNavigate()),
+    Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
+    Story.message(ChangedUrl({ url: url('/') })),
+    Story.model((model) => {
+      expect(model.route._tag).toBe('HomeRoute');
+    }),
+    Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
+  );
+});
+
 test('browser back/forward re-applies the route and releases the lock', () => {
   Story.story(
     update,

@@ -1,5 +1,7 @@
 import { Schema as S } from 'effect';
 
+import { AppRoute } from './route';
+
 // A keyed reveal target’s on-screen state: 'entered' renders `.is-in`;
 // 'drawn' additionally `.is-drawn` (a draw target whose pen finished its
 // lap, or a downward-only pen re-entered from below). Absent = at rest.
@@ -20,6 +22,9 @@ export const Flags = S.Struct({ prefersReducedMotion: S.Boolean });
 export type Flags = typeof Flags.Type;
 
 export const Model = S.Struct({
+  // Which page is on screen — the landing at `/`, the cookie policy at
+  // `/policy`. Unknown paths carry NotFoundRoute and render the landing.
+  route: AppRoute,
   isMenuOpen: S.Boolean,
   // Id of the landing section the viewport sat in when the menu was last
   // opened (None at the hero). Resolved once per open by DetectActiveSection —

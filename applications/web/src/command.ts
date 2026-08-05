@@ -95,9 +95,12 @@ const animateScrollTo = (target: HTMLElement, reduceMotion: boolean): void => {
 // (Dom.lockScroll) keeps the page’s real scroll position, so window.scrollY
 // is truthful even mid-lock and the trip animates from where the reader
 // actually sits — the old position:fixed trick zeroed scrollY, which is why
-// this used to poll `body.style.position` before measuring. Every fragment
-// the landing page links to is always rendered, so there is nothing to wait
-// for on the render side either.
+// this used to poll `body.style.position` before measuring. A fragment’s
+// element can lag the command by a render: a section link followed from the
+// policy page targets landing markup the route swap has not painted yet, so
+// a missing target is retried across a few frames before giving up (the
+// give-up keeps `#cookie-settings` — markup the banner owns, no element —
+// a scroll no-op, as it always was).
 export const Navigate = Command.define(
   'Navigate',
   // `reduceMotion` rides in from the Model (seeded via Flags) so the scroll
@@ -110,12 +113,21 @@ export const Navigate = Command.define(
     Effect.andThen(
       Effect.sync(() => {
         const fragment = url.split('#')[1];
-        const target = fragment === undefined ? null : document.getElementById(fragment);
-        if (target) {
-          animateScrollTo(target, reduceMotion);
-        } else if (fragment === undefined) {
+        if (fragment === undefined) {
           window.scrollTo(0, 0);
+          return;
         }
+        const scrollWhenRendered = (attemptsLeft: number): void => {
+          const target = document.getElementById(fragment);
+          if (target) {
+            animateScrollTo(target, reduceMotion);
+            return;
+          }
+          if (attemptsLeft > 0) {
+            window.requestAnimationFrame(() => scrollWhenRendered(attemptsLeft - 1));
+          }
+        };
+        scrollWhenRendered(10);
       }),
     ),
     Effect.as(CompletedNavigate()),
