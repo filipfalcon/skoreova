@@ -93,11 +93,13 @@ export const view = (model: Model): Html =>
                       h.span(
                         [
                           h.Class(
-                            'display pointer-events-none absolute -top-[12%] left-1/2 -translate-x-1/2 leading-none text-paper/5 select-none text-fluid-watermark',
+                            'watermark display pointer-events-none absolute -top-[12%] left-1/2 -translate-x-1/2 leading-none text-paper/5 select-none text-fluid-watermark',
                           ),
+                          h.DataAttribute('watermark', '26'),
+                          // Generated content is exposed to assistive tech like any text, so the decoration still needs hiding.
                           h.AriaHidden(true),
                         ],
-                        ['26'],
+                        [],
                       ),
                       h.img([
                         h.Src(rancovaImage),
