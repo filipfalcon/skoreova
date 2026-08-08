@@ -8,16 +8,19 @@ import { clubs, hashSlug } from './data';
 import type { Club } from './data';
 import type { Message } from './message';
 import { matchesRouter } from './route';
-import { MATCHDAYS_PLAYED, fixtureSeed, leagueRounds, mockScore } from './schedule';
+import {
+  DAYS_PER_ROUND,
+  MATCHDAYS_PLAYED,
+  SEASON_OPENING,
+  fixtureSeed,
+  leagueRounds,
+  mockScore,
+} from './schedule';
 import { getStyleXAttributes } from './stylexAttributes';
 import { shared } from './styles/shared';
 import { styles } from './styles/club-matches';
 
 const h = html<Message>();
-
-// The season opens Sat 16 Aug 2025; league rounds land a week apart.
-const SEASON_OPENING = Calendar.make(2025, 8, 16);
-const DAYS_PER_ROUND = 7;
 
 // A modulo of a non-empty tuple always lands in range, so the fallback is
 // unreachable — and it is the first kickoff rather than an off-canon time,

@@ -3,6 +3,7 @@ import { Match as M, Option, Record } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
+import firstLeagueHeroPhoto from '../assets/competitions-hero/first-league.jpg';
 import { pinkTick, sectionLabel } from '../components';
 import { standingsFor } from '../data';
 import type { Competition, Edition } from '../data';
@@ -10,12 +11,29 @@ import { SelectedCompetitionEdition, SelectedCompetitionRound } from '../message
 import type { Message } from '../message';
 import type { Model } from '../model';
 import { competitionsRouter } from '../route';
-import { MATCHDAYS_PLAYED, fixtureSeed, leagueRounds, mockScore } from '../schedule';
-import { getStyleXAttributes } from '../stylexAttributes';
+import { MATCHDAYS_PLAYED, fixtureSeed, leaguePhases, leagueRounds, mockScore } from '../schedule';
+import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
 import { styles } from '../styles/competition-profile';
 import { shared } from '../styles/shared';
 
 const h = html<Message>();
+
+// Per-competition hero artwork — the club profile's device (user call: the
+// First League page opens like the Sparta Praha page, big picture with the
+// heading under it). Competitions without an entry keep the flat header.
+// An index signature rather than the Record utility type: effect's Record
+// import shadows it in this module.
+interface HeroArt {
+  readonly photo: string;
+  readonly focus: string;
+}
+
+const competitionHeroArt: { readonly [slug: string]: HeroArt } = {
+  // The derby tangle (user-supplied) — the two upright Sparta faces ride
+  // the square's upper third, so the focus sits high enough to keep their
+  // heads clear of the crop, the Baník lesson applied preemptively.
+  'first-league': { photo: firstLeagueHeroPhoto, focus: '50% 20%' },
+};
 
 const backLink = (href: string, label: string): Html =>
   h.a([h.Href(href), ...getStyleXAttributes(h, styles.backLink)], [`← ${label}`]);
@@ -52,6 +70,172 @@ const honorChip = (text: string): Html =>
 
 const mutedChip = (text: string): Html =>
   h.span([...getStyleXAttributes(h, styles.mutedChip)], [text]);
+
+// The SEASON TIMELINE — the LiveSport device (user call: this instead of a
+// "Matchday 12 of 14" chip), reshaped across two reviews: first into phase
+// BARS (user call: bars, not dots), then into PIECES (user call) — each bar
+// is cut into one segment per matchday, so the phase lengths are countable
+// rather than implied by a fill width. The phases themselves are schedule
+// canon (`leaguePhases`), which is what puts the First League's seam at 14
+// and gives the split its own 6.
+const seasonTimeline = (league: string): Html => {
+  const played = MATCHDAYS_PLAYED;
+  // Each phase's starting offset in the season's running round count — the
+  // walk that decides which pieces are already behind us.
+  const phases = leaguePhases(league).reduce<
+    ReadonlyArray<{ readonly label: string; readonly rounds: number; readonly start: number }>
+  >(
+    (placed, phase) => [
+      ...placed,
+      { ...phase, start: placed.reduce((sum, done) => sum + done.rounds, 0) },
+    ],
+    [],
+  );
+  // The phase the current matchday falls in — the first one it hasn't run
+  // past. A season played to its end keeps the last phase lit.
+  const activeIndex = Math.max(
+    0,
+    phases.findIndex((phase) => played <= phase.start + phase.rounds),
+  );
+  const active = phases[activeIndex];
+  // Phase LENGTHS are data, not design, so they ride inline styles the way
+  // every proportional bar here does: growing each bar by its round count
+  // keeps one piece the same width across both phases.
+  const phaseBar = (phase: (typeof phases)[number]): Html =>
+    h.div(
+      [
+        ...getStyleXAttributes(h, styles.timelineTrack),
+        h.Style({ 'flex-grow': `${phase.rounds}` }),
+      ],
+      Array.from({ length: phase.rounds }, (_, round) =>
+        h.div(
+          [
+            ...getStyleXAttributes(
+              h,
+              styles.timelinePiece,
+              phase.start + round < played ? styles.timelinePiecePlayed : styles.timelinePieceRest,
+            ),
+          ],
+          [],
+        ),
+      ),
+    );
+  const phaseLabel = (phase: (typeof phases)[number], isActive: boolean): Html =>
+    h.span(
+      [
+        ...getStyleXAttributes(
+          h,
+          styles.timelineLabel,
+          isActive ? styles.timelineLabelActive : styles.timelineLabelRest,
+        ),
+        h.Style({ 'flex-grow': `${phase.rounds}` }),
+      ],
+      [phase.label],
+    );
+  return h.div(
+    [
+      ...getStyleXAttributes(h, styles.timeline),
+      // One announcement for the whole strip — the pieces are drawing, not
+      // content. It states the round WITHIN the phase, which is what the
+      // bars draw; a season-wide "matchday N of total" would have to pick a
+      // total, and only the regular phase has fixtures behind it.
+      h.Role('img'),
+      h.AriaLabel(
+        active === undefined
+          ? 'Season progress'
+          : `Season progress: ${active.label.toLowerCase()}, round ${played - active.start} of ${active.rounds}`,
+      ),
+    ],
+    [
+      h.div(
+        [...getStyleXAttributes(h, styles.timelineRow), h.AriaHidden(true)],
+        phases.map(phaseBar),
+      ),
+      h.div(
+        [...getStyleXAttributes(h, styles.timelineLabels), h.AriaHidden(true)],
+        phases.map((phase, index) => phaseLabel(phase, index === activeIndex)),
+      ),
+    ],
+  );
+};
+
+// The HERO opening — the club profile's dark act, borrowed whole (user
+// call: the First League page starts like the Sparta Praha page). One
+// full-bleed band: the artwork up top fading into ink, the badge and the
+// huge display name riding the fade, the tagline and stage chips beneath,
+// film grain over everything. The band ENDS there — the edition picker and
+// every panel below it stay the paper data act. Same single parallax as the
+// club page: the artwork drifts (.club-hero-art) and everything over it
+// holds still.
+const competitionHero = (competition: Competition, heroArt: HeroArt): Html =>
+  h.div(
+    [...getStyleXAttributes(h, styles.heroBand)],
+    [
+      h.div(
+        [...getStyleXAttributesWith(h, 'club-hero-art', styles.heroArt)],
+        [
+          // Phones ZOOM the artwork in, md+ shows the full crop — the club
+          // hero's treatment, for the same reason (players shrink to specks
+          // in the wide frame).
+          h.img([
+            h.Src(heroArt.photo),
+            h.Alt(''),
+            ...getStyleXAttributes(h, styles.heroArtImage),
+            h.Style({ 'object-position': heroArt.focus, 'transform-origin': heroArt.focus }),
+          ]),
+          h.div([...getStyleXAttributes(h, styles.heroArtFade)], []),
+          h.a(
+            [h.Href(competitionsRouter()), ...getStyleXAttributes(h, styles.backLinkOnArt)],
+            ['← All competitions'],
+          ),
+        ],
+      ),
+      h.div(
+        [...getStyleXAttributes(h, styles.heroColumn)],
+        [
+          h.div(
+            [...getStyleXAttributes(h, styles.hero)],
+            [
+              h.img([
+                h.Src(competition.badge),
+                h.Alt(`${competition.name} badge`),
+                ...getStyleXAttributes(h, styles.heroBadge),
+              ]),
+              h.h1(
+                [...getStyleXAttributes(h, shared.display, styles.heroName)],
+                [competition.name],
+              ),
+              // The tagline keeps the pink honor grammar. The stage: a
+              // league gets the season TIMELINE (user call — the LiveSport
+              // strip instead of a "Matchday 12 of 14" chip); a knockout,
+              // with no round-robin to chart, keeps the quiet bordered
+              // chip re-inked for the dark surface.
+              h.div(
+                [...getStyleXAttributes(h, styles.heroChips)],
+                [
+                  honorChip(competition.tagline),
+                  ...(competition.standings._tag === 'TableStandings'
+                    ? []
+                    : [
+                        h.span(
+                          [...getStyleXAttributes(h, styles.heroStageChip)],
+                          [competition.stage],
+                        ),
+                      ]),
+                ],
+              ),
+              ...(competition.standings._tag === 'TableStandings'
+                ? [seasonTimeline(competition.standings.league)]
+                : []),
+            ],
+          ),
+        ],
+      ),
+      // Film grain over the dark world only — the data act below stays
+      // clean paper, exactly like the club profile's seam.
+      h.div([...getStyleXAttributesWith(h, 'grain', styles.heroGrain), h.AriaHidden(true)], []),
+    ],
+  );
 
 // A league table panel, with an optional pink-highlighted team.
 const standingsPanel = (
@@ -339,21 +523,26 @@ const editionArchivePanel = (competition: Competition, open: Edition): Html =>
     ],
   );
 
-export const view = (competition: Competition, model: Model): Html =>
-  h.div(
+export const view = (competition: Competition, model: Model): Html => {
+  const heroArt = competitionHeroArt[competition.slug];
+  return h.div(
     [],
     [
-      profileHeader(
-        competitionsRouter(),
-        'All competitions',
-        h.img([
-          h.Src(competition.badge),
-          h.Alt(`${competition.name} badge`),
-          ...getStyleXAttributes(h, styles.badge),
-        ]),
-        competition.name,
-        [honorChip(competition.tagline), mutedChip(competition.stage)],
-      ),
+      // A competition with hero artwork opens on the dark act; the rest
+      // keep the flat badge-and-title header until their art lands.
+      heroArt
+        ? competitionHero(competition, heroArt)
+        : profileHeader(
+            competitionsRouter(),
+            'All competitions',
+            h.img([
+              h.Src(competition.badge),
+              h.Alt(`${competition.name} badge`),
+              ...getStyleXAttributes(h, styles.badge),
+            ]),
+            competition.name,
+            [honorChip(competition.tagline), mutedChip(competition.stage)],
+          ),
       editionRadioGroup(competition, model),
       h.div(
         [...getStyleXAttributes(h, styles.stack)],
@@ -377,3 +566,4 @@ export const view = (competition: Competition, model: Model): Html =>
       ),
     ],
   );
+};
