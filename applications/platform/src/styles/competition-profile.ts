@@ -11,6 +11,213 @@ const MD = '@media (min-width: 768px)';
 const LG = '@media (min-width: 1024px)';
 
 export const styles = stylex.create({
+  // ——— The hero opening — the club profile's dark act, value for value
+  // (deliberately copied, not shared, the same way the two apps' headers
+  // are: the pages should FEEL like one grammar while each keeps its own
+  // styles module). ———
+  heroBand: {
+    position: 'relative',
+    marginTop: {
+      default: '-2.5rem',
+      [MD]: '-3.5rem',
+    },
+    marginInline: 'calc(50% - 50vw)',
+    overflow: 'hidden',
+    backgroundColor: tokens.ink,
+    paddingInline: {
+      default: '1.25rem',
+      [MD]: '2.5rem',
+    },
+    paddingTop: '2rem',
+    paddingBottom: {
+      default: '4rem',
+      [MD]: '5rem',
+    },
+  },
+  heroArt: {
+    position: 'relative',
+    marginInline: {
+      default: '-1.25rem',
+      [MD]: '-2.5rem',
+    },
+    marginTop: '-2rem',
+    height: {
+      default: '22rem',
+      [MD]: '34rem',
+    },
+    overflow: 'hidden',
+    willChange: 'transform',
+  },
+  // Phones ZOOM the artwork in (the club hero's call — the wide frame
+  // shrank the players to specks); md+ shows the full crop.
+  heroArtImage: {
+    position: 'absolute',
+    inset: 0,
+    height: '100%',
+    width: '100%',
+    transform: {
+      default: 'scale(1.45)',
+      [MD]: 'scale(1)',
+    },
+    objectFit: 'cover',
+  },
+  heroArtFade: {
+    position: 'absolute',
+    insetInline: 0,
+    bottom: 0,
+    height: '12rem',
+    backgroundImage:
+      'linear-gradient(to top, var(--color-ink), color-mix(in srgb, var(--color-ink) 60%, transparent), transparent)',
+  },
+  backLinkOnArt: {
+    position: 'absolute',
+    top: '1.25rem',
+    left: {
+      default: '1.25rem',
+      [MD]: '2.5rem',
+    },
+    zIndex: 10,
+    fontSize: '10px',
+    letterSpacing: '0.2em',
+    color: {
+      default: 'color-mix(in srgb, var(--color-paper) 70%, transparent)',
+      ':hover': tokens.pink,
+    },
+    textTransform: 'uppercase',
+    transitionProperty: 'color, background-color, border-color',
+    transitionDuration: '0.15s',
+    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  heroColumn: {
+    position: 'relative',
+    zIndex: 10,
+    marginInline: 'auto',
+    width: '100%',
+    maxWidth: '64rem',
+  },
+  // The badge and name pull UP into the photo's fade — the band only
+  // renders when artwork exists, so there is no plain variant here.
+  hero: {
+    position: 'relative',
+    marginTop: {
+      default: '-8rem',
+      [MD]: '-11rem',
+    },
+    textAlign: 'center',
+  },
+  heroBadge: {
+    marginInline: 'auto',
+    height: {
+      default: '8rem',
+      [MD]: '13rem',
+    },
+    width: {
+      default: '8rem',
+      [MD]: '13rem',
+    },
+    objectFit: 'contain',
+    filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
+  },
+  heroName: {
+    marginTop: {
+      default: '1.5rem',
+      [MD]: '2rem',
+    },
+    fontSize: 'clamp(3.75rem, 17vw, 9rem)',
+    lineHeight: 0.95,
+    color: tokens.paper,
+  },
+  heroChips: {
+    marginTop: {
+      default: '1.5rem',
+      [MD]: '1.75rem',
+    },
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.5rem',
+  },
+  // The muted chip re-inked for the dark surface — same anatomy as
+  // mutedChip below, paper tints instead of ink.
+  heroStageChip: {
+    display: 'inline-block',
+    borderWidth: 1,
+    borderColor: 'color-mix(in srgb, var(--color-paper) 25%, transparent)',
+    paddingInline: '0.75rem',
+    paddingBlock: '0.375rem',
+    fontSize: '10px',
+    letterSpacing: '0.2em',
+    textTransform: 'uppercase',
+    color: 'color-mix(in srgb, var(--color-paper) 60%, transparent)',
+  },
+  heroGrain: {
+    pointerEvents: 'none',
+    position: 'absolute',
+    inset: 0,
+  },
+  // ——— The season timeline — the LiveSport strip reshaped into phase bars
+  // cut into one PIECE per matchday, in the platform's vocabulary: paper
+  // pieces, pink for the ones behind us, square edges like every bar in the
+  // app. ———
+  timeline: {
+    marginInline: 'auto',
+    marginTop: {
+      default: '1.5rem',
+      [MD]: '1.75rem',
+    },
+    width: '100%',
+    maxWidth: '36rem',
+  },
+  timelineRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+  },
+  // The bar itself carries no color — the pieces are the bar. flexGrow is
+  // set inline per phase (its round count), so a piece measures the same in
+  // a 14-round phase and a 6-round one.
+  timelineTrack: {
+    display: 'flex',
+    height: '6px',
+    flexShrink: 1,
+    flexBasis: '0%',
+    gap: '2px',
+  },
+  timelinePiece: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: '0%',
+  },
+  timelinePiecePlayed: {
+    backgroundColor: tokens.pink,
+  },
+  timelinePieceRest: {
+    backgroundColor: 'color-mix(in srgb, var(--color-paper) 15%, transparent)',
+  },
+  timelineLabels: {
+    marginTop: '0.5rem',
+    display: 'flex',
+    alignItems: 'baseline',
+    gap: '0.75rem',
+  },
+  // Each label centers under its own bar — flexGrow rides inline with the
+  // same round count the bar above uses, so the two rows share one set of
+  // column widths. The CURRENT phase carries the pink: "you are here".
+  timelineLabel: {
+    flexShrink: 1,
+    flexBasis: '0%',
+    textAlign: 'center',
+    fontSize: '10px',
+    letterSpacing: '0.2em',
+    textTransform: 'uppercase',
+  },
+  timelineLabelActive: {
+    color: tokens.pink,
+  },
+  timelineLabelRest: {
+    color: 'color-mix(in srgb, var(--color-paper) 50%, transparent)',
+  },
   backLink: {
     display: 'inline-block',
     fontSize: '10px',

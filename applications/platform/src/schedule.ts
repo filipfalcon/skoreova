@@ -1,4 +1,5 @@
 import { Array, Match as M } from 'effect';
+import { Calendar } from 'foldkit';
 
 import type { Competition } from './data';
 import { hashSlug, leagueTeams } from './data';
@@ -7,6 +8,13 @@ import { hashSlug, leagueTeams } from './data';
 // scoreline mock. Shared by the matches screen and both profile screens.
 
 export const MATCHDAYS_PLAYED = 12;
+
+// The season opens Sat 16 Aug 2025; league rounds land a week apart. Canon
+// here, not in a view module: the club calendar's dates and the competition
+// hero's season timeline both read the same clock, so a fixture can't sit
+// on two different days on two screens.
+export const SEASON_OPENING = Calendar.make(2025, 8, 16);
+export const DAYS_PER_ROUND = 7;
 
 // One matchday’s pairings, and a season as a list of them.
 type Fixture = readonly [string, string];
@@ -64,6 +72,35 @@ export const leagueRounds = (league: string): ReadonlyArray<Round> =>
   roundRobinRounds(leagueTeams(league));
 
 export const leagueRoundCount = (league: string): number => leagueRounds(league).length;
+
+// A season’s SHAPE, phase by phase — what the competition hero’s timeline
+// draws. Authored rather than derived: where a season splits is a
+// competition RULE, not arithmetic on the round count (the timeline used to
+// halve the double round-robin, which put the First League’s seam at 7).
+// The First League runs everyone home and away, then the table halves and
+// each group plays its own double round-robin — 14 then 6.
+//
+// Only the regular phase has fixtures behind it today: `leagueRounds` stops
+// at the double round-robin, so a split round has no pairings to page to.
+// The current matchday sits inside the regular phase, so the split bar
+// renders empty either way.
+interface SeasonPhase {
+  readonly label: string;
+  readonly rounds: number;
+}
+
+const LEAGUE_PHASES: { readonly [league: string]: ReadonlyArray<SeasonPhase> } = {
+  'First League': [
+    { label: 'Regular phase', rounds: 14 },
+    { label: 'Split phase', rounds: 6 },
+  ],
+};
+
+// A league with no authored format runs as one straight phase the length of
+// its own round-robin — the Second League’s 22 rounds, and any league added
+// before its format is written down.
+export const leaguePhases = (league: string): ReadonlyArray<SeasonPhase> =>
+  LEAGUE_PHASES[league] ?? [{ label: 'Regular phase', rounds: leagueRoundCount(league) }];
 
 // ONE seed per fixture, so the competition screen and the club calendar
 // can’t disagree about a scoreline. They used to build their own seeds from
