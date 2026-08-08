@@ -3,6 +3,7 @@ import { Array, Match as M, Option } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
+import banikHeroPhoto from '../assets/clubs-hero/banik-ostrava.jpg';
 import spartaHeroPhoto from '../assets/clubs-hero/sparta-praha.webp';
 import commentaryAvatar from '../assets/commentary-avatar.png';
 import { clubMatchesSections } from '../club-matches';
@@ -64,10 +65,19 @@ const clubHonors: Record<string, ReadonlyArray<ClubHonor>> = {
   ],
 };
 
-// Per-club hero artwork (the Universe-style full-bleed header photo);
-// clubs without one fall back to the plain crest-on-ink hero.
+// Per-club hero artwork (the Universe-style full-bleed header photo).
+// EVERY club gets one (user call) — the plain crest-on-ink hero is only
+// the interim state for clubs whose photo has not been supplied yet, so a
+// new photo is one import and one line here. `focus` marks where the
+// faces live: the crop's object-position and the phone zoom's origin.
 const clubHeroPhotos: Record<string, { readonly photo: string; readonly focus: string }> = {
   'sparta-praha': { photo: spartaHeroPhoto, focus: '50% 42%' },
+  // The pre-match huddle — the heads start ~8% from the square's top, and
+  // the wide desktop crop only shows ~a quarter of the image's height, so
+  // the focus sits high: at 25% the window opened below the hairlines and
+  // cropped every head at the nav. Settled by eye over three reviews
+  // (user calls): 10% cleared the heads, 6% overshot, 8% is the frame.
+  'banik-ostrava': { photo: banikHeroPhoto, focus: '50% 8%' },
 };
 
 // Section headings are a PINK RULE beside display type, not a filled chip
