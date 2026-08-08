@@ -1,8 +1,10 @@
 // Shared view helpers and the app shell (header + nav) — the building blocks
-// every screen composes from.
+// every screen composes from. Styling is StyleX: the shared primitives live
+// in styles/shared.ts, this module's own styles in styles/components.ts, and
+// the few parent-hover reactions ride the hover-card contract classes from
+// styles.css (StyleX has no descendant selectors).
 
 import { Button } from '@foldkit/ui';
-import clsx from 'clsx';
 import type { Html } from 'foldkit/html';
 import { html } from 'foldkit/html';
 
@@ -10,27 +12,29 @@ import type { Model, Screen } from './model';
 import { type Message, ToggledPin } from './message';
 import { type NavEntry, navEntries, screenOf, screenTitles } from './data';
 import { welcomeRouter } from './route';
+import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
+import type { StyleXStyle } from './stylexAttributes';
+import { styles } from './styles/components';
+import { shared } from './styles/shared';
 
 // The message-typed HTML builder for this module’s views.
 const h = html<Message>();
 
 // VIEW HELPERS
 
-export const panel = 'border-2 border-ink bg-paper';
-
 export const sectionLabel = (text: string): Html =>
-  h.p([h.Class('text-[10px] tracking-[0.25em] uppercase text-ink/50')], [text]);
+  h.p([...getStyleXAttributes(h, styles.sectionLabel)], [text]);
 
-export const pinkTick = (): Html => h.div([h.Class('h-1 w-10 bg-pink')], []);
+export const pinkTick = (): Html => h.div([...getStyleXAttributes(h, styles.pinkTick)], []);
 
 // The push-pin, drawn to sit at the corner of anything pinnable. Filled
 // silhouette on currentColor, same register as the drawn arrow and ×.
-export const pinGlyph = (classes: string): Html =>
+export const pinGlyph = (...glyphStyles: ReadonlyArray<StyleXStyle>): Html =>
   h.svg(
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
       h.ViewBox('0 0 24 24'),
-      h.Class(classes),
+      ...getStyleXAttributes(h, ...glyphStyles),
       h.Fill('currentColor'),
       h.AriaHidden(true),
     ],
@@ -62,33 +66,27 @@ export const pinToggle = (model: Model, id: string, label: string): Html => {
           ...button,
           h.AriaPressed(pinned ? 'true' : 'false'),
           h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
-          h.Class(
-            clsx(
-              'group/pin flex shrink-0 cursor-pointer items-center gap-1.5 border px-2.5 py-1.5 text-[10px] tracking-[0.2em] uppercase transition-colors',
-              pinned
-                ? 'border-pink bg-pink text-ink'
-                : 'border-ink/20 text-ink/50 hover:border-pink hover:text-ink',
-            ),
+          ...getStyleXAttributes(
+            h,
+            styles.pinToggle,
+            pinned ? styles.pinTogglePinned : styles.pinToggleUnpinned,
           ),
         ],
-        [pinGlyph('h-3.5 w-3.5'), pinned ? 'Pinned' : 'Pin'],
+        [pinGlyph(styles.pinGlyphChip), pinned ? 'Pinned' : 'Pin'],
       ),
   });
 };
 
-// A section chip that carries its pin control on the same row. The chip is
-// the shared heading grammar (filled pink block); justify-between parks the
-// pin at the far end so the two never crowd.
-export const CHIP_CLASS =
-  'display inline-block bg-pink px-4 py-2 text-xl tracking-[0.2em] text-ink md:px-5 md:text-2xl';
-
-// A plain section chip. Used where the pin lives on the cards below rather
-// than the heading (the stat boards, since their leagues pin separately).
-// A REAL h2, not a styled span — the h3s on the cards underneath need an
-// ancestor in the outline, and the chip is visually the section heading
-// already.
+// A plain section chip (the shared heading grammar — shared.chip). Used
+// where the pin lives on the cards below rather than the heading (the stat
+// boards, since their leagues pin separately). A REAL h2, not a styled
+// span — the h3s on the cards underneath need an ancestor in the outline,
+// and the chip is visually the section heading already.
 export const chipHeading = (title: string): Html =>
-  h.h2([h.Class('flex')], [h.span([h.Class(CHIP_CLASS)], [title])]);
+  h.h2(
+    [...getStyleXAttributes(h, styles.chipHeadingRow)],
+    [h.span([...getStyleXAttributes(h, shared.display, shared.chip)], [title])],
+  );
 
 // A tiny pink polyline preview — the saved-charts cards and anywhere a
 // dataset needs a face without a full chart.
@@ -107,7 +105,7 @@ export const sparkline = (values: ReadonlyArray<number>): Html => {
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
       h.ViewBox('0 0 120 40'),
-      h.Class('h-10 w-full'),
+      ...getStyleXAttributes(h, styles.sparkline),
       h.AriaHidden(true),
     ],
     [
@@ -133,14 +131,10 @@ export const sparkline = (values: ReadonlyArray<number>): Html => {
 // never a link — always a SIBLING of the wordmark anchor, not a child.
 export const previewStamp = (): Html =>
   h.span(
-    [
-      h.Class(
-        'font-body text-[9px] leading-[1.9] tracking-[0.2em] whitespace-nowrap text-ink uppercase select-none md:text-[10px]',
-      ),
-    ],
+    [...getStyleXAttributes(h, styles.previewStamp)],
     [
       h.span(
-        [h.Class('box-decoration-clone bg-pink px-1.5 py-0.5')],
+        [...getStyleXAttributes(h, styles.previewStampChip)],
         ['Beta Version', h.br([]), 'Work in progress'],
       ),
     ],
@@ -152,7 +146,7 @@ export const personGlyph: Html = h.svg(
   [
     h.Xmlns('http://www.w3.org/2000/svg'),
     h.ViewBox('0 0 24 24'),
-    h.Class('h-[1.1rem] w-[1.1rem]'),
+    ...getStyleXAttributes(h, styles.personGlyph),
     h.AriaHidden(true),
     h.Fill('none'),
     h.Stroke('currentColor'),
@@ -179,23 +173,15 @@ export const accountButton = (): Html =>
         [
           ...button,
           h.AriaLabel('Account'),
-          h.Class('group flex shrink-0 cursor-pointer items-center gap-3'),
+          ...getStyleXAttributesWith(h, 'hover-card', styles.accountButton),
         ],
         [
           h.span(
-            [
-              h.Class(
-                'flex h-9 w-9 items-center justify-center rounded-full border border-paper/15 text-paper/60 transition-colors group-hover:border-pink group-hover:text-paper',
-              ),
-            ],
+            [...getStyleXAttributesWith(h, 'hover-card-pink-ring', styles.accountCircle)],
             [personGlyph],
           ),
           h.span(
-            [
-              h.Class(
-                'hidden text-[10px] tracking-[0.2em] uppercase text-paper/60 transition-colors group-hover:text-paper md:inline',
-              ),
-            ],
+            [...getStyleXAttributesWith(h, 'hover-card-paper-text', styles.accountLabel)],
             ['Account'],
           ),
         ],
@@ -224,7 +210,7 @@ export const navIcon = (screen: Screen): Html => {
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
       h.ViewBox('0 0 24 24'),
-      h.Class('h-[22px] w-[22px] md:hidden'),
+      ...getStyleXAttributes(h, styles.navIcon),
       h.AriaHidden(true),
       h.Fill('none'),
       h.Stroke('currentColor'),
@@ -247,11 +233,12 @@ export const desktopNavLink = (model: Model, entry: NavEntry): Html => {
       [
         h.Href(entry.href),
         ...(active ? [h.AriaCurrent('page')] : []),
-        h.Class(
-          clsx(
-            'display flex items-center self-center px-3.5 py-2 text-[min(14px,3.4vw)] tracking-[0.08em] whitespace-nowrap uppercase transition-colors md:px-4 md:py-2.5 md:text-sm lg:px-5 lg:text-base md:tracking-[0.14em]',
-            active ? 'bg-pink text-ink' : 'hergame-chip bg-paper text-ink hover:bg-pink',
-          ),
+        ...getStyleXAttributesWith(
+          h,
+          active ? '' : 'hergame-chip',
+          shared.display,
+          styles.featuredTab,
+          active ? styles.featuredTabActive : styles.featuredTabRest,
         ),
       ],
       [entry.label],
@@ -264,14 +251,9 @@ export const desktopNavLink = (model: Model, entry: NavEntry): Html => {
       // Below `md` the tab is an ICON (label hidden, aria-label carries
       // the name); from `md` up it’s the plain uppercase label.
       h.AriaLabel(entry.label),
-      h.Class(
-        clsx(
-          'flex items-center border-b-2 px-2 py-3 whitespace-nowrap uppercase transition-colors md:px-2.5 md:text-[11px] md:tracking-[0.12em] lg:px-4 lg:text-xs lg:tracking-[0.2em]',
-          active ? 'border-pink text-pink' : 'border-transparent text-paper hover:text-pink',
-        ),
-      ),
+      ...getStyleXAttributes(h, styles.navLink, active ? styles.navLinkActive : styles.navLinkRest),
     ],
-    [navIcon(entry.screen), h.span([h.Class('hidden md:block')], [entry.label])],
+    [navIcon(entry.screen), h.span([...getStyleXAttributes(h, styles.navLabel)], [entry.label])],
   );
 };
 
@@ -289,34 +271,29 @@ export const headerView = (model: Model): Html =>
     // smears the picture a few pixels UP into the bar and the boundary
     // reads as a soft halo instead of an edge. A 1px rule gives the eye a
     // hard line to stop at; the glass stays.
-    [
-      h.Class(
-        'fixed inset-x-0 top-0 z-50 border-b border-paper/10 bg-black/90 text-paper backdrop-blur',
-      ),
-    ],
+    [...getStyleXAttributes(h, styles.header)],
     [
       h.div(
-        [
-          // The landing’s container + bar: brand on the left, account on the
-          // right. Global search will land here once the search backend
-          // exists; until then there is no control (a focusable box that
-          // does nothing is worse than none).
-          h.Class(
-            'relative mx-auto flex h-14 w-full max-w-7xl items-center justify-between gap-4 px-5 md:h-16 md:px-10',
-          ),
-        ],
+        // The landing’s container + bar: brand on the left, account on the
+        // right. Global search will land here once the search backend
+        // exists; until then there is no control (a focusable box that
+        // does nothing is worse than none).
+        [...getStyleXAttributes(h, styles.headerBar)],
         [
           h.div(
-            [h.Class('flex shrink-0 items-center gap-3')],
+            [...getStyleXAttributes(h, styles.brandGroup)],
             [
               h.a(
                 [
                   h.Href(welcomeRouter()),
-                  h.Class(
-                    'display flex items-baseline gap-3 text-2xl tracking-wide text-paper transition-colors duration-300 hover:text-pink md:text-3xl',
+                  ...getStyleXAttributes(h, shared.display, styles.brandLink),
+                ],
+                [
+                  h.span(
+                    [],
+                    ['Skóreová', h.span([...getStyleXAttributes(h, styles.brandDot)], ['.'])],
                   ),
                 ],
-                [h.span([], ['Skóreová', h.span([h.Class('text-pink')], ['.'])])],
               ),
               previewStamp(),
             ],
@@ -328,17 +305,13 @@ export const headerView = (model: Model): Html =>
       // under the header too; the bottom tab bar died).
       // no-scrollbar + overflow: the six labels outgrow the md band’s
       // width, and wrapped labels would change the header’s height (the
-      // content offset is a hard 111px). CENTERED via `mx-auto` on the
-      // inner wrapper, NOT `justify-content: center` on the scroller —
-      // auto margins collapse to 0 when the content overflows, so the md
-      // band keeps a reachable left edge (justify-center would clip the
-      // first tabs behind an unscrollable boundary).
+      // content offset is a hard 111px). CENTERED via auto inline margins
+      // on the inner wrapper, NOT justify-content on the scroller — auto
+      // margins collapse to 0 when the content overflows, so the md band
+      // keeps a reachable left edge (justify-center would clip the first
+      // tabs behind an unscrollable boundary).
       h.nav(
-        [
-          h.Class(
-            'no-scrollbar mx-auto flex w-full max-w-7xl items-center overflow-x-auto px-2 md:px-6',
-          ),
-        ],
+        [...getStyleXAttributesWith(h, 'no-scrollbar', styles.sectionRail)],
         [
           // A symmetric GRID keeps the HER GAME chip on the exact center:
           // two 1fr cells per side flank an auto center column, and equal
@@ -347,11 +320,7 @@ export const headerView = (model: Model): Html =>
           // wider than CLUBS, so the middle item drifts). From `md` the
           // grid narrows so the tabs stay a grouped rail, still centered.
           h.div(
-            [
-              h.Class(
-                'mx-auto grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)] items-center justify-items-center md:max-w-4xl',
-              ),
-            ],
+            [...getStyleXAttributes(h, styles.sectionRailGrid)],
             navEntries.map((entry) => desktopNavLink(model, entry)),
           ),
         ],
@@ -365,17 +334,21 @@ export const headerView = (model: Model): Html =>
 // (`drawn-arrow` nudges right inside any hovered link or button — see
 // styles.css). Filled silhouette, not a text glyph: it sits next to display
 // type here, the same register it does over there.
-export const drawnRightArrow = (classes: string): Html =>
+export const drawnRightArrow = (...arrowStyles: ReadonlyArray<StyleXStyle>): Html =>
   h.svg(
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
       h.ViewBox('0 0 32 24'),
-      h.Class(`drawn-arrow ${classes}`),
+      ...getStyleXAttributesWith(h, 'drawn-arrow', ...arrowStyles),
       h.Fill('currentColor'),
       h.AriaHidden(true),
     ],
     [h.path([h.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')], [])],
   );
+
+// The inline drawn-arrow size most sites want — exported beside the arrow
+// so callers don't re-declare it.
+export const drawnArrowInline = styles.drawnArrowInline;
 
 // The multiplication mark, DRAWN for the same reason (user call: next to
 // Anton’s caps the text × all but disappeared — it is a light maths glyph
@@ -397,12 +370,12 @@ export const drawnRightArrow = (classes: string): Html =>
 // MARGIN EDGE, so the margin is the control: mb + height/2 ≈ half the
 // figure height. Both are em, so it holds at any size it inherits — it
 // renders at 18px in the honors chip and 36px in the history grid.
-export const drawnTimes = (classes = ''): Html =>
+export const drawnTimes = (...timesStyles: ReadonlyArray<StyleXStyle>): Html =>
   h.svg(
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
       h.ViewBox('0 0 24 24'),
-      h.Class(`mb-[0.11em] inline-block h-[0.52em] w-auto ${classes}`),
+      ...getStyleXAttributes(h, styles.drawnTimes, ...timesStyles),
       h.Fill('currentColor'),
       h.AriaHidden(true),
     ],
@@ -422,11 +395,8 @@ export const drawnTimes = (classes = ''): Html =>
 // takes a word space after it.
 export const timesCount = (count: number): ReadonlyArray<Html | string> => [
   `${count}`,
-  drawnTimes('ml-[0.04em] mr-[0.26em]'),
+  drawnTimes(styles.timesCountSpacing),
 ];
-
-export const CLUB_CHIP =
-  'display inline-flex items-center gap-2.5 bg-pink px-4 py-2 text-xl tracking-[0.2em] text-ink md:px-5 md:text-2xl';
 
 // A chip anchors its OWN section (user call) — it does not leave the
 // profile. Clicking one jumps to that block and puts #<anchor> in the
@@ -437,7 +407,10 @@ export const CLUB_CHIP =
 // would have dissolved the chip into the page.
 export const clubChip = (text: string, anchor: string): Html =>
   h.a(
-    [h.Href(`#${anchor}`), h.Class(`${CLUB_CHIP} transition-colors hover:bg-ink hover:text-paper`)],
+    [
+      h.Href(`#${anchor}`),
+      ...getStyleXAttributes(h, shared.display, shared.clubChip, styles.clubChipLink),
+    ],
     [text],
   );
 
@@ -448,8 +421,11 @@ export const clubChip = (text: string, anchor: string): Html =>
 // in the heading outline instead of a bare link posing as one.
 export const clubSection = (title: string, children: ReadonlyArray<Html>, anchor: string): Html =>
   h.section(
-    [h.Id(anchor), h.Class('mt-16 scroll-mt-28 md:mt-20 md:scroll-mt-32')],
-    [h.h2([h.Class('flex')], [clubChip(title, anchor)]), ...children],
+    [h.Id(anchor), ...getStyleXAttributes(h, styles.clubSection)],
+    [
+      h.h2([...getStyleXAttributes(h, styles.clubSectionHeading)], [clubChip(title, anchor)]),
+      ...children,
+    ],
   );
 
 // The list/profile screens' standard header: the pink section chip, the
@@ -459,19 +435,19 @@ export const screenHeader = (model: Model, subtitle: string): Html =>
     [],
     [
       h.div(
-        [h.Class('flex')],
+        [...getStyleXAttributes(h, styles.chipHeadingRow)],
         [
           h.span(
-            [h.Class('display inline-block bg-pink px-3 py-1.5 text-sm tracking-[0.2em] text-ink')],
+            [...getStyleXAttributes(h, shared.display, styles.screenChip)],
             [screenTitles[screenOf(model.route)]],
           ),
         ],
       ),
       h.h1(
-        [h.Class('display mt-6 text-5xl text-ink md:text-7xl')],
+        [...getStyleXAttributes(h, shared.display, styles.screenTitle)],
         [screenTitles[screenOf(model.route)]],
       ),
-      h.p([h.Class('mt-3 max-w-2xl text-sm leading-relaxed text-ink/50')], [subtitle]),
+      h.p([...getStyleXAttributes(h, styles.screenSubtitle)], [subtitle]),
     ],
   );
 
@@ -480,7 +456,7 @@ export const tickerSpark: Html = h.svg(
   [
     h.Xmlns('http://www.w3.org/2000/svg'),
     h.ViewBox('0 0 24 24'),
-    h.Class('inline-block h-[0.55em] w-auto shrink-0 text-pink'),
+    ...getStyleXAttributes(h, styles.tickerSpark),
     h.AriaHidden(true),
     h.Fill('currentColor'),
   ],
@@ -502,7 +478,7 @@ export const tapeArrow = (up: boolean): Html =>
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
       h.ViewBox('0 0 12 10'),
-      h.Class('inline-block h-[0.5em] w-auto shrink-0'),
+      ...getStyleXAttributes(h, styles.tapeArrow),
       h.AriaHidden(true),
       h.Fill('currentColor'),
     ],

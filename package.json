@@ -39,5 +39,8 @@
     "extends": [
       "@commitlint/config-conventional"
     ]
+  },
+  "patchedDependencies": {
+    "@stylexjs/babel-plugin@0.19.0": "patches/@stylexjs%2Fbabel-plugin@0.19.0.patch"
   }
 }

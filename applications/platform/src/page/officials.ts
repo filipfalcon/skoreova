@@ -1,10 +1,13 @@
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
-import { panel, screenHeader } from '../components';
+import { screenHeader } from '../components';
 import { officials } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';
+import { getStyleXAttributes } from '../stylexAttributes';
+import { styles } from '../styles/officials';
+import { shared } from '../styles/shared';
 
 const h = html<Message>();
 
@@ -19,7 +22,7 @@ export const view = (model: Model): Html =>
       // A real list, not a div grid — each official is an item AT can
       // count and step through.
       h.ul(
-        [h.Class('mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3')],
+        [...getStyleXAttributes(h, styles.grid)],
         officials.map((official) =>
           h.li(
             [],
@@ -27,14 +30,10 @@ export const view = (model: Model): Html =>
               h.article(
                 // No cursor-pointer: the cards have no click handler yet — the
                 // hover border stays as a scanning aid only.
-                [h.Class(`${panel} group h-full p-6 transition-colors hover:border-pink`)],
+                [...getStyleXAttributes(h, shared.panel, styles.card)],
                 [
                   h.div(
-                    [
-                      h.Class(
-                        'display flex h-10 w-10 items-center justify-center border border-ink/20 text-base text-ink/60',
-                      ),
-                    ],
+                    [...getStyleXAttributes(h, shared.display, styles.initials)],
                     [
                       official.name
                         .split(' ')
@@ -42,28 +41,42 @@ export const view = (model: Model): Html =>
                         .join(''),
                     ],
                   ),
-                  h.h2([h.Class('display mt-5 text-2xl text-ink')], [official.name]),
+                  h.h2([...getStyleXAttributes(h, shared.display, styles.name)], [official.name]),
                   h.div(
-                    [h.Class('mt-4 flex gap-8')],
+                    [...getStyleXAttributes(h, styles.statRow)],
                     [
                       h.div(
                         [],
                         [
-                          h.p([h.Class('display text-3xl text-pink')], [`${official.matches}`]),
                           h.p(
-                            [h.Class('mt-1 text-[10px] tracking-[0.2em] uppercase text-ink/40')],
-                            ['Matches'],
+                            [
+                              ...getStyleXAttributes(
+                                h,
+                                shared.display,
+                                styles.statValue,
+                                styles.statValuePink,
+                              ),
+                            ],
+                            [`${official.matches}`],
                           ),
+                          h.p([...getStyleXAttributes(h, styles.statLabel)], ['Matches']),
                         ],
                       ),
                       h.div(
                         [],
                         [
-                          h.p([h.Class('display text-3xl text-ink')], [official.cardsPerMatch]),
                           h.p(
-                            [h.Class('mt-1 text-[10px] tracking-[0.2em] uppercase text-ink/40')],
-                            ['Cards / match'],
+                            [
+                              ...getStyleXAttributes(
+                                h,
+                                shared.display,
+                                styles.statValue,
+                                styles.statValueInk,
+                              ),
+                            ],
+                            [official.cardsPerMatch],
                           ),
+                          h.p([...getStyleXAttributes(h, styles.statLabel)], ['Cards / match']),
                         ],
                       ),
                     ],

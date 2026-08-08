@@ -1,10 +1,9 @@
 import { Button, RadioGroup } from '@foldkit/ui';
-import clsx from 'clsx';
 import { Match as M, Option, Record } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
-import { panel, pinkTick, sectionLabel } from '../components';
+import { pinkTick, sectionLabel } from '../components';
 import { standingsFor } from '../data';
 import type { Competition, Edition } from '../data';
 import { SelectedCompetitionEdition, SelectedCompetitionRound } from '../message';
@@ -12,19 +11,14 @@ import type { Message } from '../message';
 import type { Model } from '../model';
 import { competitionsRouter } from '../route';
 import { MATCHDAYS_PLAYED, fixtureSeed, leagueRounds, mockScore } from '../schedule';
+import { getStyleXAttributes } from '../stylexAttributes';
+import { styles } from '../styles/competition-profile';
+import { shared } from '../styles/shared';
 
 const h = html<Message>();
 
 const backLink = (href: string, label: string): Html =>
-  h.a(
-    [
-      h.Href(href),
-      h.Class(
-        'inline-block text-[10px] tracking-[0.25em] uppercase text-ink/40 transition-colors hover:text-pink',
-      ),
-    ],
-    [`← ${label}`],
-  );
+  h.a([h.Href(href), ...getStyleXAttributes(h, styles.backLink)], [`← ${label}`]);
 
 const profileHeader = (
   backHref: string,
@@ -38,14 +32,14 @@ const profileHeader = (
     [
       backLink(backHref, backLabel),
       h.div(
-        [h.Class('mt-8 flex flex-wrap items-center gap-6 md:gap-8')],
+        [...getStyleXAttributes(h, styles.headerRow)],
         [
           art,
           h.div(
             [],
             [
-              h.h1([h.Class('display text-5xl text-ink md:text-7xl')], [title]),
-              h.div([h.Class('mt-4 flex flex-wrap gap-2')], chips),
+              h.h1([...getStyleXAttributes(h, shared.display, styles.title)], [title]),
+              h.div([...getStyleXAttributes(h, styles.chipRow)], chips),
             ],
           ),
         ],
@@ -54,20 +48,10 @@ const profileHeader = (
   );
 
 const honorChip = (text: string): Html =>
-  h.span(
-    [h.Class('display inline-block bg-pink px-3 py-1.5 text-sm tracking-[0.15em] text-ink')],
-    [text],
-  );
+  h.span([...getStyleXAttributes(h, shared.display, styles.honorChip)], [text]);
 
 const mutedChip = (text: string): Html =>
-  h.span(
-    [
-      h.Class(
-        'inline-block border border-ink/15 px-3 py-1.5 text-[10px] tracking-[0.2em] uppercase text-ink/50',
-      ),
-    ],
-    [text],
-  );
+  h.span([...getStyleXAttributes(h, styles.mutedChip)], [text]);
 
 // A league table panel, with an optional pink-highlighted team.
 const standingsPanel = (
@@ -77,41 +61,53 @@ const standingsPanel = (
 ): Html => {
   const rows = standingsFor(league);
   return h.section(
-    [h.Class(`${panel} p-6 md:p-8`)],
+    [...getStyleXAttributes(h, shared.panel, styles.panelBody)],
     [
       sectionLabel(label),
       h.ol(
-        [h.Class('mt-6 flex flex-col')],
+        [...getStyleXAttributes(h, styles.list)],
         rows.map((row, index) => {
           const highlighted = Option.contains(highlightTeam, row.team);
           return h.li(
             [
-              h.Class(
-                clsx(
-                  'flex items-baseline gap-4 border-t px-2 py-3.5 first:border-t-0',
-                  highlighted ? 'border-pink bg-pink text-ink' : 'border-ink/10',
-                ),
+              ...getStyleXAttributes(
+                h,
+                styles.standingsRow,
+                highlighted ? styles.standingsRowHighlighted : styles.standingsRowRest,
               ),
             ],
             [
               h.span(
-                [h.Class(clsx('display w-8 text-lg', highlighted ? 'text-ink/60' : 'text-ink/30'))],
+                [
+                  ...getStyleXAttributes(
+                    h,
+                    shared.display,
+                    styles.standingsRank,
+                    highlighted ? styles.standingsRankHighlighted : styles.standingsRankRest,
+                  ),
+                ],
                 [`${index + 1}`],
               ),
-              h.span([h.Class('display flex-1 truncate text-xl')], [row.team]),
+              h.span([...getStyleXAttributes(h, shared.display, styles.standingsTeam)], [row.team]),
               h.span(
                 [
-                  h.Class(
-                    clsx(
-                      'hidden text-[10px] tracking-[0.2em] uppercase sm:block',
-                      highlighted ? 'text-ink/60' : 'text-ink/40',
-                    ),
+                  ...getStyleXAttributes(
+                    h,
+                    styles.standingsPlayed,
+                    highlighted ? styles.standingsPlayedHighlighted : styles.standingsPlayedRest,
                   ),
                 ],
                 [`${row.played} played`],
               ),
               h.span(
-                [h.Class(clsx('display w-12 text-right text-xl', { 'text-pink': !highlighted }))],
+                [
+                  ...getStyleXAttributes(
+                    h,
+                    shared.display,
+                    styles.standingsPoints,
+                    highlighted ? null : styles.standingsPointsPink,
+                  ),
+                ],
                 [`${row.points}`],
               ),
             ],
@@ -129,24 +125,20 @@ const competitionStandingsPanel = (competition: Competition): Html =>
       TableStandings: ({ league }) => standingsPanel('Current standings', league, Option.none()),
       TiesStandings: ({ rows }) =>
         h.section(
-          [h.Class(`${panel} p-6 md:p-8`)],
+          [...getStyleXAttributes(h, shared.panel, styles.panelBody)],
           [
             sectionLabel('Current standings'),
             h.ol(
-              [h.Class('mt-6 flex flex-col')],
+              [...getStyleXAttributes(h, styles.list)],
               rows.map((tie) =>
                 h.li(
+                  [...getStyleXAttributes(h, styles.tieRow)],
                   [
-                    h.Class(
-                      'flex flex-wrap items-baseline justify-between gap-x-4 border-t border-ink/10 px-2 py-3.5 first:border-t-0',
-                    ),
-                  ],
-                  [
-                    h.span([h.Class('display text-xl text-ink')], [tie.primary]),
                     h.span(
-                      [h.Class('text-[10px] tracking-[0.2em] uppercase text-pink')],
-                      [tie.secondary],
+                      [...getStyleXAttributes(h, shared.display, styles.tiePrimary)],
+                      [tie.primary],
                     ),
+                    h.span([...getStyleXAttributes(h, styles.tieSecondary)], [tie.secondary]),
                   ],
                 ),
               ),
@@ -158,21 +150,20 @@ const competitionStandingsPanel = (competition: Competition): Html =>
 
 const competitionFormatPanel = (competition: Competition): Html =>
   h.section(
-    [h.Class(`${panel} p-6 md:p-8`)],
+    [...getStyleXAttributes(h, shared.panel, styles.panelBody)],
     [
       sectionLabel('How it works'),
       h.ol(
-        [h.Class('mt-6 flex flex-col')],
+        [...getStyleXAttributes(h, styles.list)],
         competition.format.map((rule, index) =>
           h.li(
+            [...getStyleXAttributes(h, styles.formatRow)],
             [
-              h.Class(
-                'flex items-baseline gap-4 border-t border-ink/10 px-2 py-4 first:border-t-0',
+              h.span(
+                [...getStyleXAttributes(h, shared.display, styles.formatNumber)],
+                [`0${index + 1}`],
               ),
-            ],
-            [
-              h.span([h.Class('display text-2xl text-pink')], [`0${index + 1}`]),
-              h.p([h.Class('text-sm leading-relaxed text-ink/80')], [rule]),
+              h.p([...getStyleXAttributes(h, styles.formatRule)], [rule]),
             ],
           ),
         ),
@@ -182,25 +173,18 @@ const competitionFormatPanel = (competition: Competition): Html =>
 
 const competitionHistoryPanel = (competition: Competition): Html =>
   h.section(
-    [h.Class(`${panel} p-6 md:p-8`)],
+    [...getStyleXAttributes(h, shared.panel, styles.panelBody)],
     [
       sectionLabel('History in numbers'),
       h.ul(
-        [h.Class('mt-8 grid gap-8 sm:grid-cols-3')],
+        [...getStyleXAttributes(h, styles.historyGrid)],
         competition.history.map((stat) =>
           h.li(
             [],
             [
               pinkTick(),
-              h.p([h.Class('display mt-3 text-4xl text-ink')], [stat.value]),
-              h.p(
-                [
-                  h.Class(
-                    'mt-2 text-[10px] leading-relaxed tracking-[0.2em] uppercase text-ink/50',
-                  ),
-                ],
-                [stat.label],
-              ),
+              h.p([...getStyleXAttributes(h, shared.display, styles.historyValue)], [stat.value]),
+              h.p([...getStyleXAttributes(h, styles.historyLabel)], [stat.label]),
             ],
           ),
         ),
@@ -241,8 +225,9 @@ const leagueMatchesPanel = (competition: Competition, league: string, model: Mod
     // Ui.Button’s isDisabled is exactly this end-stop’s contract: aria-disabled
     // and no click handler, but NEVER the native attribute — an end-stop that
     // drops out of the tab order mid-interaction strands keyboard focus. The two
-    // looks are disjoint strings for the reason CLAUDE.md records: overlaying the
-    // blocked colors on the live ones loses Tailwind’s emit order.
+    // looks stay disjoint styles: they disagree on every property they set, and
+    // a single merged style would let whichever properties spread later win
+    // silently.
     return Button.view({
       isDisabled: blocked,
       ...(blocked
@@ -253,13 +238,11 @@ const leagueMatchesPanel = (competition: Competition, league: string, model: Mod
           [
             ...button,
             h.AriaLabel(label),
-            h.Class(
-              clsx(
-                'display border px-3.5 py-1.5 text-base transition-colors',
-                blocked
-                  ? 'cursor-default border-ink/10 text-ink/20'
-                  : 'cursor-pointer border-ink/20 text-ink hover:border-pink hover:text-pink',
-              ),
+            ...getStyleXAttributes(
+              h,
+              shared.display,
+              styles.arrow,
+              blocked ? styles.arrowBlocked : styles.arrowLive,
             ),
           ],
           [glyph],
@@ -267,45 +250,34 @@ const leagueMatchesPanel = (competition: Competition, league: string, model: Mod
     });
   };
   return h.section(
-    [h.Class(`${panel} p-6 md:p-8`)],
+    [...getStyleXAttributes(h, shared.panel, styles.panelBody)],
     [
       h.div(
-        [h.Class('flex flex-wrap items-center justify-between gap-4')],
+        [...getStyleXAttributes(h, styles.matchesHeader)],
         [
           sectionLabel(`Matches — Round ${open} of ${total}`),
           h.div(
-            [h.Class('flex gap-2')],
+            [...getStyleXAttributes(h, styles.arrowRow)],
             [arrow(open - 1, '←', 'Previous round'), arrow(open + 1, '→', 'Next round')],
           ),
         ],
       ),
       h.ul(
-        [h.Class('mt-6 flex flex-col')],
+        [...getStyleXAttributes(h, styles.list)],
         matches.map(([home, away]) => {
           const played = open <= MATCHDAYS_PLAYED;
           const [homeGoals, awayGoals] = mockScore(fixtureSeed(league, open, home, away));
           return h.li(
+            [...getStyleXAttributes(h, styles.matchRow)],
             [
-              h.Class(
-                'flex items-center gap-3 border-t border-ink/10 py-3.5 text-sm first:border-t-0',
-              ),
-            ],
-            [
-              h.span([h.Class('flex-1 truncate text-right text-ink')], [home]),
+              h.span([...getStyleXAttributes(h, styles.matchTeam, styles.matchTeamHome)], [home]),
               played
                 ? h.span(
-                    [h.Class('display shrink-0 bg-pink px-2.5 py-1 text-base text-ink')],
+                    [...getStyleXAttributes(h, shared.display, styles.scoreChip)],
                     [`${homeGoals}–${awayGoals}`],
                   )
-                : h.span(
-                    [
-                      h.Class(
-                        'display shrink-0 border border-ink/15 px-2.5 py-1 text-base text-ink/40',
-                      ),
-                    ],
-                    ['vs'],
-                  ),
-              h.span([h.Class('flex-1 truncate text-ink')], [away]),
+                : h.span([...getStyleXAttributes(h, shared.display, styles.vsChip)], ['vs']),
+              h.span([...getStyleXAttributes(h, styles.matchTeam)], [away]),
             ],
           );
         }),
@@ -331,18 +303,23 @@ const editionRadioGroup = (competition: Competition, model: Model): Html => {
     onSelect: (label) => SelectedCompetitionEdition({ label: label === currentLabel ? '' : label }),
     toView: ({ group, options }) =>
       h.div(
-        [...group, h.Class('mt-8 flex flex-wrap gap-2')],
-        options.map((option) =>
-          h.div(
+        [...group, ...getStyleXAttributes(h, styles.editionGroup)],
+        options.map((option) => {
+          // Checked derives from the model because StyleX has no attribute
+          // selectors (the component still stamps data-checked).
+          const checked = option.value === openLabel;
+          return h.div(
             [
               ...option.option,
-              h.Class(
-                'cursor-pointer border border-ink/15 px-4 py-2 text-[10px] tracking-[0.2em] text-ink/60 uppercase transition-colors hover:border-pink hover:text-ink data-[checked]:border-pink data-[checked]:bg-pink data-[checked]:text-ink',
+              ...getStyleXAttributes(
+                h,
+                styles.editionOption,
+                checked ? styles.editionChecked : styles.editionRest,
               ),
             ],
             [option.value],
-          ),
-        ),
+          );
+        }),
       ),
   });
 };
@@ -351,12 +328,12 @@ const editionRadioGroup = (competition: Competition, model: Model): Html => {
 // per-season archive lands with the real data.
 const editionArchivePanel = (competition: Competition, open: Edition): Html =>
   h.section(
-    [h.Class(`${panel} p-6 md:p-8`)],
+    [...getStyleXAttributes(h, shared.panel, styles.panelBody)],
     [
       sectionLabel(`Edition ${open.label}`),
-      h.p([h.Class('display mt-6 text-3xl text-ink md:text-4xl')], [open.detail]),
+      h.p([...getStyleXAttributes(h, shared.display, styles.archiveDetail)], [open.detail]),
       h.p(
-        [h.Class('mt-3 text-xs leading-relaxed text-ink/40')],
+        [...getStyleXAttributes(h, styles.archiveNote)],
         ['Standings, results, and stats for this edition arrive with the real data.'],
       ),
     ],
@@ -372,14 +349,14 @@ export const view = (competition: Competition, model: Model): Html =>
         h.img([
           h.Src(competition.badge),
           h.Alt(`${competition.name} badge`),
-          h.Class('h-24 w-24 object-contain md:h-32 md:w-32'),
+          ...getStyleXAttributes(h, styles.badge),
         ]),
         competition.name,
         [honorChip(competition.tagline), mutedChip(competition.stage)],
       ),
       editionRadioGroup(competition, model),
       h.div(
-        [h.Class('mt-8 flex flex-col gap-8')],
+        [...getStyleXAttributes(h, styles.stack)],
         [
           ...(Option.isNone(model.competitionEdition)
             ? [competitionStandingsPanel(competition), matchesPanel(competition, model)]
@@ -393,7 +370,7 @@ export const view = (competition: Competition, model: Model): Html =>
                 ),
               ]),
           h.div(
-            [h.Class('grid gap-8 lg:grid-cols-2')],
+            [...getStyleXAttributes(h, styles.panelPair)],
             [competitionFormatPanel(competition), competitionHistoryPanel(competition)],
           ),
         ],

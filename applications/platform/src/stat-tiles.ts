@@ -1,5 +1,4 @@
 import { Button } from '@foldkit/ui';
-import clsx from 'clsx';
 import { Array, Number, Option } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
@@ -8,12 +7,16 @@ import firstLeagueAttendancePhoto from './assets/attendance/first-league.jpg';
 import secondLeagueAttendancePhoto from './assets/attendance/second-league.jpg';
 import firstLeagueGoalsPhoto from './assets/goals/first-league.jpg';
 import secondLeagueGoalsPhoto from './assets/goals/second-league.jpg';
-import { drawnTimes, panel, pinGlyph, tapeArrow } from './components';
+import { drawnTimes, pinGlyph, tapeArrow } from './components';
 import type { TrendingEntry } from './data';
 import { type Message, ToggledPin } from './message';
 import type { Model } from './model';
 import { competitionRouter } from './route';
 import { MATCHDAYS_PLAYED } from './schedule';
+import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
+import { styles as componentStyles } from './styles/components';
+import { shared } from './styles/shared';
+import { styles } from './styles/stat-tiles';
 
 const h = html<Message>();
 
@@ -26,28 +29,21 @@ export const trendingTile = (model: Model, entry: TrendingEntry, index: number):
   // and that’s the <li> this tile sits inside (see trendingTiles) — a span on
   // the tile itself was inert.
   return h.div(
-    [h.Class('relative')],
+    [...getStyleXAttributes(h, styles.tileWrapper)],
     [
       pinOverlay(model, `trending:${entry.id}`, entry.name),
       h.a(
         [
           h.Href(entry.href),
-          // Photo tiles are FRAMELESS (user call — the ink border read
-          // as clutter around a dark image): the photo IS the card
-          // edge. Only the photoless fallback keeps the panel frame.
-          // Without the rank row the content no longer props the tile
-          // open — justify-end pins the name to the bottom edge and
-          // the min-heights carry the photo’s presence.
-          // Phone: EVERY tile runs full-width landscape (paired
-          // portrait tiles forced two-line names — the display type
-          // only sings as a one-liner); the leader stays the tallest.
-          // The grid takes over from `sm`.
-          h.Class(
-            clsx(
-              'trend-row group relative isolate flex h-full flex-col justify-end overflow-hidden p-5 md:min-h-44 lg:min-h-56',
-              featured ? 'bg-ink' : `${panel} transition-colors hover:border-pink`,
-              index === 0 ? 'min-h-64' : 'min-h-44 sm:min-h-60',
-            ),
+          // The name tints pink when the whole tile is hovered — the
+          // hover-card contract, since StyleX cannot reach a child from
+          // the parent's :hover. trend-row is the cascade-in animation.
+          ...getStyleXAttributesWith(
+            h,
+            'trend-row hover-card',
+            styles.tile,
+            index === 0 ? styles.tileLeader : styles.tileFollower,
+            featured ? styles.tileFeatured : styles.tileFramed,
           ),
           h.Style({ '--row-delay': `${0.3 + index * 0.08}s` }),
         ],
@@ -61,17 +57,10 @@ export const trendingTile = (model: Model, entry: TrendingEntry, index: number):
                   h.Src(entry.photo),
                   h.Alt(''),
                   h.Loading('lazy'),
-                  h.Class('absolute inset-0 -z-20 h-full w-full object-cover'),
+                  ...getStyleXAttributes(h, styles.tilePhoto),
                   h.Style({ 'object-position': entry.focus }),
                 ]),
-                h.div(
-                  [
-                    h.Class(
-                      'absolute inset-0 -z-10 bg-gradient-to-t from-ink/90 via-ink/40 to-ink/20',
-                    ),
-                  ],
-                  [],
-                ),
+                h.div([...getStyleXAttributes(h, styles.tileGradient)], []),
               ]
             : []),
           // Names WRAP instead of truncating — the long ones (KATEŘINA
@@ -81,23 +70,23 @@ export const trendingTile = (model: Model, entry: TrendingEntry, index: number):
           // headroom hack here.
           h.p(
             [
-              h.Class(
-                clsx(
-                  'display leading-[1.05] transition-colors group-hover:text-pink sm:text-2xl',
-                  index === 0 ? 'text-4xl' : 'text-3xl',
-                  featured ? 'text-paper' : 'text-ink',
-                ),
+              ...getStyleXAttributesWith(
+                h,
+                'hover-card-pink-text',
+                shared.display,
+                styles.tileName,
+                index === 0 ? styles.tileNameLeader : styles.tileNameFollower,
+                featured ? styles.tileNamePaper : styles.tileNameInk,
               ),
             ],
             [entry.name],
           ),
           h.p(
             [
-              h.Class(
-                clsx(
-                  'mt-2 text-[11px] leading-none tracking-[0.2em] uppercase sm:text-[10px]',
-                  featured ? 'text-paper/70' : 'text-ink/40',
-                ),
+              ...getStyleXAttributes(
+                h,
+                styles.tileKind,
+                featured ? styles.tileKindPaper : styles.tileKindInk,
               ),
             ],
             [entry.kind],
@@ -167,7 +156,7 @@ export const formatCount = (count: number): string => count.toLocaleString('en-U
 // as a flat wall).
 export const statSpark = (rounds: ReadonlyArray<number>): Html =>
   h.div(
-    [h.Class('flex h-16 w-full items-end gap-[3px] md:h-20 md:w-52'), h.AriaHidden(true)],
+    [...getStyleXAttributes(h, styles.spark), h.AriaHidden(true)],
     rounds.map((value, index) => {
       const min = Math.min(...rounds);
       const max = Math.max(...rounds);
@@ -175,7 +164,12 @@ export const statSpark = (rounds: ReadonlyArray<number>): Html =>
       const height = 25 + (spread === 0 ? 65 : ((value - min) / spread) * 65);
       return h.div(
         [
-          h.Class(clsx('bar flex-1', index === rounds.length - 1 ? 'bg-pink' : 'bg-paper/30')),
+          ...getStyleXAttributesWith(
+            h,
+            'bar',
+            styles.sparkBar,
+            index === rounds.length - 1 ? styles.sparkBarCurrent : styles.sparkBarPast,
+          ),
           h.Style({ height: `${height.toFixed(1)}%`, '--bar-delay': `${index * 0.03}s` }),
         ],
         [],
@@ -197,14 +191,13 @@ export const pinOverlay = (model: Model, id: string, label: string): Html => {
           ...button,
           h.AriaPressed(pinned ? 'true' : 'false'),
           h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
-          h.Class(
-            clsx(
-              'absolute top-3 right-3 z-10 flex h-9 w-9 cursor-pointer items-center justify-center transition-colors',
-              pinned ? 'bg-pink text-ink' : 'bg-paper/90 text-ink hover:bg-pink',
-            ),
+          ...getStyleXAttributes(
+            h,
+            styles.pinOverlay,
+            pinned ? styles.pinOverlayPinned : styles.pinOverlayUnpinned,
           ),
         ],
-        [pinGlyph('h-4 w-4')],
+        [pinGlyph(componentStyles.pinGlyphOverlay)],
       ),
   });
 };
@@ -233,7 +226,7 @@ export const statCard = (
   const deltaPct = previous === 0 ? 0 : (Math.abs(current - previous) / previous) * 100;
   const season = Number.sumAll(entry.rounds);
   return h.div(
-    [h.Class('relative')],
+    [...getStyleXAttributes(h, styles.tileWrapper)],
     [
       pinOverlay(model, pinId, label),
       h.a(
@@ -243,8 +236,10 @@ export const statCard = (
           // is a clean, untouched band up top; the stats live in a
           // solid ink footer with guaranteed contrast. The sharp seam
           // between them is deliberate — it’s the same hard edge the
-          // paper panels use everywhere else.
-          h.Class('trend-row group flex flex-col overflow-hidden bg-ink'),
+          // paper panels use everywhere else. The photo zoom, the pink
+          // league tint and the round chip's paper flood all react to
+          // this link's hover through the hover-card contract classes.
+          ...getStyleXAttributesWith(h, 'trend-row hover-card', styles.card),
           h.Style({ '--row-delay': `${0.3 + index * 0.08}s` }),
         ],
         [
@@ -252,7 +247,7 @@ export const statCard = (
             ? []
             : [
                 h.div(
-                  [h.Class('relative h-48 w-full overflow-hidden md:h-56')],
+                  [...getStyleXAttributes(h, styles.cardPhotoBand)],
                   [
                     // A slow settle-in zoom on hover — the photo is
                     // the only piece that moves; the figures stay put.
@@ -260,9 +255,7 @@ export const statCard = (
                       h.Src(entry.photo),
                       h.Alt(''),
                       h.Loading('lazy'),
-                      h.Class(
-                        'absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]',
-                      ),
+                      ...getStyleXAttributesWith(h, 'hover-card-zoom', styles.cardPhoto),
                       h.Style({ 'object-position': entry.focus }),
                     ]),
                   ],
@@ -270,32 +263,35 @@ export const statCard = (
                 // The seam carries the brand: a hard pink rule between
                 // the photo and the figures, the same ink-meets-pink
                 // edge the section chips stamp everywhere else.
-                h.div([h.Class('h-[3px] w-full shrink-0 bg-pink')], []),
+                h.div([...getStyleXAttributes(h, styles.cardSeam)], []),
               ]),
           h.div(
-            [h.Class('flex flex-1 flex-col p-5 md:p-6')],
+            [...getStyleXAttributes(h, styles.cardFooter)],
             [
               // The LEAGUE is the headline of the card (user call) —
               // full Anton display voice, with the movement answering
               // on the same baseline.
               h.div(
-                [h.Class('flex items-baseline justify-between gap-4')],
+                [...getStyleXAttributes(h, styles.cardHeadlineRow)],
                 [
                   h.h3(
                     [
-                      h.Class(
-                        'display text-2xl leading-[1.05] text-paper transition-colors group-hover:text-pink md:text-3xl',
+                      ...getStyleXAttributesWith(
+                        h,
+                        'hover-card-pink-text',
+                        shared.display,
+                        styles.cardLeague,
                       ),
                     ],
                     [entry.league],
                   ),
                   h.span(
                     [
-                      h.Class(
-                        clsx(
-                          'display flex items-center gap-2 text-xl md:text-2xl',
-                          up ? 'text-rise' : 'text-fall',
-                        ),
+                      ...getStyleXAttributes(
+                        h,
+                        shared.display,
+                        styles.cardDelta,
+                        up ? styles.cardDeltaUp : styles.cardDeltaDown,
                       ),
                     ],
                     [tapeArrow(up), `${deltaPct.toFixed(1)} %`],
@@ -307,18 +303,21 @@ export const statCard = (
               // (the matches panel’s score-chip grammar): this is the
               // fresh number, everything else is context.
               h.div(
-                [h.Class('mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4')],
+                [...getStyleXAttributes(h, styles.cardFiguresRow)],
                 [
                   h.div(
                     [],
                     [
                       h.p(
-                        [h.Class('flex')],
+                        [...getStyleXAttributes(h, styles.cardRoundRow)],
                         [
                           h.span(
                             [
-                              h.Class(
-                                'display bg-pink px-2.5 py-1 text-3xl leading-[1.05] text-ink transition-colors group-hover:bg-paper md:text-4xl',
+                              ...getStyleXAttributesWith(
+                                h,
+                                'hover-card-paper-fill',
+                                shared.display,
+                                styles.cardRound,
                               ),
                             ],
                             [formatCount(current)],
@@ -326,11 +325,7 @@ export const statCard = (
                         ],
                       ),
                       h.p(
-                        [
-                          h.Class(
-                            'mt-2 text-[10px] leading-none tracking-[0.2em] text-paper/50 uppercase',
-                          ),
-                        ],
+                        [...getStyleXAttributes(h, styles.cardCaption)],
                         [`Round ${MATCHDAYS_PLAYED}`],
                       ),
                     ],
@@ -339,17 +334,10 @@ export const statCard = (
                     [],
                     [
                       h.p(
-                        [h.Class('display text-4xl leading-[1.05] text-paper/60 md:text-5xl')],
+                        [...getStyleXAttributes(h, shared.display, styles.cardSeason)],
                         [formatCount(season)],
                       ),
-                      h.p(
-                        [
-                          h.Class(
-                            'mt-2 text-[10px] leading-none tracking-[0.2em] text-paper/50 uppercase',
-                          ),
-                        ],
-                        ['Season total'],
-                      ),
+                      h.p([...getStyleXAttributes(h, styles.cardCaption)], ['Season total']),
                     ],
                   ),
                   // Below `md` the sparkline ALWAYS takes its own
@@ -361,7 +349,7 @@ export const statCard = (
                   // bottom-right corner (negative margins cancel the
                   // footer padding).
                   h.div(
-                    [h.Class('-mx-5 -mb-5 basis-full md:-mr-6 md:-mb-6 md:ml-0 md:basis-auto')],
+                    [...getStyleXAttributes(h, styles.cardSparkStrip)],
                     [statSpark(entry.rounds)],
                   ),
                 ],
@@ -397,10 +385,10 @@ export const bestRecord = (model: Model, record: BestRecord, standalone: boolean
   const pinned = model.pinned.includes(`best:${record.id}`);
   return h.li(
     [
-      h.Class(
-        standalone
-          ? 'flex flex-col items-start text-left'
-          : 'flex flex-col items-center text-center sm:items-start sm:text-left',
+      ...getStyleXAttributes(
+        h,
+        styles.record,
+        standalone ? styles.recordStandalone : styles.recordCentered,
       ),
     ],
     [
@@ -416,28 +404,24 @@ export const bestRecord = (model: Model, record: BestRecord, standalone: boolean
               ),
               // The tick, now a hit target: pink bar at rest, growing a pin
               // glyph beside it when pinned so the state reads without color.
-              h.Class(
-                clsx(
-                  'flex cursor-pointer items-center gap-2 transition-colors',
-                  pinned ? 'text-pink' : 'text-ink/30 hover:text-pink',
-                ),
+              ...getStyleXAttributes(
+                h,
+                styles.recordPin,
+                pinned ? styles.recordPinPinned : styles.recordPinUnpinned,
               ),
             ],
             [
-              h.div([h.Class('h-1 w-10 bg-pink')], []),
-              pinned ? pinGlyph('h-3.5 w-3.5 text-pink') : h.empty,
+              h.div([...getStyleXAttributes(h, styles.recordTick)], []),
+              pinned ? pinGlyph(componentStyles.pinGlyphTick) : h.empty,
             ],
           ),
       }),
       h.p(
-        [h.Class('display mt-3 text-5xl text-ink sm:text-4xl md:text-5xl')],
+        [...getStyleXAttributes(h, shared.display, styles.recordValue)],
         record.isCount === true ? [record.value, drawnTimes()] : [record.value],
       ),
-      h.p([h.Class('display mt-2 text-2xl text-pink sm:text-xl md:text-2xl')], [record.holder]),
-      h.p(
-        [h.Class('mt-1.5 text-[10px] tracking-[0.25em] text-ink/50 uppercase md:text-[11px]')],
-        [record.label],
-      ),
+      h.p([...getStyleXAttributes(h, shared.display, styles.recordHolder)], [record.holder]),
+      h.p([...getStyleXAttributes(h, styles.recordLabel)], [record.label]),
     ],
   );
 };

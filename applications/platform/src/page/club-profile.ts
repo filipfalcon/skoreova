@@ -1,5 +1,4 @@
 import { Button, RadioGroup } from '@foldkit/ui';
-import clsx from 'clsx';
 import { Array, Match as M, Option } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
@@ -23,6 +22,9 @@ import {
   zoneFor,
 } from '../standings';
 import type { EuroCampaign } from '../standings';
+import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
+import { styles } from '../styles/club-profile';
+import { shared } from '../styles/shared';
 
 const h = html<Message>();
 
@@ -131,26 +133,24 @@ const clubCupSection = (run: ReadonlyArray<CupTie>): Html =>
     'Domestic Cup',
     [
       h.ol(
-        [h.Class('mt-6 flex flex-col')],
+        [...getStyleXAttributes(h, styles.cupList)],
         run.map((tie) =>
           h.li(
             [
-              h.Class(
-                clsx(
-                  'flex items-baseline justify-between gap-4 border-t px-2 py-3.5 first:border-t-0',
-                  tie.isUpcoming ? 'border-pink bg-pink text-ink' : 'border-ink/10 text-ink',
-                ),
+              ...getStyleXAttributes(
+                h,
+                styles.tieRow,
+                tie.isUpcoming ? styles.tieUpcoming : styles.tieRest,
               ),
             ],
             [
-              h.span([h.Class('display text-xl')], [tie.round]),
+              h.span([...getStyleXAttributes(h, shared.display, styles.tieRound)], [tie.round]),
               h.span(
                 [
-                  h.Class(
-                    clsx(
-                      'text-[10px] tracking-[0.2em] uppercase',
-                      tie.isUpcoming ? 'text-ink/70' : 'text-ink/50',
-                    ),
+                  ...getStyleXAttributes(
+                    h,
+                    styles.tieResult,
+                    tie.isUpcoming ? styles.tieResultUpcoming : styles.tieResultRest,
                   ),
                 ],
                 [tie.result],
@@ -182,49 +182,52 @@ const scopeRadioGroup = (target: Club, model: Model): Html => {
     onSelect: (scope) => SelectedScorerScope({ scope }),
     toView: ({ group, options }) =>
       h.div(
-        [...group, h.Class('mt-6 flex flex-wrap gap-2')],
-        options.map((option) =>
-          h.div(
+        [...group, ...getStyleXAttributes(h, styles.scopeGroup)],
+        options.map((option) => {
+          // Checked derives from the model because StyleX has no attribute selectors (the component still stamps data-checked).
+          const checked = option.value === model.scorerScope;
+          return h.div(
             [
               ...option.option,
-              h.Class(
-                'cursor-pointer border border-ink/20 px-4 py-2 text-[10px] tracking-[0.2em] text-ink/60 uppercase transition-colors hover:border-pink hover:text-ink data-[checked]:border-pink data-[checked]:bg-pink data-[checked]:text-ink',
+              ...getStyleXAttributes(
+                h,
+                styles.scopeOption,
+                checked ? styles.scopeChecked : styles.scopeRest,
               ),
             ],
             [labels[option.value]],
-          ),
-        ),
+          );
+        }),
       ),
   });
 };
 
 const scorerRow = (scorer: Scorer, index: number): Html =>
   h.li(
-    [h.Class('flex items-baseline gap-5 border-t border-ink/10 px-2 py-4 first:border-t-0')],
+    [...getStyleXAttributes(h, styles.scorerRow)],
     [
-      h.span([h.Class('display w-8 text-lg text-ink/35')], [`${index + 1}`]),
-      h.span([h.Class('display flex-1 truncate text-2xl text-ink')], [scorer.name]),
-      h.span([h.Class('display text-4xl text-pink')], [`${scorer.goals}`]),
+      h.span([...getStyleXAttributes(h, shared.display, styles.scorerRank)], [`${index + 1}`]),
+      h.span([...getStyleXAttributes(h, shared.display, styles.scorerName)], [scorer.name]),
+      h.span([...getStyleXAttributes(h, shared.display, styles.scorerGoals)], [`${scorer.goals}`]),
     ],
   );
 
 // One named list view per scope. Each list carries a LITERAL key — the
 // identity of that scope’s board — so switching scopes swaps subtrees
 // (replaying the `.screen` slide-in) without a data-derived key.
-const SCORERS_LIST_CLASS = 'screen mt-6 flex flex-col';
 const allScorersList = (target: Club): Html =>
   h.ol(
-    [h.Key('club-scorers-all'), h.Class(SCORERS_LIST_CLASS)],
+    [h.Key('club-scorers-all'), ...getStyleXAttributesWith(h, 'screen', styles.scorersList)],
     scorersFor(target, 'All').map(scorerRow),
   );
 const leagueScorersList = (target: Club): Html =>
   h.ol(
-    [h.Key('club-scorers-league'), h.Class(SCORERS_LIST_CLASS)],
+    [h.Key('club-scorers-league'), ...getStyleXAttributesWith(h, 'screen', styles.scorersList)],
     scorersFor(target, 'League').map(scorerRow),
   );
 const cupScorersList = (target: Club): Html =>
   h.ol(
-    [h.Key('club-scorers-cup'), h.Class(SCORERS_LIST_CLASS)],
+    [h.Key('club-scorers-cup'), ...getStyleXAttributesWith(h, 'screen', styles.scorersList)],
     scorersFor(target, 'Cup').map(scorerRow),
   );
 
@@ -245,10 +248,7 @@ const clubScorersSection = (target: Club, model: Model): Html => {
     [
       scopeRadioGroup(target, model),
       scorersListFor(target, model.scorerScope),
-      h.p(
-        [h.Class('mt-3 px-2 text-[10px] tracking-[0.2em] text-ink/45 uppercase')],
-        ['Goals — season 2025/26'],
-      ),
+      h.p([...getStyleXAttributes(h, styles.scorersFootnote)], ['Goals — season 2025/26']),
     ],
     'top-scorers',
   );
@@ -280,24 +280,21 @@ const clubHistorySection = (target: Club): Html => {
     'History',
     [
       h.div(
-        [h.Class('mt-8 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3')],
+        [...getStyleXAttributes(h, styles.historyGrid)],
         entries.map((entry) =>
           h.div(
             [],
             [
-              h.div([h.Class('h-1 w-10 bg-pink')], []),
-              h.p([h.Class('display mt-3 text-4xl text-ink md:text-5xl')], entry.value),
-              h.p([h.Class('display mt-2 text-xl text-pink md:text-2xl')], [entry.label]),
-              h.p(
-                [h.Class('mt-1.5 text-[10px] tracking-[0.25em] text-ink/50 uppercase')],
-                [entry.detail],
-              ),
+              h.div([...getStyleXAttributes(h, styles.historyTick)], []),
+              h.p([...getStyleXAttributes(h, shared.display, styles.historyValue)], entry.value),
+              h.p([...getStyleXAttributes(h, shared.display, styles.historyLabel)], [entry.label]),
+              h.p([...getStyleXAttributes(h, styles.historyDetail)], [entry.detail]),
             ],
           ),
         ),
       ),
       h.p(
-        [h.Class('mt-8 text-xs leading-relaxed text-ink/45')],
+        [...getStyleXAttributes(h, styles.historyNote)],
         ['The season-by-season archive arrives with the real data.'],
       ),
     ],
@@ -309,22 +306,15 @@ const clubAllTimeStatsSection = (): Html =>
   clubSection(
     'All-time stats',
     [
-      h.p(
-        [
-          h.Class(
-            'mt-4 inline-block border border-ink/25 px-3 py-1.5 text-[10px] tracking-[0.25em] text-ink/60 uppercase',
-          ),
-        ],
-        ['Work in progress'],
-      ),
+      h.p([...getStyleXAttributes(h, styles.wipBadge)], ['Work in progress']),
       h.div(
-        [h.Class('mt-8 grid gap-x-8 gap-y-10 grid-cols-2 lg:grid-cols-4')],
+        [...getStyleXAttributes(h, styles.statsGrid)],
         ['Matches played', 'Goals scored', 'Clean sheets', 'Biggest win'].map((label) =>
           h.div(
             [],
             [
-              h.div([h.Class('h-9 w-24 bg-ink/10')], []),
-              h.p([h.Class('mt-3 text-[10px] tracking-[0.25em] text-ink/50 uppercase')], [label]),
+              h.div([...getStyleXAttributes(h, styles.statsPlaceholder)], []),
+              h.p([...getStyleXAttributes(h, styles.statsLabel)], [label]),
             ],
           ),
         ),
@@ -336,14 +326,14 @@ const clubAllTimeStatsSection = (): Html =>
 const clubFollowSection = (target: Club, model: Model): Html => {
   const following = model.followed.includes(target.slug);
   return h.section(
-    [h.Class('mt-20 border-t border-ink/10 pt-14 pb-4 text-center md:mt-24')],
+    [...getStyleXAttributes(h, styles.follow)],
     [
       h.p(
-        [h.Class('display text-3xl leading-[1.05] text-ink md:text-5xl')],
+        [...getStyleXAttributes(h, shared.display, styles.followTitle)],
         [`Take ${target.name} with you.`],
       ),
       h.p(
-        [h.Class('mx-auto mt-4 max-w-md text-sm leading-relaxed text-ink/50')],
+        [...getStyleXAttributes(h, styles.followSubtitle)],
         ['Follow the club and Her Game builds your feed around it — matches, movers, and records.'],
       ),
       Button.view({
@@ -353,17 +343,15 @@ const clubFollowSection = (target: Club, model: Model): Html => {
             [
               ...button,
               h.AriaPressed(following ? 'true' : 'false'),
-              h.Class(
-                // On PAPER the states invert from the dark build: the call to
-                // action is the pink fill, and the settled "following" state
-                // goes solid ink — on a light surface a paper fill would have
-                // been the button disappearing, not receding.
-                clsx(
-                  'display mt-8 inline-block cursor-pointer px-10 py-4 text-xl tracking-[0.12em] transition-colors md:text-2xl',
-                  following
-                    ? 'bg-ink text-paper'
-                    : 'bg-pink text-ink hover:bg-ink hover:text-paper',
-                ),
+              // On PAPER the states invert from the dark build: the call to
+              // action is the pink fill, and the settled "following" state
+              // goes solid ink — on a light surface a paper fill would have
+              // been the button disappearing, not receding.
+              ...getStyleXAttributes(
+                h,
+                shared.display,
+                styles.followButton,
+                following ? styles.followOn : styles.followOff,
               ),
             ],
             [following ? 'Following ✓' : `Follow ${target.name}`],
@@ -393,46 +381,26 @@ export const view = (target: Club, model: Model): Html => {
   const darkBand = h.div(
     // Flows straight out of the header chrome — the same full-bleed
     // swallow as the contenders hero.
-    [
-      h.Class(
-        'relative -mt-10 mx-[calc(50%-50vw)] overflow-hidden bg-ink px-5 pt-8 pb-16 md:-mt-14 md:px-10 md:pb-20',
-      ),
-    ],
+    [...getStyleXAttributes(h, styles.darkBand)],
     [
       // The Universe-style header ARTWORK (user-supplied photo, per club):
       // full-bleed, fading into the ink so the crest + name ride the fade.
       ...(heroArt
         ? [
             h.div(
-              [
-                h.Class(
-                  'club-hero-art relative -mx-5 -mt-8 h-[22rem] overflow-hidden will-change-transform md:-mx-10 md:h-[34rem]',
-                ),
-              ],
+              [...getStyleXAttributesWith(h, 'club-hero-art', styles.heroArt)],
               [
                 // Phones ZOOM the artwork in (user call — the wide frame
                 // shrank the players to specks); md+ shows the full crop.
                 h.img([
                   h.Src(heroArt.photo),
                   h.Alt(''),
-                  h.Class('absolute inset-0 h-full w-full scale-[1.45] object-cover md:scale-100'),
+                  ...getStyleXAttributes(h, styles.heroArtImage),
                   h.Style({ 'object-position': heroArt.focus, 'transform-origin': heroArt.focus }),
                 ]),
-                h.div(
-                  [
-                    h.Class(
-                      'absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-ink via-ink/60 to-transparent',
-                    ),
-                  ],
-                  [],
-                ),
+                h.div([...getStyleXAttributes(h, styles.heroArtFade)], []),
                 h.a(
-                  [
-                    h.Href(clubsRouter()),
-                    h.Class(
-                      'absolute top-5 left-5 z-10 text-[10px] tracking-[0.2em] text-paper/70 uppercase transition-colors hover:text-pink md:left-10',
-                    ),
-                  ],
+                  [h.Href(clubsRouter()), ...getStyleXAttributes(h, styles.backLinkOnArt)],
                   ['← All clubs'],
                 ),
               ],
@@ -440,21 +408,16 @@ export const view = (target: Club, model: Model): Html => {
           ]
         : []),
       h.div(
-        [h.Class('relative z-10 mx-auto w-full max-w-5xl')],
+        [...getStyleXAttributes(h, styles.bandColumn)],
         [
           ...(heroArt
             ? []
             : [
                 h.div(
-                  [h.Class('flex')],
+                  [...getStyleXAttributes(h, styles.backRow)],
                   [
                     h.a(
-                      [
-                        h.Href(clubsRouter()),
-                        h.Class(
-                          'text-[10px] tracking-[0.2em] text-paper/50 uppercase transition-colors hover:text-pink',
-                        ),
-                      ],
+                      [h.Href(clubsRouter()), ...getStyleXAttributes(h, styles.backLink)],
                       ['← All clubs'],
                     ),
                   ],
@@ -468,24 +431,19 @@ export const view = (target: Club, model: Model): Html => {
           // layers could cover one another.
           h.div(
             [
-              h.Class(
-                heroArt ? 'relative -mt-32 text-center md:-mt-44' : 'mt-10 text-center md:mt-14',
+              ...getStyleXAttributes(
+                h,
+                styles.hero,
+                heroArt ? styles.heroOverArt : styles.heroPlain,
               ),
             ],
             [
               h.img([
                 h.Src(target.logo),
                 h.Alt(`${target.name} crest`),
-                h.Class('mx-auto h-32 w-32 object-contain drop-shadow-2xl md:h-52 md:w-52'),
+                ...getStyleXAttributes(h, styles.crest),
               ]),
-              h.h1(
-                [
-                  h.Class(
-                    'display mt-6 text-[clamp(3.75rem,17vw,9rem)] leading-[0.95] text-paper md:mt-8',
-                  ),
-                ],
-                [target.name],
-              ),
+              h.h1([...getStyleXAttributes(h, shared.display, styles.heroName)], [target.name]),
               // Honors ride UNDER the name and above the commentary. ONE
               // chip whose line ROLLS over to the next honor (user call —
               // like the landing page’s pitchside ad board), borrowing that
@@ -497,14 +455,17 @@ export const view = (target: Club, model: Model): Html => {
                 : [
                     h.ul(
                       [
-                        h.Class(
-                          'honor-roll display mx-auto mt-6 grid w-fit overflow-hidden bg-paper px-3 py-1.5 text-lg tracking-[0.12em] text-ink md:mt-7 md:px-3.5 md:py-2 md:text-xl',
+                        ...getStyleXAttributesWith(
+                          h,
+                          'honor-roll',
+                          shared.display,
+                          styles.honorRoll,
                         ),
                       ],
                       honors.map((honor, index) =>
                         h.li(
                           [
-                            h.Class('col-start-1 row-start-1 text-center whitespace-nowrap'),
+                            ...getStyleXAttributes(h, styles.honorLine),
                             h.Style({ '--honor-index': `${index}` }),
                           ],
                           honor.count === undefined
@@ -517,18 +478,10 @@ export const view = (target: Club, model: Model): Html => {
                     // rotator that cannot rotate would hide two thirds of
                     // the honors.
                     h.ul(
-                      [
-                        h.Class(
-                          'honor-static mt-6 flex-wrap items-center justify-center gap-2 md:mt-7 md:gap-3',
-                        ),
-                      ],
+                      [...getStyleXAttributesWith(h, 'honor-static', styles.honorStatic)],
                       honors.map((honor) =>
                         h.li(
-                          [
-                            h.Class(
-                              'display bg-paper px-3 py-1.5 text-lg tracking-[0.12em] text-ink md:px-3.5 md:py-2 md:text-xl',
-                            ),
-                          ],
+                          [...getStyleXAttributes(h, shared.display, styles.honorChip)],
                           honor.count === undefined
                             ? [honor.label]
                             : [...timesCount(honor.count), honor.label],
@@ -545,7 +498,13 @@ export const view = (target: Club, model: Model): Html => {
           // placeholder glyph until her photo lands — swap it for an
           // <img> in the circle then.
           h.figure(
-            [h.Class(clsx('mx-auto max-w-2xl', heroArt ? 'mt-10' : 'mt-16 md:mt-24'))],
+            [
+              ...getStyleXAttributes(
+                h,
+                styles.commentary,
+                heroArt ? styles.commentaryUnderArt : styles.commentaryPlain,
+              ),
+            ],
             [
               // The TEXT is the anchor of this block (user call): it gets a
               // measure of its own and is centered inside the figure, and
@@ -554,7 +513,7 @@ export const view = (target: Club, model: Model): Html => {
               // shifting it. Without this the mark and rule sat left of the
               // text and pushed its optical center to the right.
               h.div(
-                [h.Class('mx-auto w-full max-w-[30rem] md:max-w-[34rem]')],
+                [...getStyleXAttributes(h, styles.commentaryColumn)],
                 [
                   // Body voice, not Anton (user call) — a long quotation in
                   // the display face was unreadable. Text rags left;
@@ -563,25 +522,24 @@ export const view = (target: Club, model: Model): Html => {
                   // to the same left edge as the text: the pink rule then
                   // runs as one unbroken line past both, instead of the mark
                   // hanging off the side and interrupting it.
+                  // pt clears the MARK’S INK, not its box: the 0.3 leading
+                  // collapses the line box to ~29px while the glyph still
+                  // paints ~25px above it, so without this the quote mark
+                  // bleeds up into the honor chips.
                   h.blockquote(
-                    [
-                      h.Class(
-                        // pt clears the MARK’S INK, not its box: leading-[0.3]
-                        // collapses the line box to ~29px while the glyph
-                        // still paints ~25px above it, so without this the
-                        // quote mark bleeds up into the honor chips.
-                        'mt-0 border-l-2 border-pink pt-6 pl-5 text-left text-xl leading-relaxed font-medium text-pretty text-paper/90 md:pt-8 md:pl-7 md:text-2xl',
-                      ),
-                    ],
+                    [...getStyleXAttributes(h, styles.quote)],
                     [
                       h.span(
                         [
-                          h.Class(
-                            // -ml compensates the glyph’s own side bearing:
-                            // aligning the BOXES leaves the ink looking
-                            // indented, so nudge it back to sit optically
-                            // flush with the first letter of the quote.
-                            'quote-float display -mb-3 -ml-1 block text-8xl leading-[0.3] text-pink select-none md:-mb-4 md:-ml-1.5 md:text-9xl',
+                          // -ml compensates the glyph’s own side bearing:
+                          // aligning the BOXES leaves the ink looking
+                          // indented, so nudge it back to sit optically
+                          // flush with the first letter of the quote.
+                          ...getStyleXAttributesWith(
+                            h,
+                            'quote-float',
+                            shared.display,
+                            styles.quoteMark,
                           ),
                           h.AriaHidden(true),
                         ],
@@ -596,47 +554,35 @@ export const view = (target: Club, model: Model): Html => {
                   // sits right against the text rather than floating away
                   // below it.
                   h.figcaption(
-                    [h.Class('-mt-2 flex items-center gap-4 md:-mt-3 md:gap-5')],
+                    [...getStyleXAttributes(h, styles.signoff)],
                     [
-                      h.div([h.Class('h-px flex-1 bg-paper'), h.AriaHidden(true)], []),
+                      h.div(
+                        [...getStyleXAttributes(h, styles.signoffRule), h.AriaHidden(true)],
+                        [],
+                      ),
                       // A signature LOCKUP: the masthead in the display face
                       // over a small tracked label. Setting both as one
                       // letterspaced body-font block read cheap — wide
                       // tracking on a light weight at small size has no
                       // weight to carry it.
                       h.span(
-                        [h.Class('text-right')],
+                        [...getStyleXAttributes(h, styles.signoffLockup)],
                         [
                           h.span(
-                            [
-                              h.Class(
-                                'display block text-xl leading-none tracking-[0.12em] text-pink md:text-2xl',
-                              ),
-                            ],
+                            [...getStyleXAttributes(h, shared.display, styles.signoffMasthead)],
                             ['Skóreová'],
                           ),
-                          h.span(
-                            [
-                              h.Class(
-                                'mt-1.5 block text-sm tracking-[0.25em] text-paper uppercase md:text-base',
-                              ),
-                            ],
-                            ['Commentary'],
-                          ),
+                          h.span([...getStyleXAttributes(h, styles.signoffLabel)], ['Commentary']),
                         ],
                       ),
                       h.span(
-                        [
-                          h.Class(
-                            'flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-pink bg-panel md:h-36 md:w-36',
-                          ),
-                        ],
+                        [...getStyleXAttributes(h, styles.portrait)],
                         [
                           h.img([
                             h.Src(commentaryAvatar),
                             h.Alt('Skóreová reporter'),
                             h.Loading('lazy'),
-                            h.Class('h-full w-full object-cover'),
+                            ...getStyleXAttributes(h, styles.portraitImage),
                           ]),
                         ],
                       ),
@@ -650,7 +596,7 @@ export const view = (target: Club, model: Model): Html => {
       ),
       // Film grain over the dark world only — `overlay` against paper just
       // dirties it, and the grain is the dark act’s texture anyway.
-      h.div([h.Class('grain pointer-events-none absolute inset-0'), h.AriaHidden(true)], []),
+      h.div([...getStyleXAttributesWith(h, 'grain', styles.grainOverlay), h.AriaHidden(true)], []),
     ],
   );
 
@@ -659,7 +605,7 @@ export const view = (target: Club, model: Model): Html => {
   // simply the dark band ending. Column width matches the band above it so
   // the section headings line up straight through the seam.
   const dataBand = h.div(
-    [h.Class('mx-auto w-full max-w-5xl')],
+    [...getStyleXAttributes(h, styles.dataBand)],
     [
       clubMatchesSections(target),
       clubStandingsSection(target),

@@ -1,18 +1,26 @@
-@import 'tailwindcss';
+/* The global layer of a StyleX app — everything here is what component
+   styles CANNOT express: the palette custom properties (the one place raw
+   values live — tokens.stylex.ts aliases them, because these globals read
+   them by name and StyleX's hashed variables are unreachable from plain
+   CSS), the document reset, and the motion/contract rules that need
+   selectors StyleX rejects by design (descendant hovers, keyframes shared
+   across components, the reduced-motion opt-outs). This file is also the
+   CSS asset the StyleX plugin appends its generated rules to at build time.
+   Component styling lives in src/styles/ via stylex.create. */
 
-@theme {
+:root {
   --color-ink: #0d0c0c;
   --color-panel: #151313;
   --color-paper: #f3efe8;
   --color-pink: #ff2f8e;
-  /* Market movement colors — the ticker’s up/down states. Deliberately a
+  /* Market movement colors — the ticker's up/down states. Deliberately a
      RED red (not magenta) so a fall can never be mistaken for brand pink. */
   --color-rise: #16c784;
   --color-fall: #ea3943;
   /* Standings qualification zones (user-picked). Brand pink is already the
      highlight row, the points column and every chip, so a pink band reads
      as "brand", not as a prize. Same license as rise/fall: data-only hues.
-     These now sit on PAPER (the club profile’s data half went light).
+     These now sit on PAPER (the club profile's data half went light).
      Navy and purple survived the move untouched — 8.9:1 and 7.2:1 against
      paper — but the lime did not, so it has an -ink variant used for BOTH
      its bar and its label. */
@@ -24,22 +32,99 @@
      same hue until the bar reads as a bar and the 10px label reads as
      type; --color-uec keeps the original for any dark surface. */
   --color-uec-ink: #6b7a00;
-  /* Same story, less extreme, for the promotion green and the calendar’s
-     W letter (1.9:1). The ticker’s --color-rise stays untouched — it
+  /* Same story, less extreme, for the promotion green and the calendar's
+     W letter (1.9:1). The ticker's --color-rise stays untouched — it
      still runs on black. */
   --color-rise-ink: #0b8f5c;
   --font-display: 'Anton', 'Arial Narrow', sans-serif;
   --font-body: 'Archivo Variable', 'Helvetica Neue', Arial, sans-serif;
 }
 
+/* The document reset — the load-bearing subset of the Tailwind v4 preflight
+   this app grew up on, kept so the StyleX styles land on the same baseline:
+   universal zeroed margins/paddings and `border: 0 solid` (a style module
+   sets a border by width + color alone, exactly as the old utilities did),
+   headings and lists stripped, media elements block-level, form controls
+   inheriting their typography. */
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0 solid;
+}
+
+html {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  tab-size: 4;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+ol,
+ul {
+  list-style: none;
+}
+
+img,
+svg,
+video,
+canvas,
+iframe {
+  display: block;
+  vertical-align: middle;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+table {
+  text-indent: 0;
+  border-color: inherit;
+  border-collapse: collapse;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  background-color: transparent;
+  border-radius: 0;
+}
+
+[hidden] {
+  display: none !important;
+}
+
 html {
   /* The platform runs LIGHT (user call — the all-dark build read as sad
-     next to the landing’s confident paper): paper surface, ink type, the
+     next to the landing's confident paper): paper surface, ink type, the
      dark chrome (header, tab bar, market tape) pops on top. */
   /* Split overscroll: rubber-banding above the header reveals BLACK (the
-     header’s own world), below the page it stays paper. */
+     header's own world), below the page it stays paper. */
   background: linear-gradient(to bottom, #000 0%, #000 50%, var(--color-paper) 50%);
-  /* Also keeps the welcome ticker’s 100vw margin trick from spawning a
+  /* Also keeps the welcome ticker's 100vw margin trick from spawning a
      horizontal scrollbar (vw includes the scrollbar gutter). */
   overflow-x: hidden;
   overflow-x: clip;
@@ -48,6 +133,8 @@ html {
 body {
   font-family: var(--font-body);
   overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
@@ -55,34 +142,21 @@ body {
   color: var(--color-ink);
 }
 
-/* THE focus ring for the whole app, and deliberately unlayered: unlayered
-   author rules outrank every `@layer utilities` declaration, so this wins
-   over any `outline-*` utility a component might carry. That is the point —
-   one ring, one place — but it also means an element CANNOT opt out or
-   restyle its ring with utilities. Move this into `@layer base` on the day
-   one needs to. */
+/* THE focus ring for the whole app, in the one place component styles
+   cannot override by accident: no StyleX style here sets `outline`, so
+   this rule is the only voice on the property and wins on the cascade's
+   plain source order. One ring, one place. */
 :focus-visible {
   outline: 2px solid var(--color-pink);
   outline-offset: 2px;
 }
 
-/* Default placeholder tone is tuned for the DARK header inputs; layered
-   as base so light-surface inputs can override it with a placeholder:*
-   utility (unlayered rules would always win over Tailwind’s utilities). */
-@layer base {
-  ::placeholder {
-    color: color-mix(in srgb, var(--color-paper) 35%, transparent);
-  }
-}
-
-/* Same display voice as the landing page — Anton, tight, uppercase. */
-@layer components {
-  .display {
-    font-family: var(--font-display);
-    text-transform: uppercase;
-    line-height: 0.92;
-    letter-spacing: -0.01em;
-  }
+/* Default placeholder tone is tuned for the DARK header inputs. A bare
+   pseudo-element selector, so any field's own StyleX '::placeholder'
+   style (a class + pseudo-element, higher specificity) overrides it —
+   the clubs search does exactly that. */
+::placeholder {
+  color: color-mix(in srgb, var(--color-paper) 35%, transparent);
 }
 
 /* Film grain — same tiled SVG noise as the landing hero; the login screen
@@ -135,7 +209,7 @@ body {
   }
 }
 
-/* Overflow strips (the header’s section rail in the md band) scroll
+/* Overflow strips (the header's section rail in the md band) scroll
    without showing a scrollbar. */
 .no-scrollbar {
   scrollbar-width: none;
@@ -211,7 +285,7 @@ body {
 @supports (animation-timeline: scroll()) {
   @media (prefers-reduced-motion: no-preference) {
     /* scroll(root), NOT scroll(): the bare form binds to the NEAREST
-       scroll container, and the profile’s own overflow-hidden wrapper is
+       scroll container, and the profile's own overflow-hidden wrapper is
        one — it never scrolls, so the timeline sat inactive. The page
        scroller is the document root. */
     .club-hero-art {
@@ -228,8 +302,8 @@ body {
   }
 }
 
-/* The commentary’s opening quote LEVITATES — the landing page’s "alive
-   emblem" treatment (its knight mascot and champion’s crest), ported with
+/* The commentary's opening quote LEVITATES — the landing page's "alive
+   emblem" treatment (its knight mascot and champion's crest), ported with
    the same curve and period so the two sites bob at one rhythm. A slow
    drift UP only: the mark sits above a fixed block of text, and dipping
    down would close the gap to the first line and read as a wobble rather
@@ -254,15 +328,15 @@ body {
   }
 }
 
-/* The honors chip cycles its line like the landing page’s pitchside AD
+/* The honors chip cycles its line like the landing page's pitchside AD
    BOARD, and borrows that grammar exactly: the incoming line ROLLS DOWN
    from the top and pushes the previous one out of the bottom — one
    motor-driven motion, not a crossfade (which reads as corporate
    carousel). Every line stacks in the same grid cell, so the chip is as
    wide as the LONGEST honor and its width never jumps mid-rotation; the
-   chip’s own overflow does the clipping. Loop = honors × 2s slot, offset
+   chip's own overflow does the clipping. Loop = honors × 2s slot, offset
    per line by --honor-index; the -0.45s shift parks the first line at
-   its rolled-in rest frame so the page doesn’t load mid-roll.
+   its rolled-in rest frame so the page doesn't load mid-roll.
    Tuned for THREE honors (the curated count): the slot percentages below
    are 1/3 of the loop. A club with a different number still reads fine —
    it just holds each line for a different share — but re-derive these if
@@ -371,6 +445,36 @@ body {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* PARENT-HOVER CONTRACTS — the drawn-arrow pattern generalized. StyleX
+   rejects descendant selectors by design, so the few "hover the card,
+   tint the child" gestures live here as named contracts: the card carries
+   the `hover-card` class, the child carries the reaction class. Text-only
+   reactions use color inheritance in the style modules instead; these are
+   the ones inheritance cannot express. Hover-gated like the arrow so
+   touch browsers never stick them. */
+@media (hover: hover) {
+  .hover-card:hover .hover-card-pink-text {
+    color: var(--color-pink);
+  }
+
+  .hover-card:hover .hover-card-paper-fill {
+    background-color: var(--color-paper);
+  }
+
+  .hover-card:hover .hover-card-zoom {
+    transform: scale(1.04);
+  }
+
+  .hover-card:hover .hover-card-pink-ring {
+    border-color: var(--color-pink);
+    color: var(--color-paper);
+  }
+
+  .hover-card:hover .hover-card-paper-text {
+    color: var(--color-paper);
   }
 }
 

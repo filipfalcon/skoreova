@@ -1,7 +1,7 @@
 import { Option } from 'effect';
 
 import { Model } from './main';
-import { ClubsRoute, CompetitionRoute, HerGameRoute, WelcomeRoute } from './route';
+import { ClubRoute, ClubsRoute, CompetitionRoute, HerGameRoute, WelcomeRoute } from './route';
 
 // The boot model — mirrors `initialModel` in main.ts (kept here so a fixture
 // tweak can never quietly reshape the app’s real starting state). Every screen
@@ -30,6 +30,13 @@ export const herGamePinnedModel = Model.make({
 });
 
 export const clubsModel = Model.make({ ...welcomeModel, route: ClubsRoute() });
+
+// The richest club profile — hero artwork, honors, Europe, the cup run —
+// so a render of it walks every section the profile can grow.
+export const clubProfileModel = Model.make({
+  ...welcomeModel,
+  route: ClubRoute({ slug: 'sparta-praha' }),
+});
 
 // The First League’s profile with its round pager parked on matchday 1 — the
 // only model where an end-stop is blocked, which is the state Ui.Button owns

@@ -2,6 +2,7 @@ import { Scene } from 'foldkit';
 import { describe, test } from 'vite-plus/test';
 
 import {
+  clubProfileModel,
   clubsModel,
   competitionFirstRoundModel,
   herGameModel,
@@ -50,9 +51,13 @@ describe('view', () => {
   // blocked half is what has broken elsewhere in this repo — a state announced
   // through an attribute the markup never carried, or styled through a selector
   // that never matched. On matchday 1 "Previous round" must be announced as
-  // disabled and dimmed, while its live twin beside it proves the two looks are
-  // genuinely different strings rather than one that lost the cascade.
-  test('a blocked round arrow announces and dims, its live twin does neither', () => {
+  // disabled while its live twin beside it is not. The old class assertion
+  // (`text-ink/20`) died with Tailwind: StyleX class names are hashed, so the
+  // blocked LOOK is carried by the disjoint style pair in the view and the
+  // testable contract is Ui.Button's data-disabled stamp — the same attribute
+  // the blocked styling keys off, so a missing stamp fails here before it
+  // fails on screen.
+  test('a blocked round arrow announces itself, its live twin does not', () => {
     Scene.scene(
       { update, view },
       Scene.with(competitionFirstRoundModel),
@@ -60,9 +65,23 @@ describe('view', () => {
         'aria-disabled',
         'true',
       ),
-      Scene.expect(Scene.role('button', { name: 'Previous round' })).toHaveClass('text-ink/20'),
+      Scene.expect(Scene.role('button', { name: 'Previous round' })).toHaveAttr('data-disabled'),
       Scene.expect(Scene.role('button', { name: 'Next round' })).not.toHaveAttr('aria-disabled'),
-      Scene.expect(Scene.role('button', { name: 'Next round' })).not.toHaveClass('text-ink/20'),
+      Scene.expect(Scene.role('button', { name: 'Next round' })).not.toHaveAttr('data-disabled'),
+    );
+  });
+
+  // The club profile is the largest view in the app and the only screen no
+  // other scene reaches — this render walks its every section (hero artwork,
+  // honors, commentary, matches, standings, Europe, cup run, scorers,
+  // history, follow) so a broken subtree fails here rather than on screen.
+  test('the richest club profile renders end to end', () => {
+    Scene.scene(
+      { update, view },
+      Scene.with(clubProfileModel),
+      Scene.expect(Scene.role('heading', { name: 'Sparta Praha' })).toExist(),
+      Scene.expect(Scene.role('button', { name: 'Follow Sparta Praha' })).toExist(),
+      Scene.expect(Scene.text('Top scorers')).toExist(),
     );
   });
 

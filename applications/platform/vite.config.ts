@@ -1,14 +1,14 @@
 import { foldkit } from '@foldkit/vite-plugin';
-import tailwindcss from '@tailwindcss/vite';
+import stylex from '@stylexjs/unplugin';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite-plus';
 
-// The Foldkit plugin runs in tests too, DevTools MCP port and all — see the
-// note in applications/studio/vite.config.ts for what the port used to cost and
-// what fixed it. The plugin brands view-function identity, and that IS the
-// differ's second axis: without it the tests diffed on tag and position while
-// production diffed on identity too — the one difference a view test cannot
-// see.
+// Styling is StyleX (the kassandra pattern): tokens in src/tokens.stylex.ts,
+// style modules under src/styles/, the compiled rules appended to the
+// src/styles.css asset the document already links. Tests do NOT run through
+// this config — they load StyleX through its rollup entry in
+// vite.test.config.ts (see the note there), which is why no test section
+// lives here any more.
 
 // Pins the inner dev server's port under `alchemy dev` — see the note on
 // this plugin in applications/web/vite.config.ts (alchemy's inline
@@ -30,7 +30,7 @@ export default defineConfig({
   // vite increments to a free port instead.
   server: { host: '127.0.0.1' },
   // Studio claims 9988, web 9989 — each app needs its own DevTools MCP port.
-  plugins: [...tailwindcss(), ...foldkit({ devToolsMcpPort: 9990 }), pinAlchemyDevPort(5274)],
+  plugins: [stylex.vite(), ...foldkit({ devToolsMcpPort: 9990 }), pinAlchemyDevPort(5274)],
   // Alchemy’s deploy captures the build output through a `buildApp` post
   // hook, but Vite 8 only runs the default environment builds AFTER all
   // buildApp hooks when no real `builder.buildApp` exists — the hook then
@@ -56,24 +56,5 @@ export default defineConfig({
   },
   optimizeDeps: {
     entries: ['src/entry.ts'],
-  },
-  test: {
-    // Without a name the project is called after the package, so filtering
-    // reads `--project '@skoreova/platform-application'`. That is what Vitest
-    // falls back to when a project config names nothing.
-    name: 'platform',
-    include: ['src/**/*.test.ts'],
-    // The app’s own update/view/init never touch the DOM at call time, but the
-    // @foldkit/ui components rendered in the view do (CSS.escape when building
-    // id selectors), so scene tests run under happy-dom rather than bare Node.
-    // This matches @foldkit/ui’s own test setup. The motion/scroll Command
-    // effects that need a real browser aren’t exercised here — Story and Scene
-    // intercept Commands rather than run them.
-    environment: 'happy-dom',
-    setupFiles: ['./src/vitest-setup.ts'],
-    // Foldkit ships as ESM with subpath exports (foldkit/struct, foldkit/test/*);
-    // inline it so Vitest transforms it instead of externalizing to the bun
-    // isolated store, where the subpath resolution trips.
-    server: { deps: { inline: ['foldkit'] } },
   },
 });

@@ -1,17 +1,20 @@
-import clsx from 'clsx';
 import { Array, Option } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
 import type { StandingsRow } from './data';
 import type { Message } from './message';
+import { getStyleXAttributes } from './stylexAttributes';
+import type { StyleXStyle } from './stylexAttributes';
+import { shared } from './styles/shared';
+import { styles } from './styles/standings';
 
 const h = html<Message>();
 
 export interface StandingsZone {
   readonly label: string;
-  readonly bar: string;
-  readonly text: string;
+  readonly bar: StyleXStyle;
+  readonly text: StyleXStyle;
 }
 
 // NOT brand pink (user call): pink is the highlight row, the points and
@@ -19,10 +22,18 @@ export interface StandingsZone {
 // disappears completely against the club’s own pink row.
 // `bar` carries the picked hue; `text` is what that hue becomes as 10px
 // uppercase type on PAPER — see the -ink tokens in styles.css.
-const UWCL_ZONE: StandingsZone = { label: 'UWCL', bar: 'bg-ucl', text: 'text-ucl' };
-const UWEC_ZONE: StandingsZone = { label: 'UWEC', bar: 'bg-uec-ink', text: 'text-uec-ink' };
-const UP_ZONE: StandingsZone = { label: 'Promotion', bar: 'bg-rise-ink', text: 'text-rise-ink' };
-const DOWN_ZONE: StandingsZone = { label: 'Relegation', bar: 'bg-drop', text: 'text-drop' };
+const UWCL_ZONE: StandingsZone = { label: 'UWCL', bar: styles.uclBar, text: styles.uclText };
+const UWEC_ZONE: StandingsZone = { label: 'UWEC', bar: styles.uecInkBar, text: styles.uecInkText };
+const UP_ZONE: StandingsZone = {
+  label: 'Promotion',
+  bar: styles.riseInkBar,
+  text: styles.riseInkText,
+};
+const DOWN_ZONE: StandingsZone = {
+  label: 'Relegation',
+  bar: styles.dropBar,
+  text: styles.dropText,
+};
 
 export const zoneFor = (
   league: string,
@@ -52,17 +63,25 @@ export interface EuroCampaign {
   readonly zoneAt: (position: number) => Option.Option<StandingsZone>;
 }
 
-const KO_UCL_ZONE: StandingsZone = { label: 'Quarterfinals', bar: 'bg-ucl', text: 'text-ucl' };
+const KO_UCL_ZONE: StandingsZone = {
+  label: 'Quarterfinals',
+  bar: styles.uclBar,
+  text: styles.uclText,
+};
 const KO_UEC_ZONE: StandingsZone = {
   label: 'Quarterfinals',
-  bar: 'bg-uec-ink',
-  text: 'text-uec-ink',
+  bar: styles.uecInkBar,
+  text: styles.uecInkText,
 };
-const PLAYOFF_ZONE: StandingsZone = { label: 'Playoff', bar: 'bg-uec-ink', text: 'text-uec-ink' };
+const PLAYOFF_ZONE: StandingsZone = {
+  label: 'Playoff',
+  bar: styles.uecInkBar,
+  text: styles.uecInkText,
+};
 const PLAYOFF_ALT_ZONE: StandingsZone = {
   label: 'Playoff',
-  bar: 'bg-ink/50',
-  text: 'text-ink/60',
+  bar: styles.mutedBar,
+  text: styles.mutedText,
 };
 
 const uwclLeaguePhase: ReadonlyArray<StandingsRow> = [
@@ -141,19 +160,34 @@ export const clubEurope: Record<string, EuroCampaign> = {
 // percentage of some abstract whole.
 export const seasonProgress = (played: number, total: number): Html =>
   h.div(
-    [h.Class('mt-6')],
+    [...getStyleXAttributes(h, styles.progress)],
     [
       h.div(
-        [h.Class('flex items-baseline justify-between text-[10px] tracking-[0.2em] uppercase')],
+        [...getStyleXAttributes(h, styles.progressHeader)],
         [
-          h.span([h.Class('text-ink/50')], [`Round ${played} of ${total}`]),
-          h.span([h.Class('text-pink')], [`${Math.round((played / total) * 100)}% played`]),
+          h.span(
+            [...getStyleXAttributes(h, styles.progressLabel)],
+            [`Round ${played} of ${total}`],
+          ),
+          h.span(
+            [...getStyleXAttributes(h, styles.progressShare)],
+            [`${Math.round((played / total) * 100)}% played`],
+          ),
         ],
       ),
       h.div(
-        [h.Class('mt-2 flex gap-[3px]')],
+        [...getStyleXAttributes(h, styles.progressTrack)],
         Array.makeBy(total, (index) =>
-          h.div([h.Class(clsx('h-2 flex-1', index < played ? 'bg-pink' : 'bg-ink/15'))], []),
+          h.div(
+            [
+              ...getStyleXAttributes(
+                h,
+                styles.progressSegment,
+                index < played ? styles.progressSegmentPlayed : styles.progressSegmentLeft,
+              ),
+            ],
+            [],
+          ),
         ),
       ),
     ],
@@ -183,24 +217,15 @@ const zonesFor = (
   );
 
 // Column key — without it the two numeric columns are a guess.
-// Fixed columns stay NARROW below md: the score column eats the room
-// the club name used to have, and a truncated club name reads as a
-// bug (checked at 320, where the longest name only just clears).
 const standingsColumnKey = (): Html =>
   h.div(
+    [...getStyleXAttributes(h, styles.columnKey)],
     [
-      h.Class(
-        // 19px = 6px band + 1px hairline + 12px row padding, so the CLUB
-        // key sits exactly over the club names.
-        'mt-8 flex items-baseline gap-2 pr-2 pl-[19px] text-[10px] tracking-[0.2em] text-ink/45 uppercase sm:gap-3 md:gap-4',
-      ),
-    ],
-    [
-      h.span([h.Class('w-6 md:w-8')], []),
-      h.span([h.Class('flex-1')], ['Club']),
-      h.span([h.Class('hidden w-28 md:block')], ['Qualification']),
-      h.span([h.Class('w-12 text-right md:w-20')], ['Score']),
-      h.span([h.Class('w-10 text-right md:w-12')], ['Pts']),
+      h.span([...getStyleXAttributes(h, styles.columnPosition)], []),
+      h.span([...getStyleXAttributes(h, styles.columnClub)], ['Club']),
+      h.span([...getStyleXAttributes(h, styles.columnQualification)], ['Qualification']),
+      h.span([...getStyleXAttributes(h, styles.columnScore)], ['Score']),
+      h.span([...getStyleXAttributes(h, styles.columnPoints)], ['Pts']),
     ],
   );
 
@@ -213,14 +238,17 @@ const standingsRows = (
   flushFirst: boolean,
 ): Html =>
   h.ol(
-    [h.Class('flex flex-col')],
+    [...getStyleXAttributes(h, styles.rows)],
     entries.map((entry, index) => {
       const { row, position } = entry;
       const highlighted = row.team === highlightName;
       const zone = zoneAt(position);
-      const zoneBar = Option.match(zone, { onNone: () => 'bg-transparent', onSome: (z) => z.bar });
+      const zoneBar = Option.match(zone, {
+        onNone: () => styles.transparentBar,
+        onSome: (z) => z.bar,
+      });
       const zoneText = Option.match(zone, {
-        onNone: () => 'text-transparent',
+        onNone: () => styles.transparentText,
         onSome: (z) => z.text,
       });
       const zoneLabel = Option.match(zone, { onNone: () => '', onSome: (z) => z.label });
@@ -235,40 +263,39 @@ const standingsRows = (
         // club’s own pink fill the blue band matches almost exactly in
         // LUMINANCE (1.02:1) and differs only in hue, so without it the
         // edge vanishes in grayscale or for total color blindness.
-        [h.Class('flex items-stretch gap-px')],
+        [...getStyleXAttributes(h, styles.rowShell)],
         [
-          h.span([h.Class(clsx('w-1.5 shrink-0', zoneBar)), h.AriaHidden(true)], []),
+          h.span([...getStyleXAttributes(h, styles.rowGutter, zoneBar), h.AriaHidden(true)], []),
           h.div(
             [
-              h.Class(
-                clsx(
-                  'flex flex-1 items-baseline gap-2 py-3.5 pr-2 pl-3 transition-colors sm:gap-3 md:gap-4',
-                  { 'border-t': !(index === 0 && flushFirst) },
-                  highlighted
-                    ? 'border-pink bg-pink text-ink'
-                    : 'border-ink/10 text-ink hover:bg-ink/5',
-                ),
+              ...getStyleXAttributes(
+                h,
+                styles.row,
+                !(index === 0 && flushFirst) && styles.rowBordered,
+                highlighted ? styles.rowHighlighted : styles.rowRest,
               ),
             ],
             [
               h.span(
                 [
-                  h.Class(
-                    clsx('display w-6 text-lg md:w-8', highlighted ? 'text-ink/60' : 'text-ink/35'),
+                  ...getStyleXAttributes(
+                    h,
+                    shared.display,
+                    styles.rowPosition,
+                    highlighted ? styles.rowPositionHighlighted : styles.rowPositionRest,
                   ),
                 ],
                 [`${position}`],
               ),
-              h.span([h.Class('display flex-1 truncate text-lg sm:text-xl')], [row.team]),
+              h.span([...getStyleXAttributes(h, shared.display, styles.rowTeam)], [row.team]),
               // The zone spelled out where there is room — desktop has it
               // to spare, and a named prize beats decoding a color.
               h.span(
                 [
-                  h.Class(
-                    clsx(
-                      'hidden w-28 text-[10px] tracking-[0.2em] uppercase md:block',
-                      highlighted ? 'text-ink/60' : zoneText,
-                    ),
+                  ...getStyleXAttributes(
+                    h,
+                    styles.rowZone,
+                    highlighted ? styles.rowZoneHighlighted : zoneText,
                   ),
                 ],
                 [zoneLabel],
@@ -277,21 +304,22 @@ const standingsRows = (
               // tabular-nums so the colons line up down the column.
               h.span(
                 [
-                  h.Class(
-                    clsx(
-                      'display w-12 text-right text-base tabular-nums md:w-20 md:text-xl',
-                      highlighted ? 'text-ink/70' : 'text-ink/60',
-                    ),
+                  ...getStyleXAttributes(
+                    h,
+                    shared.display,
+                    styles.rowScore,
+                    highlighted ? styles.rowScoreHighlighted : styles.rowScoreRest,
                   ),
                 ],
                 [`${row.scored}:${row.conceded}`],
               ),
               h.span(
                 [
-                  h.Class(
-                    clsx('display w-10 text-right text-xl tabular-nums md:w-12', {
-                      'text-pink': !highlighted,
-                    }),
+                  ...getStyleXAttributes(
+                    h,
+                    shared.display,
+                    styles.rowPoints,
+                    !highlighted && styles.rowPointsRest,
                   ),
                 ],
                 [`${row.points}`],
@@ -308,14 +336,17 @@ const standingsRows = (
 // squares, so the mapping back to the table is immediate.
 const standingsLegend = (zones: ReadonlyArray<StandingsZone>): Html =>
   h.ul(
-    [h.Class('mt-5 flex flex-wrap gap-x-6 gap-y-2')],
+    [...getStyleXAttributes(h, styles.legend)],
     zones.map((zone) =>
       h.li(
-        [h.Class('flex items-center gap-2')],
+        [...getStyleXAttributes(h, styles.legendEntry)],
         [
-          h.span([h.Class(`h-4 w-1.5 shrink-0 ${zone.bar}`), h.AriaHidden(true)], []),
           h.span(
-            [h.Class('text-[10px] tracking-[0.2em] text-ink/50 uppercase')],
+            [...getStyleXAttributes(h, styles.legendSwatch, zone.bar), h.AriaHidden(true)],
+            [],
+          ),
+          h.span(
+            [...getStyleXAttributes(h, styles.legendLabel)],
             [zone.label === 'Relegation' ? 'Relegation — Second League' : zone.label],
           ),
         ],
@@ -330,7 +361,10 @@ export const standingsTable = (
   zoneAt: (position: number) => Option.Option<StandingsZone>,
 ): ReadonlyArray<Html> => [
   standingsColumnKey(),
-  h.div([h.Class('mt-2')], [standingsRows(allEntries(rows), highlightName, zoneAt, true)]),
+  h.div(
+    [...getStyleXAttributes(h, styles.rowsWrapper)],
+    [standingsRows(allEntries(rows), highlightName, zoneAt, true)],
+  ),
   standingsLegend(zonesFor(zoneAt, rows.length)),
 ];
 
@@ -340,4 +374,4 @@ export const standingsTable = (
 // Sits under the section chip. No rule and no indent — the chip is a
 // filled block again, so there is no text edge to line up with.
 export const standingsHeadline = (text: string): Html =>
-  h.p([h.Class('display mt-5 text-xl text-ink/70 md:text-2xl')], [text]);
+  h.p([...getStyleXAttributes(h, shared.display, styles.headline)], [text]);

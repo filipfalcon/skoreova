@@ -1,11 +1,14 @@
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
-import { panel, screenHeader } from '../components';
+import { screenHeader } from '../components';
 import { competitions } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';
 import { competitionRouter } from '../route';
+import { getStyleXAttributes } from '../stylexAttributes';
+import { styles } from '../styles/competitions';
+import { shared } from '../styles/shared';
 
 const h = html<Message>();
 
@@ -20,7 +23,7 @@ export const view = (model: Model): Html =>
       // A real list, not a div grid — each competition is an item AT can
       // count and step through.
       h.ul(
-        [h.Class('mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3')],
+        [...getStyleXAttributes(h, styles.grid)],
         competitions.map((competition) =>
           h.li(
             [],
@@ -28,27 +31,30 @@ export const view = (model: Model): Html =>
               h.a(
                 [
                   h.Href(competitionRouter({ slug: competition.slug })),
-                  h.Class(`${panel} group block h-full p-6 transition-colors hover:border-pink`),
+                  ...getStyleXAttributes(h, shared.panel, styles.card),
                 ],
                 [
                   h.img([
                     h.Src(competition.badge),
                     h.Alt(`${competition.name} badge`),
                     h.Loading('lazy'),
-                    h.Class('h-12 w-12'),
+                    ...getStyleXAttributes(h, styles.badge),
                   ]),
-                  h.h2([h.Class('display mt-5 text-2xl text-ink')], [competition.name]),
-                  h.p(
-                    [h.Class('mt-2 text-[10px] tracking-[0.2em] uppercase text-ink/40')],
-                    [competition.stage],
+                  h.h2(
+                    [...getStyleXAttributes(h, shared.display, styles.name)],
+                    [competition.name],
                   ),
+                  h.p([...getStyleXAttributes(h, styles.stage)], [competition.stage]),
                   // Ink track: a paper-tinted one is invisible on the paper
                   // card, which left the progress bar with no groove behind it.
                   h.div(
-                    [h.Class('mt-4 h-1 bg-ink/10')],
+                    [...getStyleXAttributes(h, styles.track)],
                     [
                       h.div(
-                        [h.Class('h-full bg-pink'), h.Style({ width: `${competition.progress}%` })],
+                        [
+                          ...getStyleXAttributes(h, styles.fill),
+                          h.Style({ width: `${competition.progress}%` }),
+                        ],
                         [],
                       ),
                     ],
