@@ -1,4 +1,3 @@
-import clsx from 'clsx';
 import { Array, Number } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
@@ -10,7 +9,7 @@ import viktoriaPlzenLogo from '../assets/clubs/ViktoriaPlzen.png';
 import domesticCupBadge from '../assets/competitions/domestic-cup.png';
 import firstLeagueBadge from '../assets/competitions/first-league.png';
 import uwclBadge from '../assets/competitions/uwcl.png';
-import { chipHeading, panel, tapeArrow, tickerSpark } from '../components';
+import { chipHeading, tapeArrow, tickerSpark } from '../components';
 import { clubs, competitions, officials, savedCharts, trending } from '../data';
 import type { Club } from '../data';
 import type { Message } from '../message';
@@ -34,6 +33,9 @@ import {
   trendingTile,
 } from '../stat-tiles';
 import type { StatEntry } from '../stat-tiles';
+import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
+import { shared } from '../styles/shared';
+import { styles } from '../styles/welcome';
 import { tickerQuotes } from '../ticker';
 
 const h = html<Message>();
@@ -65,54 +67,28 @@ const newContent: ReadonlyArray<RecentEntry> = [
 // Attendance, with the list riding in a paper panel beneath.
 const newContentPanel = (): Html =>
   h.section(
-    [h.Class('mt-12')],
+    [...getStyleXAttributes(h, styles.section)],
     [
       h.div(
-        [h.Class('flex')],
-        [
-          h.span(
-            [
-              h.Class(
-                'display inline-block bg-pink px-4 py-2 text-xl tracking-[0.2em] text-ink md:px-5 md:text-2xl',
-              ),
-            ],
-            ['New content'],
-          ),
-        ],
+        [...getStyleXAttributes(h, styles.chipRow)],
+        [h.span([...getStyleXAttributes(h, shared.display, shared.chip)], ['New content'])],
       ),
       // No panel frame (user call) — the ledger sits straight on the
       // paper, full width, with Anton names carrying the rows.
       h.ul(
-        [h.Class('mt-6 flex flex-col')],
+        [...getStyleXAttributes(h, styles.newList)],
         newContent.map((entry) =>
           h.li(
-            [
-              h.Class(
-                'flex items-center gap-4 border-t border-ink/10 py-4 first:border-t-0 first:pt-0 md:py-5',
-              ),
-            ],
+            [...getStyleXAttributes(h, styles.newRow)],
             [
               h.div(
-                [h.Class('min-w-0 flex-1')],
+                [...getStyleXAttributes(h, styles.newRowBody)],
                 [
-                  h.p(
-                    [h.Class('display text-2xl leading-[1.05] text-ink md:text-3xl')],
-                    [entry.title],
-                  ),
-                  h.p(
-                    [
-                      h.Class(
-                        'mt-1.5 text-[10px] tracking-[0.2em] text-ink/40 uppercase md:text-[11px]',
-                      ),
-                    ],
-                    [entry.kind],
-                  ),
+                  h.p([...getStyleXAttributes(h, shared.display, styles.newTitle)], [entry.title]),
+                  h.p([...getStyleXAttributes(h, styles.newKind)], [entry.kind]),
                 ],
               ),
-              h.span(
-                [h.Class('shrink-0 text-xs tracking-[0.2em] text-pink uppercase md:text-sm')],
-                [entry.when],
-              ),
+              h.span([...getStyleXAttributes(h, styles.newWhen)], [entry.when]),
             ],
           ),
         ),
@@ -126,18 +102,18 @@ const newContentPanel = (): Html =>
 // the photo carries the tile alone).
 const trendingTiles = (model: Model): Html =>
   h.section(
-    [h.Class('mt-12')],
+    [...getStyleXAttributes(h, styles.section)],
     [
       chipHeading('Trending'),
       // Three tiles (user call — five was a crowd): full-width strips on
       // phones, one row of three from `sm`. A real list — each tile is an
-      // item AT can count and step through. The leader’s col-span rides the
-      // li (the grid child) rather than the tile.
+      // item AT can count and step through. The leader’s double width rides
+      // the li (the grid child) rather than the tile.
       h.ul(
-        [h.Class('mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:gap-6')],
+        [...getStyleXAttributes(h, styles.trendingGrid)],
         trending.map((entry, index) =>
           h.li(
-            [h.Class(clsx({ 'col-span-2 sm:col-span-1': index === 0 }))],
+            [...getStyleXAttributes(h, index === 0 && styles.trendingLeaderCell)],
             [trendingTile(model, entry, index)],
           ),
         ),
@@ -157,11 +133,11 @@ const statBoard = (
   model: Model,
 ): Html =>
   h.section(
-    [h.Class('mt-12')],
+    [...getStyleXAttributes(h, styles.section)],
     [
       chipHeading(title),
       h.div(
-        [h.Class('mt-4 grid gap-4 sm:grid-cols-2 lg:gap-6')],
+        [...getStyleXAttributes(h, styles.statGrid)],
         entries.map((entry, index) =>
           statCard(
             model,
@@ -204,15 +180,17 @@ const tape: ReadonlyArray<TapeQuote> = tickerQuotes.map((quote) => ({
 
 const quoteView = (entry: TapeQuote): ReadonlyArray<Html> => [
   h.span(
-    [
-      h.Class(
-        'display flex items-center gap-1.5 text-base tracking-[0.08em] whitespace-nowrap text-paper md:text-lg',
-      ),
-    ],
+    [...getStyleXAttributes(h, shared.display, styles.quote)],
     [
       h.span([], [entry.name]),
       h.span(
-        [h.Class(clsx('flex items-center gap-1', entry.isUp ? 'text-rise' : 'text-fall'))],
+        [
+          ...getStyleXAttributes(
+            h,
+            styles.quoteDelta,
+            entry.isUp ? styles.quoteDeltaUp : styles.quoteDeltaDown,
+          ),
+        ],
         [tapeArrow(entry.isUp), h.span([], [entry.delta])],
       ),
     ],
@@ -225,47 +203,37 @@ const heroTicker = (): Html => {
   // screen readers hear the tape once.
   const run = (hidden: boolean): Html =>
     h.div(
-      [h.Class('flex items-center gap-6 pr-6'), ...(hidden ? [h.AriaHidden(true)] : [])],
+      [...getStyleXAttributes(h, styles.tickerRun), ...(hidden ? [h.AriaHidden(true)] : [])],
       tape.flatMap(quoteView),
     );
   return h.div(
-    // FULL-BLEED at every width: 50% of the container minus 50vw walks
-    // the strip out to the viewport edges regardless of the max-w cap.
-    [h.Class('ticker mx-[calc(50%-50vw)] bg-ink py-2.5')],
+    [...getStyleXAttributesWith(h, 'ticker', styles.tickerStrip)],
     [h.div([h.Class('ticker-row')], [run(false), run(true)])],
   );
 };
 
 // One honeycomb CELL: a single solid-white clip-path hexagon on the
 // paper page (user pick — a neon-tube pass was tried and reverted).
-// Hover floods the cell flat pink, and cells pop in with a small cascade
-// (`trend-row` + --row-delay).
-const HEX_CLIP = '[clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)]';
-
+// Hover floods the cell flat pink — the cell’s own :hover, since the
+// span fills the link’s whole hit area — and cells pop in with a small
+// cascade (`trend-row` + --row-delay).
 const crestChip = (entry: Club, delaySeconds: number): Html =>
   h.a(
     [
       h.Href(clubRouter({ slug: entry.slug })),
       h.AriaLabel(entry.name),
-      h.Class('trend-row group block shrink-0 transition-transform hover:scale-105'),
+      ...getStyleXAttributesWith(h, 'trend-row', styles.crestLink),
       h.Style({ '--row-delay': `${delaySeconds}s` }),
     ],
     [
       h.span(
-        [
-          h.Class(
-            // The xl one-liner maxes the container: (1200 − 15×4px grout)
-            // / 16 = 71.25 → 71px cells (16×71 + 60 = 1196 ≤ 1200); below
-            // xl the comb formation handles every width.
-            `flex h-[83px] w-[72px] items-center justify-center bg-white p-3.5 transition-colors group-hover:bg-pink xl:h-[82px] xl:w-[71px] ${HEX_CLIP}`,
-          ),
-        ],
+        [...getStyleXAttributes(h, styles.crestCell)],
         [
           h.img([
             h.Src(entry.logo),
             h.Alt(''),
             h.Loading('lazy'),
-            h.Class('h-full w-full object-contain'),
+            ...getStyleXAttributes(h, styles.crestLogo),
           ]),
         ],
       ),
@@ -323,23 +291,23 @@ const crestRail = (): Html => {
   // No label (user call) — the crests speak for themselves, sitting first
   // with just a little air under the ticker.
   return h.div(
-    [h.Class('mt-8')],
+    [...getStyleXAttributes(h, styles.crestRail)],
     [
       // HONEYCOMB tiling (user call, from a hexagon reference): touching
       // cells (4px grout), each next row pulled up 17px so the hexagons
       // interlock — 72px cells, 76px pitch, vertical offset 76 × √3/2 ≈
       // 65.8px, and the 83px cell height minus that is the 17px tuck.
       h.div(
-        [h.Class('flex flex-col items-center xl:hidden')],
+        [...getStyleXAttributes(h, styles.crestComb)],
         rows.map((row, rowIndex) =>
           h.div(
-            [h.Class(clsx('flex justify-center gap-[4px]', { '-mt-[17px]': rowIndex > 0 }))],
+            [...getStyleXAttributes(h, styles.crestRow, rowIndex > 0 && styles.crestRowTucked)],
             row,
           ),
         ),
       ),
       h.div(
-        [h.Class('hidden flex-wrap justify-center gap-[4px] xl:flex')],
+        [...getStyleXAttributes(h, styles.crestLine)],
         aSides.map((entry, index) => crestChip(entry, delay(index))),
       ),
     ],
@@ -354,10 +322,13 @@ const welcomeHero = (): Html =>
   h.section(
     [],
     [
-      h.h1([h.Class('sr-only')], ['Skóreová Platform — the data hub of Czech women’s football']),
+      h.h1(
+        [...getStyleXAttributes(h, shared.srOnly)],
+        ['Skóreová Platform — the data hub of Czech women’s football'],
+      ),
       // The ticker kisses the header (the negative top margins cancel
       // main’s padding).
-      h.div([h.Class('-mt-10 md:-mt-14')], [heroTicker()]),
+      h.div([...getStyleXAttributes(h, styles.tickerPull)], [heroTicker()]),
       crestRail(),
     ],
   );
@@ -421,33 +392,44 @@ const sectionTileView = (tile: SectionTile): Html =>
   h.a(
     [
       h.Href(tile.href),
-      h.Class(`${panel} group flex flex-col p-6 transition-colors hover:border-pink`),
+      // The label tints pink when the whole tile is hovered — the
+      // hover-card contract, since StyleX cannot reach a child from the
+      // parent's :hover.
+      ...getStyleXAttributesWith(h, 'hover-card', shared.panel, styles.sectionTile),
     ],
     [
       h.div(
-        [h.Class('flex items-start justify-between gap-4')],
+        [...getStyleXAttributes(h, styles.sectionTileTop)],
         [
-          h.span([h.Class('display text-4xl text-pink')], [tile.count]),
+          h.span(
+            [...getStyleXAttributes(h, shared.display, styles.sectionTileCount)],
+            [tile.count],
+          ),
           h.div(
-            [h.Class('flex -space-x-3')],
+            [...getStyleXAttributes(h, styles.sectionTileArt)],
             tile.art.map((src) =>
               h.img([
                 h.Src(src),
                 h.Alt(''),
                 h.Loading('lazy'),
-                h.Class(
-                  'h-10 w-10 rounded-full border border-ink/15 bg-paper object-contain p-1.5',
-                ),
+                ...getStyleXAttributes(h, styles.sectionTileCrest),
               ]),
             ),
           ),
         ],
       ),
       h.h3(
-        [h.Class('display mt-4 text-2xl text-ink transition-colors group-hover:text-pink')],
+        [
+          ...getStyleXAttributesWith(
+            h,
+            'hover-card-pink-text',
+            shared.display,
+            styles.sectionTileLabel,
+          ),
+        ],
         [tile.label],
       ),
-      h.p([h.Class('mt-1 text-[10px] tracking-[0.2em] uppercase text-ink/40')], [tile.caption]),
+      h.p([...getStyleXAttributes(h, styles.sectionTileCaption)], [tile.caption]),
     ],
   );
 
@@ -455,11 +437,11 @@ const sectionTileView = (tile: SectionTile): Html =>
 // New content: pink chip heading, frameless records straight on the paper.
 const allTimeBestsPanel = (model: Model): Html =>
   h.section(
-    [h.Class('mt-12')],
+    [...getStyleXAttributes(h, styles.section)],
     [
       chipHeading('All-time bests'),
       h.ul(
-        [h.Class('mt-8 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3')],
+        [...getStyleXAttributes(h, styles.bestsGrid)],
         allTimeBests.map((record) => bestRecord(model, record, false)),
       ),
     ],
@@ -482,11 +464,8 @@ export const view = (model: Model): Html =>
       // stat strip is gone entirely (user calls).
       allTimeBestsPanel(model),
       h.div(
-        [h.Class('mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3')],
+        [...getStyleXAttributes(h, styles.sectionTilesGrid)],
         sectionTiles.map(sectionTileView),
       ),
     ],
   );
-
-// A saved-chart card — the real thing, shared by the Saved charts grid and
-// the Pinned feed (a pinned chart shows its actual card, not a summary).

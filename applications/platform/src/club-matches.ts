@@ -3,12 +3,15 @@ import { Calendar } from 'foldkit';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
-import { clubSection, drawnRightArrow } from './components';
+import { clubSection, drawnArrowInline, drawnRightArrow } from './components';
 import { clubs, hashSlug } from './data';
 import type { Club } from './data';
 import type { Message } from './message';
 import { matchesRouter } from './route';
 import { MATCHDAYS_PLAYED, fixtureSeed, leagueRounds, mockScore } from './schedule';
+import { getStyleXAttributes } from './stylexAttributes';
+import { shared } from './styles/shared';
+import { styles } from './styles/club-matches';
 
 const h = html<Message>();
 
@@ -82,15 +85,15 @@ const crestFor = (team: string): string | undefined =>
 const clubMatchCrest = (team: string): Html => {
   const crest = crestFor(team);
   return h.div(
-    [h.Class('flex min-w-0 flex-1 justify-center')],
+    [...getStyleXAttributes(h, styles.crestCell)],
     [
       crest === undefined
-        ? h.span([h.Class('display truncate text-center text-sm text-ink md:text-base')], [team])
+        ? h.span([...getStyleXAttributes(h, shared.display, styles.crestFallback)], [team])
         : h.img([
             h.Src(crest),
             h.Alt(team),
             h.Loading('lazy'),
-            h.Class('h-20 w-20 object-contain md:h-24 md:w-24'),
+            ...getStyleXAttributes(h, styles.crestImage),
           ]),
     ],
   );
@@ -108,7 +111,7 @@ const clubMatchCrest = (team: string): Html => {
 const clubMatchScore = (home: number, away: number): Html =>
   h.div(
     [
-      h.Class('relative z-10 -mx-2 flex shrink-0 items-baseline md:-mx-4'),
+      ...getStyleXAttributes(h, styles.score),
       // The parts are styled fragments — announce the result once, whole.
       // Role('img') gives the label a role to hang on; an AriaLabel on a
       // role-less div announces as nothing.
@@ -117,24 +120,15 @@ const clubMatchScore = (home: number, away: number): Html =>
     ],
     [
       h.span(
-        [
-          h.Class('display text-6xl leading-none tabular-nums text-ink md:text-7xl'),
-          h.AriaHidden(true),
-        ],
+        [...getStyleXAttributes(h, shared.display, styles.scoreNumeral), h.AriaHidden(true)],
         [`${home}`],
       ),
       h.span(
-        [
-          h.Class('display px-1 text-6xl leading-none text-pink md:px-1.5 md:text-7xl'),
-          h.AriaHidden(true),
-        ],
+        [...getStyleXAttributes(h, shared.display, styles.scoreColon), h.AriaHidden(true)],
         [':'],
       ),
       h.span(
-        [
-          h.Class('display text-6xl leading-none tabular-nums text-ink md:text-7xl'),
-          h.AriaHidden(true),
-        ],
+        [...getStyleXAttributes(h, shared.display, styles.scoreNumeral), h.AriaHidden(true)],
         [`${away}`],
       ),
     ],
@@ -144,14 +138,7 @@ const clubMatchScore = (home: number, away: number): Html =>
 // filled chip — the same block the section headings are cut from — rather
 // than sitting between the crests as gray lowercase type.
 const clubMatchVersus = (): Html =>
-  h.span(
-    [
-      h.Class(
-        'display relative z-10 shrink-0 bg-pink px-3.5 py-1.5 text-xl leading-none text-ink md:px-4 md:py-2 md:text-2xl',
-      ),
-    ],
-    ['VS'],
-  );
+  h.span([...getStyleXAttributes(h, shared.display, styles.versus)], ['VS']);
 
 // ONE match, with the CRESTS as the whole point (user call). The badges
 // are what a supporter recognizes before they read anything — they say
@@ -170,20 +157,13 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
     fixtureSeed(target.league, entry.match.round, entry.match.home, entry.match.away),
   );
   return h.div(
-    [h.Class('flex flex-col border border-ink/15')],
+    [...getStyleXAttributes(h, styles.card)],
     [
       // THE FIXTURE — crests at hero scale with the scoreline between
       // them. Generous padding so the badges own the space rather than
       // sharing it; crest order carries home and away.
-      // Capped and centered: on a full-width card the two crests would
-      // otherwise sit at opposite edges with the score marooned between
-      // them, and they stop reading as one fixture.
       h.div(
-        [
-          h.Class(
-            'mx-auto flex w-full max-w-md items-center gap-3 px-5 py-8 md:gap-5 md:px-6 md:py-10',
-          ),
-        ],
+        [...getStyleXAttributes(h, styles.fixtureRow)],
         [
           clubMatchCrest(entry.match.home),
           entry.isPlayed ? clubMatchScore(homeGoals, awayGoals) : clubMatchVersus(),
@@ -193,22 +173,19 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
       // Everything else, below the badges and behind a hairline so the
       // crest block reads as the card’s subject and this as its caption.
       h.div(
-        [h.Class('mt-auto border-t border-ink/10 px-5 py-5 md:px-6')],
+        [...getStyleXAttributes(h, styles.caption)],
         [
           // COMPETITION AND STAGE on ONE line, split by a middot (user
           // call) — it is what tells you whether this is a league game, a
-          // cup tie or a European night. Display type carries POSITIVE
-          // tracking here (the .display default is tight −0.01em); the
-          // widened caps read as a label, not a headline, so they don’t
-          // fight the scoreline above.
+          // cup tie or a European night.
           h.p(
-            [h.Class('display text-2xl tracking-[0.05em] text-ink md:text-3xl')],
+            [...getStyleXAttributes(h, shared.display, styles.competitionLine)],
             [`${target.league} · Round ${entry.match.round}`],
           ),
           // Date rides the quiet line below — SECONDARY (user call), plus
           // the kickoff on a game still to come.
           h.p(
-            [h.Class('mt-2 text-[10px] tracking-[0.2em] text-ink/50 uppercase')],
+            [...getStyleXAttributes(h, styles.dateLine)],
             [
               entry.isPlayed
                 ? roundDate(entry.match.round)
@@ -222,11 +199,9 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
           h.a(
             [
               h.Href(matchesRouter()),
-              h.Class(
-                'display mt-5 flex w-fit items-center gap-2 border border-ink px-5 py-2.5 text-sm tracking-[0.12em] text-ink uppercase transition-colors hover:bg-ink hover:text-paper md:text-base',
-              ),
+              ...getStyleXAttributes(h, shared.display, styles.matchInfoLink),
             ],
-            ['Match info', drawnRightArrow('inline-block h-[0.72em] w-auto')],
+            ['Match info', drawnRightArrow(drawnArrowInline)],
           ),
         ],
       ),
@@ -273,7 +248,7 @@ export const clubMatchesSections = (target: Club): Html => {
       : [
           clubSection(
             'Last match',
-            [h.div([h.Class('mt-6')], [clubMatchCard(target, last)])],
+            [h.div([...getStyleXAttributes(h, styles.sectionBody)], [clubMatchCard(target, last)])],
             'last-match',
           ),
         ]),
@@ -282,14 +257,14 @@ export const clubMatchesSections = (target: Club): Html => {
       : [
           clubSection(
             'Upcoming match',
-            [h.div([h.Class('mt-6')], [clubMatchCard(target, next)])],
+            [h.div([...getStyleXAttributes(h, styles.sectionBody)], [clubMatchCard(target, next)])],
             'upcoming-match',
           ),
         ]),
   ];
-  // gap-x only: stacked, the sections' own mt keeps the page’s section
-  // rhythm, and a row gap on top of it would open a hole between two
-  // blocks that belong together. Side by side, both sit in row one and
+  // Column gap only: stacked, the sections' own mt keeps the page’s
+  // section rhythm, and a row gap on top of it would open a hole between
+  // two blocks that belong together. Side by side, both sit in row one and
   // that same mt aligns their chips.
-  return h.div([h.Class('grid gap-x-4 md:grid-cols-2 md:gap-x-5')], sections);
+  return h.div([...getStyleXAttributes(h, styles.sections)], sections);
 };

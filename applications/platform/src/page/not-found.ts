@@ -3,6 +3,9 @@ import type { Html } from 'foldkit/html';
 
 import type { Message } from '../message';
 import { welcomeRouter } from '../route';
+import { getStyleXAttributes } from '../stylexAttributes';
+import { styles } from '../styles/not-found';
+import { shared } from '../styles/shared';
 
 const h = html<Message>();
 
@@ -14,26 +17,16 @@ export const view = (path: string): Html =>
     [],
     [
       h.div(
-        [h.Class('flex')],
-        [
-          h.span(
-            [h.Class('display inline-block bg-pink px-3 py-1.5 text-sm tracking-[0.2em] text-ink')],
-            ['404'],
-          ),
-        ],
+        [...getStyleXAttributes(h, styles.chipRow)],
+        [h.span([...getStyleXAttributes(h, shared.display, styles.chip)], ['404'])],
       ),
-      h.h1([h.Class('display mt-6 text-5xl text-ink md:text-7xl')], ['Nothing here.']),
+      h.h1([...getStyleXAttributes(h, shared.display, styles.title)], ['Nothing here.']),
       h.p(
-        [h.Class('mt-3 max-w-2xl text-sm leading-relaxed text-ink/50')],
+        [...getStyleXAttributes(h, styles.subtitle)],
         [`No page lives at ${path} — it may have moved, or the address has a typo.`],
       ),
       h.a(
-        [
-          h.Href(welcomeRouter()),
-          h.Class(
-            'mt-8 inline-block border-2 border-ink px-5 py-2.5 text-xs tracking-[0.2em] uppercase text-ink transition-colors duration-300 hover:bg-ink hover:text-paper',
-          ),
-        ],
+        [h.Href(welcomeRouter()), ...getStyleXAttributes(h, styles.homeLink)],
         ['Back to the platform'],
       ),
     ],

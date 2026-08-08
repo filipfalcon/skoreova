@@ -1,10 +1,13 @@
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
-import { panel, screenHeader } from '../components';
+import { screenHeader } from '../components';
 import { players } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';
+import { getStyleXAttributes } from '../stylexAttributes';
+import { styles } from '../styles/players';
+import { shared } from '../styles/shared';
 
 const h = html<Message>();
 
@@ -17,28 +20,33 @@ export const view = (model: Model): Html =>
         'The league’s top performers. Full player profiles with per-90 stats are on the way.',
       ),
       h.div(
-        [h.Class(`${panel} mt-12 overflow-x-auto`)],
+        [...getStyleXAttributes(h, shared.panel, styles.tableWrapper)],
         [
           h.table(
-            [h.Class('w-full min-w-[640px] text-left text-sm')],
+            [...getStyleXAttributes(h, styles.table)],
             [
               h.thead(
                 [],
                 [
                   h.tr(
+                    [...getStyleXAttributes(h, styles.headRow)],
                     [
-                      h.Class(
-                        'border-b border-ink/10 text-[10px] tracking-[0.2em] uppercase text-ink/40',
+                      h.th([...getStyleXAttributes(h, styles.cell, styles.headCell)], ['#']),
+                      h.th([...getStyleXAttributes(h, styles.cell, styles.headCell)], ['Player']),
+                      h.th([...getStyleXAttributes(h, styles.cell, styles.headCell)], ['Club']),
+                      h.th([...getStyleXAttributes(h, styles.cell, styles.headCell)], ['Pos']),
+                      h.th(
+                        [...getStyleXAttributes(h, styles.cell, styles.headCell, styles.cellRight)],
+                        ['Apps'],
                       ),
-                    ],
-                    [
-                      h.th([h.Class('px-6 py-4 font-normal')], ['#']),
-                      h.th([h.Class('px-6 py-4 font-normal')], ['Player']),
-                      h.th([h.Class('px-6 py-4 font-normal')], ['Club']),
-                      h.th([h.Class('px-6 py-4 font-normal')], ['Pos']),
-                      h.th([h.Class('px-6 py-4 text-right font-normal')], ['Apps']),
-                      h.th([h.Class('px-6 py-4 text-right font-normal')], ['Goals']),
-                      h.th([h.Class('px-6 py-4 text-right font-normal')], ['Assists']),
+                      h.th(
+                        [...getStyleXAttributes(h, styles.cell, styles.headCell, styles.cellRight)],
+                        ['Goals'],
+                      ),
+                      h.th(
+                        [...getStyleXAttributes(h, styles.cell, styles.headCell, styles.cellRight)],
+                        ['Assists'],
+                      ),
                     ],
                   ),
                 ],
@@ -48,26 +56,61 @@ export const view = (model: Model): Html =>
                 players.map((player, index) =>
                   h.tr(
                     [
-                      h.Class(
-                        // No cursor-pointer: the rows have no click handler
-                        // yet — the hover wash stays as a reading aid only.
-                        'border-b border-ink/5 transition-colors last:border-b-0 hover:bg-ink/[0.04]',
-                      ),
+                      // No cursor-pointer: the rows have no click handler
+                      // yet — the hover wash stays as a reading aid only.
+                      ...getStyleXAttributes(h, styles.row),
                     ],
                     [
-                      h.td([h.Class('display px-6 py-4 text-base text-ink/30')], [`${index + 1}`]),
-                      h.td([h.Class('px-6 py-4 font-medium text-ink')], [player.name]),
-                      h.td([h.Class('px-6 py-4 text-ink/60')], [player.club]),
-                      h.td([h.Class('px-6 py-4 text-ink/60')], [player.position]),
                       h.td(
-                        [h.Class('px-6 py-4 text-right text-ink/60')],
+                        [...getStyleXAttributes(h, shared.display, styles.cell, styles.cellIndex)],
+                        [`${index + 1}`],
+                      ),
+                      h.td(
+                        [...getStyleXAttributes(h, styles.cell, styles.cellName)],
+                        [player.name],
+                      ),
+                      h.td(
+                        [...getStyleXAttributes(h, styles.cell, styles.cellMuted)],
+                        [player.club],
+                      ),
+                      h.td(
+                        [...getStyleXAttributes(h, styles.cell, styles.cellMuted)],
+                        [player.position],
+                      ),
+                      h.td(
+                        [
+                          ...getStyleXAttributes(
+                            h,
+                            styles.cell,
+                            styles.cellMuted,
+                            styles.cellRight,
+                          ),
+                        ],
                         [`${player.appearances}`],
                       ),
                       h.td(
-                        [h.Class('display px-6 py-4 text-right text-base text-pink')],
+                        [
+                          ...getStyleXAttributes(
+                            h,
+                            shared.display,
+                            styles.cell,
+                            styles.cellRight,
+                            styles.cellGoals,
+                          ),
+                        ],
                         [`${player.goals}`],
                       ),
-                      h.td([h.Class('px-6 py-4 text-right text-ink/60')], [`${player.assists}`]),
+                      h.td(
+                        [
+                          ...getStyleXAttributes(
+                            h,
+                            styles.cell,
+                            styles.cellMuted,
+                            styles.cellRight,
+                          ),
+                        ],
+                        [`${player.assists}`],
+                      ),
                     ],
                   ),
                 ),

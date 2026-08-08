@@ -32,6 +32,8 @@ import {
   Players,
   Welcome,
 } from './page';
+import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
+import { styles } from './styles/view';
 
 const h = html<Message>();
 
@@ -75,7 +77,7 @@ const screenView = (model: Model): Html => {
 
 const shellView = (model: Model): Html =>
   h.div(
-    [h.Class('min-h-screen')],
+    [...getStyleXAttributes(h, styles.shell)],
     [
       headerView(model),
       // A BLACK spacer clears the fixed header (bar + section rail)
@@ -85,7 +87,7 @@ const shellView = (model: Model): Html =>
       h.div(
         [],
         [
-          h.div([h.Class('h-[104px] bg-black md:h-[107px] lg:h-[108px]')], []),
+          h.div([...getStyleXAttributes(h, styles.headerSpacer)], []),
           // Keyed per screen AND per open profile so the slide-in replays
           // on every section or profile change.
           h.main(
@@ -93,30 +95,21 @@ const shellView = (model: Model): Html =>
               h.Key(
                 `${screenOf(model.route)}:${routeClubSlug(model.route)}:${routeCompetitionSlug(model.route)}`,
               ),
-              h.Class('screen mx-auto w-full max-w-7xl px-5 pt-10 pb-10 md:px-10 md:pt-14'),
+              ...getStyleXAttributesWith(h, 'screen', styles.main),
             ],
             [screenView(model)],
           ),
           h.footer(
-            [
-              h.Class(
-                'mx-auto flex w-full max-w-7xl flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t border-ink/10 px-5 py-6 md:px-10',
-              ),
-            ],
+            [...getStyleXAttributes(h, styles.footer)],
             [
               h.p(
-                [h.Class('text-[10px] tracking-[0.2em] uppercase text-ink/30')],
+                [...getStyleXAttributes(h, styles.footerNote)],
                 ['Beta version — all data is placeholder while the platform wires up.'],
               ),
               // Reopens the consent banner — index.html owns the handler
               // (the banner lives outside the app; see the script there).
               h.a(
-                [
-                  h.Href('#cookie-settings'),
-                  h.Class(
-                    'text-[10px] tracking-[0.2em] uppercase text-ink/30 underline decoration-pink decoration-2 underline-offset-4 transition-colors duration-300 hover:text-ink',
-                  ),
-                ],
+                [h.Href('#cookie-settings'), ...getStyleXAttributes(h, styles.cookieLink)],
                 ['Cookie settings'],
               ),
             ],
@@ -146,5 +139,5 @@ export const view = (model: Model): Document => ({
   title: documentTitle(model),
   // American English, the language every string in this app is written in; the runtime writes it after the first render, so what a crawler reads is whatever the served document already carried.
   lang: 'en-US',
-  body: h.div([h.Class('bg-paper font-body text-ink antialiased')], [shellView(model)]),
+  body: h.div([...getStyleXAttributes(h, styles.page)], [shellView(model)]),
 });

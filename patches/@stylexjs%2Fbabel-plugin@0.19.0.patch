@@ -1,0 +1,37 @@
+diff --git a/lib/index.js b/lib/index.js
+index d021dd41475ac4d3189ac3d569427dac5dea6703..ffc2875aff6cec1562f21c0ce393574c20a3ec88 100644
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -1655,6 +1655,10 @@ function requireTokenTypes () {
+ 	      return null;
+ 	    }
+ 	    const token = this.tokenIterator.nextToken();
++	    if (token == null || token[0] === 'EOF-token') {
++	      this.isAtEnd = true;
++	      return null;
++	    }
+ 	    this.consumedTokens.push(token);
+ 	    this.currentIndex++;
+ 	    if (this.tokenIterator.endOfFile()) {
+@@ -1670,6 +1674,10 @@ function requireTokenTypes () {
+ 	      return null;
+ 	    }
+ 	    const token = this.tokenIterator.nextToken();
++	    if (token == null || token[0] === 'EOF-token') {
++	      this.isAtEnd = true;
++	      return null;
++	    }
+ 	    this.consumedTokens.push(token);
+ 	    return token;
+ 	  }
+@@ -1683,6 +1691,10 @@ function requireTokenTypes () {
+ 	    }
+ 	    while (!this.isAtEnd && !this.tokenIterator.endOfFile() && this.consumedTokens.length <= newIndex) {
+ 	      const token = this.tokenIterator.nextToken();
++	      if (token == null || token[0] === 'EOF-token') {
++	        this.isAtEnd = true;
++	        break;
++	      }
+ 	      this.consumedTokens.push(token);
+ 	      if (this.tokenIterator.endOfFile()) {
+ 	        this.isAtEnd = true;

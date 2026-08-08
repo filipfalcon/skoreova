@@ -3,7 +3,7 @@ import { Array, Match as M, Number, Option } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
-import { panel, pinGlyph, pinToggle, screenHeader, sectionLabel, sparkline } from '../components';
+import { pinGlyph, pinToggle, screenHeader, sectionLabel, sparkline } from '../components';
 import { metricSeries, savedCharts, trending } from '../data';
 import type { MetricSeries, SavedChart } from '../data';
 import { SelectedMetric } from '../message';
@@ -19,12 +19,16 @@ import {
   trendingTile,
 } from '../stat-tiles';
 import type { StatEntry } from '../stat-tiles';
+import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
+import { styles as componentStyles } from '../styles/components';
+import { styles } from '../styles/her-game';
+import { shared } from '../styles/shared';
 
 const h = html<Message>();
 
 // The chart studio’s metric selector: three mutually-exclusive options, so a
 // real radiogroup rather than a row of independent buttons. Selected state is
-// color-only, driven by the `data-checked` the component sets.
+// color-only.
 const metricRadioGroup = (model: Model): Html =>
   RadioGroup.view<Metric, Message>({
     id: 'chart-studio-metric',
@@ -34,18 +38,22 @@ const metricRadioGroup = (model: Model): Html =>
     onSelect: (metric) => SelectedMetric({ metric }),
     toView: ({ group, options }) =>
       h.div(
-        [...group, h.Class('mt-6 flex flex-wrap gap-2')],
-        options.map((option) =>
-          h.div(
+        [...group, ...getStyleXAttributes(h, styles.metricGroup)],
+        options.map((option) => {
+          // Checked is derived from the model because StyleX has no attribute selectors — the component still stamps data-checked for semantics.
+          const checked = option.value === model.metric;
+          return h.div(
             [
               ...option.option,
-              h.Class(
-                'cursor-pointer border border-ink/15 px-4 py-2 text-[10px] tracking-[0.2em] text-ink/60 uppercase transition-colors hover:border-pink hover:text-ink data-[checked]:border-pink data-[checked]:bg-pink data-[checked]:text-ink',
+              ...getStyleXAttributes(
+                h,
+                styles.metricOption,
+                checked ? styles.metricOptionChecked : styles.metricOptionRest,
               ),
             ],
             [metricSeries[option.value].label],
-          ),
-        ),
+          );
+        }),
       ),
   });
 
@@ -78,7 +86,7 @@ const studioChart = (series: MetricSeries): Html => {
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
       h.ViewBox(`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`),
-      h.Class('mt-8 w-full'),
+      ...getStyleXAttributes(h, styles.chart),
       h.AriaHidden(true),
     ],
     [
@@ -102,7 +110,8 @@ const studioChart = (series: MetricSeries): Html => {
             h.Y(`${CHART_BASELINE_Y - (value / max) * CHART_PLOT_HEIGHT}`),
             h.Width(`${BAR_WIDTH}`),
             h.Height(`${(value / max) * CHART_PLOT_HEIGHT}`),
-            h.Class('bar fill-pink/75 transition-colors hover:fill-pink'),
+            // `bar` is the grow-in animation contract from styles.css.
+            ...getStyleXAttributesWith(h, 'bar', styles.chartBar),
             h.Style({ '--bar-delay': `${index * BAR_DELAY_STEP_SECONDS}s` }),
           ],
           [],
@@ -117,7 +126,7 @@ const studioChart = (series: MetricSeries): Html => {
           h.Stroke('var(--color-ink)'),
           h.StrokeWidth('1'),
           h.StrokeDasharray('5 5'),
-          h.Class('opacity-40'),
+          ...getStyleXAttributes(h, styles.chartAverageLine),
         ],
         [],
       ),
@@ -144,9 +153,9 @@ const studioChart = (series: MetricSeries): Html => {
                 [
                   h.X(`${index * BAR_STEP + BAR_STEP / 2}`),
                   h.Y(`${AXIS_LABEL_Y}`),
+                  ...getStyleXAttributes(h, styles.chartAxisLabel),
                   // No dedicated helper for text-anchor — it’s a styleable SVG
                   // property, so the inline style does the same job.
-                  h.Class('fill-ink/30 text-[10px]'),
                   h.Style({ 'text-anchor': 'middle' }),
                 ],
                 [`${index + 1}`],
@@ -166,7 +175,7 @@ const studioChart = (series: MetricSeries): Html => {
 // announces something.
 const chartSummary = (series: MetricSeries): Html =>
   h.p(
-    [h.Class('sr-only'), h.Role('status')],
+    [...getStyleXAttributes(h, shared.srOnly), h.Role('status')],
     [
       `${series.label}, ${series.unit}. Matchdays 1 to ${series.values.length}: ${series.values.join(', ')}.`,
     ],
@@ -204,21 +213,21 @@ const metricChartView = (metric: Metric): Html =>
 
 const chartStudioPanel = (model: Model): Html =>
   h.section(
-    [h.Class(`${panel} mt-14 p-6 md:p-8`)],
+    [...getStyleXAttributes(h, shared.panel, styles.studioPanel)],
     [
       h.div(
-        [h.Class('flex flex-wrap items-center justify-between gap-4')],
+        [...getStyleXAttributes(h, styles.studioHeader)],
         [
           h.div(
             [],
             [
               sectionLabel('Chart studio'),
               h.h2(
-                [h.Class('display mt-2 text-2xl text-ink md:text-3xl')],
+                [...getStyleXAttributes(h, shared.display, styles.studioTitle)],
                 [metricSeries[model.metric].label],
               ),
               h.p(
-                [h.Class('mt-1 text-xs text-ink/40')],
+                [...getStyleXAttributes(h, styles.studioMeta)],
                 [`Season 2025/26 — ${metricSeries[model.metric].unit}`],
               ),
             ],
@@ -232,12 +241,7 @@ const chartStudioPanel = (model: Model): Html =>
             isDisabled: true,
             toView: ({ button }) =>
               h.button(
-                [
-                  ...button,
-                  h.Class(
-                    'border border-ink/15 px-4 py-2 text-[10px] tracking-[0.2em] uppercase text-ink/60 transition-colors hover:border-pink hover:text-ink',
-                  ),
-                ],
+                [...button, ...getStyleXAttributes(h, styles.saveButton)],
                 ['Save to my charts'],
               ),
           }),
@@ -251,14 +255,14 @@ const chartStudioPanel = (model: Model): Html =>
 
 const savedChartCard = (model: Model, chart: SavedChart): Html =>
   h.article(
-    [h.Class(`${panel} flex flex-col p-6 transition-colors hover:border-pink`)],
+    [...getStyleXAttributes(h, shared.panel, styles.savedCard)],
     [
       sparkline(chart.spark),
-      h.h2([h.Class('display mt-5 text-xl text-ink')], [chart.title]),
+      h.h2([...getStyleXAttributes(h, shared.display, styles.savedCardTitle)], [chart.title]),
       h.div(
-        [h.Class('mt-2 flex items-center justify-between gap-4')],
+        [...getStyleXAttributes(h, styles.savedCardFooter)],
         [
-          h.p([h.Class('text-[10px] tracking-[0.2em] uppercase text-ink/40')], [chart.updated]),
+          h.p([...getStyleXAttributes(h, styles.savedCardUpdated)], [chart.updated]),
           pinToggle(model, chart.id, chart.title),
         ],
       ),
@@ -325,10 +329,10 @@ const pinRegistry: ReadonlyArray<PinnedTile> = [
 const pinnedTileView = (model: Model, tile: PinnedTile): Html =>
   h.keyed('div')(
     tile.id,
-    [h.Class('flex flex-col')],
+    [...getStyleXAttributes(h, styles.pinnedTile)],
     [
-      h.p([h.Class('truncate text-[10px] tracking-[0.2em] text-ink/50 uppercase')], [tile.title]),
-      h.div([h.Class('mt-3')], [tile.render(model)]),
+      h.p([...getStyleXAttributes(h, styles.pinnedTileTitle)], [tile.title]),
+      h.div([...getStyleXAttributes(h, styles.pinnedTileBody)], [tile.render(model)]),
     ],
   );
 
@@ -338,23 +342,19 @@ const pinnedTileView = (model: Model, tile: PinnedTile): Html =>
 const pinnedFeed = (model: Model): Html => {
   const tiles = pinRegistry.filter((tile) => model.pinned.includes(tile.id));
   return h.div(
-    [h.Class('mt-14')],
+    [...getStyleXAttributes(h, styles.section)],
     [
       sectionLabel('Pinned'),
       Array.isReadonlyArrayEmpty(tiles)
         ? h.div(
+            [...getStyleXAttributes(h, styles.emptyState)],
             [
-              h.Class(
-                'mt-6 flex items-center gap-3 border border-dashed border-ink/20 p-6 text-sm text-ink/50',
-              ),
-            ],
-            [
-              pinGlyph('h-4 w-4 shrink-0 text-ink/30'),
+              pinGlyph(componentStyles.pinGlyphEmpty),
               h.span([], ['Pin any tile or chart and it lands here — your own front page.']),
             ],
           )
         : h.div(
-            [h.Class('mt-6 grid items-start gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3')],
+            [...getStyleXAttributes(h, styles.pinnedGrid)],
             tiles.map((tile) => pinnedTileView(model, tile)),
           ),
     ],
@@ -375,9 +375,9 @@ export const view = (model: Model): Html =>
       // Pinned first — it is the reason to come back here.
       pinnedFeed(model),
       chartStudioPanel(model),
-      h.div([h.Class('mt-14')], [sectionLabel('Saved charts')]),
+      h.div([...getStyleXAttributes(h, styles.section)], [sectionLabel('Saved charts')]),
       h.div(
-        [h.Class('mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3')],
+        [...getStyleXAttributes(h, styles.savedGrid)],
         [
           ...savedCharts.map((chart) => savedChartCard(model, chart)),
           // NOTE: deliberately inert mock until the chart builder exists — same
@@ -386,12 +386,7 @@ export const view = (model: Model): Html =>
             isDisabled: true,
             toView: ({ button }) =>
               h.button(
-                [
-                  ...button,
-                  h.Class(
-                    'display flex min-h-40 items-center justify-center border border-dashed border-ink/20 p-6 text-xl text-ink/40 transition-colors hover:border-pink hover:text-pink',
-                  ),
-                ],
+                [...button, ...getStyleXAttributes(h, shared.display, styles.newChartButton)],
                 ['+ New chart'],
               ),
           }),

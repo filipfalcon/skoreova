@@ -191,7 +191,10 @@ export default defineConfig({
     // project with no plugins, no setup and no environment — green for reasons
     // no one intended.
     projects: [
-      'applications/platform/vite.config.ts',
+      // Platform's tests run through a sidecar config, not its app config:
+      // StyleX must load through its rollup entry in test runs — see the
+      // note in applications/platform/vite.test.config.ts.
+      'applications/platform/vite.test.config.ts',
       'applications/studio/vite.config.ts',
       'applications/web/vite.config.ts',
       'applications/web/vite.browser.config.ts',
