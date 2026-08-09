@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { tokens } from '../tokens.stylex';
+import { tokens, type } from '../tokens.stylex';
 
 // The cross-module primitives every screen composes from — the StyleX form
 // of what used to be the `display` class and the shared class-string
@@ -26,6 +26,22 @@ export const shared = stylex.create({
     textTransform: 'uppercase',
     lineHeight: 0.92,
     letterSpacing: '-0.01em',
+  },
+  // META TEXT — the quiet uppercase voice: breadcrumbs, the hero subtitle,
+  // and the base the season selector's value composes on top of. One size
+  // and one tracking, matching the app's 10px label scale, so nothing in a
+  // meta row can be a step larger than its neighbours by accident. The
+  // muted grey is the token, not a per-site mix of paper.
+  //
+  // Compose, never copy: a site that needs a different color or weight
+  // spreads this first and overrides the one property (see the season
+  // value, which is this plus paper plus a bold weight).
+  metaText: {
+    fontSize: type.metaSize,
+    lineHeight: 1.6,
+    letterSpacing: type.metaTracking,
+    textTransform: 'uppercase',
+    color: tokens.muted,
   },
   // Visually hidden, reachable by assistive tech — the sr-only recipe.
   srOnly: {

@@ -13,6 +13,37 @@
   --color-panel: #151313;
   --color-paper: #f3efe8;
   --color-pink: #ff2f8e;
+  /* THE muted grey for quiet text on dark surfaces — one value, written
+     once. It is paper at 70% resolved against ink: the hero's breadcrumb
+     and subtitle used to mint that mix separately (and at 70% and 65%, so
+     they did not even match). Solid rather than a tint because it has to
+     hold its contrast over the scrims too, where a transparent grey would
+     take whatever is behind it. 8.5:1 on ink, 8.1:1 on --color-ink-lift. */
+  --color-muted: #aeaba6;
+  /* Its counterpart for quiet text on PAPER. --color-muted is ink-surface
+     only and measures 2:1 on cream — invisible where the page is light.
+     This is ink at 60% resolved against paper, which clears AA at 4.9:1. */
+  --color-muted-ink: #696764;
+  /* The floor of the hero's bottom zone. The scrim ramps ink → this, so the
+     field under the headline reads as a surface rather than a dead flat. */
+  --color-ink-lift: #141414;
+  /* The phase bar's CURRENT round — pink lifted toward white so "you are
+     here" separates from "already played" without leaving the accent. */
+  --color-pink-live: #ff7eb9;
+  /* FORM squares. Deliberately not the market's rise/fall pair: those are
+     signal colours for a live ticker on black, and a standings table wants a
+     quiet read on paper.
+
+     The three are ordered by LUMINANCE, not just hue — loss darkest, win
+     mid, draw lightest — because a deuteranope sees the green and the red
+     converge in tone and can only tell them apart by brightness. Measured
+     on cream: win 4.64:1, draw 3.21:1, loss 7.56:1, all past the 3:1 a UI
+     mark owes. Pairwise they hold 1.45–2.36:1 in normal vision and
+     1.42–2.05:1 simulated through deuteranopia. Changing any one of them
+     means re-checking all six of those numbers. */
+  --color-form-win: #3d774e;
+  --color-form-draw: #888580;
+  --color-form-loss: #83302c;
   /* Market movement colors — the ticker's up/down states. Deliberately a
      RED red (not magenta) so a fall can never be mistaken for brand pink. */
   --color-rise: #16c784;
@@ -148,7 +179,7 @@ body {
    plain source order. One ring, one place. */
 :focus-visible {
   outline: 2px solid var(--color-pink);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 
 /* Default placeholder tone is tuned for the DARK header inputs. A bare
