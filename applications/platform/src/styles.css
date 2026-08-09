@@ -218,6 +218,139 @@ body {
   }
 }
 
+/* The competition hero's phase bar, revealed in TWO STAGES (user call) and
+   deliberately unhurried.
+
+   STAGE ONE — `phase-draw` runs on EVERY segment, played or not, scaling it
+   out of its own left edge and staggered by --piece-delay. Both bars build
+   themselves left to right, empty: you see the shape of the season before
+   you see how much of it is gone. Kept BRISK (user call) — this stage is
+   setting the stage, and the counting-out in stage two is the part worth
+   watching.
+
+   STAGE TWO — `phase-ink` then colours the played segments one at a time,
+   held back by --ink-delay until the drawing has finished. Its `from` is the
+   unplayed tint, so a segment waiting its turn sits there drawn-but-empty;
+   `both` is what makes that hold work, and what makes the reduced-motion
+   path free, since with the animation off each piece just wears its own
+   background.
+
+   There are two ink keyframes because the run ends on two different colours
+   — the last played round is the live one and lands on --color-pink-live.
+   The pulse then starts once the whole run is done, timed by --pulse-delay
+   so it stays correct however long the season is. */
+@keyframes phase-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes phase-ink {
+  from {
+    background-color: color-mix(in srgb, var(--color-paper) 15%, transparent);
+  }
+  to {
+    background-color: var(--color-pink);
+  }
+}
+
+@keyframes phase-ink-live {
+  from {
+    background-color: color-mix(in srgb, var(--color-paper) 15%, transparent);
+  }
+  to {
+    background-color: var(--color-pink-live);
+  }
+}
+
+/* The phase LABELS ride the same two stages as the bars they name. They
+   fade in as their own bar finishes drawing (--label-delay), both of them
+   in the resting grey — nothing is claimed about where the season stands
+   while the bars are still empty. Then, exactly as the ink run begins, the
+   label of the phase actually in progress turns accent.
+
+   `from` carries the resting grey and the base style carries pink, so with
+   motion off the active label is simply pink from the start — the animation
+   adds the reveal, it is never what makes the state readable. */
+@keyframes phase-label-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes phase-label-live {
+  from {
+    color: color-mix(in srgb, var(--color-paper) 50%, transparent);
+  }
+  to {
+    color: var(--color-pink);
+  }
+}
+
+.phase-label {
+  animation: phase-label-in 0.24s ease-out var(--label-delay, 0s) both;
+}
+
+.phase-label.phase-label-live {
+  animation:
+    phase-label-in 0.24s ease-out var(--label-delay, 0s) both,
+    phase-label-live 0.3s ease-out var(--ink-delay, 0s) both;
+}
+
+@keyframes phase-now-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.phase-piece {
+  transform-origin: left;
+  animation: phase-draw 0.22s cubic-bezier(0.22, 1, 0.36, 1) var(--piece-delay, 0s) both;
+}
+
+/* The `animation` shorthand is ONE property, so every combination has to be
+   declared whole — a second rule adding an animation would drop the draw. */
+.phase-piece.phase-played {
+  animation:
+    phase-draw 0.22s cubic-bezier(0.22, 1, 0.36, 1) var(--piece-delay, 0s) both,
+    phase-ink 0.3s ease-out var(--ink-delay, 0s) both;
+}
+
+.phase-piece.phase-live {
+  animation:
+    phase-draw 0.22s cubic-bezier(0.22, 1, 0.36, 1) var(--piece-delay, 0s) both,
+    phase-ink-live 0.3s ease-out var(--ink-delay, 0s) both;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .phase-piece.phase-live {
+    animation:
+      phase-draw 0.22s cubic-bezier(0.22, 1, 0.36, 1) var(--piece-delay, 0s) both,
+      phase-ink-live 0.3s ease-out var(--ink-delay, 0s) both,
+      phase-now-pulse 2s ease-in-out var(--pulse-delay, 0s) infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phase-piece,
+  .phase-piece.phase-played,
+  .phase-piece.phase-live,
+  .phase-label,
+  .phase-label.phase-label-live {
+    animation: none;
+  }
+}
+
 /* Each screen slides up a touch as it mounts — keyed per route in the view,
    so switching sections replays it. */
 @keyframes screen-in {
