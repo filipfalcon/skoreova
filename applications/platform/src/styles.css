@@ -199,6 +199,25 @@ body {
   opacity: 0.5;
 }
 
+/* The anchoring section chip's hover. It lives here, not in the style
+   module, because it MUST be gated on a hover-capable pointer — without the
+   gate a tap leaves the chip in its pressed colours until you touch
+   something else — and StyleX silently drops this media query when it is
+   nested inside a conditional value.
+
+   The `:not(#\#)` chain is not decoration. The StyleX plugin APPENDS its
+   output to this file and boosts every rule with three of them, so a plain
+   `.chip-anchor:hover` is both lower specificity and earlier in the
+   cascade: it never applies. Matching the count and adding `:hover` on top
+   wins the tie by one pseudo-class. Resting pink-on-ink stays in
+   styles/components.ts; this only says what a real pointer does. */
+@media (hover: hover) {
+  .chip-anchor:hover:not(#\#):not(#\#):not(#\#) {
+    background-color: var(--color-ink);
+    color: var(--color-paper);
+  }
+}
+
 /* Each screen slides up a touch as it mounts — keyed per route in the view,
    so switching sections replays it. */
 @keyframes screen-in {

@@ -344,18 +344,24 @@ export const styles = stylex.create({
     marginLeft: '0.04em',
     marginRight: '0.26em',
   },
+  // RESTING look only. Two things had to be learned the hard way here.
+  //
+  // First, a conditional value REPLACES the property rather than layering on
+  // what an earlier style set, so the `default: null` this used to carry did
+  // not mean "leave the chip's fill alone" — it deleted it, and every
+  // anchoring chip on the club profile rendered as bare ink text on paper.
+  //
+  // Second, the hover itself cannot live here. It has to be gated behind
+  // `@media (hover: hover)` or a TAP leaves the chip stuck in its pressed
+  // colours, and StyleX silently drops that media query when it is nested
+  // inside a conditional value — no error, just no rule. The hover is a
+  // `.chip-anchor` contract in styles.css instead.
   clubChipLink: {
     transitionProperty: 'color, background-color, border-color',
     transitionDuration: '0.15s',
     transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-    backgroundColor: {
-      default: null,
-      ':hover': tokens.ink,
-    },
-    color: {
-      default: null,
-      ':hover': tokens.paper,
-    },
+    backgroundColor: tokens.pink,
+    color: tokens.ink,
   },
   clubSection: {
     marginTop: {
@@ -408,5 +414,19 @@ export const styles = stylex.create({
     height: '0.5em',
     width: 'auto',
     flexShrink: 0,
+  },
+  // ONE optical size for the chevron wherever it appears, so the mark beside
+  // a 10px breadcrumb and the one beside the season value carry the same
+  // stroke weight. Fixed rather than `em` for that reason: em would scale
+  // the stroke with whatever type it sat next to, which is how the two
+  // drifted apart in the first place.
+  chevron: {
+    height: '1.125rem',
+    width: '1.125rem',
+    flexShrink: 0,
+    color: tokens.pink,
+  },
+  chevronLeft: {
+    transform: 'rotate(90deg)',
   },
 });

@@ -27,6 +27,39 @@ export const sectionLabel = (text: string): Html =>
 
 export const pinkTick = (): Html => h.div([...getStyleXAttributes(h, styles.pinkTick)], []);
 
+// THE chevron — one drawn mark for every "there is more this way" glyph.
+// Both hero uses render this: the breadcrumb pointing left, the season
+// selector pointing down. They used to be separate SVGs that had drifted
+// apart in optical weight (the same stroke number at two different sizes is
+// not the same stroke), which is exactly what a shared component prevents.
+//
+// One path, turned by CSS rather than redrawn per direction, so the two can
+// never disagree about shape. Accent-colored: it marks the interactive
+// glyph, while the text beside it keeps its own voice.
+export const chevron = (
+  direction: 'left' | 'down',
+  ...glyphStyles: ReadonlyArray<StyleXStyle>
+): Html =>
+  h.svg(
+    [
+      h.Xmlns('http://www.w3.org/2000/svg'),
+      h.ViewBox('0 0 24 24'),
+      ...getStyleXAttributes(
+        h,
+        styles.chevron,
+        direction === 'left' ? styles.chevronLeft : null,
+        ...glyphStyles,
+      ),
+      h.AriaHidden(true),
+      h.Fill('none'),
+      h.Stroke('currentColor'),
+      h.StrokeWidth('3'),
+      h.StrokeLinecap('round'),
+      h.StrokeLinejoin('round'),
+    ],
+    [h.path([h.D('M6 9 L12 15 L18 9')], [])],
+  );
+
 // The push-pin, drawn to sit at the corner of anything pinnable. Filled
 // silhouette on currentColor, same register as the drawn arrow and ×.
 export const pinGlyph = (...glyphStyles: ReadonlyArray<StyleXStyle>): Html =>
@@ -409,7 +442,13 @@ export const clubChip = (text: string, anchor: string): Html =>
   h.a(
     [
       h.Href(`#${anchor}`),
-      ...getStyleXAttributes(h, shared.display, shared.clubChip, styles.clubChipLink),
+      ...getStyleXAttributesWith(
+        h,
+        'chip-anchor',
+        shared.display,
+        shared.clubChip,
+        styles.clubChipLink,
+      ),
     ],
     [text],
   );
