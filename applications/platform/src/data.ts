@@ -219,6 +219,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'sparta-praha',
     name: 'Sparta Praha',
+    shortName: 'Sparta Praha',
     city: 'Prague',
     logo: spartaPrahaLogo,
     league: 'First League',
@@ -233,6 +234,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'slavia-praha',
     name: 'Slavia Praha',
+    shortName: 'Slavia Praha',
     city: 'Prague',
     logo: slaviaPrahaLogo,
     league: 'First League',
@@ -247,6 +249,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'slovacko',
     name: 'Slovácko',
+    shortName: 'Slovácko',
     city: 'Uherské Hradiště',
     logo: slovackoLogo,
     league: 'First League',
@@ -261,6 +264,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'sparta-praha-b',
     name: 'Sparta Praha B',
+    shortName: 'Sparta Praha B',
     city: 'Prague',
     logo: spartaPrahaLogo,
     league: 'Second League',
@@ -275,6 +279,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'vysocina-jihlava',
     name: 'Vysočina Jihlava',
+    shortName: 'Vysočina Jihlava',
     city: 'Jihlava',
     logo: vysocinaJihlavaLogo,
     league: 'Second League',
@@ -289,6 +294,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'banik-ostrava',
     name: 'Baník Ostrava',
+    shortName: 'Baník Ostrava',
     city: 'Ostrava',
     logo: banikOstravaLogo,
     league: 'First League',
@@ -303,6 +309,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'viktoria-plzen',
     name: 'Viktoria Plzeň',
+    shortName: 'Viktoria Plzeň',
     city: 'Plzeň',
     logo: viktoriaPlzenLogo,
     league: 'First League',
@@ -317,6 +324,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'slovan-liberec',
     name: 'Slovan Liberec',
+    shortName: 'Slovan Liberec',
     city: 'Liberec',
     logo: slovanLiberecLogo,
     league: 'First League',
@@ -331,6 +339,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'hradec-kralove',
     name: 'Hradec Králové',
+    shortName: 'Hradec Králové',
     city: 'Hradec Králové',
     logo: hradecKraloveLogo,
     league: 'Second League',
@@ -345,6 +354,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'pardubice',
     name: 'Pardubice',
+    shortName: 'Pardubice',
     city: 'Pardubice',
     logo: pardubiceLogo,
     league: 'Second League',
@@ -359,6 +369,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'sigma-olomouc',
     name: 'Sigma Olomouc',
+    shortName: 'Sigma Olomouc',
     city: 'Olomouc',
     logo: sigmaOlomoucLogo,
     league: 'Second League',
@@ -373,6 +384,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'lokomotiva-brno',
     name: 'Lokomotiva Brno',
+    shortName: 'Lokomotiva Brno',
     city: 'Brno',
     logo: lokomotivaBrnoLogo,
     league: 'First League',
@@ -387,6 +399,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'artis-brno',
     name: 'Artis Brno',
+    shortName: 'Artis Brno',
     city: 'Brno',
     logo: artisBrnoLogo,
     league: 'Second League',
@@ -401,6 +414,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'dynamo-ceske-budejovice',
     name: 'Dynamo Č. Budějovice',
+    shortName: 'Dynamo Č. Budějovice',
     city: 'České Budějovice',
     logo: dynamoBudejoviceLogo,
     league: 'Second League',
@@ -415,6 +429,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'abc-branik',
     name: 'ABC Braník',
+    shortName: 'ABC Braník',
     city: 'Prague',
     logo: abcBranikLogo,
     league: 'Second League',
@@ -429,6 +444,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'slovan-liberec-b',
     name: 'Slovan Liberec B',
+    shortName: 'Slovan Liberec B',
     city: 'Liberec',
     logo: slovanLiberecLogo,
     league: 'Second League',
@@ -443,6 +459,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'viktoria-plzen-b',
     name: 'Viktoria Plzeň B',
+    shortName: 'Viktoria Plzeň B',
     city: 'Plzeň',
     logo: viktoriaPlzenLogo,
     league: 'Second League',
@@ -457,6 +474,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'prague-raptors',
     name: 'Prague Raptors',
+    shortName: 'Prague Raptors',
     city: 'Prague',
     logo: pragueRaptorsLogo,
     league: 'First League',
@@ -471,6 +489,7 @@ export const clubs: ReadonlyArray<Club> = [
   {
     slug: 'teplice',
     name: 'Teplice',
+    shortName: 'Teplice',
     city: 'Teplice',
     logo: tepliceLogo,
     league: 'Second League',
@@ -587,7 +606,9 @@ export const competitions: ReadonlyArray<Competition> = [
     badge: firstLeagueBadge,
     stage: 'Matchday 12 of 14',
     progress: 86,
-    tagline: 'The top flight of Czech women’s football',
+    // Short on purpose: the whole platform is Czech women's football, so
+    // spelling that out here only cost the chip a second line.
+    tagline: 'The top flight',
     // The European line states the bands `zoneFor` actually paints in the
     // table this rule sits above — 1–2 UWCL, 3 UWEC — not the
     // champion/runner-up split it used to claim.
@@ -778,6 +799,25 @@ const descendingBy = (key: (row: StandingsRow) => number): Order.Order<Standings
 // a club climbing the standings must not reshuffle the season’s fixtures.
 export const leagueTeams = (league: string): ReadonlyArray<string> =>
   clubs.filter((club) => club.league === league).map((club) => club.name);
+
+// The club behind a standings row, found by the name the row carries: its
+// slug to link to, its editorial short name to print, its crest to show.
+// Deliberately NOT fields on StandingsRow — the European league-phase
+// tables in standings.ts are hand-written rows for clubs with no entry in
+// our own table, and would have nothing to put there. Callers fall back to
+// the row's own name.
+export interface ClubRowFace {
+  readonly slug: string;
+  readonly shortName: string;
+  readonly crest: string;
+}
+
+export const clubRowFace = (name: string): ClubRowFace | undefined => {
+  const club = clubs.find((entry) => entry.name === name);
+  return club === undefined
+    ? undefined
+    : { slug: club.slug, shortName: club.shortName, crest: club.logo };
+};
 
 // The standings table backing a league, COMPUTED from the club records
 // above: played and points are arithmetic, so the table can’t drift from the

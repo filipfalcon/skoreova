@@ -16,6 +16,11 @@ export type StandingsRow = typeof StandingsRow.Type;
 export const Club = S.Struct({
   slug: S.String,
   name: S.String,
+  // The EDITORIAL short form, for tables and anywhere a row has to hold a
+  // club in one line: club name plus city, with legal forms and district
+  // suffixes dropped. Authored, never derived — no rule reliably shortens
+  // a Czech club name, and the table would be the wrong place to find out.
+  shortName: S.String,
   city: S.String,
   logo: S.String,
   league: S.String,
