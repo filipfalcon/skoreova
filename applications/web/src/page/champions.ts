@@ -658,10 +658,10 @@ const cupRunGrid = (model: Model): Html =>
                 [
                   h.img([
                     h.Src(domesticDoubleImage),
-                    h.Width('1170'),
-                    h.Height('859'),
+                    h.Width('1080'),
+                    h.Height('1350'),
                     h.Alt(
-                      'Sparta Praha player kissing toward the league trophy with the cup trophy in hand, under the champions arch',
+                      'Sparta Praha players in DOUBLE shirts lifting the league and cup trophies together under the cup final arch',
                     ),
                     h.Loading('lazy'),
                     h.Class('w-full'),
@@ -672,7 +672,7 @@ const cupRunGrid = (model: Model): Html =>
           ),
           h.figcaption(
             [h.Class('mt-3 text-center text-xs tracking-[0.2em] uppercase')],
-            ['Ellie Ospeck enjoying the trophies.'],
+            ['Sparta celebrating the domestic cup win.'],
           ),
         ],
       ),

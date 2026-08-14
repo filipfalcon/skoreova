@@ -61,7 +61,7 @@ export const competitions: ReadonlyArray<Competition> = [
     label: 'First League',
     image: firstLeagueImage,
     badge: firstLeagueBadge,
-    alt: 'Sparta and Slavia players challenging for the ball in the Prague derby',
+    alt: 'A Slovácko player shielding the ball from a Slavia Praha opponent on an autumn afternoon',
     copy: 'The best of the best. Prague’s two “S” clubs have owned it for years — but the chasing pack has other plans.',
   },
   {
@@ -69,7 +69,7 @@ export const competitions: ReadonlyArray<Competition> = [
     label: 'Second League',
     image: secondLeagueImage,
     badge: secondLeagueBadge,
-    alt: 'Two second-league players dueling for the ball on an autumn pitch',
+    alt: 'Two second-league players dueling for the ball beside the corner flag',
     copy: 'A world away from the top flight, and Sparta’s B side’s stomping ground — yet it keeps sending players up who stick.',
   },
   {
@@ -77,7 +77,7 @@ export const competitions: ReadonlyArray<Competition> = [
     label: 'Domestic Cup',
     image: domesticCupImage,
     badge: domesticCupBadge,
-    alt: 'A cup tie duel in front of an LED advertising board',
+    alt: 'A Slavia Praha player driving the ball past a Sparta Praha opponent in a sunlit cup tie',
     copy: 'The nation’s favorite knockout. One game at a time — switch off for a minute and you’re gone, waiting a whole year for another shot. Cruel game.',
   },
   {
@@ -85,7 +85,7 @@ export const competitions: ReadonlyArray<Competition> = [
     label: 'Champions League',
     image: uwclImage,
     badge: uwclBadge,
-    alt: 'A Slavia Praha player driving past a Galatasaray captain on a European night',
+    alt: 'A Slavia Praha player shielding the ball from a Rangers opponent on a European away day',
     copy: 'Every footballer’s dream — the most prestigious club competition on the planet. Who’ll be the first Czech side to take down OL Lyonnes?',
   },
   {
@@ -93,7 +93,7 @@ export const competitions: ReadonlyArray<Competition> = [
     label: 'Europa Cup',
     image: uwecImage,
     badge: uwecBadge,
-    alt: 'A Sparta Praha player in the black away kit striking the ball in the rain',
+    alt: 'A Sparta Praha player in the black away kit carrying the ball past a Hammarby opponent',
     copy: 'Europe’s newest club competition — and Sparta Praha ran all the way to the semifinals in its very first season.',
   },
   {
