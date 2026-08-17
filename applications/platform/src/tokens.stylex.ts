@@ -15,6 +15,11 @@ export const tokens = stylex.defineVars({
   ink: 'var(--color-ink)',
   panel: 'var(--color-panel)',
   paper: 'var(--color-paper)',
+  // The raised surface on paper — a card's whole frame, since the platform
+  // draws no rims and casts no shadows.
+  surface: 'var(--color-surface)',
+  // The drawn line on paper, for anything outlined rather than filled.
+  hairline: 'var(--color-hairline)',
   // `pink` IS the accent token — the one the nav's active trophy, the phase
   // bar and the hero's chevrons all read. Named for the color rather than
   // the role because it predates the role, and renaming it would touch
@@ -55,10 +60,16 @@ export const tokens = stylex.defineVars({
 // on a 667pt screen. `sm` is 12 because the name and its facts read as one
 // statement only when they sit distinctly closer than the blocks around
 // them, and it was walked down 16 → 14 → 12 to get there.
+// `lg` is the fourth step, and it arrived for one reason: the home page's
+// weekly carousel needs the next card to peek past the edge of the current
+// one, and that peek is a distance the reader measures against the gaps
+// beside it. 24 is twice `sm`, which is what makes a peek read as "there is
+// more" rather than as a mis-set gap.
 export const spacing = stylex.defineVars({
   xs: '0.5rem',
   sm: '0.75rem',
   md: '1.25rem',
+  lg: '1.5rem',
 });
 
 // The two rungs of quiet type. `meta` is the app's label scale — breadcrumb,
@@ -85,4 +96,19 @@ export const type = stylex.defineVars({
   metaTracking: '0.2em',
   subtitleSize: '1.125rem',
   subtitleTracking: '0.07em',
+  // A match card's two rungs. `cardName` is the club name in a card row —
+  // the subtitle size, because a card is a small surface and the two names
+  // are its subject, not its headline. `scoreSize` is the goals column: the
+  // one number on a finished card that has to be readable at a glance from
+  // the far side of a carousel, and the size at which two of them still fit
+  // beside a name on a 360px screen.
+  cardName: '1.125rem',
+  scoreSize: '1.5rem',
+  // THE HERO CARD'S HEADLINE — "SPARTA × SLAVIA" in the display face, the
+  // profile heroes' voice brought down to card scale. It is NOT headlineL:
+  // that rung starts at 3rem and a card is 314px wide, so the shortest
+  // pairing in the league would still take three lines. This clamp holds the
+  // common pairings on one line at 390px and lets the longest fall to two,
+  // which is the range the layout is built for.
+  cardHeadline: 'clamp(1.875rem, 9vw, 2.75rem)',
 });

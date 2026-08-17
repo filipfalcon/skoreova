@@ -6,7 +6,6 @@ import { tokens } from '../tokens.stylex';
 // the main column, and the footer.
 
 const MD = '@media (min-width: 768px)';
-const LG = '@media (min-width: 1024px)';
 
 export const styles = stylex.create({
   page: {
@@ -21,10 +20,10 @@ export const styles = stylex.create({
   // of padding: the translucent header must rest on black, not on the
   // paper page — content still slides beneath the blur once you scroll.
   headerSpacer: {
+    // The row of tabs and the hairline under it. Below `md` a tab stacks a glyph over its label, which is what makes the phone header the taller of the two.
     height: {
-      default: '104px',
-      [MD]: '107px',
-      [LG]: '108px',
+      default: '55px',
+      [MD]: '49px',
     },
     backgroundColor: 'black',
   },

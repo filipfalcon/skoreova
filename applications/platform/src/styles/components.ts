@@ -6,6 +6,17 @@ import { tokens } from '../tokens.stylex';
 // Follows the translation discipline stated in shared.ts: every fontSize
 // carries its Tailwind pair's lineHeight, alpha tints are color-mix fades.
 
+// One size for every mark in the tab row — the four drawn glyphs and the brand
+// illustration alike. They share it so the five tabs keep one height, and it is
+// what the illustration needs to read as a mark rather than as a dot.
+const ICON_SIZE = '26px';
+
+// How far the tape's rise/fall mark drops to sit on the numerals' own centre
+// rather than their line box's. Measured against the rendered tape, in em so
+// it holds at any size the tape is set at.
+const TAPE_ARROW_SHIFT = '-0.0625em';
+
+const XS = '@media (min-width: 360px)';
 const MD = '@media (min-width: 768px)';
 const LG = '@media (min-width: 1024px)';
 
@@ -84,131 +95,71 @@ export const styles = stylex.create({
   },
   // The stage stamp — the landing header's pink chip device, always two
   // lines here (see the note at the view).
-  previewStamp: {
-    fontFamily: tokens.fontBody,
-    fontSize: {
-      default: '9px',
-      [MD]: '10px',
-    },
-    lineHeight: 1.9,
-    letterSpacing: '0.2em',
-    whiteSpace: 'nowrap',
-    color: tokens.ink,
-    textTransform: 'uppercase',
-    userSelect: 'none',
-  },
-  previewStampChip: {
-    // Chromium still wants the -webkit- prefix here, and StyleX does not
-    // auto-prefix — both spellings, like the old utility emitted.
-    WebkitBoxDecorationBreak: 'clone',
-    boxDecorationBreak: 'clone',
-    backgroundColor: tokens.pink,
-    paddingInline: '0.375rem',
-    paddingBlock: '0.125rem',
-  },
-  personGlyph: {
-    height: '1.1rem',
-    width: '1.1rem',
-  },
-  accountButton: {
-    display: 'flex',
-    flexShrink: 0,
-    cursor: 'pointer',
-    alignItems: 'center',
-    gap: '0.75rem',
-  },
   // The circle and the label react to the button's hover through the
   // hover-card contract classes in styles.css (StyleX has no descendant
   // selectors) — only their resting looks live here.
-  accountCircle: {
-    display: 'flex',
-    height: '2.25rem',
-    width: '2.25rem',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '9999px',
-    borderWidth: 1,
-    borderColor: 'color-mix(in srgb, var(--color-paper) 15%, transparent)',
-    color: 'color-mix(in srgb, var(--color-paper) 60%, transparent)',
-    transitionProperty: 'color, background-color, border-color',
-    transitionDuration: '0.15s',
-    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  },
-  accountLabel: {
+  // The mark occupies the drawn glyphs' box exactly, so all five tabs share one
+  // geometry and one baseline. The paper disc is the white the artwork was
+  // drawn on; the mark's own ink ring covers its edge, so the two read as one
+  // badge rather than as a logo sitting on a circle.
+  brandMark: {
     display: {
-      default: 'none',
-      [MD]: 'inline',
+      default: 'block',
+      [MD]: 'none',
     },
-    fontSize: '10px',
-    letterSpacing: '0.2em',
-    textTransform: 'uppercase',
-    color: 'color-mix(in srgb, var(--color-paper) 60%, transparent)',
-    transitionProperty: 'color, background-color, border-color',
-    transitionDuration: '0.15s',
-    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+    height: ICON_SIZE,
+    width: ICON_SIZE,
+    backgroundColor: tokens.paper,
+    borderRadius: '9999px',
+  },
+  // Open, the mark takes a RING and nothing else. Filling the disc instead put
+  // accent through every transparent part of the artwork, the face included,
+  // so the illustration read as a pink silhouette. The ring is a shadow rather
+  // than a border so it costs no layout: a border would take its width out of
+  // the image's own box and the mark would shrink as the tab opened.
+  brandMarkActive: {
+    boxShadow: `0 0 0 2px ${tokens.pink}`,
   },
   navIcon: {
-    height: '22px',
-    width: '22px',
+    height: ICON_SIZE,
+    width: ICON_SIZE,
     display: {
       default: 'block',
       [MD]: 'none',
     },
   },
   // HER GAME — the featured center tab (see the view for the states).
-  featuredTab: {
-    display: 'flex',
-    alignItems: 'center',
-    alignSelf: 'center',
-    paddingInline: {
-      default: '0.875rem',
-      [MD]: '1rem',
-      [LG]: '1.25rem',
-    },
-    paddingBlock: {
-      default: '0.5rem',
-      [MD]: '0.625rem',
-    },
-    fontSize: {
-      default: 'min(14px, 3.4vw)',
-      [MD]: '0.875rem',
-      [LG]: '1rem',
-    },
-    lineHeight: {
-      default: 0.92,
-      [MD]: '1.25rem',
-      [LG]: '1.5rem',
-    },
-    letterSpacing: {
-      default: '0.08em',
-      [MD]: '0.14em',
-    },
-    whiteSpace: 'nowrap',
-    textTransform: 'uppercase',
-    transitionProperty: 'color, background-color, border-color',
-    transitionDuration: '0.15s',
-    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-    color: tokens.ink,
-  },
-  featuredTabActive: {
-    backgroundColor: tokens.pink,
-  },
-  featuredTabRest: {
-    backgroundColor: {
-      default: tokens.paper,
-      ':hover': tokens.pink,
-    },
-  },
+
   navLink: {
     display: 'flex',
+    // Below `md` a tab is a glyph over its label, so it stacks; from `md` the glyph is gone and the label sits alone on the line.
+    flexDirection: {
+      default: 'column',
+      [MD]: 'row',
+    },
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: {
+      default: '0.25rem',
+      [MD]: null,
+    },
+    // A touch target of 44 CSS pixels, the floor for a control a thumb has to hit.
+    minHeight: {
+      default: '44px',
+      [MD]: null,
+    },
     borderBottomWidth: 2,
+    // Five labelled tabs share 304px at the narrowest supported viewport, so the horizontal padding on each is what the widest label spends its room on.
     paddingInline: {
-      default: '0.5rem',
+      default: '0.125rem',
+      [XS]: '0.25rem',
       [MD]: '0.625rem',
       [LG]: '1rem',
     },
-    paddingBlock: '0.75rem',
+    paddingBlock: {
+      default: '0.375rem',
+      [MD]: '0.75rem',
+    },
     whiteSpace: 'nowrap',
     textTransform: 'uppercase',
     fontSize: {
@@ -241,6 +192,29 @@ export const styles = stylex.create({
     },
   },
   navLabel: {
+    // The phone rail's own rung of the label scale: the meta size, with the meta tracking held as far down as five tabs on a 320px screen allow.
+    fontSize: {
+      default: '9px',
+      [XS]: '10px',
+      [MD]: null,
+    },
+    letterSpacing: {
+      default: '0.12em',
+      [XS]: '0.2em',
+      [MD]: null,
+    },
+    lineHeight: {
+      default: 1,
+      [MD]: null,
+    },
+  },
+  navLabelPhone: {
+    display: {
+      default: 'block',
+      [MD]: 'none',
+    },
+  },
+  navLabelWide: {
     display: {
       default: 'none',
       [MD]: 'block',
@@ -257,61 +231,12 @@ export const styles = stylex.create({
     color: tokens.paper,
     backdropFilter: 'blur(8px)',
   },
-  headerBar: {
-    position: 'relative',
-    marginInline: 'auto',
-    display: 'flex',
-    height: {
-      default: '3.5rem',
-      [MD]: '4rem',
-    },
-    width: '100%',
-    maxWidth: '80rem',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '1rem',
-    paddingInline: {
-      default: '1.25rem',
-      [MD]: '2.5rem',
-    },
-  },
-  brandGroup: {
-    display: 'flex',
-    flexShrink: 0,
-    alignItems: 'center',
-    gap: '0.75rem',
-  },
-  brandLink: {
-    display: 'flex',
-    alignItems: 'baseline',
-    gap: '0.75rem',
-    fontSize: {
-      default: '1.5rem',
-      [MD]: '1.875rem',
-    },
-    lineHeight: {
-      default: '2rem',
-      [MD]: '2.25rem',
-    },
-    letterSpacing: '0.025em',
-    color: {
-      default: tokens.paper,
-      ':hover': tokens.pink,
-    },
-    transitionProperty: 'color, background-color, border-color',
-    transitionDuration: '0.3s',
-    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  },
-  brandDot: {
-    color: tokens.pink,
-  },
   sectionRail: {
     marginInline: 'auto',
     display: 'flex',
     width: '100%',
     maxWidth: '80rem',
     alignItems: 'center',
-    overflowX: 'auto',
     paddingInline: {
       default: '0.5rem',
       [MD]: '1.5rem',
@@ -404,16 +329,29 @@ export const styles = stylex.create({
   },
   tickerSpark: {
     display: 'inline-block',
-    height: '0.55em',
+    height: '0.85em',
     width: 'auto',
     flexShrink: 0,
     color: tokens.pink,
   },
+  // A flex row centres a mark on its LINE box, and a line box is taller than
+  // the digits inside it — the space a descender would use sits under them, so
+  // a mark centred that way rides high of the numerals it belongs to. The
+  // nudge is the measured distance between the two centres, and it is written
+  // in em so it holds at any tape size.
   tapeArrow: {
     display: 'inline-block',
     height: '0.5em',
     width: 'auto',
     flexShrink: 0,
+  },
+  // Both directions carry the same nudge; the fall applies it before the flip,
+  // so the two land on one axis rather than mirroring the correction too.
+  tapeArrowUp: {
+    transform: `translateY(${TAPE_ARROW_SHIFT})`,
+  },
+  tapeArrowDown: {
+    transform: `translateY(${TAPE_ARROW_SHIFT}) scaleY(-1)`,
   },
   // ONE optical size for the chevron wherever it appears, so the mark beside
   // a 10px breadcrumb and the one beside the season value carry the same

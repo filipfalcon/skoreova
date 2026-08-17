@@ -29,16 +29,19 @@ export const styles = stylex.create({
     overflow: 'hidden',
     padding: '1.25rem',
   },
+  // On a PHONE the leader is a full-width band rather than a portrait: it
+  // still leads, but it no longer spends most of a screen doing it. 16rem was
+  // half the viewport for a name and a kind.
   tileLeader: {
     minHeight: {
-      default: '16rem',
+      default: '10rem',
       [MD]: '11rem',
       [LG]: '14rem',
     },
   },
   tileFollower: {
     minHeight: {
-      default: '11rem',
+      default: '10rem',
       [SM]: '15rem',
       [MD]: '11rem',
       [LG]: '14rem',
@@ -113,6 +116,19 @@ export const styles = stylex.create({
   },
   tileKindPaper: {
     color: 'color-mix(in srgb, var(--color-paper) 70%, transparent)',
+  },
+  // The reason sits under the kind, at body scale rather than the label's, so
+  // the one line that says something is not the smallest type on the tile.
+  tileReason: {
+    marginTop: '0.375rem',
+    fontSize: '0.8125rem',
+    lineHeight: 1.3,
+  },
+  tileReasonPaper: {
+    color: 'color-mix(in srgb, var(--color-paper) 82%, transparent)',
+  },
+  tileReasonInk: {
+    color: tokens.mutedInk,
   },
   tileKindInk: {
     color: 'color-mix(in srgb, var(--color-ink) 40%, transparent)',

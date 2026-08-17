@@ -8,10 +8,10 @@ import { Button } from '@foldkit/ui';
 import type { Html } from 'foldkit/html';
 import { html } from 'foldkit/html';
 
+import brandLogo from './assets/brand/logo.svg';
 import type { Model, Screen } from './model';
 import { type Message, ToggledPin } from './message';
 import { type NavEntry, navEntries, screenOf, screenTitles } from './data';
-import { welcomeRouter } from './route';
 import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
 import type { StyleXStyle } from './stylexAttributes';
 import { styles } from './styles/components';
@@ -151,80 +151,22 @@ export const sparkline = (values: ReadonlyArray<number>): Html => {
 };
 
 // SHELL
-//
-// Desktop navigation is HORIZONTAL (user call, Rohlik-style): one sticky
-// header with brand / centered search / account on the first row and the
-// section links on a rail below. Below `md` the top bar carries the brand
-// + account and navigation lives in the bottom tab bar.
 
-// The stage stamp — the landing header’s device (pink chip, 9/10px
-// uppercase, box-decoration-clone so each line’s pink hugs its own text).
-// ALWAYS two lines here: this header’s brand column is tighter than the
-// landing’s, and the one-line form re-wrapped mid-phrase. A status label,
-// never a link — always a SIBLING of the wordmark anchor, not a child.
-export const previewStamp = (): Html =>
-  h.span(
-    [...getStyleXAttributes(h, styles.previewStamp)],
-    [
-      h.span(
-        [...getStyleXAttributes(h, styles.previewStampChip)],
-        ['Beta Version', h.br([]), 'Work in progress'],
-      ),
-    ],
-  );
+// The brand mark, standing in for a glyph on the HER GAME tab. The artwork is
+// ink drawn ON white — the white is the page it was drawn on, not part of the
+// file — so the mark supplies that ground itself. That is also why it cannot
+// take the tab's accent when the section is open: recoloring it would mean
+// painting it as a mask, which is what drops the ground.
+export const brandMark = (active: boolean): Html =>
+  h.img([
+    h.Src(brandLogo),
+    h.Alt(''),
+    ...getStyleXAttributes(h, styles.brandMark, active ? styles.brandMarkActive : null),
+  ]);
 
-// A stroked person mark for the account section — drawn like the app’s
-// other glyphs (currentColor strokes, no icon font).
-export const personGlyph: Html = h.svg(
-  [
-    h.Xmlns('http://www.w3.org/2000/svg'),
-    h.ViewBox('0 0 24 24'),
-    ...getStyleXAttributes(h, styles.personGlyph),
-    h.AriaHidden(true),
-    h.Fill('none'),
-    h.Stroke('currentColor'),
-    h.StrokeWidth('2'),
-  ],
-  [
-    h.path([h.D('M12 4a4 4 0 1 1 0 8a4 4 0 0 1 0-8Z')], []),
-    h.path([h.D('M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5')], []),
-  ],
-);
-
-// NOTE: deliberately inert mock — accounts arrive with the paid tiers; the
-// free platform never demands one. Ui.Button’s isDisabled is what announces
-// that honestly: aria-disabled plus data-disabled, and NO click handler, while
-// the control keeps its place in the tab order so a keyboard reader still
-// meets it and hears why it does nothing yet.
-export const accountButton = (): Html =>
-  // The message type has to be written out: nothing else in this call carries
-  // it, since an always-blocked button has no onClick to infer it from.
-  Button.view<Message>({
-    isDisabled: true,
-    toView: ({ button }) =>
-      h.button(
-        [
-          ...button,
-          h.AriaLabel('Account'),
-          ...getStyleXAttributesWith(h, 'hover-card', styles.accountButton),
-        ],
-        [
-          h.span(
-            [...getStyleXAttributesWith(h, 'hover-card-pink-ring', styles.accountCircle)],
-            [personGlyph],
-          ),
-          h.span(
-            [...getStyleXAttributesWith(h, 'hover-card-paper-text', styles.accountLabel)],
-            ['Account'],
-          ),
-        ],
-      ),
-  });
-
-// Phone nav ICONS — below `md` the tabs show a glyph instead of text
-// (user call). PLACEHOLDER line art for now: the user supplies the final
-// icon set; swap the paths here when it lands. Stroke = currentColor so
-// the active/hover pink comes free.
+// A tab's glyph, drawn over its label below `md` and dropped from `md` up.
+// PLACEHOLDER line art: the final icon set replaces these paths. Stroke is
+// currentColor, so the tab's own accent and hover colors reach it.
 export const navIcon = (screen: Screen): Html => {
   const paths: Partial<Record<Screen, string>> = {
     // Crest/shield — clubs.
@@ -257,101 +199,41 @@ export const navIcon = (screen: Screen): Html => {
 
 export const desktopNavLink = (model: Model, entry: NavEntry): Html => {
   const active = screenOf(model.route) === entry.screen;
-  // HER GAME — the featured center tab: a paper chip in Anton, no number,
-  // with a periodic pink gradient sweeping through it (.hergame-chip).
-  // Solid pink only when the section is OPEN (and on hover), so the pink
-  // always reads as "you are here / go here".
-  if (entry.isFeatured) {
-    return h.a(
-      [
-        h.Href(entry.href),
-        ...(active ? [h.AriaCurrent('page')] : []),
-        ...getStyleXAttributesWith(
-          h,
-          active ? '' : 'hergame-chip',
-          shared.display,
-          styles.featuredTab,
-          active ? styles.featuredTabActive : styles.featuredTabRest,
-        ),
-      ],
-      [entry.label],
-    );
-  }
   return h.a(
     [
       h.Href(entry.href),
       ...(active ? [h.AriaCurrent('page')] : []),
-      // Below `md` the tab is an ICON (label hidden, aria-label carries
-      // the name); from `md` up it’s the plain uppercase label.
-      h.AriaLabel(entry.label),
+      // The label is text at every width, so the tab needs no accessible name of its own — one that duplicated the visible words would only be free to drift from them.
       ...getStyleXAttributes(h, styles.navLink, active ? styles.navLinkActive : styles.navLinkRest),
     ],
-    [navIcon(entry.screen), h.span([...getStyleXAttributes(h, styles.navLabel)], [entry.label])],
+    [
+      // Every tab is the same shape; the brand section differs only in which mark is drawn over its label.
+      entry.isBrand ? brandMark(active) : navIcon(entry.screen),
+      // Two spans rather than one, because the swap is a change of words and CSS can only choose between elements.
+      h.span(
+        [...getStyleXAttributes(h, styles.navLabel, styles.navLabelPhone)],
+        [entry.shortLabel ?? entry.label],
+      ),
+      h.span([...getStyleXAttributes(h, styles.navLabel, styles.navLabelWide)], [entry.label]),
+    ],
   );
 };
 
-// The header bar is a DUPLICATE of the landing page’s header — same fixed
-// shell, same container (max-w-7xl px-5/10), same h-14/h-16 bar, same
-// wordmark size and pink hover, same translucent ink + blur — deliberately
-// copied, not shared (user call): the two apps should FEEL like one page,
-// while each keeps its own elements inside the bar (search + account here;
-// CTA + menu there). The section rail below the bar is platform-only.
+// The whole header: one row of tabs, fixed over the page. The hairline
+// TERMINATES the backdrop blur — backdrop-filter samples beyond the element's
+// own box, so over a bright backdrop the blur smears the picture a few pixels
+// up into the bar and the boundary reads as a soft halo instead of an edge.
 export const headerView = (model: Model): Html =>
   h.header(
-    // The hairline TERMINATES the backdrop blur. backdrop-filter samples
-    // beyond the element’s own box, so over a bright backdrop — the club
-    // profile’s header photo starts exactly where this bar ends — the blur
-    // smears the picture a few pixels UP into the bar and the boundary
-    // reads as a soft halo instead of an edge. A 1px rule gives the eye a
-    // hard line to stop at; the glass stays.
     [...getStyleXAttributes(h, styles.header)],
     [
-      h.div(
-        // The landing’s container + bar: brand on the left, account on the
-        // right. Global search will land here once the search backend
-        // exists; until then there is no control (a focusable box that
-        // does nothing is worse than none).
-        [...getStyleXAttributes(h, styles.headerBar)],
-        [
-          h.div(
-            [...getStyleXAttributes(h, styles.brandGroup)],
-            [
-              h.a(
-                [
-                  h.Href(welcomeRouter()),
-                  ...getStyleXAttributes(h, shared.display, styles.brandLink),
-                ],
-                [
-                  h.span(
-                    [],
-                    ['Skóreová', h.span([...getStyleXAttributes(h, styles.brandDot)], ['.'])],
-                  ),
-                ],
-              ),
-              previewStamp(),
-            ],
-          ),
-          accountButton(),
-        ],
-      ),
-      // The section rail — every breakpoint (user call: phones navigate
-      // under the header too; the bottom tab bar died).
-      // no-scrollbar + overflow: the six labels outgrow the md band’s
-      // width, and wrapped labels would change the header’s height (the
-      // content offset is a hard 111px). CENTERED via auto inline margins
-      // on the inner wrapper, NOT justify-content on the scroller — auto
-      // margins collapse to 0 when the content overflows, so the md band
-      // keeps a reachable left edge (justify-center would clip the first
-      // tabs behind an unscrollable boundary).
       h.nav(
-        [...getStyleXAttributesWith(h, 'no-scrollbar', styles.sectionRail)],
+        [...getStyleXAttributes(h, styles.sectionRail)],
         [
-          // A symmetric GRID keeps the HER GAME chip on the exact center:
-          // two 1fr cells per side flank an auto center column, and equal
-          // 1fr tracks mean the left half always weighs the same as the
-          // right — justify-between could not do that (COMPETITIONS is
-          // wider than CLUBS, so the middle item drifts). From `md` the
-          // grid narrows so the tabs stay a grouped rail, still centered.
+          // A symmetric GRID holds HER GAME on the exact center: two 1fr cells
+          // per side flank an auto center column, and equal 1fr tracks mean the
+          // left half always weighs the same as the right. Space-between could
+          // not do that, since the outer labels differ in width.
           h.div(
             [...getStyleXAttributes(h, styles.sectionRailGrid)],
             navEntries.map((entry) => desktopNavLink(model, entry)),
@@ -512,14 +394,18 @@ export const tickerSpark: Html = h.svg(
 );
 
 // The tape/stat-delta arrow — a solid up or down triangle.
+// ONE triangle, turned by CSS rather than redrawn per direction, so a rise
+// and a fall can never disagree about shape — they are the same mark about the
+// same axis. The pair used to be two hand-written paths, which agreed only for
+// as long as nobody edited one of them.
 export const tapeArrow = (up: boolean): Html =>
   h.svg(
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
       h.ViewBox('0 0 12 10'),
-      ...getStyleXAttributes(h, styles.tapeArrow),
+      ...getStyleXAttributes(h, styles.tapeArrow, up ? styles.tapeArrowUp : styles.tapeArrowDown),
       h.AriaHidden(true),
       h.Fill('currentColor'),
     ],
-    [h.path([h.D(up ? 'M6 0 L12 10 H0 Z' : 'M0 0 H12 L6 10 Z')], [])],
+    [h.path([h.D('M6 0 L12 10 H0 Z')], [])],
   );

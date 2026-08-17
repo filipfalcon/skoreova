@@ -23,7 +23,12 @@ const h = html<Message>();
 // One trending tile — its own pinnable unit (user call: split the boards).
 // The pin rides over it as an overlay sibling of the card link, like the
 // stat cards. `id` is `trending:<entry id>`.
-export const trendingTile = (model: Model, entry: TrendingEntry, index: number): Html => {
+export const trendingTile = (
+  model: Model,
+  entry: TrendingEntry,
+  index: number,
+  withPin = true,
+): Html => {
   const featured = entry.photo !== '';
   // No col-span here: the leader’s double width belongs to the grid CHILD,
   // and that’s the <li> this tile sits inside (see trendingTiles) — a span on
@@ -31,7 +36,10 @@ export const trendingTile = (model: Model, entry: TrendingEntry, index: number):
   return h.div(
     [...getStyleXAttributes(h, styles.tileWrapper)],
     [
-      pinOverlay(model, `trending:${entry.id}`, entry.name),
+      // A pin sends a tile to HER GAME, which is behind the sign-in — so the
+      // landing draws the same tiles without one rather than offering a
+      // destination the reader has no way to reach.
+      ...(withPin ? [pinOverlay(model, `trending:${entry.id}`, entry.name)] : []),
       h.a(
         [
           h.Href(entry.href),
@@ -42,7 +50,7 @@ export const trendingTile = (model: Model, entry: TrendingEntry, index: number):
             h,
             'trend-row hover-card',
             styles.tile,
-            index === 0 ? styles.tileLeader : styles.tileFollower,
+            styles.tileFollower,
             featured ? styles.tileFeatured : styles.tileFramed,
           ),
           h.Style({ '--row-delay': `${0.3 + index * 0.08}s` }),
@@ -75,7 +83,7 @@ export const trendingTile = (model: Model, entry: TrendingEntry, index: number):
                 'hover-card-pink-text',
                 shared.display,
                 styles.tileName,
-                index === 0 ? styles.tileNameLeader : styles.tileNameFollower,
+                styles.tileNameFollower,
                 featured ? styles.tileNamePaper : styles.tileNameInk,
               ),
             ],
@@ -91,6 +99,22 @@ export const trendingTile = (model: Model, entry: TrendingEntry, index: number):
             ],
             [entry.kind],
           ),
+          // WHY it is trending. Editorial and optional: with nothing written
+          // the row does not exist, and the tile is a name and a kind again.
+          ...(entry.reason === ''
+            ? []
+            : [
+                h.p(
+                  [
+                    ...getStyleXAttributes(
+                      h,
+                      styles.tileReason,
+                      featured ? styles.tileReasonPaper : styles.tileReasonInk,
+                    ),
+                  ],
+                  [entry.reason],
+                ),
+              ]),
         ],
       ),
     ],

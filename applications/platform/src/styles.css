@@ -12,6 +12,23 @@
   --color-ink: #0d0c0c;
   --color-panel: #151313;
   --color-paper: #f3efe8;
+  /* The card surface on paper. The platform is flat — no rims, no shadows —
+     so a card is told apart from the page by tone alone, and the tone has to
+     be small enough not to read as a second background colour.
+
+     LIGHTENED from #ece7dd (1.075:1 against paper), which read as a grey fill
+     rather than as a lift; this is 1.048:1 — present, but no longer a
+     colour. Everything printed on it was re-measured here: ink 16.3:1 and
+     --color-muted-ink 4.7:1 both clear AA, but --color-pink stays under the
+     3:1 a non-text mark owes, so no pink mark may sit on this surface. Pink
+     on the section chip is unaffected: that block is pink FILL under ink
+     type, and it sits on paper. */
+  --color-surface: #eeeae1;
+  /* The RULE — one ink hairline, for anything outlined on paper rather than
+     filled. 18% ink resolves to #cac6c0, 1.48:1 against paper: it reads as a
+     drawn line at 1px without turning into a box. Three sites used to mint
+     their own 10–15% mix of this by hand. */
+  --color-hairline: #cac6c0;
   --color-pink: #ff2f8e;
   /* THE muted grey for quiet text on dark surfaces — one value, written
      once. It is paper at 70% resolved against ink: the hero's breadcrumb
