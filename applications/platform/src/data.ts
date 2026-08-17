@@ -1,10 +1,9 @@
 // The platform placeholder data layer: the domain types plus the hardcoded
 // content and the pure helpers that read it. All mock until the backend lands.
 
-import { Array, Match as M, Option, Order, pipe } from 'effect';
+import { Array, Option, Order, pipe } from 'effect';
 
 import {
-  AppRoute,
   clubRouter,
   clubsRouter,
   competitionsRouter,
@@ -31,6 +30,7 @@ import {
 } from './domain/entities';
 
 export * from './domain/entities';
+export * from './screen';
 
 import abcBranikLogo from './assets/clubs/AbcBranik.png';
 import artisBrnoLogo from './assets/clubs/ArtisBrno.png';
@@ -89,44 +89,6 @@ export const navEntries: ReadonlyArray<NavEntry> = [
     href: competitionsRouter(),
   },
 ];
-
-export const screenTitles: Record<Screen, string> = {
-  Welcome: 'Her Game',
-  HerGame: 'Her Game',
-  Clubs: 'Clubs',
-  Players: 'Players',
-  Matches: 'Matches',
-  Competitions: 'Competitions',
-  Officials: 'Officials',
-};
-
-// The visible screen implied by the route. The Model stores the route; the
-// nav, titles, and screen dispatch read the screen it maps to. The two profile
-// routes fold onto their directory screen (the open profile is drawn by
-// screenView resolving the slug), and NotFound onto the root (the mock has no
-// error page).
-export const screenOf = (route: AppRoute): Screen =>
-  M.value(route).pipe(
-    M.withReturnType<Screen>(),
-    M.tagsExhaustive({
-      WelcomeRoute: () => 'Welcome',
-      HerGameRoute: () => 'HerGame',
-      ClubsRoute: () => 'Clubs',
-      ClubRoute: () => 'Clubs',
-      PlayersRoute: () => 'Players',
-      MatchesRoute: () => 'Matches',
-      CompetitionsRoute: () => 'Competitions',
-      CompetitionRoute: () => 'Competitions',
-      OfficialsRoute: () => 'Officials',
-      NotFoundRoute: () => 'Welcome',
-    }),
-  );
-
-// The open club / competition slug, or '' when the route is not that profile.
-export const routeClubSlug = (route: AppRoute): string =>
-  route._tag === 'ClubRoute' ? route.slug : '';
-export const routeCompetitionSlug = (route: AppRoute): string =>
-  route._tag === 'CompetitionRoute' ? route.slug : '';
 
 // ONE POINT PER MATCHDAY PLAYED — the chart’s x axis is the season canon, so
 // the series run to MATCHDAYS_PLAYED and no further. They used to carry
