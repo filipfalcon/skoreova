@@ -30,11 +30,14 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.with(welcomeModel),
-      // The tape and the trending board are the landing so far, and what sits
-      // behind the sign-in must not leak onto it.
+      // The tape, the trending board and the feed are the landing, and what
+      // sits behind the sign-in must not leak onto it. The feed carries the
+      // week's fixtures, so the pulse's own chip stays off this page.
       Scene.expect(Scene.text('Slavia Praha')).toExist(),
       Scene.expect(Scene.text('Trending')).toExist(),
+      Scene.expect(Scene.text('Feed')).toExist(),
       Scene.expect(Scene.text('This week')).not.toExist(),
+      Scene.expect(Scene.text('Goals')).not.toExist(),
       // A pin sends a tile to Her Game, which the reader has no way to reach
       // from here — so the landing's tiles carry no pin control.
       Scene.expect(Scene.role('button', { name: 'Pin Sierra Pennock to Her Game' })).not.toExist(),
@@ -45,7 +48,8 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.with(signedInModel),
-      Scene.expect(Scene.text('This week')).toExist(),
+      // The stat boards are the half of the page that an account buys.
+      Scene.expect(Scene.text('Goals')).toExist(),
       // The same tiles, but pinnable now that there is somewhere to pin them.
       Scene.expect(Scene.role('button', { name: 'Pin Sierra Pennock to Her Game' })).toExist(),
     );

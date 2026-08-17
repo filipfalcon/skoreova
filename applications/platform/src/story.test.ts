@@ -5,6 +5,7 @@ import { fromString } from 'foldkit/url';
 import { expect, test } from 'vite-plus/test';
 
 import { clubsModel, welcomeModel } from './main.fixtures';
+import { DEFAULT_FEED_BLOCKS, FEED_ADD_WIDGET, FEED_FEATURED_MATCHES } from './model';
 import {
   ChangedUrl,
   ClickedLink,
@@ -18,8 +19,10 @@ import {
   SelectedCompetitionRound,
   SelectedMetric,
   SelectedScorerScope,
+  ToggledFeedEditing,
   ToggledFollow,
   ToggledPin,
+  UnpinnedFeedBlock,
   WritePins,
   init,
   update,
@@ -228,5 +231,64 @@ test('an external link leaves the model and loads the href', () => {
     }),
     Story.Command.expectHas(Load),
     Story.Command.resolve(Load, CompletedLoad()),
+  );
+});
+
+test('the manage switch toggles the feed in and out of its manage state', () => {
+  Story.story(
+    update,
+    Story.with(welcomeModel),
+    Story.message(ToggledFeedEditing()),
+    Story.model((model) => {
+      expect(model.isFeedEditing).toBe(true);
+    }),
+    Story.message(ToggledFeedEditing()),
+    Story.model((model) => {
+      expect(model.isFeedEditing).toBe(false);
+    }),
+  );
+});
+
+test('unpinning a block takes it out of the feed and writes nothing', () => {
+  Story.story(
+    update,
+    Story.with({ ...welcomeModel, isFeedEditing: true }),
+    Story.message(UnpinnedFeedBlock({ id: FEED_FEATURED_MATCHES })),
+    Story.model((model) => {
+      expect(model.feedBlocks).toEqual([FEED_ADD_WIDGET]);
+      // The feed is session-only, so unpinning must NOT reach the pins port —
+      // that storage belongs to the boards pinned to Her Game.
+      expect(model.pinned).toEqual([]);
+    }),
+  );
+});
+
+test('the widget block refuses to leave a signed-out feed', () => {
+  Story.story(
+    update,
+    Story.with({ ...welcomeModel, isFeedEditing: true }),
+    Story.message(UnpinnedFeedBlock({ id: FEED_ADD_WIDGET })),
+    Story.model((model) => {
+      expect(model.feedBlocks).toEqual(DEFAULT_FEED_BLOCKS);
+      expect(model.isFeedUnpinRefused).toBe(true);
+    }),
+    // Leaving the manage state clears the refusal, so it never greets a
+    // reader who comes back to manage the feed again.
+    Story.message(ToggledFeedEditing()),
+    Story.model((model) => {
+      expect(model.isFeedUnpinRefused).toBe(false);
+    }),
+  );
+});
+
+test('an account is what lets the widget block leave', () => {
+  Story.story(
+    update,
+    Story.with({ ...welcomeModel, isFeedEditing: true, isSignedIn: true }),
+    Story.message(UnpinnedFeedBlock({ id: FEED_ADD_WIDGET })),
+    Story.model((model) => {
+      expect(model.feedBlocks).toEqual([FEED_FEATURED_MATCHES]);
+      expect(model.isFeedUnpinRefused).toBe(false);
+    }),
   );
 });

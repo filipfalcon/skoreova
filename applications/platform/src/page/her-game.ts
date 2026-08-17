@@ -1,4 +1,5 @@
 import { Array, Number } from 'effect';
+import { Button } from '@foldkit/ui';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
@@ -13,9 +14,12 @@ import { chipHeading, tapeArrow, tickerSpark } from '../components';
 import { clubs, competitions, officials, savedCharts, trending } from '../data';
 import type { Club } from '../data';
 import { matchCard, returnsCard } from '../match-card';
+import { ToggledFeedEditing, UnpinnedFeedBlock } from '../message';
 import type { Message } from '../message';
+import { FEED_ADD_WIDGET, FEED_FEATURED_MATCHES } from '../model';
 import type { Model } from '../model';
 import { resumesLabel, thisWeek } from '../pulse';
+import type { Pulse } from '../pulse';
 import {
   clubRouter,
   clubsRouter,
@@ -335,21 +339,45 @@ interface PulseSlot {
   readonly isHero: boolean;
 }
 
+const slot = (card: Html): PulseSlot => ({ card, isHero: false });
+
+// The INVITATION half of a week: the fixtures, hero first. A week can be all
+// invitation (the feed) or invitation then chronicle (the pulse), so the half
+// is assembled once and the caller decides what follows it.
+const invitationSlots = ({ hero, upcoming }: Pulse): ReadonlyArray<PulseSlot> => [
+  // The hero leads, when there is one. There is no hero on a week with no
+  // fixtures, and none on a week where nothing the desk could lead with has
+  // a photograph — pulse.ts decides that, not the view.
+  ...(hero === undefined ? [] : [{ card: matchCard(hero, 'hero'), isHero: true }]),
+  // The pause card stands in only when the WHOLE invitation half is empty:
+  // no hero and nothing upcoming.
+  ...(hero === undefined && upcoming.length === 0
+    ? [slot(returnsCard(resumesLabel()))]
+    : upcoming.map((match) => slot(matchCard(match, 'compact')))),
+];
+
+// A real list, so assistive tech can count the week and step through it rather
+// than meeting a run of loose links.
+const matchTrack = (cards: ReadonlyArray<PulseSlot>, isFramed = false): Html =>
+  h.ul(
+    [
+      ...getStyleXAttributesWith(
+        h,
+        'no-scrollbar',
+        styles.pulseTrack,
+        isFramed ? styles.feedTrack : null,
+      ),
+    ],
+    cards.map((entry) =>
+      h.li(
+        [...getStyleXAttributes(h, styles.pulseCard, entry.isHero ? styles.pulseHeroCard : null)],
+        [entry.card],
+      ),
+    ),
+  );
+
 const pulseSection = (): Html => {
-  const { hero, upcoming, finished } = thisWeek();
-  const slot = (card: Html): PulseSlot => ({ card, isHero: false });
-  const cards: ReadonlyArray<PulseSlot> = [
-    // The hero leads, when there is one. There is no hero on a week with no
-    // fixtures, and none on a week where nothing the desk could lead with has
-    // a photograph — pulse.ts decides that, not the view.
-    ...(hero === undefined ? [] : [{ card: matchCard(hero, 'hero'), isHero: true }]),
-    // The pause card stands in only when the WHOLE invitation half is empty:
-    // no hero and nothing upcoming.
-    ...(hero === undefined && upcoming.length === 0
-      ? [slot(returnsCard(resumesLabel()))]
-      : upcoming.map((match) => slot(matchCard(match, 'compact')))),
-    ...finished.map((match) => slot(matchCard(match, 'compact'))),
-  ];
+  const week = thisWeek();
   return h.section(
     [...getStyleXAttributes(h, styles.section, styles.pulseSection)],
     [
@@ -357,23 +385,109 @@ const pulseSection = (): Html => {
       // main’s padding).
       h.div([...getStyleXAttributes(h, styles.tickerPull)], [heroTicker()]),
       h.div([...getStyleXAttributes(h, styles.pulseChipRow)], [chipHeading(PULSE_SECTION)]),
-      // A real list, so assistive tech can count the weekend and step
-      // through it rather than meeting a run of loose links.
-      h.ul(
-        [...getStyleXAttributesWith(h, 'no-scrollbar', styles.pulseTrack)],
-        cards.map((entry) =>
-          h.li(
-            [
-              ...getStyleXAttributes(
-                h,
-                styles.pulseCard,
-                entry.isHero ? styles.pulseHeroCard : null,
-              ),
-            ],
-            [entry.card],
-          ),
-        ),
+      matchTrack([
+        ...invitationSlots(week),
+        ...week.finished.map((match) => slot(matchCard(match, 'compact'))),
+      ]),
+    ],
+  );
+};
+
+// THE FEED — fixtures and nothing else. It is what the platform is inviting
+// the visitor to, so the round just played has no place in it: a result is
+// something to read about, not something to turn up for.
+const FEED_SECTION = 'Feed';
+
+// The MANAGE switch. It carries the state in its label rather than in an icon
+// that would have to mean "editing" on its own, and `aria-pressed` is what
+// says which way it is currently thrown.
+const feedManageToggle = (model: Model): Html =>
+  Button.view({
+    onClick: ToggledFeedEditing(),
+    toView: ({ button }) =>
+      h.button(
+        [
+          ...button,
+          h.AriaPressed(model.isFeedEditing ? 'true' : 'false'),
+          ...getStyleXAttributes(h, styles.feedManage),
+        ],
+        [model.isFeedEditing ? 'Done' : 'Manage'],
       ),
+  });
+
+// One block's way out of the feed, shown only while the feed is being
+// managed. The label names the block, so the row of them a longer feed will
+// grow into does not read as a column of identical "Remove" buttons.
+const feedUnpinButton = (id: string, label: string): Html =>
+  Button.view({
+    onClick: UnpinnedFeedBlock({ id }),
+    toView: ({ button }) =>
+      h.button(
+        [
+          ...button,
+          h.AriaLabel(`Unpin ${label} from the feed`),
+          ...getStyleXAttributes(h, styles.feedUnpin),
+        ],
+        ['Unpin'],
+      ),
+  });
+
+// A feed with everything taken out of it still has to say so — an empty
+// frame reads as something that failed to load.
+const feedEmpty = (): Html =>
+  h.p([...getStyleXAttributes(h, styles.feedEmpty)], ['Nothing pinned.']);
+
+// ADD A WIDGET — the feed's own invitation, and the one block that will not
+// leave a signed-out feed. It leads, because an empty-handed reader needs the
+// way to fill the feed before they need anything already in it.
+const addWidgetBlock = (): Html =>
+  h.p([...getStyleXAttributes(h, shared.display, styles.feedAddWidget)], ['Add a widget']);
+
+// The refusal, announced rather than merely drawn: it answers a press, so a
+// reader who cannot see the feed still learns why nothing moved.
+const feedRefusal = (): Html =>
+  h.p(
+    [h.Role('alert'), ...getStyleXAttributes(h, styles.feedRefusal)],
+    ['This widget could be unpinned only if you are logged in.'],
+  );
+
+// One block, wrapped with the bar that carries its way out while the feed is
+// being managed.
+const feedBlock = (model: Model, id: string, label: string, body: Html): Html =>
+  h.div(
+    [],
+    [
+      ...(model.isFeedEditing
+        ? [h.div([...getStyleXAttributes(h, styles.feedBlockBar)], [feedUnpinButton(id, label)])]
+        : []),
+      body,
+      ...(model.isFeedEditing && model.isFeedUnpinRefused && id === FEED_ADD_WIDGET
+        ? [feedRefusal()]
+        : []),
+    ],
+  );
+
+// The feed draws what it carries, in the order it carries it, so a block that
+// leaves takes its slot with it.
+const feedBody = (model: Model, id: string): Html | undefined =>
+  id === FEED_ADD_WIDGET
+    ? feedBlock(model, id, 'Add a widget', addWidgetBlock())
+    : id === FEED_FEATURED_MATCHES
+      ? feedBlock(model, id, 'Featured matches', matchTrack(invitationSlots(thisWeek()), true))
+      : undefined;
+
+const feedSection = (model: Model): Html => {
+  const blocks = model.feedBlocks
+    .map((id) => feedBody(model, id))
+    .filter((block): block is Html => block !== undefined);
+  return h.section(
+    [...getStyleXAttributes(h, styles.section, styles.feedFrame)],
+    [
+      h.div(
+        [...getStyleXAttributes(h, styles.feedHeader)],
+        [chipHeading(FEED_SECTION), feedManageToggle(model)],
+      ),
+      ...(blocks.length === 0 ? [feedEmpty()] : blocks),
     ],
   );
 };
@@ -508,10 +622,10 @@ const allTimeBestsPanel = (model: Model): Html =>
     ],
   );
 
-// THE LANDING — what `/` is to a visitor who has not signed in. The tape and
-// nothing else so far: it is public data, it needs no account to mean
-// anything, and it butts straight against the navigation, so the page opens on
-// one dark band rather than on a heading.
+// THE LANDING — what `/` is to a visitor who has not signed in. Everything on
+// it is public data that needs no account to mean anything, and the tape butts
+// straight against the navigation, so the page opens on one dark band rather
+// than on a heading.
 const landingView = (model: Model): Html =>
   h.div(
     [],
@@ -519,6 +633,7 @@ const landingView = (model: Model): Html =>
       welcomeHero(),
       h.div([...getStyleXAttributes(h, styles.tickerPull)], [heroTicker()]),
       trendingTiles(model, false, true),
+      feedSection(model),
     ],
   );
 

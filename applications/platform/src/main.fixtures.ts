@@ -1,6 +1,7 @@
 import { Option } from 'effect';
 
 import { Model } from './main';
+import { DEFAULT_FEED_BLOCKS } from './model';
 import { ClubRoute, ClubsRoute, CompetitionRoute, HerGameRoute, WelcomeRoute } from './route';
 
 // The boot model — mirrors `initialModel` in main.ts (kept here so a fixture
@@ -18,6 +19,23 @@ export const welcomeModel = Model.make({
   scorerScope: 'All',
   metric: 'Goals',
   isSignedIn: false,
+  feedBlocks: DEFAULT_FEED_BLOCKS,
+  isFeedEditing: false,
+  isFeedUnpinRefused: false,
+});
+
+// The feed mid-manage, where every block it carries is offering to leave.
+export const feedEditingModel = Model.make({ ...welcomeModel, isFeedEditing: true });
+
+// A feed the reader has emptied — the branch where the frame has to say so
+// rather than stand open.
+export const feedEmptyModel = Model.make({ ...welcomeModel, feedBlocks: [] });
+
+// The refusal the widget block answers a signed-out unpin with.
+export const feedRefusedModel = Model.make({
+  ...welcomeModel,
+  isFeedEditing: true,
+  isFeedUnpinRefused: true,
 });
 
 export const herGameModel = Model.make({ ...welcomeModel, route: HerGameRoute() });

@@ -27,6 +27,11 @@ export const ToggledFollow = m('ToggledFollow', { slug: S.String });
 export const LoadedPins = m('LoadedPins', { ids: S.Array(S.String) });
 export const ToggledPin = m('ToggledPin', { id: S.String });
 export const CompletedWritePins = m('CompletedWritePins');
+// The feed's manage state, and the one action it exists to offer. Unpinning
+// is one-way — a block the reader takes out cannot be put back from the feed,
+// because the thing that would put it back is the surface it came from.
+export const ToggledFeedEditing = m('ToggledFeedEditing');
+export const UnpinnedFeedBlock = m('UnpinnedFeedBlock', { id: S.String });
 
 export const Message = S.Union([
   ClickedLink,
@@ -43,5 +48,7 @@ export const Message = S.Union([
   LoadedPins,
   ToggledPin,
   CompletedWritePins,
+  ToggledFeedEditing,
+  UnpinnedFeedBlock,
 ]);
 export type Message = typeof Message.Type;

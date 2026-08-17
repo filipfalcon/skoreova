@@ -34,6 +34,93 @@ export const styles = stylex.create({
   sectionUnderTicker: {
     marginTop: spacing.lg,
   },
+  // THE FEED FRAME — a hairline box holding the chip and the fixtures
+  // together, so the cards read as something inside the feed rather than as
+  // the next band down the page.
+  feedFrame: {
+    borderWidth: 1,
+    borderColor: 'color-mix(in srgb, var(--color-ink) 15%, transparent)',
+    paddingBlock: spacing.md,
+    paddingInline: spacing.md,
+  },
+  // The track bleeds back out to the frame's edge, so a peeking card is cut
+  // by the border rather than stopping short of it inside the padding.
+  feedTrack: {
+    marginInline: `calc(-1 * ${spacing.md})`,
+    paddingInline: spacing.md,
+  },
+  // The chip and the manage switch share the frame's top line, pushed to
+  // opposite ends. Baseline rather than center: the chip is display type and
+  // the switch is body text, so their centers do not agree.
+  feedHeader: {
+    display: 'flex',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  // A quiet text switch, not a second chip — the pink chip beside it already
+  // owns the section's one loud mark.
+  feedManage: {
+    fontSize: '0.8125rem',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    color: {
+      default: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
+      ':hover': tokens.ink,
+    },
+    textDecorationLine: {
+      default: 'none',
+      ':hover': 'underline',
+    },
+  },
+  feedBlockBar: {
+    marginTop: spacing.md,
+    display: 'flex',
+    justifyContent: 'flex-end',
+  },
+  // The destructive half of the manage state, so it carries the pink the rest
+  // of the feed withholds.
+  feedUnpin: {
+    fontSize: '0.8125rem',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    borderWidth: 1,
+    borderColor: tokens.pink,
+    paddingBlock: '0.25rem',
+    paddingInline: spacing.sm,
+    color: {
+      default: tokens.ink,
+      ':hover': tokens.paper,
+    },
+    backgroundColor: {
+      default: 'transparent',
+      ':hover': tokens.pink,
+    },
+  },
+  feedEmpty: {
+    marginTop: spacing.md,
+    color: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
+  },
+  // The invitation reads as an empty slot waiting to be filled, which is what
+  // the dashed rule says and a solid one would not.
+  feedAddWidget: {
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: 'color-mix(in srgb, var(--color-ink) 30%, transparent)',
+    paddingBlock: spacing.lg,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    color: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
+  },
+  // The refusal is the one place the feed speaks in the fall color the tape
+  // uses for a drop — it is a no, and it should not look like a caption.
+  feedRefusal: {
+    marginTop: spacing.sm,
+    fontSize: '0.8125rem',
+    color: tokens.fall,
+  },
   // THE CAROUSEL. Swipe, snap, no dots — the next card's edge peeking past
   // the last visible one is the only scroll cue there is.
   //

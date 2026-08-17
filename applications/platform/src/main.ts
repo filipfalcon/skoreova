@@ -5,7 +5,14 @@ import { evo } from 'foldkit/struct';
 import { toString as urlToString } from 'foldkit/url';
 
 import { AppRoute, WelcomeRoute, urlToAppRoute } from './route';
-import { Metric, Model, Screen, ScorerScope } from './model';
+import {
+  DEFAULT_FEED_BLOCKS,
+  Metric,
+  Model,
+  Screen,
+  ScorerScope,
+  isUnpinnableWithoutAccount,
+} from './model';
 import {
   ChangedUrl,
   ClickedLink,
@@ -19,8 +26,10 @@ import {
   SelectedFeaturedClub,
   SelectedMetric,
   SelectedScorerScope,
+  ToggledFeedEditing,
   ToggledFollow,
   ToggledPin,
+  UnpinnedFeedBlock,
   UpdatedClubQuery,
 } from './message';
 import { Load, Navigate, ReadPins, WritePins } from './command';
@@ -48,8 +57,10 @@ export {
   SelectedFeaturedClub,
   SelectedMetric,
   SelectedScorerScope,
+  ToggledFeedEditing,
   ToggledFollow,
   ToggledPin,
+  UnpinnedFeedBlock,
   UpdatedClubQuery,
 };
 
@@ -67,6 +78,9 @@ const initialModel: Model = {
   scorerScope: 'All',
   metric: 'Goals',
   isSignedIn: false,
+  feedBlocks: DEFAULT_FEED_BLOCKS,
+  isFeedEditing: false,
+  isFeedUnpinRefused: false,
 };
 
 // A route change stores the new route and resets the transient per-view state
@@ -80,6 +94,8 @@ const applyRoute = (model: Model, route: AppRoute): Model =>
     clubQuery: () => '',
     featuredClub: () => 0,
     scorerScope: (current) => (route._tag === 'ClubRoute' ? 'All' : current),
+    isFeedEditing: () => false,
+    isFeedUnpinRefused: () => false,
   });
 
 export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
@@ -173,6 +189,23 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         return [evo(model, { pinned: () => pinned }), [WritePins({ ids: pinned })]];
       },
       CompletedWritePins: () => [model, []],
+      ToggledFeedEditing: () => [
+        evo(model, {
+          isFeedEditing: (editing) => !editing,
+          isFeedUnpinRefused: () => false,
+        }),
+        [],
+      ],
+      UnpinnedFeedBlock: ({ id }) =>
+        isUnpinnableWithoutAccount(id) || model.isSignedIn
+          ? [
+              evo(model, {
+                feedBlocks: (blocks) => blocks.filter((block) => block !== id),
+                isFeedUnpinRefused: () => false,
+              }),
+              [],
+            ]
+          : [evo(model, { isFeedUnpinRefused: () => true }), []],
     }),
   );
 

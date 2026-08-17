@@ -67,5 +67,33 @@ export const Model = S.Struct({
   // message sets this yet, so it holds its initial value until accounts land
   // and the signed-in half is reachable from the fixtures.
   isSignedIn: S.Boolean,
+  // The blocks the feed is carrying. Mock — session only, and deliberately
+  // NOT the `pinned` array above: that one is replaced wholesale by whatever
+  // storage returns, which on a first visit is nothing, and a feed that opens
+  // empty for every new reader is not a feed.
+  feedBlocks: S.Array(S.String),
+  // Whether the feed is in its MANAGE state, where every block it carries
+  // offers to leave. Transient: a route change drops it, so nobody returns to
+  // the page still holding a screwdriver.
+  isFeedEditing: S.Boolean,
+  // Set when the reader tries to take out a block that will not leave without
+  // an account. Cleared whenever the manage state is thrown, so a refusal
+  // never outlives the state that produced it.
+  isFeedUnpinRefused: S.Boolean,
 });
 export type Model = typeof Model.Type;
+
+// The blocks a feed can carry. Ids rather than union members so a block can
+// join or leave the feed without the model's type moving.
+export const FEED_ADD_WIDGET = 'feed:add-a-widget';
+export const FEED_FEATURED_MATCHES = 'feed:featured-matches';
+
+// What a feed opens with before the reader has taken anything out of it. The
+// widget block leads, and unlike the rest it does not leave — see
+// `isUnpinnableWithoutAccount`.
+export const DEFAULT_FEED_BLOCKS: ReadonlyArray<string> = [FEED_ADD_WIDGET, FEED_FEATURED_MATCHES];
+
+// Whether a block refuses to leave a signed-out feed. Adding a widget is the
+// one thing in the feed that needs somewhere to save the result, so it is the
+// one block an account gates.
+export const isUnpinnableWithoutAccount = (id: string): boolean => id !== FEED_ADD_WIDGET;
