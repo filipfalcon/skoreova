@@ -14,15 +14,18 @@ import {
   standingsFor,
   trending,
 } from './data';
+import { STORY_LINE_LIMIT, editorialFor } from './editorial';
 import { contenderPhrases } from './page/clubs';
 import { clubEurope } from './standings';
 import { allTimeBests, attendance, goals } from './stat-tiles';
 import {
+  CUP_TIES,
   MATCHDAYS_PLAYED,
   SCORE_OVERRIDES,
   fixtureSeed,
   leagueRoundCount,
   leagueRounds,
+  roundDay,
 } from './schedule';
 import { tickerQuotes } from './ticker';
 import { BASE, CLUB_NAMES } from './worker';
@@ -325,5 +328,72 @@ test('every pinnable tile carries its own well-formed id', () => {
 test('every club sits in a league the schedule generator knows', () => {
   for (const club of clubs) {
     expect(leagueTeams(club.league)).toContain(club.name);
+  }
+});
+
+// THE CUP'S TWO SEMIFINALS ARE WRITTEN DOWN TWICE — as prose on the
+// competition profile's ties list, and as fixtures in CUP_TIES, which is what
+// the home page's weekend board turns into match cards. Nothing in the types
+// holds those together, so this does: same two clubs, same day, in the same
+// order. The dates used to disagree outright — the ties list had the semis in
+// April while the leagues sat at matchday 12 in November, so the two screens
+// would have printed the same tie four months apart.
+test('the cup’s ties list and its fixtures name the same two semifinals', () => {
+  const cup = competitions.find((competition) => competition.slug === 'domestic-cup');
+  expect(cup).toBeDefined();
+  if (cup === undefined || cup.standings._tag !== 'TiesStandings') return;
+
+  const semis = cup.standings.rows.filter((row) => row.primary.startsWith('Semis —'));
+  expect(semis).toHaveLength(CUP_TIES.length);
+
+  semis.forEach((row, index) => {
+    const tie = CUP_TIES[index];
+    expect(tie).toBeDefined();
+    if (tie === undefined) return;
+    expect(row.primary).toBe(`Semis — ${tie.home} vs ${tie.away}`);
+    expect(row.secondary).toBe(
+      roundDay(tie.weekend, tie.dayOffset).toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+      }),
+    );
+  });
+});
+
+// Every club needs a ground: a match card prints the home side's venue, and a
+// blank one silently drops the line rather than showing anything wrong.
+test('every club names a home ground', () => {
+  for (const club of clubs) {
+    expect(club.venue, `${club.name} has no venue`).not.toBe('');
+  }
+});
+
+// The HEADLINE form of a club name, which a hero match card sets as
+// "SPARTA × SLAVIA". Dropping the city is only safe while what is left still
+// names one club — "Slovan" reads as Liberec because nothing else is Slovan,
+// and the moment a second Slovan joins the table both have to grow their city
+// back. That is the whole content of "if unambiguous", so it is checked
+// rather than trusted.
+test('every club’s headline name is distinct from every other', () => {
+  const names = clubs.map((club) => club.displayName);
+  expect(Array.dedupe(names)).toEqual(names);
+  for (const club of clubs) {
+    expect(club.displayName, `${club.name} has no headline name`).not.toBe('');
+    // A headline form that grew past the short form is not a short form.
+    expect(club.displayName.length).toBeLessThanOrEqual(club.shortName.length);
+  }
+});
+
+// The story line's limit is an AUTHORING rule, not a rendering one: the row
+// does not wrap and is not allowed to ellipsize, so an overrun would clip on
+// screen. This is the guard that stops one reaching a screen at all.
+test('no story line on the desk exceeds its character limit', () => {
+  for (const tie of CUP_TIES) {
+    const seed = fixtureSeed('Domestic Cup', tie.weekend, tie.home, tie.away);
+    const line = editorialFor(seed).storyLine ?? '';
+    expect(
+      line.length,
+      `story line for ${tie.home} is ${line.length} characters`,
+    ).toBeLessThanOrEqual(STORY_LINE_LIMIT);
   }
 });
