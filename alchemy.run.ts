@@ -19,7 +19,7 @@ export default Alchemy.Stack(
         name: 'skoreova.com',
         aliases: ['skoreova.cz'],
       },
-      dev: { host: '127.0.0.1', port: 5180, strictPort: true },
+      dev: { port: 5180, strictPort: true },
       // Custom Worker entry: a Sentry-wrapped pass-through to the assets
       // binding, so edge-side failures get reported too (the browser SDK
       // in entry.ts covers the client). Builds through the `ssr` Vite
@@ -50,7 +50,7 @@ export default Alchemy.Stack(
         name: 'platform.skoreova.com',
         aliases: ['platform.skoreova.cz'],
       },
-      dev: { host: '127.0.0.1', port: 5181, strictPort: true },
+      dev: { port: 5181, strictPort: true },
       // Custom Worker entry: /api/ticker from KV + assets pass-through,
       // plus the daily (04:00 UTC) scheduled refresh of the ticker key.
       // Mock numbers for now. Workers
@@ -75,16 +75,16 @@ export default Alchemy.Stack(
         name: 'studio.skoreova.com',
         aliases: ['studio.skoreova.cz'],
       },
-      dev: { host: '127.0.0.1', port: 5182, strictPort: true },
+      dev: { port: 5182, strictPort: true },
       assets: {
         notFoundHandling: 'single-page-application',
       },
     });
 
     return {
-      landingPage: landingPage.url,
-      platform: platform.url,
-      studio: studio.url,
+      landingPage: landingPage.urls,
+      platform: platform.urls,
+      studio: studio.urls,
     };
   }),
 );
