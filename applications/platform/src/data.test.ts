@@ -30,7 +30,7 @@ import {
   roundDay,
 } from './schedule';
 import { tickerQuotes } from './ticker';
-import { BASE, CLUB_NAMES } from './worker';
+import { BASE, CLUB_NAMES, sitemapPaths } from './worker';
 
 // THE SEASON CANON’S ARITHMETIC. The league numbers are mock, but a reader
 // can add them up — and the version before this one didn’t survive that: the
@@ -437,4 +437,22 @@ test('a profile route titles itself after the open profile', () => {
   );
   // An unrecognized slug draws the directory screen, so it is titled as one.
   expect(documentTitle(ClubRoute.make({ slug: 'not-a-club' }))).toBe('Clubs — Skóreová Platform');
+});
+
+// The sitemap is the only thing telling a crawler these profiles exist: they
+// are reachable from the directory screens, but nothing links most of them
+// from outside the app. A club absent here is a club Google has no reason to
+// look for.
+test('the sitemap lists every screen and every profile, once each', () => {
+  const paths = sitemapPaths();
+  for (const club of clubs) {
+    expect(paths, `the sitemap drops ${club.slug}`).toContain(`/clubs/${club.slug}`);
+  }
+  for (const competition of competitions) {
+    expect(paths, `the sitemap drops ${competition.slug}`).toContain(
+      `/competitions/${competition.slug}`,
+    );
+  }
+  expect(paths).toContain('/');
+  expect(new Set(paths).size).toBe(paths.length);
 });

@@ -1,5 +1,5 @@
 // The deployed Worker entry for the platform (alchemy.run.ts points `main`
-// here). Three jobs in one module:
+// here). Four jobs in one module:
 //
 // - `fetch` — serves `/api/ticker` (the clubs' percentages) straight from
 //   KV with a Cache-Control header, so the edge cache absorbs most reads
@@ -12,6 +12,9 @@
 //   A crawler reads those tags before it runs the app, so every route was
 //   declaring itself a copy of `/`. This handler writes the route's own
 //   title and URL into the HTML on the way out.
+// - `/sitemap.xml` — generated from the routers and the profile maps, so it
+//   cannot go stale against them. The path used to fall through to the SPA
+//   and answer HTML with a 200.
 // - `scheduled` — the daily ticker refresh (cron in alchemy.run.ts):
 //   rewrites the single `ticker:clubs` KV key.
 //
@@ -29,8 +32,19 @@
 import { Option } from 'effect';
 import { fromString } from 'foldkit/url';
 
-import { documentTitle } from './document-title';
-import { urlToAppRoute } from './route';
+import { clubNames, competitionNames, documentTitle } from './document-title';
+import {
+  clubRouter,
+  clubsRouter,
+  competitionRouter,
+  competitionsRouter,
+  herGameRouter,
+  matchesRouter,
+  officialsRouter,
+  playersRouter,
+  urlToAppRoute,
+  welcomeRouter,
+} from './route';
 import { tickerQuotes } from './ticker';
 
 export const TICKER_KEY = 'ticker:clubs';
@@ -87,6 +101,30 @@ const tickerDocument = (): string => {
   const clubs = BASE.map((club) => ({ ...club, delta: jitter(club.delta) }));
   return JSON.stringify({ updatedAt: new Date().toISOString(), clubs });
 };
+
+// Every path worth crawling, built from the routers rather than written out:
+// a route that changes shape rewrites these with it, and the profile paths
+// come from the same maps the titles do.
+export const sitemapPaths = (): ReadonlyArray<string> => [
+  welcomeRouter(),
+  herGameRouter(),
+  clubsRouter(),
+  playersRouter(),
+  matchesRouter(),
+  competitionsRouter(),
+  officialsRouter(),
+  ...Object.keys(clubNames).map((slug) => clubRouter({ slug })),
+  ...Object.keys(competitionNames).map((slug) => competitionRouter({ slug })),
+];
+
+const sitemapDocument = (): string =>
+  [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...sitemapPaths().map((path) => `  <url><loc>${SITE_ORIGIN}${path}</loc></url>`),
+    '</urlset>',
+    '',
+  ].join('\n');
 
 // Minimal local shapes for the runtime's streaming HTML rewriter — enough of
 // it to retag a document, and no more, which keeps this file free of
@@ -155,6 +193,14 @@ export default {
           'Content-Type': 'application/json; charset=utf-8',
           // The data changes once a day — an hour of edge cache keeps KV
           // reads flat under traffic while staying fresh after the cron.
+          'Cache-Control': 'public, max-age=3600',
+        },
+      });
+    }
+    if (url.pathname === '/sitemap.xml') {
+      return new Response(sitemapDocument(), {
+        headers: {
+          'Content-Type': 'application/xml; charset=utf-8',
           'Cache-Control': 'public, max-age=3600',
         },
       });
