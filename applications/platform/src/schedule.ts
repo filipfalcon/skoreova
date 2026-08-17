@@ -16,6 +16,32 @@ export const MATCHDAYS_PLAYED = 12;
 export const SEASON_OPENING = Calendar.make(2025, 8, 16);
 export const DAYS_PER_ROUND = 7;
 
+// The DAY a round is played on, `dayOffset` days into that round's weekend
+// (0 = the Saturday the round opens). The one place the season's clock is
+// turned into a date: the club calendar, the home page's weekly carousel and
+// the cup's authored ties all come through here, so a fixture cannot sit on
+// two different days on two screens.
+export const roundDay = (round: number, dayOffset = 0): Date =>
+  Calendar.toDateLocal(Calendar.addDays(SEASON_OPENING, (round - 1) * DAYS_PER_ROUND + dayOffset));
+
+// A modulo of a non-empty tuple always lands in range, so the fallback is
+// unreachable — and it is the first kickoff rather than an off-canon time,
+// so a future edit to KICKOFFS can’t leak one either.
+const KICKOFFS = ['14:00', '16:00', '17:30', '19:00'] as const;
+
+// A fixture's kickoff, off its own seed. Canon here rather than in a view
+// (it began in the club calendar) because two screens now print it, and a
+// second copy of this table is a second answer to what time a match starts.
+export const kickoffFor = (seed: string): string =>
+  KICKOFFS[hashSlug(seed) % KICKOFFS.length] ?? KICKOFFS[0];
+
+// Minutes past midnight, for ORDERING a matchday. The carousel runs
+// ascending by kickoff, and '17:30' sorts before '9:00' as a string.
+export const kickoffMinutes = (kickoff: string): number => {
+  const [hours = '0', minutes = '0'] = kickoff.split(':');
+  return globalThis.Number(hours) * 60 + globalThis.Number(minutes);
+};
+
 // One matchday’s pairings, and a season as a list of them.
 type Fixture = readonly [string, string];
 type Round = ReadonlyArray<Fixture>;
@@ -237,12 +263,77 @@ export const SCORE_OVERRIDES: Record<string, readonly [number, number]> = {
   [fixtureSeed('First League', 7, 'Sparta Praha', 'Slavia Praha')]: [1, 0],
 };
 
+// CALLED OFF. Keyed by the same fixture seed as the score overrides, because
+// a postponement is the other thing that can be true about a specific match
+// and nothing about it is derivable — no hash decides that a tie was called
+// off. A postponed fixture keeps its place in the round (that is what it was
+// scheduled for, and it is how the carousel still orders it), but it prints
+// no kickoff: the time it was going to have is the time nobody should turn
+// up at.
+export const POSTPONED: ReadonlySet<string> = new Set([
+  // Round 13's Saturday late game, off for a frozen pitch in Liberec.
+  fixtureSeed('First League', MATCHDAYS_PLAYED + 1, 'Slovan Liberec', 'Lokomotiva Brno'),
+]);
+
+export const isPostponed = (seed: string): boolean => POSTPONED.has(seed);
+
 export const mockScore = (seed: string): readonly [number, number] => {
   const override = SCORE_OVERRIDES[seed];
   if (override !== undefined) return override;
   const hash = hashSlug(seed);
   return [hash % 5, (hash >> 3) % 4];
 };
+
+// THE CUP'S LIVE TIES. The generator above only knows how to build a
+// round-robin, so the knockout has none — these are authored, and they are
+// the only fixtures in the app that are.
+//
+// They still ride the LEAGUE'S clock rather than carrying dates of their
+// own: a tie names the matchday weekend it shares and which day of it, and
+// `roundDay` turns that into a date exactly as it does for a league round.
+// The cup's own numbering (round 7 of 8 — see COMPETITION_SHAPES) says where
+// the competition stands; `weekend` says when it is played. Those are
+// different questions, and an authored date would have answered the second
+// one twice.
+//
+// data.test.ts holds the competition's ties list to these — the profile
+// prints the same two semifinals as prose, and the two must not drift.
+export interface CupTieFixture {
+  readonly stage: string;
+  readonly home: string;
+  readonly away: string;
+  readonly weekend: number;
+  readonly dayOffset: number;
+}
+
+export const CUP_SLUG = 'domestic-cup';
+
+// MIDWEEK, which is what the negative offsets say: four days before the next
+// round's Saturday is the Tuesday of that week, three the Wednesday. That is
+// where a cup semifinal actually sits, and it also keeps the four semi-
+// finalists off two matches in two days.
+//
+// The PAIRINGS avoid every fixture in the rounds either side of them. They
+// were Sparta v Slovácko and Slavia v Baník, and both are literally round 13
+// of the First League — the weekend board printed the same two clubs twice,
+// once as a cup tie and once as a league game. The four semifinalists are
+// unchanged (clubCupRun names the same four), only who meets whom.
+export const CUP_TIES: ReadonlyArray<CupTieFixture> = [
+  {
+    stage: 'Semifinal',
+    home: 'Sparta Praha',
+    away: 'Slavia Praha',
+    weekend: MATCHDAYS_PLAYED + 1,
+    dayOffset: -4,
+  },
+  {
+    stage: 'Semifinal',
+    home: 'Slovácko',
+    away: 'Baník Ostrava',
+    weekend: MATCHDAYS_PLAYED + 1,
+    dayOffset: -3,
+  },
+];
 
 // How many rounds a competition’s picker can address: a league season’s
 // full double round-robin, or a single "round" for knockout competitions

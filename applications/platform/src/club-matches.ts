@@ -1,34 +1,25 @@
 import { Array, Option } from 'effect';
-import { Calendar } from 'foldkit';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
 import { clubSection, drawnArrowInline, drawnRightArrow } from './components';
-import { clubs, hashSlug } from './data';
+import { clubs } from './data';
 import type { Club } from './data';
 import type { Message } from './message';
 import { matchesRouter } from './route';
 import {
-  DAYS_PER_ROUND,
   MATCHDAYS_PLAYED,
-  SEASON_OPENING,
   fixtureSeed,
+  kickoffFor,
   leagueRounds,
   mockScore,
+  roundDay,
 } from './schedule';
 import { getStyleXAttributes } from './stylexAttributes';
 import { shared } from './styles/shared';
 import { styles } from './styles/club-matches';
 
 const h = html<Message>();
-
-// A modulo of a non-empty tuple always lands in range, so the fallback is
-// unreachable — and it is the first kickoff rather than an off-canon time,
-// so a future edit to KICKOFFS can’t leak one either.
-const KICKOFFS = ['14:00', '16:00', '17:30', '19:00'] as const;
-
-const kickoffFor = (seed: string): string =>
-  KICKOFFS[hashSlug(seed) % KICKOFFS.length] ?? KICKOFFS[0];
 
 interface ClubMatch {
   readonly round: number;
@@ -46,9 +37,11 @@ const clubMatches = (target: Club): ReadonlyArray<ClubMatch> =>
 // The date is SECONDARY here (user call), so it is one quiet line rather
 // than the big stacked numeral the strip used to lead with.
 const roundDate = (round: number): string =>
-  Calendar.toDateLocal(
-    Calendar.addDays(SEASON_OPENING, (round - 1) * DAYS_PER_ROUND),
-  ).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+  roundDay(round).toLocaleDateString('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
 
 interface PlayedMatch {
   readonly match: ClubMatch;

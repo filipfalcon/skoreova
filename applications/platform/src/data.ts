@@ -8,9 +8,9 @@ import {
   clubRouter,
   clubsRouter,
   competitionsRouter,
-  herGameRouter,
   matchesRouter,
   playersRouter,
+  welcomeRouter,
 } from './route';
 import { Metric, Screen, ScorerScope } from './model';
 
@@ -61,10 +61,11 @@ import spartaPhoto from './assets/trending/sparta.jpg';
 export interface NavEntry {
   readonly screen: Screen;
   readonly label: string;
+  // The name the phone rail uses, where five labelled tabs share the width of one screen. Absent means the full label fits.
+  readonly shortLabel?: string;
   readonly href: string;
-  // HER GAME — the personal section. Always the CENTER tab and visually
-  // set apart from the rest (solid pink chip, no number).
-  readonly isFeatured?: boolean;
+  // The tab that carries the brand mark in place of a drawn glyph.
+  readonly isBrand?: boolean;
 }
 
 // Officials left the top nav (still reachable from the home browse tiles
@@ -72,22 +73,25 @@ export interface NavEntry {
 export const navEntries: ReadonlyArray<NavEntry> = [
   { screen: 'Clubs', label: 'Clubs', href: clubsRouter() },
   { screen: 'Players', label: 'Players', href: playersRouter() },
+  // The tab points at the ROOT and claims it, so it reads as open there. The
+  // Her Game page itself answers to `/her-game`, which no tab leads to.
   {
-    screen: 'HerGame',
+    screen: 'Welcome',
     label: 'Her Game',
-    href: herGameRouter(),
-    isFeatured: true,
+    href: welcomeRouter(),
+    isBrand: true,
   },
   { screen: 'Matches', label: 'Matches', href: matchesRouter() },
   {
     screen: 'Competitions',
     label: 'Competitions',
+    shortLabel: 'Leagues',
     href: competitionsRouter(),
   },
 ];
 
 export const screenTitles: Record<Screen, string> = {
-  Welcome: 'Home',
+  Welcome: 'Her Game',
   HerGame: 'Her Game',
   Clubs: 'Clubs',
   Players: 'Players',
@@ -99,8 +103,8 @@ export const screenTitles: Record<Screen, string> = {
 // The visible screen implied by the route. The Model stores the route; the
 // nav, titles, and screen dispatch read the screen it maps to. The two profile
 // routes fold onto their directory screen (the open profile is drawn by
-// screenView resolving the slug), and NotFound onto the welcome screen (the
-// mock has no error page).
+// screenView resolving the slug), and NotFound onto the root (the mock has no
+// error page).
 export const screenOf = (route: AppRoute): Screen =>
   M.value(route).pipe(
     M.withReturnType<Screen>(),
@@ -169,6 +173,7 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     id: 'sierra-pennock',
     name: 'Sierra Pennock',
     kind: 'Player',
+    reason: 'Most shots on target this month.',
     href: playersRouter(),
     crest: '',
     photo: sierraPhoto,
@@ -178,6 +183,7 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     id: 'sparta-praha',
     name: 'Sparta Praha',
     kind: 'Club',
+    reason: 'Top of the First League, one defeat.',
     href: clubRouter({ slug: 'sparta-praha' }),
     crest: spartaPrahaLogo,
     photo: spartaPhoto,
@@ -192,10 +198,61 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     // gave it away.
     name: 'Pardubice',
     kind: 'Club',
+    reason: 'Seventeen points from eleven games.',
     href: clubRouter({ slug: 'pardubice' }),
     crest: pardubiceLogo,
     photo: pardubicePhoto,
-    focus: '50% 18%',
+    focus: '50% 40%',
+  },
+  {
+    id: 'slavia-praha',
+    name: 'Slavia Praha',
+    kind: 'Club',
+    reason: 'Three points off the top.',
+    href: clubRouter({ slug: 'slavia-praha' }),
+    crest: slaviaPrahaLogo,
+    photo: '',
+    focus: '',
+  },
+  {
+    id: 'sigma-olomouc',
+    name: 'Sigma Olomouc',
+    kind: 'Club',
+    reason: 'Second in the Second League, 29 scored.',
+    href: clubRouter({ slug: 'sigma-olomouc' }),
+    crest: sigmaOlomoucLogo,
+    photo: '',
+    focus: '',
+  },
+  {
+    id: 'banik-ostrava',
+    name: 'Baník Ostrava',
+    kind: 'Club',
+    reason: 'Five wins, five defeats.',
+    href: clubRouter({ slug: 'banik-ostrava' }),
+    crest: banikOstravaLogo,
+    photo: '',
+    focus: '',
+  },
+  {
+    id: 'prague-raptors',
+    name: 'Prague Raptors',
+    kind: 'Club',
+    reason: 'One win in twelve.',
+    href: clubRouter({ slug: 'prague-raptors' }),
+    crest: pragueRaptorsLogo,
+    photo: '',
+    focus: '',
+  },
+  {
+    id: 'sparta-praha-b',
+    name: 'Sparta Praha B',
+    kind: 'Club',
+    reason: 'Top of the Second League on 23.',
+    href: clubRouter({ slug: 'sparta-praha-b' }),
+    crest: spartaPrahaLogo,
+    photo: '',
+    focus: '',
   },
 ];
 
@@ -220,7 +277,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'sparta-praha',
     name: 'Sparta Praha',
     shortName: 'Sparta Praha',
+    displayName: 'Sparta',
     city: 'Prague',
+    venue: 'Letná',
     logo: spartaPrahaLogo,
     league: 'First League',
     won: 9,
@@ -235,7 +294,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'slavia-praha',
     name: 'Slavia Praha',
     shortName: 'Slavia Praha',
+    displayName: 'Slavia',
     city: 'Prague',
+    venue: 'Eden',
     logo: slaviaPrahaLogo,
     league: 'First League',
     won: 8,
@@ -250,7 +311,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'slovacko',
     name: 'Slovácko',
     shortName: 'Slovácko',
+    displayName: 'Slovácko',
     city: 'Uherské Hradiště',
+    venue: 'Městský stadion',
     logo: slovackoLogo,
     league: 'First League',
     won: 7,
@@ -265,7 +328,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'sparta-praha-b',
     name: 'Sparta Praha B',
     shortName: 'Sparta Praha B',
+    displayName: 'Sparta B',
     city: 'Prague',
+    venue: 'Strahov',
     logo: spartaPrahaLogo,
     league: 'Second League',
     won: 7,
@@ -280,7 +345,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'vysocina-jihlava',
     name: 'Vysočina Jihlava',
     shortName: 'Vysočina Jihlava',
+    displayName: 'Vysočina',
     city: 'Jihlava',
+    venue: 'Stadion v Jiráskově',
     logo: vysocinaJihlavaLogo,
     league: 'Second League',
     won: 5,
@@ -295,7 +362,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'banik-ostrava',
     name: 'Baník Ostrava',
     shortName: 'Baník Ostrava',
+    displayName: 'Baník',
     city: 'Ostrava',
+    venue: 'Bazaly',
     logo: banikOstravaLogo,
     league: 'First League',
     won: 5,
@@ -310,7 +379,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'viktoria-plzen',
     name: 'Viktoria Plzeň',
     shortName: 'Viktoria Plzeň',
+    displayName: 'Viktoria',
     city: 'Plzeň',
+    venue: 'Štruncovy sady',
     logo: viktoriaPlzenLogo,
     league: 'First League',
     won: 2,
@@ -325,7 +396,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'slovan-liberec',
     name: 'Slovan Liberec',
     shortName: 'Slovan Liberec',
+    displayName: 'Slovan',
     city: 'Liberec',
+    venue: 'Stadion u Nisy',
     logo: slovanLiberecLogo,
     league: 'First League',
     won: 2,
@@ -340,7 +413,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'hradec-kralove',
     name: 'Hradec Králové',
     shortName: 'Hradec Králové',
+    displayName: 'Hradec',
     city: 'Hradec Králové',
+    venue: 'Malšovická aréna',
     logo: hradecKraloveLogo,
     league: 'Second League',
     won: 6,
@@ -355,7 +430,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'pardubice',
     name: 'Pardubice',
     shortName: 'Pardubice',
+    displayName: 'Pardubice',
     city: 'Pardubice',
+    venue: 'Letní stadion',
     logo: pardubiceLogo,
     league: 'Second League',
     won: 5,
@@ -370,7 +447,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'sigma-olomouc',
     name: 'Sigma Olomouc',
     shortName: 'Sigma Olomouc',
+    displayName: 'Sigma',
     city: 'Olomouc',
+    venue: 'Andrův stadion',
     logo: sigmaOlomoucLogo,
     league: 'Second League',
     won: 7,
@@ -385,7 +464,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'lokomotiva-brno',
     name: 'Lokomotiva Brno',
     shortName: 'Lokomotiva Brno',
+    displayName: 'Lokomotiva',
     city: 'Brno',
+    venue: 'Za Lužánkami',
     logo: lokomotivaBrnoLogo,
     league: 'First League',
     won: 6,
@@ -400,7 +481,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'artis-brno',
     name: 'Artis Brno',
     shortName: 'Artis Brno',
+    displayName: 'Artis',
     city: 'Brno',
+    venue: 'Srbská',
     logo: artisBrnoLogo,
     league: 'Second League',
     won: 5,
@@ -415,7 +498,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'dynamo-ceske-budejovice',
     name: 'Dynamo Č. Budějovice',
     shortName: 'Dynamo Č. Budějovice',
+    displayName: 'Dynamo',
     city: 'České Budějovice',
+    venue: 'Střelecký ostrov',
     logo: dynamoBudejoviceLogo,
     league: 'Second League',
     won: 2,
@@ -430,7 +515,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'abc-branik',
     name: 'ABC Braník',
     shortName: 'ABC Braník',
+    displayName: 'Braník',
     city: 'Prague',
+    venue: 'Stadion Braník',
     logo: abcBranikLogo,
     league: 'Second League',
     won: 1,
@@ -445,7 +532,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'slovan-liberec-b',
     name: 'Slovan Liberec B',
     shortName: 'Slovan Liberec B',
+    displayName: 'Slovan B',
     city: 'Liberec',
+    venue: 'Vesec',
     logo: slovanLiberecLogo,
     league: 'Second League',
     won: 3,
@@ -460,7 +549,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'viktoria-plzen-b',
     name: 'Viktoria Plzeň B',
     shortName: 'Viktoria Plzeň B',
+    displayName: 'Viktoria B',
     city: 'Plzeň',
+    venue: 'Luční',
     logo: viktoriaPlzenLogo,
     league: 'Second League',
     won: 6,
@@ -475,7 +566,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'prague-raptors',
     name: 'Prague Raptors',
     shortName: 'Prague Raptors',
+    displayName: 'Raptors',
     city: 'Prague',
+    venue: 'Ďolíček',
     logo: pragueRaptorsLogo,
     league: 'First League',
     won: 1,
@@ -490,7 +583,9 @@ export const clubs: ReadonlyArray<Club> = [
     slug: 'teplice',
     name: 'Teplice',
     shortName: 'Teplice',
+    displayName: 'Teplice',
     city: 'Teplice',
+    venue: 'Na Stínadlech',
     logo: tepliceLogo,
     league: 'Second League',
     won: 3,
@@ -680,8 +775,14 @@ export const competitions: ReadonlyArray<Competition> = [
     ],
     standings: TiesStandings.make({
       rows: [
-        { primary: 'Semis — Sparta Praha vs Slovácko', secondary: 'Apr 12' },
-        { primary: 'Semis — Slavia Praha vs Baník Ostrava', secondary: 'Apr 13' },
+        // The two semifinals are also FIXTURES — schedule.ts's CUP_TIES —
+        // because the home page's weekend board shows them as match cards.
+        // These dates are the same two days that list resolves to, and
+        // data.test.ts fails if they drift apart: the cup used to be at the
+        // semis here in April while the leagues were at matchday 12 in
+        // November, and the board would have printed both.
+        { primary: 'Semis — Sparta Praha vs Slavia Praha', secondary: 'Nov 4' },
+        { primary: 'Semis — Slovácko vs Baník Ostrava', secondary: 'Nov 5' },
         { primary: 'Finals — Prague, Letná', secondary: 'May 8' },
       ],
     }),
@@ -809,14 +910,27 @@ export const leagueTeams = (league: string): ReadonlyArray<string> =>
 export interface ClubRowFace {
   readonly slug: string;
   readonly shortName: string;
+  // The headline form, for a match card's "SPARTA × SLAVIA".
+  readonly displayName: string;
   readonly crest: string;
 }
+
+// The ground a HOME side plays on, by the name a fixture carries. Separate
+// from ClubRowFace on purpose: a standings row has no venue to show, and a
+// match card needs this for one of its two clubs only.
+export const clubVenue = (name: string): string | undefined =>
+  clubs.find((entry) => entry.name === name)?.venue;
 
 export const clubRowFace = (name: string): ClubRowFace | undefined => {
   const club = clubs.find((entry) => entry.name === name);
   return club === undefined
     ? undefined
-    : { slug: club.slug, shortName: club.shortName, crest: club.logo };
+    : {
+        slug: club.slug,
+        shortName: club.shortName,
+        displayName: club.displayName,
+        crest: club.logo,
+      };
 };
 
 // The standings table backing a league, COMPUTED from the club records
@@ -844,6 +958,26 @@ export const standingsFor = (league: string): ReadonlyArray<StandingsRow> =>
       descendingBy((row) => row.scored),
     ),
   );
+
+// Where a club currently sits, and in WHICH table. Undefined for a side with
+// no row here — the cup draws in clubs from outside our nineteen, and a
+// European table is hand-written rows for clubs we hold no record of. Callers
+// drop the standing rather than inventing one.
+//
+// The league comes back with the position because a position means nothing
+// without it: a match card only prints "3rd vs 6th" when both sides are read
+// off the SAME table, and second-tier third is not first-tier third.
+export interface ClubStanding {
+  readonly league: string;
+  readonly position: number;
+}
+
+export const clubStanding = (name: string): ClubStanding | undefined => {
+  const club = clubs.find((entry) => entry.name === name);
+  if (club === undefined) return undefined;
+  const index = standingsFor(club.league).findIndex((row) => row.team === name);
+  return index < 0 ? undefined : { league: club.league, position: index + 1 };
+};
 
 // EUROPEAN CONTENDERS (clubs screen) — the featured-club carousel entries.
 // Lives here (not in the view) so `update` can wrap SelectedFeaturedClub
