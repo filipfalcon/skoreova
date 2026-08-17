@@ -14,6 +14,8 @@ import {
   standingsFor,
   trending,
 } from './data';
+import { clubNames, competitionNames, documentTitle } from './document-title';
+import { ClubRoute, ClubsRoute, CompetitionRoute, NotFoundRoute, WelcomeRoute } from './route';
 import { STORY_LINE_LIMIT, editorialFor } from './editorial';
 import { contenderPhrases } from './page/clubs';
 import { clubEurope } from './standings';
@@ -396,4 +398,43 @@ test('no story line on the desk exceeds its character limit', () => {
       `story line for ${tie.home} is ${line.length} characters`,
     ).toBeLessThanOrEqual(STORY_LINE_LIMIT);
   }
+});
+
+// The title map is the SECOND place a club or competition is named, and it
+// exists because the Worker that titles a served page cannot import the tables
+// below: they pull in twenty-five crest and photograph imports. Both
+// directions matter — a missing entry silently titles a profile "Clubs", and
+// an entry left behind names a profile that no longer exists.
+test('the document titles name every club and competition, and only those', () => {
+  for (const club of clubs) {
+    expect(clubNames[club.slug], `no title name for ${club.slug}`).toBe(club.name);
+  }
+  expect(Object.keys(clubNames).sort()).toEqual(clubs.map((club) => club.slug).sort());
+
+  for (const competition of competitions) {
+    expect(competitionNames[competition.slug], `no title name for ${competition.slug}`).toBe(
+      competition.name,
+    );
+  }
+  expect(Object.keys(competitionNames).sort()).toEqual(
+    competitions.map((competition) => competition.slug).sort(),
+  );
+});
+
+// A profile titles itself after the thing it shows; every other screen after
+// the screen, and the front page after the brand alone.
+test('a profile route titles itself after the open profile', () => {
+  expect(documentTitle(ClubRoute.make({ slug: 'slavia-praha' }))).toBe(
+    'Slavia Praha — Skóreová Platform',
+  );
+  expect(documentTitle(CompetitionRoute.make({ slug: 'national-team' }))).toBe(
+    'National Team — Skóreová Platform',
+  );
+  expect(documentTitle(ClubsRoute.make({}))).toBe('Clubs — Skóreová Platform');
+  expect(documentTitle(WelcomeRoute.make({}))).toBe('Skóreová Platform');
+  expect(documentTitle(NotFoundRoute.make({ path: '/nowhere' }))).toBe(
+    'Page not found — Skóreová Platform',
+  );
+  // An unrecognized slug draws the directory screen, so it is titled as one.
+  expect(documentTitle(ClubRoute.make({ slug: 'not-a-club' }))).toBe('Clubs — Skóreová Platform');
 });

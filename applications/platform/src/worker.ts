@@ -1,5 +1,5 @@
 // The deployed Worker entry for the platform (alchemy.run.ts points `main`
-// here). Two jobs in one module:
+// here). Three jobs in one module:
 //
 // - `fetch` — serves `/api/ticker` (the clubs' percentages) straight from
 //   KV with a Cache-Control header, so the edge cache absorbs most reads
@@ -7,6 +7,11 @@
 //   forwards to the assets binding (the SPA). Note: static assets are
 //   served BEFORE the Worker runs, so this handler only sees non-asset
 //   requests.
+// - the document rewrite — every SPA route is served the same index.html,
+//   whose `<title>`, canonical and og:url are written for the front page.
+//   A crawler reads those tags before it runs the app, so every route was
+//   declaring itself a copy of `/`. This handler writes the route's own
+//   title and URL into the HTML on the way out.
 // - `scheduled` — the daily ticker refresh (cron in alchemy.run.ts):
 //   rewrites the single `ticker:clubs` KV key.
 //
@@ -21,9 +26,19 @@
 // with a small random offset, so the tape visibly moves day to day. Real
 // percentages replace it when that API exists.
 
+import { Option } from 'effect';
+import { fromString } from 'foldkit/url';
+
+import { documentTitle } from './document-title';
+import { urlToAppRoute } from './route';
 import { tickerQuotes } from './ticker';
 
 export const TICKER_KEY = 'ticker:clubs';
+
+// The origin every canonical is built on. The `.cz` alias serves the same
+// Worker and points here, which is what makes one origin the right answer
+// rather than the requested host.
+export const SITE_ORIGIN = 'https://platform.skoreova.com';
 
 interface TickerClub {
   readonly slug: string;
@@ -73,6 +88,50 @@ const tickerDocument = (): string => {
   return JSON.stringify({ updatedAt: new Date().toISOString(), clubs });
 };
 
+// Minimal local shapes for the runtime's streaming HTML rewriter — enough of
+// it to retag a document, and no more, which keeps this file free of
+// @cloudflare/workers-types inside the platform app’s DOM tsconfig.
+interface RewriterElement {
+  setAttribute(name: string, value: string): void;
+  setInnerContent(content: string): void;
+}
+
+interface Rewriter {
+  on(selector: string, handlers: { element(element: RewriterElement): void }): Rewriter;
+  transform(response: Response): Response;
+}
+
+declare const HTMLRewriter: new () => Rewriter;
+
+// The served document, retagged for the route it is actually answering.
+//
+// The canonical drops the query string: campaign and referral parameters
+// arrive on shared links and name the same document, so folding them onto one
+// URL is the difference between one page and an unbounded family of copies.
+const documentResponse = (response: Response, url: URL): Response => {
+  if (!(response.headers.get('content-type') ?? '').includes('text/html')) return response;
+  const parsed = fromString(url.toString());
+  if (Option.isNone(parsed)) return response;
+  const route = urlToAppRoute(parsed.value);
+  const canonical = `${SITE_ORIGIN}${url.pathname}`;
+  const rewritten = new HTMLRewriter()
+    .on('link[rel="canonical"]', {
+      element: (element) => element.setAttribute('href', canonical),
+    })
+    .on('meta[property="og:url"]', {
+      element: (element) => element.setAttribute('content', canonical),
+    })
+    .on('title', {
+      element: (element) => element.setInnerContent(documentTitle(route)),
+    })
+    .transform(response);
+  // An unknown path still renders the app's own not-found screen, but it says
+  // so in the status line instead of answering 200 to a page that isn't there.
+  return route._tag === 'NotFoundRoute'
+    ? new Response(rewritten.body, { status: 404, headers: rewritten.headers })
+    : rewritten;
+};
+
 // Minimal local binding shapes — keeps this file free of
 // @cloudflare/workers-types inside the platform app’s DOM tsconfig.
 interface Env {
@@ -100,7 +159,7 @@ export default {
         },
       });
     }
-    return env.ASSETS.fetch(request);
+    return documentResponse(await env.ASSETS.fetch(request), url);
   },
 
   async scheduled(_controller: unknown, env: Env): Promise<void> {

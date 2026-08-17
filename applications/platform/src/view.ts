@@ -16,8 +16,8 @@ import {
   routeClubSlug,
   routeCompetitionSlug,
   screenOf,
-  screenTitles,
 } from './data';
+import { documentTitle } from './document-title';
 import type { Message } from './message';
 import type { Model } from './model';
 import {
@@ -120,23 +120,12 @@ const shellView = (model: Model): Html =>
     ],
   );
 
-// The open profile’s name (club, then competition) titles the tab; away from
-// a profile it’s the screen’s own title, and the front page is just the brand.
-const documentTitle = (model: Model): string => {
-  if (model.route._tag === 'NotFoundRoute') return 'Page not found — Skóreová Platform';
-  if (screenOf(model.route) === 'Welcome') return 'Skóreová Platform';
-  const name = Option.getOrElse(
-    Option.orElse(
-      Option.map(openClub(model), (club) => club.name),
-      () => Option.map(openCompetition(model), (competition) => competition.name),
-    ),
-    () => screenTitles[screenOf(model.route)],
-  );
-  return `${name} — Skóreová Platform`;
-};
-
+// `canonical` and `ogUrl` are left off: omitting them tells the runtime to use
+// the current URL, which is what a profile page wants, and the Worker has
+// already written that same URL into the served HTML for anything reading the
+// document before the app boots.
 export const view = (model: Model): Document => ({
-  title: documentTitle(model),
+  title: documentTitle(model.route),
   // American English, the language every string in this app is written in; the runtime writes it after the first render, so what a crawler reads is whatever the served document already carried.
   lang: 'en-US',
   body: h.div([...getStyleXAttributes(h, styles.page)], [shellView(model)]),
