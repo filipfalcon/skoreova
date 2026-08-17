@@ -6,44 +6,48 @@ import {
   clubsModel,
   competitionFirstRoundModel,
   herGameModel,
-  herGamePinnedModel,
+  signedInModel,
   welcomeModel,
 } from './main.fixtures';
 import { update, view } from './main';
 
 describe('view', () => {
-  test('the welcome screen renders inside the platform shell', () => {
+  test('the Her Game front page renders inside the platform shell', () => {
     Scene.scene(
       { update, view },
-      Scene.with(welcomeModel),
-      // The header account control and the shell footer are on every screen —
-      // stable proof the shell mounted around the screen.
-      Scene.expect(Scene.label('Account')).toExist(),
+      Scene.with(herGameModel),
+      // The nav's own short label for the competitions section appears nowhere
+      // else in the document, and the footer note is on every screen — between
+      // them, stable proof the shell mounted around the screen.
+      Scene.expect(Scene.text('Leagues')).toExist(),
       Scene.expect(
         Scene.text('Beta version — all data is placeholder while the platform wires up.'),
       ).toExist(),
     );
   });
 
-  test('an empty Her Game feed shows the pin invitation, not a tile', () => {
+  test('the root is the landing until the visitor signs in', () => {
     Scene.scene(
       { update, view },
-      Scene.with(herGameModel),
-      Scene.expect(
-        Scene.text('Pin any tile or chart and it lands here — your own front page.'),
-      ).toExist(),
-      Scene.expect(Scene.text('Saved charts')).toExist(),
+      Scene.with(welcomeModel),
+      // The tape and the trending board are the landing so far, and what sits
+      // behind the sign-in must not leak onto it.
+      Scene.expect(Scene.text('Slavia Praha')).toExist(),
+      Scene.expect(Scene.text('Trending')).toExist(),
+      Scene.expect(Scene.text('This week')).not.toExist(),
+      // A pin sends a tile to Her Game, which the reader has no way to reach
+      // from here — so the landing's tiles carry no pin control.
+      Scene.expect(Scene.role('button', { name: 'Pin Sierra Pennock to Her Game' })).not.toExist(),
     );
   });
 
-  test('a pinned tile appears in the Her Game feed with its own title', () => {
+  test('signing in turns the same route into Her Game', () => {
     Scene.scene(
       { update, view },
-      Scene.with(herGamePinnedModel),
-      // Each pinned tile carries its own self-describing title in the feed.
-      Scene.expect(Scene.text('Trending · Sparta Praha')).toExist(),
-      // …and its pin control now offers to remove it.
-      Scene.expect(Scene.role('button', { name: 'Unpin Sparta Praha from Her Game' })).toExist(),
+      Scene.with(signedInModel),
+      Scene.expect(Scene.text('This week')).toExist(),
+      // The same tiles, but pinnable now that there is somewhere to pin them.
+      Scene.expect(Scene.role('button', { name: 'Pin Sierra Pennock to Her Game' })).toExist(),
     );
   });
 

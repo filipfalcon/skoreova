@@ -7,4 +7,3 @@ export * as Matches from './matches';
 export * as NotFound from './not-found';
 export * as Officials from './officials';
 export * as Players from './players';
-export * as Welcome from './welcome';

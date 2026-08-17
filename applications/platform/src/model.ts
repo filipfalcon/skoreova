@@ -62,5 +62,10 @@ export const Model = S.Struct({
   pinned: S.Array(S.String),
   scorerScope: ScorerScope,
   metric: Metric,
+  // Whether the visitor is SIGNED IN, which is the whole of what makes `/`
+  // two pages: signed out it is the landing, signed in it is Her Game. No
+  // message sets this yet, so it holds its initial value until accounts land
+  // and the signed-in half is reachable from the fixtures.
+  isSignedIn: S.Boolean,
 });
 export type Model = typeof Model.Type;

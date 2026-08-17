@@ -1,14 +1,30 @@
-import { Button, RadioGroup } from '@foldkit/ui';
-import { Array, Match as M, Number, Option } from 'effect';
+import { Array, Number } from 'effect';
 import { html } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
-import { pinGlyph, pinToggle, screenHeader, sectionLabel, sparkline } from '../components';
-import { metricSeries, savedCharts, trending } from '../data';
-import type { MetricSeries, SavedChart } from '../data';
-import { SelectedMetric } from '../message';
+import banikOstravaLogo from '../assets/clubs/BanikOstrava.png';
+import slaviaPrahaLogo from '../assets/clubs/SlaviaPraha.png';
+import spartaPrahaLogo from '../assets/clubs/SpartaPraha.png';
+import viktoriaPlzenLogo from '../assets/clubs/ViktoriaPlzen.png';
+import domesticCupBadge from '../assets/competitions/domestic-cup.png';
+import firstLeagueBadge from '../assets/competitions/first-league.png';
+import uwclBadge from '../assets/competitions/uwcl.png';
+import { chipHeading, tapeArrow, tickerSpark } from '../components';
+import { clubs, competitions, officials, savedCharts, trending } from '../data';
+import type { Club } from '../data';
+import { matchCard, returnsCard } from '../match-card';
 import type { Message } from '../message';
-import type { Metric, Model } from '../model';
+import type { Model } from '../model';
+import { resumesLabel, thisWeek } from '../pulse';
+import {
+  clubRouter,
+  clubsRouter,
+  competitionsRouter,
+  herGameRouter,
+  matchesRouter,
+  officialsRouter,
+  playersRouter,
+} from '../route';
 import {
   allTimeBests,
   attendance,
@@ -20,377 +36,519 @@ import {
 } from '../stat-tiles';
 import type { StatEntry } from '../stat-tiles';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
-import { styles as componentStyles } from '../styles/components';
-import { styles } from '../styles/her-game';
 import { shared } from '../styles/shared';
+import { styles } from '../styles/her-game';
+import { tickerQuotes } from '../ticker';
 
 const h = html<Message>();
 
-// The chart studio’s metric selector: three mutually-exclusive options, so a
-// real radiogroup rather than a row of independent buttons. Selected state is
-// color-only.
-const metricRadioGroup = (model: Model): Html =>
-  RadioGroup.view<Metric, Message>({
-    id: 'chart-studio-metric',
-    selectedValue: Option.some(model.metric),
-    options: ['Goals', 'Attendance', 'Conversion'],
-    ariaLabel: 'Chart metric',
-    onSelect: (metric) => SelectedMetric({ metric }),
-    toView: ({ group, options }) =>
-      h.div(
-        [...group, ...getStyleXAttributes(h, styles.metricGroup)],
-        options.map((option) => {
-          // Checked is derived from the model because StyleX has no attribute selectors — the component still stamps data-checked for semantics.
-          const checked = option.value === model.metric;
-          return h.div(
-            [
-              ...option.option,
-              ...getStyleXAttributes(
-                h,
-                styles.metricOption,
-                checked ? styles.metricOptionChecked : styles.metricOptionRest,
-              ),
-            ],
-            [metricSeries[option.value].label],
-          );
-        }),
-      ),
-  });
+// HER GAME — the platform's ONE front page, at `/her-game`: the ticker, the
+// weekend board, the club crests, trending, what's new, the all-time bests and
+// the browse tiles. There is no account gate; every visitor lands straight in
+// the data.
 
-// Fixed geometry, in viewBox units: bars rise CHART_PLOT_HEIGHT above the
-// CHART_BASELINE_Y axis line, one bar per BAR_STEP with the axis labels a
-// hair under the baseline. The WIDTH is derived, not fixed — it was 560 for
-// fourteen bars, and when the series came back to the canon’s twelve the last
-// bar ended at 472 while the baseline, gridlines and average line still ran
-// the full 560.
-const CHART_HEIGHT = 244;
-const CHART_BASELINE_Y = 220;
-const CHART_PLOT_HEIGHT = 190;
-const BAR_STEP = 40;
-const BAR_INSET = 8;
-const BAR_WIDTH = 24;
-const AXIS_LABEL_Y = 238;
-const BAR_DELAY_STEP_SECONDS = 0.035;
-
-const chartWidth = (series: MetricSeries): number => series.values.length * BAR_STEP;
-
-// The studio chart: one bar per matchday played (the series length is the
-// season canon — see metricSeries), three faint gridlines, and a dashed
-// season-average line. Pure SVG — the real chart engine replaces this.
-const studioChart = (series: MetricSeries): Html => {
-  const CHART_WIDTH = chartWidth(series);
-  const max = Math.max(...series.values);
-  const average = Number.sumAll(series.values) / series.values.length;
-  const averageY = CHART_BASELINE_Y - (average / max) * CHART_PLOT_HEIGHT;
-  return h.svg(
-    [
-      h.Xmlns('http://www.w3.org/2000/svg'),
-      h.ViewBox(`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`),
-      ...getStyleXAttributes(h, styles.chart),
-      h.AriaHidden(true),
-    ],
-    [
-      ...[0.25, 0.5, 0.75].map((fraction) =>
-        h.line(
-          [
-            h.X1('0'),
-            h.X2(`${CHART_WIDTH}`),
-            h.Y1(`${CHART_BASELINE_Y - fraction * CHART_PLOT_HEIGHT}`),
-            h.Y2(`${CHART_BASELINE_Y - fraction * CHART_PLOT_HEIGHT}`),
-            h.Stroke('rgba(13, 12, 12, 0.08)'),
-            h.StrokeWidth('1'),
-          ],
-          [],
-        ),
-      ),
-      ...series.values.map((value, index) =>
-        h.rect(
-          [
-            h.X(`${index * BAR_STEP + BAR_INSET}`),
-            h.Y(`${CHART_BASELINE_Y - (value / max) * CHART_PLOT_HEIGHT}`),
-            h.Width(`${BAR_WIDTH}`),
-            h.Height(`${(value / max) * CHART_PLOT_HEIGHT}`),
-            // `bar` is the grow-in animation contract from styles.css.
-            ...getStyleXAttributesWith(h, 'bar', styles.chartBar),
-            h.Style({ '--bar-delay': `${index * BAR_DELAY_STEP_SECONDS}s` }),
-          ],
-          [],
-        ),
-      ),
-      h.line(
-        [
-          h.X1('0'),
-          h.X2(`${CHART_WIDTH}`),
-          h.Y1(`${averageY}`),
-          h.Y2(`${averageY}`),
-          h.Stroke('var(--color-ink)'),
-          h.StrokeWidth('1'),
-          h.StrokeDasharray('5 5'),
-          ...getStyleXAttributes(h, styles.chartAverageLine),
-        ],
-        [],
-      ),
-      h.line(
-        [
-          h.X1('0'),
-          h.X2(`${CHART_WIDTH}`),
-          h.Y1(`${CHART_BASELINE_Y}`),
-          h.Y2(`${CHART_BASELINE_Y}`),
-          h.Stroke('rgba(13, 12, 12, 0.25)'),
-          h.StrokeWidth('1'),
-        ],
-        [],
-      ),
-      // Every OTHER matchday gets a label, counted back from the END so the
-      // CURRENT matchday always carries one — anchoring to the start left the
-      // most recent bar as the only unlabeled one on an even-length series,
-      // which is exactly the bar a reader looks for. flatMap emits nothing for
-      // the rest rather than an empty placeholder element.
-      ...series.values.flatMap((_, index) =>
-        (series.values.length - 1 - index) % 2 === 0
-          ? [
-              h.text(
-                [
-                  h.X(`${index * BAR_STEP + BAR_STEP / 2}`),
-                  h.Y(`${AXIS_LABEL_Y}`),
-                  ...getStyleXAttributes(h, styles.chartAxisLabel),
-                  // No dedicated helper for text-anchor — it’s a styleable SVG
-                  // property, so the inline style does the same job.
-                  h.Style({ 'text-anchor': 'middle' }),
-                ],
-                [`${index + 1}`],
-              ),
-            ]
-          : [],
-      ),
-    ],
-  );
-};
-
-// The SVG is decorative markup — AriaHidden, like every other drawn chart here
-// — which left the metric radiogroup changing nothing an assistive-tech reader
-// could perceive: three options, one silent picture. This is the same treatment
-// the count-up numbers get on the landing page: the shape stays hidden and a
-// screen-reader-only summary carries the content, so switching metrics actually
-// announces something.
-const chartSummary = (series: MetricSeries): Html =>
-  h.p(
-    [...getStyleXAttributes(h, shared.srOnly), h.Role('status')],
-    [
-      `${series.label}, ${series.unit}. Matchdays 1 to ${series.values.length}: ${series.values.join(', ')}.`,
-    ],
-  );
-
-// The chart is KEYED per metric, on a LITERAL key — the identity of that
-// metric’s chart, never a value derived from model data — so switching metrics
-// swaps whole subtrees, teardown plus the bars' grow-in replay, instead of
-// patching one series' bars into another’s.
-//
-// The summary above deliberately is NOT keyed: a live region announces a text
-// CHANGE inside an element the reader is already on, and this one used to sit
-// inside the keyed wrapper, so every metric switch tore the region down and
-// inserted a new one. Assistive tech does not reliably announce a live region
-// that did not exist a moment ago — which defeated the entire point of adding
-// it. It lives beside the chart now, one element for the panel’s whole life,
-// and only its sentence changes.
-const keyedChart = (key: string, series: MetricSeries): Html =>
-  h.div([h.Key(key)], [studioChart(series)]);
-
-const goalsChartView = (): Html => keyedChart('studio-chart-goals', metricSeries.Goals);
-const attendanceChartView = (): Html =>
-  keyedChart('studio-chart-attendance', metricSeries.Attendance);
-const conversionChartView = (): Html =>
-  keyedChart('studio-chart-conversion', metricSeries.Conversion);
-
-const metricChartView = (metric: Metric): Html =>
-  M.value(metric).pipe(
-    M.withReturnType<Html>(),
-    M.when('Goals', () => goalsChartView()),
-    M.when('Attendance', () => attendanceChartView()),
-    M.when('Conversion', () => conversionChartView()),
-    M.exhaustive,
-  );
-
-const chartStudioPanel = (model: Model): Html =>
-  h.section(
-    [...getStyleXAttributes(h, shared.panel, styles.studioPanel)],
-    [
-      h.div(
-        [...getStyleXAttributes(h, styles.studioHeader)],
-        [
-          h.div(
-            [],
-            [
-              sectionLabel('Chart studio'),
-              h.h2(
-                [...getStyleXAttributes(h, shared.display, styles.studioTitle)],
-                [metricSeries[model.metric].label],
-              ),
-              h.p(
-                [...getStyleXAttributes(h, styles.studioMeta)],
-                [`Season 2025/26 — ${metricSeries[model.metric].unit}`],
-              ),
-            ],
-          ),
-          // NOTE: deliberately inert mock until saved charts persist — the
-          // blocked state comes from Ui.Button, which announces it as
-          // aria-disabled and passes no click handler while leaving the control
-          // in the tab order. The message type is written out because an
-          // always-blocked button has no onClick to infer it from.
-          Button.view<Message>({
-            isDisabled: true,
-            toView: ({ button }) =>
-              h.button(
-                [...button, ...getStyleXAttributes(h, styles.saveButton)],
-                ['Save to my charts'],
-              ),
-          }),
-        ],
-      ),
-      metricRadioGroup(model),
-      chartSummary(metricSeries[model.metric]),
-      metricChartView(model.metric),
-    ],
-  );
-
-const savedChartCard = (model: Model, chart: SavedChart): Html =>
-  h.article(
-    [...getStyleXAttributes(h, shared.panel, styles.savedCard)],
-    [
-      sparkline(chart.spark),
-      h.h2([...getStyleXAttributes(h, shared.display, styles.savedCardTitle)], [chart.title]),
-      h.div(
-        [...getStyleXAttributes(h, styles.savedCardFooter)],
-        [
-          h.p([...getStyleXAttributes(h, styles.savedCardUpdated)], [chart.updated]),
-          pinToggle(model, chart.id, chart.title),
-        ],
-      ),
-    ],
-  );
-
-// THE PIN REGISTRY. Every individually-pinnable tile lists itself here
-// once: its id, a self-describing TITLE (user call — a pinned tile is cut
-// from its home context, so on Her Game it must say what it is; this is the
-// same slot a single stat pinned off a player or club profile will fill),
-// and the real card it renders. Ids match exactly what the home cards emit,
-// so a pin toggled there resolves here. No whole-board entries any more —
-// every board split into its tiles.
-interface PinnedTile {
-  readonly id: string;
+// What the platform gained lately — the home page’s proof that the
+// database is alive (user-supplied canonical list). Placeholder entries
+// in the mock’s spirit.
+interface RecentEntry {
+  readonly kind: string;
   readonly title: string;
-  readonly render: (model: Model) => Html;
+  readonly when: string;
 }
 
-const statTilesFor = (noun: string, entries: ReadonlyArray<StatEntry>): ReadonlyArray<PinnedTile> =>
-  entries.map((entry, index) => {
-    const id = `${noun}:${leagueSlug(entry.league)}`;
-    const label = `${entry.league} ${noun}`;
-    return {
-      id,
-      title: `${entry.league} · ${noun.charAt(0).toUpperCase()}${noun.slice(1)}`,
-      render: (model: Model) => statCard(model, entry, index, id, label),
-    };
-  });
-
-const pinRegistry: ReadonlyArray<PinnedTile> = [
-  ...statTilesFor('goals', goals),
-  ...statTilesFor('attendance', attendance),
-  ...trending.map(
-    (entry, index): PinnedTile => ({
-      id: `trending:${entry.id}`,
-      title: `Trending · ${entry.name}`,
-      render: (model: Model) => trendingTile(model, entry, index),
-    }),
-  ),
-  ...allTimeBests.map(
-    (record): PinnedTile => ({
-      id: `best:${record.id}`,
-      title: `All-time best · ${record.label}`,
-      render: (model: Model) => bestRecord(model, record, true),
-    }),
-  ),
-  ...savedCharts.map(
-    (chart): PinnedTile => ({
-      id: chart.id,
-      title: `Saved chart · ${chart.title}`,
-      render: (model: Model) => savedChartCard(model, chart),
-    }),
-  ),
+const newContent: ReadonlyArray<RecentEntry> = [
+  { kind: 'Player', title: 'Eva Bartoňová', when: 'Just now' },
+  { kind: 'Player', title: 'Eliška Janíková', when: '14 hours ago' },
+  { kind: 'Team', title: 'Bellatrix Praha', when: '20 hours ago' },
+  { kind: 'Player', title: 'Fortesa Berisha', when: '21 hours ago' },
+  { kind: 'Team', title: 'Albania', when: '21 hours ago' },
 ];
 
-// One pinned tile in the feed: its own TITLE above the real card (user
-// call). The title is the tile’s self-description; the card below is
-// unchanged from the home screen, and carries its own pin control for
-// unpinning, so the header stays a label.
-// Keyed by the pin id: unpinning tile N must remove tile N, not positionally
-// patch tile N+1's card (and its pin control) up into N’s slot under the
-// pointer.
-const pinnedTileView = (model: Model, tile: PinnedTile): Html =>
-  h.keyed('div')(
-    tile.id,
-    [...getStyleXAttributes(h, styles.pinnedTile)],
+// NEW CONTENT — the same pink-chip section grammar as Trending/Goals/
+// Attendance, with the list riding in a paper panel beneath.
+const newContentPanel = (): Html =>
+  h.section(
+    [...getStyleXAttributes(h, styles.section)],
     [
-      h.p([...getStyleXAttributes(h, styles.pinnedTileTitle)], [tile.title]),
-      h.div([...getStyleXAttributes(h, styles.pinnedTileBody)], [tile.render(model)]),
+      h.div(
+        [...getStyleXAttributes(h, styles.chipRow)],
+        [h.span([...getStyleXAttributes(h, shared.display, shared.chip)], ['New content'])],
+      ),
+      // No panel frame (user call) — the ledger sits straight on the
+      // paper, full width, with Anton names carrying the rows.
+      h.ul(
+        [...getStyleXAttributes(h, styles.newList)],
+        newContent.map((entry) =>
+          h.li(
+            [...getStyleXAttributes(h, styles.newRow)],
+            [
+              h.div(
+                [...getStyleXAttributes(h, styles.newRowBody)],
+                [
+                  h.p([...getStyleXAttributes(h, shared.display, styles.newTitle)], [entry.title]),
+                  h.p([...getStyleXAttributes(h, styles.newKind)], [entry.kind]),
+                ],
+              ),
+              h.span([...getStyleXAttributes(h, styles.newWhen)], [entry.when]),
+            ],
+          ),
+        ),
+      ),
     ],
   );
 
-// The pinned feed — a uniform grid of self-titled tiles, each the real card
-// from its home. Empty until the visitor pins something; the empty state
-// names the gesture rather than leaving a blank slot.
-const pinnedFeed = (model: Model): Html => {
-  const tiles = pinRegistry.filter((tile) => model.pinned.includes(tile.id));
-  return h.div(
+// The TRENDING board — the pink chip stamps its top edge like the section
+// kickers. Every tile is a LINK into the data, and carries one line saying why
+// it is here: a name and a kind alone did not earn the space the board took.
+const trendingTiles = (model: Model, withPin = true, isFirst = false): Html =>
+  h.section(
+    [...getStyleXAttributes(h, styles.section, isFirst ? styles.sectionUnderTicker : null)],
+    [
+      chipHeading('Trending'),
+      // A real list — each tile is an item assistive tech can count and step
+      // through, whichever way the track is scrolled.
+      h.ul(
+        [...getStyleXAttributesWith(h, 'no-scrollbar', styles.trendingTrack)],
+        trending.map((entry, index) =>
+          h.li(
+            [...getStyleXAttributes(h, styles.trendingCard)],
+            [trendingTile(model, entry, index, withPin)],
+          ),
+        ),
+      ),
+    ],
+  );
+
+// A stat board = plain chip heading + the league cards. The pin now lives
+// on each CARD, not the heading (user call: the leagues must split), so a
+// board has no single pin of its own. `noun` builds each card’s pin id and
+// its accessible label (`attendance:first-league`, "First League
+// attendance").
+const statBoard = (
+  title: string,
+  noun: string,
+  entries: ReadonlyArray<StatEntry>,
+  model: Model,
+): Html =>
+  h.section(
     [...getStyleXAttributes(h, styles.section)],
     [
-      sectionLabel('Pinned'),
-      Array.isReadonlyArrayEmpty(tiles)
-        ? h.div(
-            [...getStyleXAttributes(h, styles.emptyState)],
-            [
-              pinGlyph(componentStyles.pinGlyphEmpty),
-              h.span([], ['Pin any tile or chart and it lands here — your own front page.']),
-            ],
-          )
-        : h.div(
-            [...getStyleXAttributes(h, styles.pinnedGrid)],
-            tiles.map((tile) => pinnedTileView(model, tile)),
+      chipHeading(title),
+      h.div(
+        [...getStyleXAttributes(h, styles.statGrid)],
+        entries.map((entry, index) =>
+          statCard(
+            model,
+            entry,
+            index,
+            `${noun}:${leagueSlug(entry.league)}`,
+            `${entry.league} ${noun}`,
           ),
+        ),
+      ),
+    ],
+  );
+
+const goalsTiles = (model: Model): Html => statBoard('Goals', 'goals', goals, model);
+const attendanceTiles = (model: Model): Html =>
+  statBoard('Attendance', 'attendance', attendance, model);
+
+// The LIVE TICKER, stock-market style (user call): QUOTES ONLY — every
+// item is an entity with a movement in the MARKET colors (green rise, red
+// fall — they clashed with the pink band, so the tape runs on a dark
+// strip; the pink lives on in the spark separators). No scores, no counts
+// (user call: "jen stocks"). CLUBS ONLY (user call) — no players, coaches or
+// competitions on the tape, which is what lets every row resolve its name
+// from the clubs table.
+//
+// A quote as the tape draws it: the club’s canonical name from the season
+// table, plus its movement. The name is looked up rather than stored — see
+// ticker.ts for why.
+interface TapeQuote {
+  readonly name: string;
+  readonly delta: string;
+  readonly isUp: boolean;
+}
+
+const tape: ReadonlyArray<TapeQuote> = tickerQuotes.map((quote) => ({
+  name: clubs.find((club) => club.slug === quote.slug)?.name ?? quote.slug,
+  delta: `${quote.delta} %`,
+  isUp: quote.isUp,
+}));
+
+const quoteView = (entry: TapeQuote): ReadonlyArray<Html> => [
+  h.span(
+    [...getStyleXAttributes(h, shared.display, styles.quote)],
+    [
+      h.span([], [entry.name]),
+      h.span(
+        [
+          ...getStyleXAttributes(
+            h,
+            styles.quoteDelta,
+            entry.isUp ? styles.quoteDeltaUp : styles.quoteDeltaDown,
+          ),
+        ],
+        [tapeArrow(entry.isUp), h.span([], [entry.delta])],
+      ),
+    ],
+  ),
+  tickerSpark,
+];
+
+const heroTicker = (): Html => {
+  // Two identical runs make the loop seamless; the copy is aria-hidden so
+  // screen readers hear the tape once.
+  const run = (hidden: boolean): Html =>
+    h.div(
+      [...getStyleXAttributes(h, styles.tickerRun), ...(hidden ? [h.AriaHidden(true)] : [])],
+      tape.flatMap(quoteView),
+    );
+  return h.div(
+    [...getStyleXAttributesWith(h, 'ticker', styles.tickerStrip)],
+    [h.div([h.Class('ticker-row')], [run(false), run(true)])],
+  );
+};
+
+// One honeycomb CELL: a single solid-white clip-path hexagon on the
+// paper page (user pick — a neon-tube pass was tried and reverted).
+// Hover floods the cell flat pink — the cell’s own :hover, since the
+// span fills the link’s whole hit area — and cells pop in with a small
+// cascade (`trend-row` + --row-delay).
+const crestChip = (entry: Club, delaySeconds: number): Html =>
+  h.a(
+    [
+      h.Href(clubRouter({ slug: entry.slug })),
+      h.AriaLabel(entry.name),
+      ...getStyleXAttributesWith(h, 'trend-row', styles.crestLink),
+      h.Style({ '--row-delay': `${delaySeconds}s` }),
+    ],
+    [
+      h.span(
+        [...getStyleXAttributes(h, styles.crestCell)],
+        [
+          h.img([
+            h.Src(entry.logo),
+            h.Alt(''),
+            h.Loading('lazy'),
+            ...getStyleXAttributes(h, styles.crestLogo),
+          ]),
+        ],
+      ),
+    ],
+  );
+
+// The rail’s order is hand-set (user call), row by row of the phone
+// formation: 5 — Sparta, Slavia, Slovan, Slovácko, Baník; 4 — Lokomotiva,
+// Plzeň, Raptors, Hradec; 5 — Pardubice, Artis, Č. Budějovice, Sigma,
+// Teplice; 2 — Braník, Jihlava.
+const CREST_ORDER: ReadonlyArray<string> = [
+  'sparta-praha',
+  'slavia-praha',
+  'slovan-liberec',
+  'slovacko',
+  'banik-ostrava',
+  'lokomotiva-brno',
+  'viktoria-plzen',
+  'prague-raptors',
+  'hradec-kralove',
+  'pardubice',
+  'artis-brno',
+  'dynamo-ceske-budejovice',
+  'sigma-olomouc',
+  'teplice',
+  'abc-branik',
+  'vysocina-jihlava',
+];
+
+// The honeycomb’s row widths, alternating so the rows interlock — the last
+// row takes whatever is left (5-4-5-2 across the sixteen crests). Slicing by
+// these sizes replaces the old take-flipping loop and its running cell
+// counter: each row’s first cell index IS the sum of the rows before it, so
+// the stagger delays stay consecutive across rows.
+const CREST_ROW_SIZES: ReadonlyArray<number> = [5, 4, 5, 4];
+
+// Every A-side crest, one tap from its profile — B teams share their
+// parent’s crest, so they’d only duplicate the artwork here. On phones the
+// rail stacks into centered 5-4-5-… rows (user call — the staggered
+// formation reads like a lineup, and no row is left with an orphan flush
+// left); from `md` everything fits one straight row.
+const crestRail = (): Html => {
+  const bySlug = (slug: string): Club | undefined => clubs.find((entry) => entry.slug === slug);
+  const aSides = CREST_ORDER.flatMap((slug) => {
+    const found = bySlug(slug);
+    return found ? [found] : [];
+  });
+  const delay = (index: number): number => 0.15 + index * 0.04;
+  const rows = CREST_ROW_SIZES.map((size, rowIndex) => {
+    const start = Number.sumAll(CREST_ROW_SIZES.slice(0, rowIndex));
+    return aSides
+      .slice(start, start + size)
+      .map((entry, cell) => crestChip(entry, delay(start + cell)));
+  }).filter(Array.isReadonlyArrayNonEmpty);
+  // No label (user call) — the crests speak for themselves, sitting first
+  // with just a little air under the ticker.
+  return h.div(
+    [...getStyleXAttributes(h, styles.crestRail)],
+    [
+      // HONEYCOMB tiling (user call, from a hexagon reference): touching
+      // cells (4px grout), each next row pulled up 17px so the hexagons
+      // interlock — 72px cells, 76px pitch, vertical offset 76 × √3/2 ≈
+      // 65.8px, and the 83px cell height minus that is the 17px tuck.
+      h.div(
+        [...getStyleXAttributes(h, styles.crestComb)],
+        rows.map((row, rowIndex) =>
+          h.div(
+            [...getStyleXAttributes(h, styles.crestRow, rowIndex > 0 && styles.crestRowTucked)],
+            row,
+          ),
+        ),
+      ),
+      h.div(
+        [...getStyleXAttributes(h, styles.crestLine)],
+        aSides.map((entry, index) => crestChip(entry, delay(index))),
+      ),
     ],
   );
 };
 
-// HER GAME — the platform’s personal section (the former charts screen).
-// For now it holds the chart studio and saved charts; the custom feed of
-// followed clubs, players, and competitions lands here next.
-export const view = (model: Model): Html =>
+// THE PULSE — the page's FIRST section, straight under the navigation, with
+// the ticker as its own top bar. It is the weekend in one swipe: the nearest
+// round's fixtures first, ascending by kickoff, then the round just played.
+// Competitions are MIXED — a league tie and a cup semifinal sit side by side,
+// and each card names which is which, because a supporter's week is not
+// sorted by competition.
+//
+// No live state anywhere in it (user call): the data lands once per round, so
+// the section is honestly a weekend board — invitations and results — and
+// nothing here polls, subscribes or ticks.
+//
+// The section never goes blank. With no next round to invite anyone to
+// (winter break, or between seasons) the first card becomes the pause card
+// and the results still run behind it.
+const PULSE_SECTION = 'This week';
+
+// One slot in the track. The hero takes a wider basis than the rest — see
+// styles.pulseHeroCard for why it is not simply "85% of the viewport".
+interface PulseSlot {
+  readonly card: Html;
+  readonly isHero: boolean;
+}
+
+const pulseSection = (): Html => {
+  const { hero, upcoming, finished } = thisWeek();
+  const slot = (card: Html): PulseSlot => ({ card, isHero: false });
+  const cards: ReadonlyArray<PulseSlot> = [
+    // The hero leads, when there is one. There is no hero on a week with no
+    // fixtures, and none on a week where nothing the desk could lead with has
+    // a photograph — pulse.ts decides that, not the view.
+    ...(hero === undefined ? [] : [{ card: matchCard(hero, 'hero'), isHero: true }]),
+    // The pause card stands in only when the WHOLE invitation half is empty:
+    // no hero and nothing upcoming.
+    ...(hero === undefined && upcoming.length === 0
+      ? [slot(returnsCard(resumesLabel()))]
+      : upcoming.map((match) => slot(matchCard(match, 'compact')))),
+    ...finished.map((match) => slot(matchCard(match, 'compact'))),
+  ];
+  return h.section(
+    [...getStyleXAttributes(h, styles.section, styles.pulseSection)],
+    [
+      // The ticker kisses the header (the negative top margins cancel
+      // main’s padding).
+      h.div([...getStyleXAttributes(h, styles.tickerPull)], [heroTicker()]),
+      h.div([...getStyleXAttributes(h, styles.pulseChipRow)], [chipHeading(PULSE_SECTION)]),
+      // A real list, so assistive tech can count the weekend and step
+      // through it rather than meeting a run of loose links.
+      h.ul(
+        [...getStyleXAttributesWith(h, 'no-scrollbar', styles.pulseTrack)],
+        cards.map((entry) =>
+          h.li(
+            [
+              ...getStyleXAttributes(
+                h,
+                styles.pulseCard,
+                entry.isHero ? styles.pulseHeroCard : null,
+              ),
+            ],
+            [entry.card],
+          ),
+        ),
+      ),
+    ],
+  );
+};
+
+// HOME HERO — no greeting, no intro (user call: the data updates once per
+// matchday round, so "since your last visit" copy would overclaim, and
+// the ticker + crest rail are enough of a welcome). The real <h1> is
+// screen-reader-only, and it stays FIRST in the document even though the
+// Pulse is the first thing on screen: it is what names the page.
+const welcomeHero = (): Html =>
+  h.section(
+    [],
+    [
+      h.h1(
+        [...getStyleXAttributes(h, shared.srOnly)],
+        ['Skóreová Platform — the data hub of Czech women’s football'],
+      ),
+    ],
+  );
+
+// One browse tile per platform section — the count leads, a small fan of
+// crests/badges gives the tile a face where artwork exists.
+interface SectionTile {
+  readonly href: string;
+  readonly label: string;
+  readonly count: string;
+  readonly caption: string;
+  readonly art: ReadonlyArray<string>;
+}
+
+const sectionTiles: ReadonlyArray<SectionTile> = [
+  {
+    href: clubsRouter(),
+    label: 'Clubs',
+    count: `${clubs.length}`,
+    caption: 'Both leagues, one directory',
+    art: [spartaPrahaLogo, slaviaPrahaLogo, banikOstravaLogo, viktoriaPlzenLogo],
+  },
+  {
+    href: playersRouter(),
+    label: 'Players',
+    count: '5,112',
+    caption: 'Indexed across the country',
+    art: [],
+  },
+  {
+    href: matchesRouter(),
+    label: 'Matches',
+    count: '1,284',
+    caption: 'Round by round, both leagues',
+    art: [],
+  },
+  {
+    href: competitionsRouter(),
+    label: 'Competitions',
+    count: `${competitions.length}`,
+    caption: 'Leagues, cup, Europe, national team',
+    art: [firstLeagueBadge, domesticCupBadge, uwclBadge],
+  },
+  {
+    href: officialsRouter(),
+    label: 'Officials',
+    count: `${officials.length}`,
+    caption: 'Appointments and cards in the open',
+    art: [],
+  },
+  {
+    href: herGameRouter(),
+    label: 'Her Game',
+    count: `${savedCharts.length}`,
+    caption: 'Your charts and the studio',
+    art: [],
+  },
+];
+
+const sectionTileView = (tile: SectionTile): Html =>
+  h.a(
+    [
+      h.Href(tile.href),
+      // The label tints pink when the whole tile is hovered — the
+      // hover-card contract, since StyleX cannot reach a child from the
+      // parent's :hover.
+      ...getStyleXAttributesWith(h, 'hover-card', shared.panel, styles.sectionTile),
+    ],
+    [
+      h.div(
+        [...getStyleXAttributes(h, styles.sectionTileTop)],
+        [
+          h.span(
+            [...getStyleXAttributes(h, shared.display, styles.sectionTileCount)],
+            [tile.count],
+          ),
+          h.div(
+            [...getStyleXAttributes(h, styles.sectionTileArt)],
+            tile.art.map((src) =>
+              h.img([
+                h.Src(src),
+                h.Alt(''),
+                h.Loading('lazy'),
+                ...getStyleXAttributes(h, styles.sectionTileCrest),
+              ]),
+            ),
+          ),
+        ],
+      ),
+      h.h3(
+        [
+          ...getStyleXAttributesWith(
+            h,
+            'hover-card-pink-text',
+            shared.display,
+            styles.sectionTileLabel,
+          ),
+        ],
+        [tile.label],
+      ),
+      h.p([...getStyleXAttributes(h, styles.sectionTileCaption)], [tile.caption]),
+    ],
+  );
+
+// ALL-TIME BESTS — the same section grammar as Trending/Goals/Attendance.
+// New content: pink chip heading, frameless records straight on the paper.
+const allTimeBestsPanel = (model: Model): Html =>
+  h.section(
+    [...getStyleXAttributes(h, styles.section)],
+    [
+      chipHeading('All-time bests'),
+      h.ul(
+        [...getStyleXAttributes(h, styles.bestsGrid)],
+        allTimeBests.map((record) => bestRecord(model, record, false)),
+      ),
+    ],
+  );
+
+// THE LANDING — what `/` is to a visitor who has not signed in. The tape and
+// nothing else so far: it is public data, it needs no account to mean
+// anything, and it butts straight against the navigation, so the page opens on
+// one dark band rather than on a heading.
+const landingView = (model: Model): Html =>
   h.div(
     [],
     [
-      screenHeader(
-        model,
-        'Your side of the platform. Build a chart in the studio below and save it — soon this is where your own feed of clubs, players, and competitions lives.',
-      ),
-      // Pinned first — it is the reason to come back here.
-      pinnedFeed(model),
-      chartStudioPanel(model),
-      h.div([...getStyleXAttributes(h, styles.section)], [sectionLabel('Saved charts')]),
+      welcomeHero(),
+      h.div([...getStyleXAttributes(h, styles.tickerPull)], [heroTicker()]),
+      trendingTiles(model, false, true),
+    ],
+  );
+
+// `/` IS TWO PAGES, told apart by nothing but whether the visitor is signed
+// in: the landing above, and Her Game below.
+export const view = (model: Model): Html =>
+  model.isSignedIn ? signedInView(model) : landingView(model);
+
+const signedInView = (model: Model): Html =>
+  h.div(
+    [],
+    [
+      welcomeHero(),
+      // THE PULSE leads the page — the weekend before the boards.
+      pulseSection(),
+      crestRail(),
+      // The movers first (results wait for the sections — user call). The
+      // trending board’s chip overflows its top edge, so the row gets
+      // breathing room (mt covers the chip). Each board carries a pin that
+      // sends it to Her Game.
+      trendingTiles(model),
+      goalsTiles(model),
+      attendanceTiles(model),
+      newContentPanel(),
+      // All-time bests ABOVE the browse tiles; the "platform in numbers"
+      // stat strip is gone entirely (user calls).
+      allTimeBestsPanel(model),
       h.div(
-        [...getStyleXAttributes(h, styles.savedGrid)],
-        [
-          ...savedCharts.map((chart) => savedChartCard(model, chart)),
-          // NOTE: deliberately inert mock until the chart builder exists — same
-          // blocked contract as the save control above.
-          Button.view<Message>({
-            isDisabled: true,
-            toView: ({ button }) =>
-              h.button(
-                [...button, ...getStyleXAttributes(h, shared.display, styles.newChartButton)],
-                ['+ New chart'],
-              ),
-          }),
-        ],
+        [...getStyleXAttributes(h, styles.sectionTilesGrid)],
+        sectionTiles.map(sectionTileView),
       ),
     ],
   );

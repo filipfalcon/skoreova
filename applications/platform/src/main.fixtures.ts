@@ -17,9 +17,14 @@ export const welcomeModel = Model.make({
   pinned: [],
   scorerScope: 'All',
   metric: 'Goals',
+  isSignedIn: false,
 });
 
 export const herGameModel = Model.make({ ...welcomeModel, route: HerGameRoute() });
+
+// The root as a SIGNED-IN visitor sees it — the same route as `welcomeModel`,
+// the other half of the same page.
+export const signedInModel = Model.make({ ...welcomeModel, isSignedIn: true });
 
 // A Her Game feed with one board already pinned — exercises the pinned-tile
 // branch of the view (empty vs populated).

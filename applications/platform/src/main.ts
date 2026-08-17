@@ -66,6 +66,7 @@ const initialModel: Model = {
   pinned: [],
   scorerScope: 'All',
   metric: 'Goals',
+  isSignedIn: false,
 };
 
 // A route change stores the new route and resets the transient per-view state

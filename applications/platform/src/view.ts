@@ -30,7 +30,6 @@ import {
   NotFound,
   Officials,
   Players,
-  Welcome,
 } from './page';
 import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
 import { styles } from './styles/view';
@@ -64,7 +63,9 @@ const screenView = (model: Model): Html => {
   if (Option.isSome(competition)) return CompetitionProfile.view(competition.value, model);
   return M.value(screenOf(model.route)).pipe(
     M.withReturnType<Html>(),
-    M.when('Welcome', () => Welcome.view(model)),
+    // `/` and `/her-game` are the same page. What it draws is the visitor's
+    // sign-in state's to decide, not the route's.
+    M.when('Welcome', () => HerGame.view(model)),
     M.when('HerGame', () => HerGame.view(model)),
     M.when('Clubs', () => Clubs.view(model)),
     M.when('Players', () => Players.view(model)),
@@ -120,8 +121,7 @@ const shellView = (model: Model): Html =>
   );
 
 // The open profile’s name (club, then competition) titles the tab; away from
-// a profile it’s the screen’s own title, and the welcome screen is just the
-// brand.
+// a profile it’s the screen’s own title, and the front page is just the brand.
 const documentTitle = (model: Model): string => {
   if (model.route._tag === 'NotFoundRoute') return 'Page not found — Skóreová Platform';
   if (screenOf(model.route) === 'Welcome') return 'Skóreová Platform';
