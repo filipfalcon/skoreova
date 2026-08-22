@@ -3,15 +3,16 @@
 //
 // - `fetch` — serves `/api/ticker` (the clubs' percentages) straight from
 //   KV with a Cache-Control header, so the edge cache absorbs most reads
-//   and the KV read count stays flat under traffic; everything else
-//   forwards to the assets binding (the SPA). Note: static assets are
+//   and the KV read count stays flat under traffic. Note: static assets are
 //   served BEFORE the Worker runs, so this handler only sees non-asset
 //   requests.
-// - the document rewrite — every SPA route is served the same index.html,
-//   whose `<title>`, canonical and og:url are written for the front page.
-//   A crawler reads those tags before it runs the app, so every route was
-//   declaring itself a copy of `/`. This handler writes the route's own
-//   title and URL into the HTML on the way out.
+// - the page render — every other request is answered by rendering the app
+//   against the requested URL and placing that markup in the HTML shell.
+//   This replaced an HTMLRewriter pass that retagged a client-rendered
+//   shell: a crawler reads the document before it runs the app, so the tags
+//   had to be right, but the BODY was empty either way. The tags now come
+//   from the same `Document` the app returns, and the body arrives with
+//   them.
 // - `/sitemap.xml` — generated from the routers and the profile maps, so it
 //   cannot go stale against them. The path used to fall through to the SPA
 //   and answer HTML with a 200.
@@ -29,10 +30,9 @@
 // with a small random offset, so the tape visibly moves day to day. Real
 // percentages replace it when that API exists.
 
-import { Option } from 'effect';
-import { fromString } from 'foldkit/url';
+import { Server } from 'foldkit/experimental';
 
-import { clubNames, competitionNames, documentTitle } from './document-title';
+import { clubNames, competitionNames } from './document-title';
 import {
   clubRouter,
   clubsRouter,
@@ -42,17 +42,15 @@ import {
   matchesRouter,
   officialsRouter,
   playersRouter,
-  urlToAppRoute,
   welcomeRouter,
 } from './route';
+import { SITE_ORIGIN } from './site';
+import { renderPage } from './entry.server';
 import { tickerQuotes } from './ticker';
 
 export const TICKER_KEY = 'ticker:clubs';
 
-// The origin every canonical is built on. The `.cz` alias serves the same
-// Worker and points here, which is what makes one origin the right answer
-// rather than the requested host.
-export const SITE_ORIGIN = 'https://platform.skoreova.com';
+export { SITE_ORIGIN };
 
 interface TickerClub {
   readonly slug: string;
@@ -126,50 +124,6 @@ const sitemapDocument = (): string =>
     '',
   ].join('\n');
 
-// Minimal local shapes for the runtime's streaming HTML rewriter — enough of
-// it to retag a document, and no more, which keeps this file free of
-// @cloudflare/workers-types inside the platform app’s DOM tsconfig.
-interface RewriterElement {
-  setAttribute(name: string, value: string): void;
-  setInnerContent(content: string): void;
-}
-
-interface Rewriter {
-  on(selector: string, handlers: { element(element: RewriterElement): void }): Rewriter;
-  transform(response: Response): Response;
-}
-
-declare const HTMLRewriter: new () => Rewriter;
-
-// The served document, retagged for the route it is actually answering.
-//
-// The canonical drops the query string: campaign and referral parameters
-// arrive on shared links and name the same document, so folding them onto one
-// URL is the difference between one page and an unbounded family of copies.
-const documentResponse = (response: Response, url: URL): Response => {
-  if (!(response.headers.get('content-type') ?? '').includes('text/html')) return response;
-  const parsed = fromString(url.toString());
-  if (Option.isNone(parsed)) return response;
-  const route = urlToAppRoute(parsed.value);
-  const canonical = `${SITE_ORIGIN}${url.pathname}`;
-  const rewritten = new HTMLRewriter()
-    .on('link[rel="canonical"]', {
-      element: (element) => element.setAttribute('href', canonical),
-    })
-    .on('meta[property="og:url"]', {
-      element: (element) => element.setAttribute('content', canonical),
-    })
-    .on('title', {
-      element: (element) => element.setInnerContent(documentTitle(route)),
-    })
-    .transform(response);
-  // An unknown path still renders the app's own not-found screen, but it says
-  // so in the status line instead of answering 200 to a page that isn't there.
-  return route._tag === 'NotFoundRoute'
-    ? new Response(rewritten.body, { status: 404, headers: rewritten.headers })
-    : rewritten;
-};
-
 // Minimal local binding shapes — keeps this file free of
 // @cloudflare/workers-types inside the platform app’s DOM tsconfig.
 interface Env {
@@ -179,6 +133,18 @@ interface Env {
     put(key: string, value: string): Promise<void>;
   };
 }
+
+// THE SHELL — the built index.html, read from the assets binding rather than
+// imported from source. The source template names `/src/entry.ts`; the one
+// beside the deployed assets names the hashed bundle, and it is the only copy
+// that can never disagree with what the browser will actually be asked to
+// load. The binding is a local lookup rather than a network call, so this is
+// read per request instead of held in a module-level cache the Model does not
+// own.
+const shell = (env: Env, url: URL): Promise<string> =>
+  env.ASSETS.fetch(new Request(new URL('/index.html', url.origin))).then((response) =>
+    response.text(),
+  );
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -205,7 +171,26 @@ export default {
         },
       });
     }
-    return documentResponse(await env.ASSETS.fetch(request), url);
+    // A method the `Request` constructor rejects can never reach an entry, so
+    // it is refused here rather than turned into a 500 further in.
+    if (Server.isHostSettledMethod(request.method)) {
+      return new Response(null, {
+        status: Server.HOST_METHOD_ANSWERS.refusedStatus,
+        headers: { Allow: Server.HOST_METHOD_ANSWERS.allow },
+      });
+    }
+    // A request that matched no file is not automatically a page. A browser
+    // asks for scripts, styles and images with `Accept: */*`, which accepts
+    // HTML, so a hashed bundle that is no longer deployed would otherwise be
+    // answered with the shell at 200 — a stale client would read that as its
+    // own JavaScript. Classifying the miss answers it as the miss it is.
+    if (
+      Server.classifyRequest(request.url, request.headers.get('sec-fetch-dest') ?? undefined) !==
+      'Page'
+    ) {
+      return new Response('Not found', { status: 404 });
+    }
+    return Server.toResponse(await shell(env, url), await renderPage(request));
   },
 
   async scheduled(_controller: unknown, env: Env): Promise<void> {

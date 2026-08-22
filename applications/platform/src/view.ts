@@ -4,8 +4,7 @@
 // schedule, stat tiles, …) live alongside.
 
 import { Array, Match as M, Option } from 'effect';
-import { html } from 'foldkit/html';
-import type { Document, Html } from 'foldkit/html';
+import type { Document, Html, HtmlBuilder } from 'foldkit/html';
 
 import { headerView } from './components';
 import {
@@ -18,6 +17,8 @@ import {
   screenOf,
 } from './data';
 import { documentTitle } from './document-title';
+import { routePath } from './route';
+import { SITE_ORIGIN } from './site';
 import type { Message } from './message';
 import type { Model } from './model';
 import {
@@ -33,8 +34,6 @@ import {
 } from './page';
 import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
 import { styles } from './styles/view';
-
-const h = html<Message>();
 
 // PROFILES — migrated from the landing page, restyled into the platform’s
 // panel idiom. Same anatomy as the drafts: a club shows its hero, league
@@ -53,34 +52,34 @@ const openCompetition = (model: Model): Option.Option<Competition> =>
     (candidate) => candidate.slug === routeCompetitionSlug(model.route),
   );
 
-const screenView = (model: Model): Html => {
+const screenView = (model: Model, h: HtmlBuilder<Message>): Html => {
   // An unknown PATH names itself — only unknown club/competition SLUGS
   // still fall back to their directory screen (see openClub below).
-  if (model.route._tag === 'NotFoundRoute') return NotFound.view(model.route.path);
+  if (model.route._tag === 'NotFoundRoute') return NotFound.view(model.route.path, h);
   const club = openClub(model);
-  if (Option.isSome(club)) return ClubProfile.view(club.value, model);
+  if (Option.isSome(club)) return ClubProfile.view(club.value, model, h);
   const competition = openCompetition(model);
-  if (Option.isSome(competition)) return CompetitionProfile.view(competition.value, model);
+  if (Option.isSome(competition)) return CompetitionProfile.view(competition.value, model, h);
   return M.value(screenOf(model.route)).pipe(
     M.withReturnType<Html>(),
     // `/` and `/her-game` are the same page. What it draws is the visitor's
     // sign-in state's to decide, not the route's.
-    M.when('Welcome', () => HerGame.view(model)),
-    M.when('HerGame', () => HerGame.view(model)),
-    M.when('Clubs', () => Clubs.view(model)),
-    M.when('Players', () => Players.view(model)),
-    M.when('Matches', () => Matches.view(model)),
-    M.when('Competitions', () => Competitions.view(model)),
-    M.when('Officials', () => Officials.view(model)),
+    M.when('Welcome', () => HerGame.view(model, h)),
+    M.when('HerGame', () => HerGame.view(model, h)),
+    M.when('Clubs', () => Clubs.view(model, h)),
+    M.when('Players', () => Players.view(model, h)),
+    M.when('Matches', () => Matches.view(model, h)),
+    M.when('Competitions', () => Competitions.view(model, h)),
+    M.when('Officials', () => Officials.view(model, h)),
     M.exhaustive,
   );
 };
 
-const shellView = (model: Model): Html =>
+const shellView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.div(
     [...getStyleXAttributes(h, styles.shell)],
     [
-      headerView(model),
+      headerView(model, h),
       // A BLACK spacer clears the fixed header (bar + section rail)
       // instead of padding: the translucent header must rest on black,
       // not on the paper page — content still slides beneath the blur
@@ -98,7 +97,7 @@ const shellView = (model: Model): Html =>
               ),
               ...getStyleXAttributesWith(h, 'screen', styles.main),
             ],
-            [screenView(model)],
+            [screenView(model, h)],
           ),
           h.footer(
             [...getStyleXAttributes(h, styles.footer)],
@@ -120,13 +119,17 @@ const shellView = (model: Model): Html =>
     ],
   );
 
-// `canonical` and `ogUrl` are left off: omitting them tells the runtime to use
-// the current URL, which is what a profile page wants, and the Worker has
-// already written that same URL into the served HTML for anything reading the
-// document before the app boots.
-export const view = (model: Model): Document => ({
+// The canonical is built from the ROUTE rather than the request, so it drops
+// the query string: campaign and referral parameters arrive on shared links
+// and name the same document, and folding them onto one URL is the difference
+// between one page and an unbounded family of copies. It is stated rather than
+// left to the runtime's current-URL default because a server render has to put
+// the right URL in the markup a crawler reads before any app boots.
+export const view = (model: Model, h: HtmlBuilder<Message>): Document => ({
   title: documentTitle(model.route),
+  canonical: `${SITE_ORIGIN}${routePath(model.route)}`,
+  ogUrl: `${SITE_ORIGIN}${routePath(model.route)}`,
   // American English, the language every string in this app is written in; the runtime writes it after the first render, so what a crawler reads is whatever the served document already carried.
   lang: 'en-US',
-  body: h.div([...getStyleXAttributes(h, styles.page)], [shellView(model)]),
+  body: h.div([...getStyleXAttributes(h, styles.page)], [shellView(model, h)]),
 });

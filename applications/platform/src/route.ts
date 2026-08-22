@@ -1,4 +1,4 @@
-import { Schema as S, pipe } from 'effect';
+import { Match as M, Schema as S, pipe } from 'effect';
 import { literal, mapTo, oneOf, parseUrlWithFallback, r, root, slash, string } from 'foldkit/route';
 
 // The platform’s top-level sections, plus the two profile routes migrated
@@ -64,3 +64,29 @@ const routeParser = oneOf(
 );
 
 export const urlToAppRoute = parseUrlWithFallback(routeParser, NotFoundRoute);
+
+/**
+ * The path a route names, which is the same path its router parses. The routers run both ways, so a
+ * route that changes shape carries its canonical URL with it rather than leaving a second spelling
+ * to drift.
+ *
+ * A not-found route answers with the path that produced it, so the document a 404 serves still
+ * names what was asked for.
+ *
+ * @param route The route to name.
+ */
+export const routePath = (route: AppRoute): string =>
+  M.value(route).pipe(
+    M.withReturnType<string>(),
+    M.tag('WelcomeRoute', () => welcomeRouter()),
+    M.tag('HerGameRoute', () => herGameRouter()),
+    M.tag('ClubsRoute', () => clubsRouter()),
+    M.tag('ClubRoute', ({ slug }) => clubRouter({ slug })),
+    M.tag('PlayersRoute', () => playersRouter()),
+    M.tag('MatchesRoute', () => matchesRouter()),
+    M.tag('CompetitionsRoute', () => competitionsRouter()),
+    M.tag('CompetitionRoute', ({ slug }) => competitionRouter({ slug })),
+    M.tag('OfficialsRoute', () => officialsRouter()),
+    M.tag('NotFoundRoute', ({ path }) => path),
+    M.exhaustive,
+  );

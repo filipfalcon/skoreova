@@ -9,7 +9,7 @@ export default Alchemy.Stack(
     state: Cloudflare.state(),
   },
   Effect.gen(function* () {
-    const landingPage = yield* Cloudflare.Website.Vite('LandingPage', {
+    const landingPage = yield* Cloudflare.Website.Foldkit('LandingPage', {
       rootDir: 'applications/web',
       workersDev: {
         enabled: false,
@@ -40,7 +40,7 @@ export default Alchemy.Stack(
     // a single KV get per pageview behind the edge cache.
     const tickerKv = yield* Cloudflare.KV.Namespace('Ticker');
 
-    const platform = yield* Cloudflare.Website.Vite('Platform', {
+    const platform = yield* Cloudflare.Website.Foldkit('Platform', {
       rootDir: 'applications/platform',
       workersDev: {
         enabled: false,
@@ -60,12 +60,25 @@ export default Alchemy.Stack(
       crons: ['0 4 * * *'],
       cache: { enabled: true },
       env: { TICKER: tickerKv },
+      // THE PLATFORM RENDERS ON THE SERVER, so neither asset default may
+      // stand. `single-page-application` answered every unmatched path with
+      // the un-rendered shell, which is the whole of what SSR replaces —
+      // every deep link would have been served the empty document again, and
+      // nothing would have failed to say so. `htmlHandling: 'none'` is the
+      // other half: without it the asset layer resolves `/` to `/index.html`
+      // on its own and the front page alone would arrive unrendered.
+      //
+      // Files still come from the asset layer directly — only requests that
+      // match no file reach the Worker, which is exactly the set of pages.
+      // `/index.html` keeps matching literally, which is what the Worker
+      // reads its shell from.
       assets: {
-        notFoundHandling: 'single-page-application',
+        htmlHandling: 'none',
+        notFoundHandling: 'none',
       },
     });
 
-    const studio = yield* Cloudflare.Website.Vite('Studio', {
+    const studio = yield* Cloudflare.Website.Foldkit('Studio', {
       rootDir: 'applications/studio',
       workersDev: {
         enabled: false,
