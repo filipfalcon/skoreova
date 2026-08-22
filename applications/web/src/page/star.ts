@@ -1,5 +1,4 @@
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import rancovaImage from '../assets/rancova.webp';
 import clsx from 'clsx';
@@ -17,9 +16,7 @@ import type { Message } from '../message';
 import type { Model } from '../model';
 import { tabularScore } from './champions';
 
-const h = html<Message>();
-
-export const view = (model: Model): Html =>
+export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.section(
     [
       h.Id('hail-to-the-queen'),
@@ -29,10 +26,10 @@ export const view = (model: Model): Html =>
       h.div(
         [h.Class(container)],
         [
-          kicker(model, '05', 'Hail to the queen', 'ink', '/#hail-to-the-queen'),
+          kicker(model, '05', 'Hail to the queen', 'ink', '/#hail-to-the-queen', h),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
-            [maskedLine(model, 'star-headline', 'Denisa Rancová', 'text-fluid-6xl-9xl', 0)],
+            [maskedLine(model, 'star-headline', 'Denisa Rancová', 'text-fluid-6xl-9xl', 0, h)],
           ),
           // She’s the section — so she shows up immediately: the portrait
           // is FIRST in the DOM (right under the headline on phones) and
@@ -377,7 +374,7 @@ export const view = (model: Model): Html =>
                                                 'display text-fluid-2xl-4xl transition-colors duration-300 group-hover:text-ink',
                                               ),
                                             ],
-                                            [...tabularScore(haul.score)],
+                                            [...tabularScore(haul.score, h)],
                                           ),
                                           h.p(
                                             [

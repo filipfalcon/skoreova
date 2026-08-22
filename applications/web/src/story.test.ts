@@ -31,7 +31,7 @@ const url = (path: string) => Option.getOrThrow(fromString(`https://skoreova.exa
 test('opening the menu locks scroll and kicks off active-section detection', () => {
   Story.story(
     update,
-    Story.with(landingModel),
+    Story.given(landingModel),
     Story.message(ToggledMenu()),
     Story.model((model) => {
       expect(model.isMenuOpen).toBe(true);
@@ -54,7 +54,7 @@ test('opening the menu locks scroll and kicks off active-section detection', () 
 test('closing the menu releases the scroll lock', () => {
   Story.story(
     update,
-    Story.with(menuOpenModel),
+    Story.given(menuOpenModel),
     Story.message(ToggledMenu()),
     Story.model((model) => {
       expect(model.isMenuOpen).toBe(false);
@@ -67,7 +67,7 @@ test('closing the menu releases the scroll lock', () => {
 test('ClosedMenu closes the overlay and releases the lock', () => {
   Story.story(
     update,
-    Story.with(menuOpenModel),
+    Story.given(menuOpenModel),
     Story.message(ClosedMenu()),
     Story.model((model) => {
       expect(model.isMenuOpen).toBe(false);
@@ -79,7 +79,7 @@ test('ClosedMenu closes the overlay and releases the lock', () => {
 test('selecting a map league switches the filter and closes any open club card', () => {
   Story.story(
     update,
-    Story.with(secondLeagueMapModel),
+    Story.given(secondLeagueMapModel),
     Story.message(SelectedMapLeague({ league: 'First' })),
     Story.model((model) => {
       expect(model.mapLeague).toBe('First');
@@ -92,7 +92,7 @@ test('selecting a map league switches the filter and closes any open club card',
 test('opening a club card records its slug; the area unit toggles', () => {
   Story.story(
     update,
-    Story.with(landingModel),
+    Story.given(landingModel),
     Story.message(OpenedMapClub({ slug: 'slavia-praha' })),
     Story.model((model) => {
       expect(model.mapClub).toEqual(Option.some('slavia-praha'));
@@ -114,7 +114,7 @@ test('opening a club card records its slug; the area unit toggles', () => {
 test('the hero observer drives the header CTA flag', () => {
   Story.story(
     update,
-    Story.with(landingModel),
+    Story.given(landingModel),
     // Hero scrolled under the header → the persistent CTA takes over.
     Story.message(DetectedHeroPastHeader({ past: true })),
     Story.model((model) => {
@@ -132,7 +132,7 @@ test('the hero observer drives the header CTA flag', () => {
 test('the reveal fold enters, keeps drawn state, drops stale drawn reports, and exits', () => {
   Story.story(
     update,
-    Story.with(landingModel),
+    Story.given(landingModel),
     Story.message(ChangedReveals({ revealed: ['map', 'stat'], concealed: [], drawn: [] })),
     Story.model((model) => {
       expect(model.reveals).toEqual({ map: 'entered', stat: 'entered' });
@@ -174,7 +174,7 @@ test('the reveal fold enters, keeps drawn state, drops stale drawn reports, and 
 test('an internal link applies the route, pushes it, and releases the lock', () => {
   Story.story(
     update,
-    Story.with(menuOpenModel),
+    Story.given(menuOpenModel),
     Story.message(ClickedLink({ request: Internal({ url: url('/') }) })),
     Story.model((model) => {
       // Navigating always closes the menu and any open club card.
@@ -189,7 +189,7 @@ test('an internal link applies the route, pushes it, and releases the lock', () 
 test('the policy link routes to the policy page and back', () => {
   Story.story(
     update,
-    Story.with(landingModel),
+    Story.given(landingModel),
     Story.message(ClickedLink({ request: Internal({ url: url('/policy') }) })),
     Story.model((model) => {
       expect(model.route._tag).toBe('PolicyRoute');
@@ -207,7 +207,7 @@ test('the policy link routes to the policy page and back', () => {
 test('browser back/forward re-applies the route and releases the lock', () => {
   Story.story(
     update,
-    Story.with(menuOpenModel),
+    Story.given(menuOpenModel),
     Story.message(ChangedUrl({ url: url('/') })),
     Story.model((model) => {
       expect(model.isMenuOpen).toBe(false);
@@ -219,7 +219,7 @@ test('browser back/forward re-applies the route and releases the lock', () => {
 test('an external link loads the href and leaves the model alone', () => {
   Story.story(
     update,
-    Story.with(landingModel),
+    Story.given(landingModel),
     Story.message(ClickedLink({ request: External({ href: 'https://uefa.com' }) })),
     Story.model((model) => {
       expect(model.isMenuOpen).toBe(false);

@@ -1,3 +1,4 @@
+import { RadioGroup } from '@foldkit/ui';
 import { Schema as S } from 'effect';
 
 import { AppRoute } from './route';
@@ -31,6 +32,9 @@ export const Model = S.Struct({
   // scroll is locked while the overlay is up, so it cannot go stale.
   activeSection: S.Option(S.String),
   mapLeague: MapLeague,
+  // The league filter's own state. It owns keyboard focus; the committed
+  // league stays in `mapLeague` above and is handed back as a view input.
+  mapLeagueGroup: RadioGroup.Model,
   // Slug of the club whose card is open over the map (None = closed). Pins
   // open the card; navigation to the profile happens via the card’s button.
   mapClub: S.Option(S.String),

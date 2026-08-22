@@ -1,6 +1,5 @@
 import { Button, Input } from '@foldkit/ui';
-import { html } from 'foldkit/html';
-import type { Document } from 'foldkit/html';
+import type { Document, HtmlBuilder } from 'foldkit/html';
 
 import loginBackground from '../assets/login-background.jpg';
 import { SubmittedSignIn, UpdatedEmail, UpdatedPassword } from '../message';
@@ -8,9 +7,7 @@ import type { Message } from '../message';
 import type { Model } from '../model';
 import { cardStyle, chipStyle, inputStyle, submitStyle } from '../styles';
 
-const h = html<Message>();
-
-export const view = (model: Model): Document => {
+export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
   // The credential inputs only exist while signed out; this view never
   // renders otherwise, so the fallbacks are just for totality.
   const emailInput = model.session._tag === 'Anonymous' ? model.session.emailInput : '';
@@ -54,49 +51,55 @@ export const view = (model: Model): Document => {
                         // The fields carry only a placeholder visually; the real
                         // <label> is sr-only so each is a properly labeled form
                         // control without changing the card’s look.
-                        Input.view({
-                          id: 'signin-email',
-                          type: 'email',
-                          placeholder: 'email address',
-                          value: emailInput,
-                          onInput: (value) => UpdatedEmail({ value }),
-                          toView: (attributes) =>
-                            h.div(
-                              [],
-                              [
-                                h.label(
-                                  [...attributes.label, h.Class('sr-only')],
-                                  ['Email address'],
-                                ),
-                                h.input([
-                                  ...attributes.input,
-                                  h.Name('email'),
-                                  h.Autocomplete('email'),
-                                  h.Class(inputStyle),
-                                ]),
-                              ],
-                            ),
-                        }),
-                        Input.view({
-                          id: 'signin-password',
-                          type: 'password',
-                          placeholder: 'password',
-                          value: passwordInput,
-                          onInput: (value) => UpdatedPassword({ value }),
-                          toView: (attributes) =>
-                            h.div(
-                              [],
-                              [
-                                h.label([...attributes.label, h.Class('sr-only')], ['Password']),
-                                h.input([
-                                  ...attributes.input,
-                                  h.Name('password'),
-                                  h.Autocomplete('current-password'),
-                                  h.Class(inputStyle),
-                                ]),
-                              ],
-                            ),
-                        }),
+                        Input.view(
+                          {
+                            id: 'signin-email',
+                            type: 'email',
+                            placeholder: 'email address',
+                            value: emailInput,
+                            onInput: (value) => UpdatedEmail({ value }),
+                            toView: (attributes) =>
+                              h.div(
+                                [],
+                                [
+                                  h.label(
+                                    [...attributes.label, h.Class('sr-only')],
+                                    ['Email address'],
+                                  ),
+                                  h.input([
+                                    ...attributes.input,
+                                    h.Name('email'),
+                                    h.Autocomplete('email'),
+                                    h.Class(inputStyle),
+                                  ]),
+                                ],
+                              ),
+                          },
+                          h,
+                        ),
+                        Input.view(
+                          {
+                            id: 'signin-password',
+                            type: 'password',
+                            placeholder: 'password',
+                            value: passwordInput,
+                            onInput: (value) => UpdatedPassword({ value }),
+                            toView: (attributes) =>
+                              h.div(
+                                [],
+                                [
+                                  h.label([...attributes.label, h.Class('sr-only')], ['Password']),
+                                  h.input([
+                                    ...attributes.input,
+                                    h.Name('password'),
+                                    h.Autocomplete('current-password'),
+                                    h.Class(inputStyle),
+                                  ]),
+                                ],
+                              ),
+                          },
+                          h,
+                        ),
                       ],
                     ),
                     h.div(
@@ -112,14 +115,17 @@ export const view = (model: Model): Document => {
                         // this only needs Ui.Button for the submit type.
                         // Annotated: with no onClick there is no Message to
                         // infer the component’s type parameter from.
-                        Button.view<Message>({
-                          type: 'submit',
-                          toView: ({ button }) =>
-                            h.button(
-                              [...button, h.AriaLabel('Sign in'), h.Class(submitStyle)],
-                              ['→'],
-                            ),
-                        }),
+                        Button.view(
+                          {
+                            type: 'submit',
+                            toView: ({ button }) =>
+                              h.button(
+                                [...button, h.AriaLabel('Sign in'), h.Class(submitStyle)],
+                                ['→'],
+                              ),
+                          },
+                          h,
+                        ),
                       ],
                     ),
                   ],

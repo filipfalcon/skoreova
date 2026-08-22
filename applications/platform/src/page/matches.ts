@@ -1,5 +1,4 @@
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { screenHeader } from '../components';
 import { leagueCompetitions } from '../data';
@@ -10,17 +9,19 @@ import { styles } from '../styles/matches';
 import { shared } from '../styles/shared';
 import { matchesPanel } from './competition-profile';
 
-const h = html<Message>();
-
 // MATCHES — the standalone section: the round-by-round schedule of every
 // league, reusing the competition profile’s matches panel.
-export const view = (model: Model): Html =>
+export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.div(
     [],
     [
       // "every league", not "both": the panels below are derived from the
       // canon, so a third league would have made this line a lie.
-      screenHeader(model, 'Round by round across every league — refreshed after every matchday.'),
+      screenHeader(
+        model,
+        'Round by round across every league — refreshed after every matchday.',
+        h,
+      ),
       h.div(
         [...getStyleXAttributes(h, styles.stack)],
         // One panel per league competition, straight off the canon rather than
@@ -37,7 +38,7 @@ export const view = (model: Model): Html =>
               ),
               h.div(
                 [...getStyleXAttributes(h, styles.panelSpacing)],
-                [matchesPanel(competition, model)],
+                [matchesPanel(competition, model, h)],
               ),
             ],
           ),

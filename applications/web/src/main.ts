@@ -1,6 +1,7 @@
+import { RadioGroup } from '@foldkit/ui';
 import { Array, Match as M, Option, Record } from 'effect';
 import type { Runtime } from 'foldkit';
-import { Command } from 'foldkit';
+import { Command, Update } from 'foldkit';
 import { evo } from 'foldkit/struct';
 import { toString as urlToString } from 'foldkit/url';
 
@@ -8,6 +9,8 @@ import type { AppRoute } from './route';
 import { HomeRoute, urlToAppRoute } from './route';
 import type { Flags, Model, RevealState } from './model';
 import type { Message } from './message';
+import { GotMapLeagueGroupMessage } from './message';
+import { MAP_LEAGUE_GROUP_ID, MapLeagueRadioGroup } from './radio-groups';
 import { detectActiveSection, focusMenuToggle, load, navigate, setScrollLock } from './command';
 
 // The app entry: init, the update reducer, and the re-exports that keep the
@@ -25,6 +28,7 @@ const initialModel: Model = {
   isMenuOpen: false,
   activeSection: Option.none(),
   mapLeague: 'All',
+  mapLeagueGroup: RadioGroup.init({ id: MAP_LEAGUE_GROUP_ID }),
   mapClub: Option.none(),
   isMapAreaImperial: true,
   heroPastHeader: false,
@@ -111,6 +115,22 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         evo(model, { mapLeague: () => league, mapClub: () => Option.none() }),
         [],
       ],
+      GotMapLeagueGroupMessage: ({ message }) =>
+        Update.foldChild({
+          update: MapLeagueRadioGroup.update,
+          read: (parent: Model) => Option.some(parent.mapLeagueGroup),
+          write: (parent: Model, mapLeagueGroup) =>
+            evo(parent, { mapLeagueGroup: () => mapLeagueGroup }),
+          toParentMessage: (childMessage) => GotMapLeagueGroupMessage({ message: childMessage }),
+          // Committing a league also drops the open club: the pin behind the
+          // card can be filtered away by the very pick that commits.
+          foldOutMessage:
+            ({ value }) =>
+            (parent: Model) => [
+              evo(parent, { mapLeague: () => value, mapClub: () => Option.none() }),
+              [],
+            ],
+        })(message)(model),
       OpenedMapClub: ({ slug }) => [evo(model, { mapClub: () => Option.some(slug) }), []],
       ClosedMapClub: () => [evo(model, { mapClub: () => Option.none() }), []],
       ToggledAreaUnit: () => [evo(model, { isMapAreaImperial: (imperial) => !imperial }), []],

@@ -1,5 +1,5 @@
-import { createKeyedLazy, html } from 'foldkit/html';
-import type { Document, Html } from 'foldkit/html';
+import { createKeyedLazy } from 'foldkit/html';
+import type { Document, Html, HtmlBuilder } from 'foldkit/html';
 
 import { footerView, headerView, menuOverlayView } from './components';
 import { documentTitle } from './document-title';
@@ -19,8 +19,6 @@ import {
   Statement,
   Story,
 } from './page';
-
-const h = html<Message>();
 
 // MEMOIZED SECTIONS. Two of the landing sections take no Model at all, so
 // their markup is identical on every render — and this view re-runs on every
@@ -42,26 +40,30 @@ const h = html<Message>();
 const heroLazy = createKeyedLazy();
 const marqueeLazy = createKeyedLazy();
 
-const landingSections = (model: Model, rootKey: string): ReadonlyArray<Html> => [
-  heroLazy(rootKey, Hero.view, []),
-  Story.view(model),
-  Competitions.view(model),
+const landingSections = (
+  model: Model,
+  rootKey: string,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Html> => [
+  heroLazy(rootKey, Hero.view, [h]),
+  Story.view(model, h),
+  Competitions.view(model, h),
   // The map right after the competitions — first WHAT we cover, then WHERE
   // it all happens, before zooming into individual protagonists.
-  Clubs.view(model),
-  Champions.view(model),
+  Clubs.view(model, h),
+  Champions.view(model, h),
   // Champion → her star player, then out to the national team.
-  Star.view(model),
-  National.view(model),
-  Statement.view(model),
+  Star.view(model, h),
+  National.view(model, h),
+  Statement.view(model, h),
   // The competitions ticker answers the statement’s closing line — "Watch
   // it rise to the top." and every competition name rolls past (user call;
   // it used to close the competitions section instead).
-  marqueeLazy(rootKey, Marquee.view, []),
-  Follow.view(model),
+  marqueeLazy(rootKey, Marquee.view, [h]),
+  Follow.view(model, h),
 ];
 
-export const view = (model: Model): Document => {
+export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
   // Keyed on the route tag as well as the motion flag: navigating between
   // the landing and the policy page tears the motion mounts down and re-runs
   // their setup against the page actually on screen — the choreography's
@@ -89,8 +91,8 @@ export const view = (model: Model): Document => {
         h.OnMount(ObserveReveals({ reduceMotion: model.prefersReducedMotion })),
       ],
       [
-        headerView(model),
-        menuOverlayView(model),
+        headerView(model, h),
+        menuOverlayView(model, h),
         // While the menu overlay is open, the page content behind it goes
         // `inert` — unfocusable and invisible to assistive tech, so Tab
         // cycles through the overlay (and header) only. The attribute is
@@ -98,9 +100,9 @@ export const view = (model: Model): Document => {
         // is a boolean attribute: its mere presence would disable the page.
         h.main(
           [h.OnMount(MountMotion()), ...(model.isMenuOpen ? [h.Inert(true)] : [])],
-          isPolicy ? [Policy.view()] : landingSections(model, rootKey),
+          isPolicy ? [Policy.view(h)] : landingSections(model, rootKey, h),
         ),
-        footerView(model.isMenuOpen),
+        footerView(model.isMenuOpen, h),
       ],
     ),
   };

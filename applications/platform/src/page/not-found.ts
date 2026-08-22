@@ -1,5 +1,4 @@
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import type { Message } from '../message';
 import { welcomeRouter } from '../route';
@@ -7,12 +6,10 @@ import { getStyleXAttributes } from '../stylexAttributes';
 import { styles } from '../styles/not-found';
 import { shared } from '../styles/shared';
 
-const h = html<Message>();
-
 // The 404 screen — an unknown path names itself instead of silently
 // rendering the welcome screen. Same anatomy as screenHeader (pink chip,
 // display title, quiet subtitle); the one action is the way home.
-export const view = (path: string): Html =>
+export const view = (path: string, h: HtmlBuilder<Message>): Html =>
   h.div(
     [],
     [

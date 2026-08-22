@@ -1,6 +1,5 @@
 import clsx from 'clsx';
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import flagLionessImage from '../assets/flag-lioness.webp';
 import nationalAwayHighfiveImage from '../assets/national-away-highfive.webp';
@@ -14,8 +13,6 @@ import { platformUrl } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';
 
-const h = html<Message>();
-
 // The 2027 World Cup qualifying play-offs — Czechia went through Group B1
 // as runners-up and enters the two-round knockout path (REAL fixtures from
 // the June 18, 2026 draw). Rendered as a BRACKET, not prose cards: the
@@ -26,7 +23,13 @@ const h = html<Message>();
 // platform like every match row on the page. Hover pops the card to paper:
 // the tables' sliding pink row fill would vanish into this section’s pink
 // background.
-const playoffTie = (home: string, away: string, czech: boolean, step: number): Html =>
+const playoffTie = (
+  home: string,
+  away: string,
+  czech: boolean,
+  step: number,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.a(
     [
       h.Href(platformUrl),
@@ -67,7 +70,12 @@ const playoffTie = (home: string, away: string, czech: boolean, step: number): H
 // plain pass-through run (Round 2 → the prize) — it reaches one border
 // width into the dashed card itself, so the crossing needs no separate
 // port piece that could round one pixel away from it.
-const bracketJoint = (position: string, bridge: 'down' | 'up' | 'none', step: number): Html =>
+const bracketJoint = (
+  position: string,
+  bridge: 'down' | 'up' | 'none',
+  step: number,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.div(
     [h.Class(`relative hidden md:block ${position}`), h.DataAttribute('bracket-step', `${step}`)],
     [
@@ -114,7 +122,8 @@ const bracketJoint = (position: string, bridge: 'down' | 'up' | 'none', step: nu
 
 // The joint’s phone-sized sibling: a short centered drop between the
 // stacked bracket stages.
-const bracketDrop = (): Html => h.div([h.Class('mx-auto h-10 w-1 bg-ink md:hidden')], []);
+const bracketDrop = (h: HtmlBuilder<Message>): Html =>
+  h.div([h.Class('mx-auto h-10 w-1 bg-ink md:hidden')], []);
 
 // The matchday PRINT PILE: five celebration photos hard-cutting through
 // one tile (the .photo-cycle loop in styles.css; reduced motion pins the
@@ -124,7 +133,7 @@ const bracketDrop = (): Html => h.div([h.Class('mx-auto h-10 w-1 bg-ink md:hidde
 // `key` names the pile’s reveal pair. The section renders two of them —
 // a corner stamp from md and an in-flow tile on phones — and each needs
 // its own keys, since a reveal key addresses one element in the Model.
-const matchdayPile = (model: Model, key: string): Html =>
+const matchdayPile = (model: Model, key: string, h: HtmlBuilder<Message>): Html =>
   h.div(
     [h.Class('relative overflow-hidden')],
     [
@@ -175,7 +184,12 @@ const matchdayPile = (model: Model, key: string): Html =>
 // full-width road rule had to clear the lioness column — leaving a dead
 // pink hole under the payoff at every width. The card is exactly the
 // height that hole wanted back.
-const nationalIdCard = (model: Model, classes: string, cellReveals: boolean): Html =>
+const nationalIdCard = (
+  model: Model,
+  classes: string,
+  cellReveals: boolean,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.div(
     [h.Class(`flex-wrap items-start justify-between gap-x-6 gap-y-6 ${classes}`)],
     (
@@ -207,7 +221,7 @@ const nationalIdCard = (model: Model, classes: string, cellReveals: boolean): Ht
     }),
   );
 
-export const view = (model: Model): Html =>
+export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.section(
     [h.Id('roar-as-one'), h.Class('relative bg-pink py-16 text-ink md:py-24')],
     [
@@ -275,7 +289,7 @@ export const view = (model: Model): Html =>
           h.DataAttribute('reveal', 'up'),
           h.DataAttribute('reveal-key', 'national-mascots'),
         ],
-        [matchdayPile(model, 'national-mascots')],
+        [matchdayPile(model, 'national-mascots', h)],
       ),
       h.div(
         [h.Class(`${container} relative z-10`)],
@@ -304,7 +318,7 @@ export const view = (model: Model): Html =>
               h.div(
                 [h.Class('md:min-h-[min(calc(100svh-10rem),40rem)]')],
                 [
-                  kicker(model, '06', 'Roar as one', 'pink', '/#roar-as-one'),
+                  kicker(model, '06', 'Roar as one', 'pink', '/#roar-as-one', h),
                   h.h2(
                     [h.Class('mt-10 md:mt-16')],
                     [
@@ -321,6 +335,7 @@ export const view = (model: Model): Html =>
                         'Lvice',
                         'text-fluid-7xl-12xl text-paper',
                         0,
+                        h,
                       ),
                     ],
                   ),
@@ -379,7 +394,7 @@ export const view = (model: Model): Html =>
                           h.DataAttribute('reveal', 'up'),
                           h.DataAttribute('reveal-key', 'national-pile'),
                         ],
-                        [matchdayPile(model, 'national-pile')],
+                        [matchdayPile(model, 'national-pile', h)],
                       ),
                       // max-w-2xl keeps the three cells inside the left
                       // column (the lioness starts ~780px in at 1280)
@@ -389,6 +404,7 @@ export const view = (model: Model): Html =>
                         model,
                         'mt-12 grid grid-cols-2 sm:mt-0 sm:min-w-0 sm:flex-1 sm:grid-cols-1 md:mt-14 md:flex md:max-w-2xl',
                         true,
+                        h,
                       ),
                     ],
                   ),
@@ -463,15 +479,15 @@ export const view = (model: Model): Html =>
                     [
                       h.div(
                         [h.Class('md:col-start-1 md:row-start-1')],
-                        [playoffTie('Czechia', 'Scotland', true, 0)],
+                        [playoffTie('Czechia', 'Scotland', true, 0, h)],
                       ),
                       h.div(
                         [h.Class('mt-4 md:col-start-1 md:row-start-2 md:mt-0')],
-                        [playoffTie('Lithuania', 'Sweden', false, 1)],
+                        [playoffTie('Lithuania', 'Sweden', false, 1, h)],
                       ),
-                      bracketDrop(),
-                      bracketJoint('md:col-start-2 md:row-start-1', 'down', 2),
-                      bracketJoint('md:col-start-2 md:row-start-2', 'up', 2),
+                      bracketDrop(h),
+                      bracketJoint('md:col-start-2 md:row-start-1', 'down', 2, h),
+                      bracketJoint('md:col-start-2 md:row-start-2', 'up', 2, h),
                       // Round 2 has no teams yet — dashed outline, nothing to
                       // click through to until the Round 1 winners are known.
                       h.div(
@@ -495,8 +511,8 @@ export const view = (model: Model): Html =>
                           h.p([h.Class('display mt-4 text-fluid-2xl-4xl')], ['The winners meet.']),
                         ],
                       ),
-                      bracketDrop(),
-                      bracketJoint('md:col-start-4 md:row-span-2 md:row-start-1', 'none', 4),
+                      bracketDrop(h),
+                      bracketJoint('md:col-start-4 md:row-span-2 md:row-start-1', 'none', 4, h),
                       // The prize node — the section’s only paper block, so the
                       // eye lands where the bracket ends.
                       h.div(

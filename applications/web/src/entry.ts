@@ -1,6 +1,5 @@
 import '@fontsource/anton/400.css';
 import '@fontsource-variable/archivo/index.css';
-import { overlay } from '@foldkit/devtools';
 import { Effect } from 'effect';
 import { Runtime } from 'foldkit';
 
@@ -134,11 +133,6 @@ if (import.meta.env.DEV) {
 const application = Runtime.makeApplication({
   Model,
   Flags,
-  // The boot-time reduced-motion read — mid-session flips arrive through
-  // the reducedMotion subscription.
-  flags: Effect.sync(() => ({
-    prefersReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  })),
   init,
   update,
   view,
@@ -148,10 +142,14 @@ const application = Runtime.makeApplication({
     onUrlRequest: (request) => ClickedLink({ request }),
     onUrlChange: (url) => ChangedUrl({ url }),
   },
-  // The package declares `sideEffects: false`, so folding this to `undefined`
-  // in a production build leaves `overlay` unreferenced and the dependency is
-  // dropped rather than shipped unused.
-  ...(import.meta.env.DEV ? { devTools: { overlay, Message } } : {}),
+  devTools: { Message },
 });
 
-Runtime.run(application);
+// The boot-time reduced-motion read — mid-session flips arrive through the
+// reducedMotion subscription. It rides with `run` rather than the application
+// because a hydrating entry takes its Flags off the server handoff instead.
+Runtime.run(application, {
+  flags: Effect.sync(() => ({
+    prefersReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  })),
+});

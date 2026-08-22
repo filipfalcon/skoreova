@@ -1,6 +1,8 @@
+import { RadioGroup } from '@foldkit/ui';
 import { Option } from 'effect';
 
 import { Model } from './main';
+import { MAP_LEAGUE_GROUP_ID } from './radio-groups';
 import { HomeRoute } from './route';
 
 // The landing page at rest — mirrors `initialModel` in main.ts.
@@ -9,6 +11,7 @@ export const landingModel = Model.make({
   isMenuOpen: false,
   activeSection: Option.none(),
   mapLeague: 'All',
+  mapLeagueGroup: RadioGroup.init({ id: MAP_LEAGUE_GROUP_ID }),
   mapClub: Option.none(),
   isMapAreaImperial: true,
   heroPastHeader: false,

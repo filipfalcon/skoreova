@@ -103,7 +103,7 @@ const expectFailure = (data: SectionData, error: string): void => {
 test('signing in fans out one fetch per section, and each success loads it', () => {
   Story.story(
     update,
-    Story.with(signedOutModel),
+    Story.given(signedOutModel),
     Story.message(SubmittedSignIn()),
     Story.model((model) => {
       expect(model.session._tag).toBe('SignedIn');
@@ -152,7 +152,7 @@ test('signing in refetches a section a pre-auth deep link had force-populated', 
     // A deep link resolved one club by id before sign-in, which forces that
     // section to Success holding the single row (upsertRecord). Fetching only
     // the IDLE sections would leave Clubs as a one-row list.
-    Story.with({
+    Story.given({
       ...signedOutModel,
       clubs: SectionData.Success({ data: [sampleClub] }),
     }),
@@ -184,7 +184,7 @@ test('signing in refetches a section a pre-auth deep link had force-populated', 
 test('a successful players fetch loads its rows and records the total', () => {
   Story.story(
     update,
-    Story.with({
+    Story.given({
       ...signedOutModel,
       session: SignedIn({ email: '' }),
       players: SectionData.Loading(),
@@ -215,7 +215,7 @@ test('a successful players fetch loads its rows and records the total', () => {
 test('every fetch FAILURE settles the section into Failure with the reason', () => {
   Story.story(
     update,
-    Story.with(loadingModel),
+    Story.given(loadingModel),
     Story.message(FailedFetchPlayers({ reason: 'players down' })),
     Story.message(FailedFetchClubs({ reason: 'clubs down' })),
     Story.message(FailedFetchNationals({ reason: 'nationals down' })),
@@ -242,7 +242,7 @@ test('every fetch FAILURE settles the section into Failure with the reason', () 
 test('retrying a failed section reloads it and re-probes health', () => {
   Story.story(
     update,
-    Story.with({ ...loadingModel, players: SectionData.Failure({ error: 'boom' }) }),
+    Story.given({ ...loadingModel, players: SectionData.Failure({ error: 'boom' }) }),
     Story.message(ClickedRetryPlayers()),
     Story.model((model) => {
       // Failure has no data to keep, so a retry starts a fresh Loading.
@@ -260,7 +260,7 @@ test('paging the players list revalidates while keeping the current page', () =>
     // playersListModel holds a loaded page, so paging goes to Refreshing
     // (stale-while-revalidate) rather than discarding the rows. 42 records at
     // ten a page is five pages, so page 3 is a real one.
-    Story.with({ ...playersListModel, playersTotal: 42 }),
+    Story.given({ ...playersListModel, playersTotal: 42 }),
     Story.message(ClickedPlayersPage({ page: 3 })),
     Story.model((model) => {
       expect(model.playersPage).toBe(3);
@@ -276,7 +276,7 @@ test('a players page past the end clamps to the last page', () => {
     update,
     // 42 records = five pages; the arrows disable at the end-stop, but a
     // double click can still send a sixth.
-    Story.with({ ...playersListModel, playersTotal: 42 }),
+    Story.given({ ...playersListModel, playersTotal: 42 }),
     Story.message(ClickedPlayersPage({ page: 6 })),
     Story.model((model) => {
       expect(model.playersPage).toBe(5);
@@ -289,7 +289,7 @@ test('a players page past the end clamps to the last page', () => {
 test('a deep-linked team resolves by id, upserts the row, and opens its drawer', () => {
   Story.story(
     update,
-    Story.with({
+    Story.given({
       ...signedOutModel,
       session: SignedIn({ email: '' }),
       route: SectionRoute({ section: 'clubs' }),
@@ -318,7 +318,7 @@ test('a deep-linked team resolves by id, upserts the row, and opens its drawer',
 test('a team that cannot be resolved by id surfaces a link error', () => {
   Story.story(
     update,
-    Story.with({
+    Story.given({
       ...signedOutModel,
       session: SignedIn({ email: '' }),
       route: SectionRoute({ section: 'clubs' }),
@@ -334,7 +334,7 @@ test('a team that cannot be resolved by id surfaces a link error', () => {
 test('once the chart host mounts, the current record is synced into it', () => {
   Story.story(
     update,
-    Story.with(playerRecordModel),
+    Story.given(playerRecordModel),
     Story.message(SucceededMountChart({ hostId: CHART_HOST_ID })),
     Story.model((model) => {
       expect(model.chartError).toEqual(Option.none());
@@ -347,7 +347,7 @@ test('once the chart host mounts, the current record is synced into it', () => {
 test('a team record’s points host syncs through SyncPointsChart, and reports its failures', () => {
   Story.story(
     update,
-    Story.with(clubRecordModel),
+    Story.given(clubRecordModel),
     // Two hosts share SucceededMountChart — the hostId is what picks the
     // series. The points chart is team-only (see POINTS_CHART_HOST_ID).
     Story.message(SucceededMountChart({ hostId: POINTS_CHART_HOST_ID })),
@@ -368,7 +368,7 @@ test('a team record’s points host syncs through SyncPointsChart, and reports i
 test('a fetch failure arrives through its own Command, not just its message', () => {
   Story.story(
     update,
-    Story.with(signedOutModel),
+    Story.given(signedOutModel),
     Story.message(SubmittedSignIn()),
     // Dispatching FailedFetchPlayers by hand (as the failure sweep above does)
     // proves the handler. Resolving the COMMAND with it is what proves the
@@ -399,7 +399,7 @@ test('a new edition names its competition through the picker, and is filed under
     update,
     // On the Editions list with the competitions loaded — what the picker
     // offers. Creating opens a blank draft over the section’s columns.
-    Story.with(editionsListModel),
+    Story.given(editionsListModel),
     Story.message(ClickedAddNew()),
     Story.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
     Story.model((model) => {
@@ -428,7 +428,7 @@ test('a new edition names its competition through the picker, and is filed under
 test('a new edition with no competition chosen is refused, not filed', () => {
   Story.story(
     update,
-    Story.with(editionsListModel),
+    Story.given(editionsListModel),
     Story.message(ClickedAddNew()),
     Story.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
     // Everything but the reference filled in. The drawer disables Save here;
@@ -449,7 +449,7 @@ test('a new edition with no competition chosen is refused, not filed', () => {
 test('a failed chart mount records the reason as a chart error', () => {
   Story.story(
     update,
-    Story.with(playerRecordModel),
+    Story.given(playerRecordModel),
     Story.message(FailedMountChart({ reason: 'no canvas' })),
     Story.model((model) => {
       expect(model.chartError).toEqual(Option.some('no canvas'));
@@ -461,7 +461,7 @@ test('a failed chart mount records the reason as a chart error', () => {
 test('a failed chart sync records the reason as a chart error', () => {
   Story.story(
     update,
-    Story.with(playerRecordModel),
+    Story.given(playerRecordModel),
     Story.message(FailedSyncChart({ reason: 'no live chart' })),
     Story.model((model) => {
       expect(model.chartError).toEqual(Option.some('no live chart'));
@@ -474,7 +474,7 @@ test('saving an edited record defers to the clock, then commits with that timest
   Story.story(
     update,
     // A player record open with one field edited in the draft (index 1).
-    Story.with({
+    Story.given({
       ...playerRecordModel,
       drawer: DrawerEditing({
         section: 'players',
@@ -519,7 +519,7 @@ test('a deleted record stays deleted when the browser replays its route', () => 
   Story.story(
     update,
     // A club open in its drawer, deep-linkable by id.
-    Story.with(clubRecordModel),
+    Story.given(clubRecordModel),
     Story.message(ClickedDeleteRecord()),
     Story.message(ClickedConfirmDelete()),
     Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
@@ -556,7 +556,7 @@ test('a refetch cannot resurrect a deleted record or drop a locally created one'
 
   Story.story(
     update,
-    Story.with({
+    Story.given({
       ...clubRecordModel,
       clubs: SectionData.Success({ data: [sampleClub, localClub] }),
     }),
@@ -588,7 +588,7 @@ test('a delete on one players page survives paging away and back', () => {
     // Players is the one server-paged section: each fetch REPLACES the rows
     // with a different page, so a merge that reads deleted ids off the loaded
     // rows can’t see page 1's delete while page 2 is on screen.
-    Story.with({
+    Story.given({
       ...playersListModel,
       playersTotal: 42,
       drawer: DrawerEditing({
@@ -622,7 +622,7 @@ test('a delete on one players page survives paging away and back', () => {
 test('the ledger outranks a list that no longer carries the deleted record', () => {
   Story.story(
     update,
-    Story.with(clubRecordModel),
+    Story.given(clubRecordModel),
     Story.message(ClickedDeleteRecord()),
     Story.message(ClickedConfirmDelete()),
     Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
@@ -655,7 +655,7 @@ test('a row the wire already reports deleted does not open either', () => {
     // of them green. This is the case only it covers: a soft delete that
     // happened somewhere else and arrived on the wire, with an empty ledger
     // because this client never performed it.
-    Story.with({
+    Story.given({
       ...clubRecordModel,
       drawer: DrawerClosed(),
       dialog: Dialog.init({ id: DRAWER_DIALOG_ID }),
@@ -675,7 +675,7 @@ test('a row the wire already reports deleted does not open either', () => {
 test('a by-id response in flight when the delete happens cannot land the record', () => {
   Story.story(
     update,
-    Story.with(clubRecordModel),
+    Story.given(clubRecordModel),
     Story.message(ClickedDeleteRecord()),
     Story.message(ClickedConfirmDelete()),
     Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
@@ -705,7 +705,7 @@ test('a by-id response in flight when the delete happens cannot land the record'
 test('the column rules decide what saves, and the same rules refuse in update', () => {
   Story.story(
     update,
-    Story.with(editionsListModel),
+    Story.given(editionsListModel),
     Story.message(ClickedAddNew()),
     Story.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
     // Edition (title, required), Competition (reference, required), then two

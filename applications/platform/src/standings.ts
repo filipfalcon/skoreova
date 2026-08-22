@@ -1,6 +1,5 @@
 import { Array, Option } from 'effect';
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import type { StandingsRow } from './data';
 import type { Message } from './message';
@@ -8,8 +7,6 @@ import { getStyleXAttributes } from './stylexAttributes';
 import type { StyleXStyle } from './stylexAttributes';
 import { shared } from './styles/shared';
 import { styles } from './styles/standings';
-
-const h = html<Message>();
 
 export interface StandingsZone {
   readonly label: string;
@@ -158,7 +155,7 @@ export const clubEurope: Record<string, EuroCampaign> = {
 // Segmented season progress — the same bar vocabulary as the stat-board
 // sparklines rather than a solid meter, so it reads as ROUNDS, not a
 // percentage of some abstract whole.
-export const seasonProgress = (played: number, total: number): Html =>
+export const seasonProgress = (played: number, total: number, h: HtmlBuilder<Message>): Html =>
   h.div(
     [...getStyleXAttributes(h, styles.progress)],
     [
@@ -217,7 +214,7 @@ const zonesFor = (
   );
 
 // Column key — without it the two numeric columns are a guess.
-const standingsColumnKey = (): Html =>
+const standingsColumnKey = (h: HtmlBuilder<Message>): Html =>
   h.div(
     [...getStyleXAttributes(h, styles.columnKey)],
     [
@@ -236,6 +233,7 @@ const standingsRows = (
   highlightName: string,
   zoneAt: (position: number) => Option.Option<StandingsZone>,
   flushFirst: boolean,
+  h: HtmlBuilder<Message>,
 ): Html =>
   h.ol(
     [...getStyleXAttributes(h, styles.rows)],
@@ -334,7 +332,7 @@ const standingsRows = (
 // Legend — carries the zone colors below md, where the named column
 // is hidden. Swatches are BARS of the same width as the ribbon, not
 // squares, so the mapping back to the table is immediate.
-const standingsLegend = (zones: ReadonlyArray<StandingsZone>): Html =>
+const standingsLegend = (zones: ReadonlyArray<StandingsZone>, h: HtmlBuilder<Message>): Html =>
   h.ul(
     [...getStyleXAttributes(h, styles.legend)],
     zones.map((zone) =>
@@ -359,13 +357,14 @@ export const standingsTable = (
   rows: ReadonlyArray<StandingsRow>,
   highlightName: string,
   zoneAt: (position: number) => Option.Option<StandingsZone>,
+  h: HtmlBuilder<Message>,
 ): ReadonlyArray<Html> => [
-  standingsColumnKey(),
+  standingsColumnKey(h),
   h.div(
     [...getStyleXAttributes(h, styles.rowsWrapper)],
-    [standingsRows(allEntries(rows), highlightName, zoneAt, true)],
+    [standingsRows(allEntries(rows), highlightName, zoneAt, true, h)],
   ),
-  standingsLegend(zonesFor(zoneAt, rows.length)),
+  standingsLegend(zonesFor(zoneAt, rows.length), h),
 ];
 
 // The section heading a table sits under: the competition is the SUBJECT,
@@ -373,5 +372,5 @@ export const standingsTable = (
 // the chip above.
 // Sits under the section chip. No rule and no indent — the chip is a
 // filled block again, so there is no text edge to line up with.
-export const standingsHeadline = (text: string): Html =>
+export const standingsHeadline = (text: string, h: HtmlBuilder<Message>): Html =>
   h.p([...getStyleXAttributes(h, shared.display, styles.headline)], [text]);

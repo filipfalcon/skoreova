@@ -3,8 +3,7 @@ import type { Calendar as UiCalendar } from '@foldkit/ui';
 import { Array, Match as M, Option } from 'effect';
 import { AsyncData, Calendar } from 'foldkit';
 import clsx from 'clsx';
-import { html } from 'foldkit/html';
-import type { Document, Html } from 'foldkit/html';
+import type { Document, Html, HtmlBuilder } from 'foldkit/html';
 
 import { PAGE_SIZE } from '../api';
 import type { Column } from '../api';
@@ -81,9 +80,7 @@ import {
 } from '../styles';
 import * as Drawer from './drawer';
 
-const h = html<Message>();
-
-export const view = (model: Model): Document => {
+export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
   const account = accountName(model);
   // The screen is derived from the stored route: a section list when one is
   // addressed, the dashboard landing page otherwise (home and the 404
@@ -118,11 +115,14 @@ export const view = (model: Model): Document => {
             h.div(
               [h.Class('flex items-center gap-3')],
               [
-                Button.view({
-                  onClick: ClickedDashboard(),
-                  toView: ({ button }) =>
-                    h.button([...button, h.Class(brandButtonStyle)], ['Skóreová']),
-                }),
+                Button.view(
+                  {
+                    onClick: ClickedDashboard(),
+                    toView: ({ button }) =>
+                      h.button([...button, h.Class(brandButtonStyle)], ['Skóreová']),
+                  },
+                  h,
+                ),
                 h.span([h.Class(dashboardChipStyle)], ['Studio']),
               ],
             ),
@@ -133,24 +133,30 @@ export const view = (model: Model): Document => {
                   [h.Class('hidden text-sm text-neutral-500 sm:inline')],
                   [`Signed in as ${account}`],
                 ),
-                Button.view({
-                  onClick: ClickedSignOut(),
-                  toView: ({ button }) =>
-                    h.button([...button, h.Class(signOutStyle)], ['Sign out']),
-                }),
-                Button.view({
-                  onClick: ToggledMenu(),
-                  toView: ({ button }) =>
-                    h.button(
-                      [
-                        ...button,
-                        h.AriaLabel('Menu'),
-                        h.AriaExpanded(model.isMenuOpen),
-                        h.Class(menuToggleStyle),
-                      ],
-                      [model.isMenuOpen ? '✕' : '☰'],
-                    ),
-                }),
+                Button.view(
+                  {
+                    onClick: ClickedSignOut(),
+                    toView: ({ button }) =>
+                      h.button([...button, h.Class(signOutStyle)], ['Sign out']),
+                  },
+                  h,
+                ),
+                Button.view(
+                  {
+                    onClick: ToggledMenu(),
+                    toView: ({ button }) =>
+                      h.button(
+                        [
+                          ...button,
+                          h.AriaLabel('Menu'),
+                          h.AriaExpanded(model.isMenuOpen),
+                          h.Class(menuToggleStyle),
+                        ],
+                        [model.isMenuOpen ? '✕' : '☰'],
+                      ),
+                  },
+                  h,
+                ),
               ],
             ),
           ],
@@ -162,31 +168,37 @@ export const view = (model: Model): Document => {
             ),
           ],
           [
-            sidebar(maybeSection, model.isMenuOpen),
+            sidebar(maybeSection, model.isMenuOpen, h),
             Option.match(maybeSection, {
-              onNone: () => dashboardHome(model),
-              onSome: (section) => content(model, section),
+              onNone: () => dashboardHome(model, h),
+              onSome: (section) => content(model, section, h),
             }),
           ],
         ),
-        Drawer.view(model),
+        Drawer.view(model, h),
       ],
     ),
   };
 };
 
-const sidebar = (current: Option.Option<Section>, open: boolean): Html => {
+const sidebar = (current: Option.Option<Section>, open: boolean, h: HtmlBuilder<Message>): Html => {
   const currentSection = Option.getOrUndefined(current);
 
   const leafItem = (leaf: MenuLeaf): Html =>
-    Button.view({
-      onClick: SelectedSection({ section: leaf.section }),
-      toView: ({ button }) =>
-        h.button(
-          [...button, h.Class(leaf.section === currentSection ? navItemActiveStyle : navItemStyle)],
-          [leaf.label],
-        ),
-    });
+    Button.view(
+      {
+        onClick: SelectedSection({ section: leaf.section }),
+        toView: ({ button }) =>
+          h.button(
+            [
+              ...button,
+              h.Class(leaf.section === currentSection ? navItemActiveStyle : navItemStyle),
+            ],
+            [leaf.label],
+          ),
+      },
+      h,
+    );
 
   const node = (entry: MenuNode): Html =>
     'group' in entry
@@ -199,14 +211,17 @@ const sidebar = (current: Option.Option<Section>, open: boolean): Html => {
         )
       : leafItem(entry.leaf);
 
-  const dashboardItem: Html = Button.view({
-    onClick: ClickedDashboard(),
-    toView: ({ button }) =>
-      h.button(
-        [...button, h.Class(Option.isNone(current) ? navItemActiveStyle : navItemStyle)],
-        ['Dashboard'],
-      ),
-  });
+  const dashboardItem: Html = Button.view(
+    {
+      onClick: ClickedDashboard(),
+      toView: ({ button }) =>
+        h.button(
+          [...button, h.Class(Option.isNone(current) ? navItemActiveStyle : navItemStyle)],
+          ['Dashboard'],
+        ),
+    },
+    h,
+  );
 
   return h.nav(
     [h.Class(clsx(open ? 'flex' : 'hidden', 'w-full flex-col gap-6 md:flex md:w-56 md:shrink-0'))],
@@ -216,7 +231,7 @@ const sidebar = (current: Option.Option<Section>, open: boolean): Html => {
 
 // The default landing page right after signing in — an overview of every
 // section, each linking straight into its list.
-const dashboardHome = (model: Model): Html => {
+const dashboardHome = (model: Model, h: HtmlBuilder<Message>): Html => {
   const account = accountName(model);
 
   // Players is server-paginated, so its loaded rows are one page of ten —
@@ -228,17 +243,20 @@ const dashboardHome = (model: Model): Html => {
 
   const card = (section: Section): Html => {
     const count = countFor(section);
-    return Button.view({
-      onClick: SelectedSection({ section }),
-      toView: ({ button }) =>
-        h.button(
-          [...button, h.Class(homeCardStyle)],
-          [
-            h.span([h.Class(homeCardCountStyle)], [count.toString()]),
-            h.span([h.Class(homeCardLabelStyle)], [sectionLabels[section]]),
-          ],
-        ),
-    });
+    return Button.view(
+      {
+        onClick: SelectedSection({ section }),
+        toView: ({ button }) =>
+          h.button(
+            [...button, h.Class(homeCardStyle)],
+            [
+              h.span([h.Class(homeCardCountStyle)], [count.toString()]),
+              h.span([h.Class(homeCardLabelStyle)], [sectionLabels[section]]),
+            ],
+          ),
+      },
+      h,
+    );
   };
 
   return h.main(
@@ -251,7 +269,7 @@ const dashboardHome = (model: Model): Html => {
   );
 };
 
-const content = (model: Model, current: Section): Html => {
+const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html => {
   const label = sectionLabels[current];
   const meta = sectionData[current];
   const columns = meta.columns;
@@ -341,22 +359,25 @@ const content = (model: Model, current: Section): Html => {
       entry.id,
       [],
       [
-        Button.view({
-          onClick: ClickedRecord({ section: entry.section, id: entry.id }),
-          toView: ({ button }) =>
-            h.button(
-              [...button, h.Class(entryCardStyle)],
-              [
-                h.span([h.Class('font-medium text-neutral-900')], [entry.values[0] ?? '']),
-                h.div(
-                  [h.Class('mt-1 flex flex-wrap items-center gap-2')],
-                  columns
-                    .slice(1)
-                    .map((column, i) => fieldBadge(column, entry.values[i + 1] ?? '')),
-                ),
-              ],
-            ),
-        }),
+        Button.view(
+          {
+            onClick: ClickedRecord({ section: entry.section, id: entry.id }),
+            toView: ({ button }) =>
+              h.button(
+                [...button, h.Class(entryCardStyle)],
+                [
+                  h.span([h.Class('font-medium text-neutral-900')], [entry.values[0] ?? '']),
+                  h.div(
+                    [h.Class('mt-1 flex flex-wrap items-center gap-2')],
+                    columns
+                      .slice(1)
+                      .map((column, i) => fieldBadge(column, entry.values[i + 1] ?? '')),
+                  ),
+                ],
+              ),
+          },
+          h,
+        ),
       ],
     );
 
@@ -403,7 +424,7 @@ const content = (model: Model, current: Section): Html => {
             ),
           triggerClassName: filterSelectStyle,
           panelClassName: datePickerPanelStyle,
-          toCalendarView: calendarView,
+          toCalendarView: (attributes) => calendarView(attributes, h),
         },
         toParentMessage: (message) => GotDateFilterMessage({ column, bound, message }),
       });
@@ -415,14 +436,17 @@ const content = (model: Model, current: Section): Html => {
         h.span([h.Class('text-sm text-neutral-400')], ['–']),
         picker('to'),
         hasRange
-          ? Button.view({
-              onClick: ClearedDateFilter({ column }),
-              toView: ({ button }) =>
-                h.button(
-                  [...button, h.AriaLabel(`Clear ${column} filter`), h.Class(filterClearStyle)],
-                  ['✕'],
-                ),
-            })
+          ? Button.view(
+              {
+                onClick: ClearedDateFilter({ column }),
+                toView: ({ button }) =>
+                  h.button(
+                    [...button, h.AriaLabel(`Clear ${column} filter`), h.Class(filterClearStyle)],
+                    ['✕'],
+                  ),
+              },
+              h,
+            )
           : h.empty,
       ],
     );
@@ -513,15 +537,18 @@ const content = (model: Model, current: Section): Html => {
     // called it deliberate.) It does drop the OnClick, so the arrow is inert
     // where it matters; what it costs is a tab stop that does nothing, which
     // is why the label has to look blocked.
-    Button.view({
-      onClick,
-      isDisabled: disabled,
-      toView: ({ button }) =>
-        h.button(
-          [...button, h.Class(disabled ? paginationButtonInertStyle : paginationButtonStyle)],
-          [label],
-        ),
-    });
+    Button.view(
+      {
+        onClick,
+        isDisabled: disabled,
+        toView: ({ button }) =>
+          h.button(
+            [...button, h.Class(disabled ? paginationButtonInertStyle : paginationButtonStyle)],
+            [label],
+          ),
+      },
+      h,
+    );
 
   const pagination = (): Html => {
     if (current === 'players') {
@@ -590,10 +617,13 @@ const content = (model: Model, current: Section): Html => {
           [h.Class('text-sm text-rose-700')],
           [`Couldn’t load ${label.toLowerCase()}: ${failureError}`],
         ),
-        Button.view({
-          onClick: retry,
-          toView: ({ button }) => h.button([...button, h.Class(retryButtonStyle)], ['Retry']),
-        }),
+        Button.view(
+          {
+            onClick: retry,
+            toView: ({ button }) => h.button([...button, h.Class(retryButtonStyle)], ['Retry']),
+          },
+          h,
+        ),
       ],
     );
   };
@@ -654,36 +684,43 @@ const content = (model: Model, current: Section): Html => {
                     ],
                     [],
                   ),
-                  Button.view({
-                    onClick: retry,
-                    // Keeping the tab stop is right here whatever the
-                    // component did: the label reads "Refreshing…" and the
-                    // AriaLive below announces it, so the button is worth
-                    // reaching while the fetch is in flight. It just isn’t the
-                    // native `disabled` an earlier note here claimed.
-                    isDisabled: pending,
-                    toView: ({ button }) =>
-                      h.button(
-                        [
-                          ...button,
-                          h.AriaLive('polite'),
-                          h.Class(pending ? refreshButtonInertStyle : refreshButtonStyle),
-                        ],
-                        [
-                          pending
-                            ? 'Refreshing…'
-                            : model.serverHealth === 'Down'
-                              ? 'Retry'
-                              : 'Refresh',
-                        ],
-                      ),
-                  }),
+                  Button.view(
+                    {
+                      onClick: retry,
+                      // Keeping the tab stop is right here whatever the
+                      // component did: the label reads "Refreshing…" and the
+                      // AriaLive below announces it, so the button is worth
+                      // reaching while the fetch is in flight. It just isn’t the
+                      // native `disabled` an earlier note here claimed.
+                      isDisabled: pending,
+                      toView: ({ button }) =>
+                        h.button(
+                          [
+                            ...button,
+                            h.AriaLive('polite'),
+                            h.Class(pending ? refreshButtonInertStyle : refreshButtonStyle),
+                          ],
+                          [
+                            pending
+                              ? 'Refreshing…'
+                              : model.serverHealth === 'Down'
+                                ? 'Retry'
+                                : 'Refresh',
+                          ],
+                        ),
+                    },
+                    h,
+                  ),
                 ],
               ),
-              Button.view({
-                onClick: ClickedAddNew(),
-                toView: ({ button }) => h.button([...button, h.Class(addNewStyle)], ['+ Add new']),
-              }),
+              Button.view(
+                {
+                  onClick: ClickedAddNew(),
+                  toView: ({ button }) =>
+                    h.button([...button, h.Class(addNewStyle)], ['+ Add new']),
+                },
+                h,
+              ),
             ],
           ),
         ],
@@ -692,21 +729,24 @@ const content = (model: Model, current: Section): Html => {
       linkErrorBanner(),
       // Placeholder-only visually; the real <label> is sr-only so the search
       // field is properly labeled without a visible caption.
-      Input.view({
-        id: 'section-search',
-        type: 'search',
-        placeholder: `Search ${label.toLowerCase()}…`,
-        value: model.search,
-        onInput: (value) => UpdatedSearch({ value }),
-        toView: (attributes) =>
-          h.div(
-            [h.Class('mt-6')],
-            [
-              h.label([...attributes.label, h.Class('sr-only')], [`Search ${label}`]),
-              h.input([...attributes.input, h.Class(searchInputStyle)]),
-            ],
-          ),
-      }),
+      Input.view(
+        {
+          id: 'section-search',
+          type: 'search',
+          placeholder: `Search ${label.toLowerCase()}…`,
+          value: model.search,
+          onInput: (value) => UpdatedSearch({ value }),
+          toView: (attributes) =>
+            h.div(
+              [h.Class('mt-6')],
+              [
+                h.label([...attributes.label, h.Class('sr-only')], [`Search ${label}`]),
+                h.input([...attributes.input, h.Class(searchInputStyle)]),
+              ],
+            ),
+        },
+        h,
+      ),
       h.div(
         [h.Class('mt-3 flex flex-wrap gap-2')],
         filterColumns.map(({ column, index }) => {
@@ -742,7 +782,7 @@ const content = (model: Model, current: Section): Html => {
 // Lays out a DatePicker’s embedded calendar from the component’s attribute
 // bundles: the Days grid, plus the Months/Years drill-downs reached through
 // the heading button.
-const calendarView = (attributes: UiCalendar.CalendarAttributes): Html => {
+const calendarView = (attributes: UiCalendar.CalendarAttributes, h: HtmlBuilder<Message>): Html => {
   const dayStyle = (cell: UiCalendar.DayCell): string =>
     clsx(
       'h-8 w-8 cursor-pointer rounded-md text-sm transition',

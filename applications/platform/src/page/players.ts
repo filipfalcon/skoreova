@@ -1,5 +1,4 @@
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { screenHeader } from '../components';
 import { players } from '../data';
@@ -9,15 +8,14 @@ import { getStyleXAttributes } from '../stylexAttributes';
 import { styles } from '../styles/players';
 import { shared } from '../styles/shared';
 
-const h = html<Message>();
-
-export const view = (model: Model): Html =>
+export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.div(
     [],
     [
       screenHeader(
         model,
         'The league’s top performers. Full player profiles with per-90 stats are on the way.',
+        h,
       ),
       h.div(
         [...getStyleXAttributes(h, shared.panel, styles.tableWrapper)],

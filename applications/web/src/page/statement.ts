@@ -1,13 +1,10 @@
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import clsx from 'clsx';
 
 import { container, maskedLine, revealClass } from '../components';
 import type { Message } from '../message';
 import type { Model } from '../model';
-
-const h = html<Message>();
 
 // One segment of the statement take. On phones the segments stack into
 // lines and EACH carries its own pen slash (a single absolute strike over
@@ -20,6 +17,7 @@ const takeSegment = (
   text: string,
   maskDelaySeconds: number,
   strikeDelay: string,
+  h: HtmlBuilder<Message>,
 ): Html =>
   h.span(
     [h.Class('relative mx-auto block w-fit md:inline-block')],
@@ -68,6 +66,7 @@ const equationLine = (
   left: string,
   right: string,
   delaySeconds: number,
+  h: HtmlBuilder<Message>,
 ): Html =>
   h.p(
     [
@@ -129,7 +128,7 @@ const equationLine = (
 
 // An unnumbered full-bleed interlude — the site’s attitude in three beats:
 // the tired take, the stamp slammed over it, and the deadpan analogy.
-export const view = (model: Model): Html =>
+export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.section(
     [h.Class('overflow-hidden bg-ink py-20 text-paper md:py-32')],
     [
@@ -156,9 +155,9 @@ export const view = (model: Model): Html =>
                 // size it collapses to a sliver and the two words touch.
                 [h.Class('display relative inline-block text-fluid-5xl-8xl')],
                 [
-                  takeSegment(model, 'statement-take-1', 'She doesn’t play', 0, '0.25s'),
+                  takeSegment(model, 'statement-take-1', 'She doesn’t play', 0, '0.25s', h),
                   ' ',
-                  takeSegment(model, 'statement-take-2', 'like men...', 0.08, '0.45s'),
+                  takeSegment(model, 'statement-take-2', 'like men...', 0.08, '0.45s', h),
                   // From `md` up a single continuous slash across the
                   // whole h2 replaces the per-line pair. The take still
                   // WRAPS to two lines through most of the md band, so
@@ -225,9 +224,9 @@ export const view = (model: Model): Html =>
           h.div(
             [h.Class('mt-14 space-y-8 md:mt-20 md:space-y-10')],
             [
-              equationLine(model, 'statement-eq-hockey', 'Hockey', 'floorball', 0.15),
-              equationLine(model, 'statement-eq-train', 'Train', 'subway', 0.3),
-              equationLine(model, 'statement-eq-men', 'Men', 'women', 0.45),
+              equationLine(model, 'statement-eq-hockey', 'Hockey', 'floorball', 0.15, h),
+              equationLine(model, 'statement-eq-train', 'Train', 'subway', 0.3, h),
+              equationLine(model, 'statement-eq-men', 'Men', 'women', 0.45, h),
             ],
           ),
           h.p(
@@ -257,6 +256,7 @@ export const view = (model: Model): Html =>
                 'A whole new sport is being born.',
                 'text-fluid-3xl-6xl',
                 0,
+                h,
               ),
               // The margin sits on a wrapper, not in the maskedLine
               // classes — those land on the inner masked span too, where
@@ -271,6 +271,7 @@ export const view = (model: Model): Html =>
                     'Watch it rise to the top.',
                     'text-fluid-3xl-6xl text-pink',
                     0.2,
+                    h,
                   ),
                 ],
               ),

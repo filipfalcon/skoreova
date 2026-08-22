@@ -1,5 +1,4 @@
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import clsx from 'clsx';
 
@@ -9,9 +8,7 @@ import { unstoppableProof, youthPhotos } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';
 
-const h = html<Message>();
-
-export const view = (model: Model): Html =>
+export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.section(
     // No `overflow-hidden`: it would clip the mascot (she’s anchored to the
     // top edge and floats). Horizontal overflow is already contained globally
@@ -78,7 +75,7 @@ export const view = (model: Model): Html =>
               // `dark: true` on a paper section is deliberate (user call):
               // 01 opens the page’s numbered run and the pink chip + ink
               // type reads stronger here than the ink chip variant.
-              kicker(model, '01', 'On the rise', 'paper', '/#on-the-rise'),
+              kicker(model, '01', 'On the rise', 'paper', '/#on-the-rise', h),
               // Slightly looser rhythm below md (mt-12/mt-10 vs the md
               // mt-16/mt-12 pattern’s phone halves): the cover has vertical
               // room to give, and the extra air shrinks the dead band under
@@ -86,13 +83,14 @@ export const view = (model: Model): Html =>
               h.h2(
                 [h.Class('mt-12 md:mt-16')],
                 [
-                  maskedLine(model, 'story-headline-1', 'Officially', 'text-fluid-6xl-9xl', 0),
+                  maskedLine(model, 'story-headline-1', 'Officially', 'text-fluid-6xl-9xl', 0, h),
                   maskedLine(
                     model,
                     'story-headline-2',
                     'unstoppable.',
                     'text-fluid-6xl-9xl text-pink',
                     0.12,
+                    h,
                   ),
                 ],
               ),
@@ -279,6 +277,7 @@ export const view = (model: Model): Html =>
                 // shouts carry equal weight (was one step down at 5xl-8xl).
                 'text-fluid-6xl-9xl',
                 0,
+                h,
               ),
             ],
           ),

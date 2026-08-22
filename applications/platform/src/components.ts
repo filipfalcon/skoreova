@@ -5,8 +5,8 @@
 // styles.css (StyleX has no descendant selectors).
 
 import { Button } from '@foldkit/ui';
-import type { Html } from 'foldkit/html';
-import { html } from 'foldkit/html';
+import { inertHtml as ih } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import brandLogo from './assets/brand/logo.svg';
 import type { Model, Screen } from './model';
@@ -17,15 +17,13 @@ import type { StyleXStyle } from './stylexAttributes';
 import { styles } from './styles/components';
 import { shared } from './styles/shared';
 
-// The message-typed HTML builder for this module’s views.
-const h = html<Message>();
-
 // VIEW HELPERS
 
-export const sectionLabel = (text: string): Html =>
+export const sectionLabel = (text: string, h: HtmlBuilder<Message>): Html =>
   h.p([...getStyleXAttributes(h, styles.sectionLabel)], [text]);
 
-export const pinkTick = (): Html => h.div([...getStyleXAttributes(h, styles.pinkTick)], []);
+export const pinkTick = (h: HtmlBuilder<Message>): Html =>
+  h.div([...getStyleXAttributes(h, styles.pinkTick)], []);
 
 // THE chevron — one drawn mark for every "there is more this way" glyph.
 // Both hero uses render this: the breadcrumb pointing left, the season
@@ -37,6 +35,7 @@ export const pinkTick = (): Html => h.div([...getStyleXAttributes(h, styles.pink
 // never disagree about shape. Accent-colored: it marks the interactive
 // glyph, while the text beside it keeps its own voice.
 export const chevron = (
+  h: HtmlBuilder<Message>,
   direction: 'left' | 'down',
   ...glyphStyles: ReadonlyArray<StyleXStyle>
 ): Html =>
@@ -62,7 +61,10 @@ export const chevron = (
 
 // The push-pin, drawn to sit at the corner of anything pinnable. Filled
 // silhouette on currentColor, same register as the drawn arrow and ×.
-export const pinGlyph = (...glyphStyles: ReadonlyArray<StyleXStyle>): Html =>
+export const pinGlyph = (
+  h: HtmlBuilder<Message>,
+  ...glyphStyles: ReadonlyArray<StyleXStyle>
+): Html =>
   h.svg(
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
@@ -89,25 +91,33 @@ export const pinGlyph = (...glyphStyles: ReadonlyArray<StyleXStyle>): Html =>
 // is a quiet outline that fills on hover so the affordance is obvious. The
 // label names the target so a screen reader hears "Pin Goals to Her Game",
 // not a bare "pin".
-export const pinToggle = (model: Model, id: string, label: string): Html => {
+export const pinToggle = (
+  model: Model,
+  id: string,
+  label: string,
+  h: HtmlBuilder<Message>,
+): Html => {
   const pinned = model.pinned.includes(id);
-  return Button.view({
-    onClick: ToggledPin({ id }),
-    toView: ({ button }) =>
-      h.button(
-        [
-          ...button,
-          h.AriaPressed(pinned ? 'true' : 'false'),
-          h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
-          ...getStyleXAttributes(
-            h,
-            styles.pinToggle,
-            pinned ? styles.pinTogglePinned : styles.pinToggleUnpinned,
-          ),
-        ],
-        [pinGlyph(styles.pinGlyphChip), pinned ? 'Pinned' : 'Pin'],
-      ),
-  });
+  return Button.view(
+    {
+      onClick: ToggledPin({ id }),
+      toView: ({ button }) =>
+        h.button(
+          [
+            ...button,
+            h.AriaPressed(pinned ? 'true' : 'false'),
+            h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
+            ...getStyleXAttributes(
+              h,
+              styles.pinToggle,
+              pinned ? styles.pinTogglePinned : styles.pinToggleUnpinned,
+            ),
+          ],
+          [pinGlyph(h, styles.pinGlyphChip), pinned ? 'Pinned' : 'Pin'],
+        ),
+    },
+    h,
+  );
 };
 
 // A plain section chip (the shared heading grammar — shared.chip). Used
@@ -115,7 +125,7 @@ export const pinToggle = (model: Model, id: string, label: string): Html => {
 // boards, since their leagues pin separately). A REAL h2, not a styled
 // span — the h3s on the cards underneath need an ancestor in the outline,
 // and the chip is visually the section heading already.
-export const chipHeading = (title: string): Html =>
+export const chipHeading = (title: string, h: HtmlBuilder<Message>): Html =>
   h.h2(
     [...getStyleXAttributes(h, styles.chipHeadingRow)],
     [h.span([...getStyleXAttributes(h, shared.display, shared.chip)], [title])],
@@ -123,7 +133,7 @@ export const chipHeading = (title: string): Html =>
 
 // A tiny pink polyline preview — the saved-charts cards and anywhere a
 // dataset needs a face without a full chart.
-export const sparkline = (values: ReadonlyArray<number>): Html => {
+export const sparkline = (values: ReadonlyArray<number>, h: HtmlBuilder<Message>): Html => {
   const max = Math.max(...values);
   const min = Math.min(...values);
   const span = max - min || 1;
@@ -157,7 +167,7 @@ export const sparkline = (values: ReadonlyArray<number>): Html => {
 // file — so the mark supplies that ground itself. That is also why it cannot
 // take the tab's accent when the section is open: recoloring it would mean
 // painting it as a mask, which is what drops the ground.
-export const brandMark = (active: boolean): Html =>
+export const brandMark = (active: boolean, h: HtmlBuilder<Message>): Html =>
   h.img([
     h.Src(brandLogo),
     h.Alt(''),
@@ -167,7 +177,7 @@ export const brandMark = (active: boolean): Html =>
 // A tab's glyph, drawn over its label below `md` and dropped from `md` up.
 // PLACEHOLDER line art: the final icon set replaces these paths. Stroke is
 // currentColor, so the tab's own accent and hover colors reach it.
-export const navIcon = (screen: Screen): Html => {
+export const navIcon = (screen: Screen, h: HtmlBuilder<Message>): Html => {
   const paths: Partial<Record<Screen, string>> = {
     // Crest/shield — clubs.
     Clubs: 'M12 3 L20 6 V12 C20 17 16.5 20 12 21.5 C7.5 20 4 17 4 12 V6 Z',
@@ -197,7 +207,7 @@ export const navIcon = (screen: Screen): Html => {
   );
 };
 
-export const desktopNavLink = (model: Model, entry: NavEntry): Html => {
+export const desktopNavLink = (model: Model, entry: NavEntry, h: HtmlBuilder<Message>): Html => {
   const active = screenOf(model.route) === entry.screen;
   return h.a(
     [
@@ -208,7 +218,7 @@ export const desktopNavLink = (model: Model, entry: NavEntry): Html => {
     ],
     [
       // Every tab is the same shape; the brand section differs only in which mark is drawn over its label.
-      entry.isBrand ? brandMark(active) : navIcon(entry.screen),
+      entry.isBrand ? brandMark(active, h) : navIcon(entry.screen, h),
       // Two spans rather than one, because the swap is a change of words and CSS can only choose between elements.
       h.span(
         [...getStyleXAttributes(h, styles.navLabel, styles.navLabelPhone)],
@@ -223,7 +233,7 @@ export const desktopNavLink = (model: Model, entry: NavEntry): Html => {
 // TERMINATES the backdrop blur — backdrop-filter samples beyond the element's
 // own box, so over a bright backdrop the blur smears the picture a few pixels
 // up into the bar and the boundary reads as a soft halo instead of an edge.
-export const headerView = (model: Model): Html =>
+export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.header(
     [...getStyleXAttributes(h, styles.header)],
     [
@@ -236,7 +246,7 @@ export const headerView = (model: Model): Html =>
           // not do that, since the outer labels differ in width.
           h.div(
             [...getStyleXAttributes(h, styles.sectionRailGrid)],
-            navEntries.map((entry) => desktopNavLink(model, entry)),
+            navEntries.map((entry) => desktopNavLink(model, entry, h)),
           ),
         ],
       ),
@@ -249,7 +259,10 @@ export const headerView = (model: Model): Html =>
 // (`drawn-arrow` nudges right inside any hovered link or button — see
 // styles.css). Filled silhouette, not a text glyph: it sits next to display
 // type here, the same register it does over there.
-export const drawnRightArrow = (...arrowStyles: ReadonlyArray<StyleXStyle>): Html =>
+export const drawnRightArrow = (
+  h: HtmlBuilder<Message>,
+  ...arrowStyles: ReadonlyArray<StyleXStyle>
+): Html =>
   h.svg(
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
@@ -285,7 +298,10 @@ export const drawnArrowInline = styles.drawnArrowInline;
 // MARGIN EDGE, so the margin is the control: mb + height/2 ≈ half the
 // figure height. Both are em, so it holds at any size it inherits — it
 // renders at 18px in the honors chip and 36px in the history grid.
-export const drawnTimes = (...timesStyles: ReadonlyArray<StyleXStyle>): Html =>
+export const drawnTimes = (
+  h: HtmlBuilder<Message>,
+  ...timesStyles: ReadonlyArray<StyleXStyle>
+): Html =>
   h.svg(
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
@@ -308,10 +324,10 @@ export const drawnTimes = (...timesStyles: ReadonlyArray<StyleXStyle>): Html =>
 
 // A COUNT reads "22 times champions", so the mark hugs the number and
 // takes a word space after it.
-export const timesCount = (count: number): ReadonlyArray<Html | string> => [
-  `${count}`,
-  drawnTimes(styles.timesCountSpacing),
-];
+export const timesCount = (
+  count: number,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Html | string> => [`${count}`, drawnTimes(h, styles.timesCountSpacing)];
 
 // A chip anchors its OWN section (user call) — it does not leave the
 // profile. Clicking one jumps to that block and puts #<anchor> in the
@@ -320,7 +336,7 @@ export const timesCount = (count: number): ReadonlyArray<Html | string> => [
 // go nowhere else. The hover carries the affordance instead — pink to ink,
 // rather than the landing’s pink to paper, which on this paper surface
 // would have dissolved the chip into the page.
-export const clubChip = (text: string, anchor: string): Html =>
+export const clubChip = (text: string, anchor: string, h: HtmlBuilder<Message>): Html =>
   h.a(
     [
       h.Href(`#${anchor}`),
@@ -340,18 +356,23 @@ export const clubChip = (text: string, anchor: string): Html =>
 // the chrome, which reads as having jumped to the wrong place.
 // The chip anchor rides inside a REAL h2 so each club section owns a spot
 // in the heading outline instead of a bare link posing as one.
-export const clubSection = (title: string, children: ReadonlyArray<Html>, anchor: string): Html =>
+export const clubSection = (
+  title: string,
+  children: ReadonlyArray<Html>,
+  anchor: string,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.section(
     [h.Id(anchor), ...getStyleXAttributes(h, styles.clubSection)],
     [
-      h.h2([...getStyleXAttributes(h, styles.clubSectionHeading)], [clubChip(title, anchor)]),
+      h.h2([...getStyleXAttributes(h, styles.clubSectionHeading)], [clubChip(title, anchor, h)]),
       ...children,
     ],
   );
 
 // The list/profile screens' standard header: the pink section chip, the
 // big display title, and a one-line subtitle.
-export const screenHeader = (model: Model, subtitle: string): Html =>
+export const screenHeader = (model: Model, subtitle: string, h: HtmlBuilder<Message>): Html =>
   h.div(
     [],
     [
@@ -373,18 +394,18 @@ export const screenHeader = (model: Model, subtitle: string): Html =>
   );
 
 // A tiny upward spark for the welcome ticker and the clubs rail.
-export const tickerSpark: Html = h.svg(
+export const tickerSpark: Html = ih.svg(
   [
-    h.Xmlns('http://www.w3.org/2000/svg'),
-    h.ViewBox('0 0 24 24'),
-    ...getStyleXAttributes(h, styles.tickerSpark),
-    h.AriaHidden(true),
-    h.Fill('currentColor'),
+    ih.Xmlns('http://www.w3.org/2000/svg'),
+    ih.ViewBox('0 0 24 24'),
+    ...getStyleXAttributes(ih, styles.tickerSpark),
+    ih.AriaHidden(true),
+    ih.Fill('currentColor'),
   ],
   [
-    h.path(
+    ih.path(
       [
-        h.D(
+        ih.D(
           'M12 0 C13.5 7.5 16.5 10.5 24 12 C16.5 13.5 13.5 16.5 12 24 C10.5 16.5 7.5 13.5 0 12 C7.5 10.5 10.5 7.5 12 0 Z',
         ),
       ],
@@ -398,7 +419,7 @@ export const tickerSpark: Html = h.svg(
 // and a fall can never disagree about shape — they are the same mark about the
 // same axis. The pair used to be two hand-written paths, which agreed only for
 // as long as nobody edited one of them.
-export const tapeArrow = (up: boolean): Html =>
+export const tapeArrow = (up: boolean, h: HtmlBuilder<Message>): Html =>
   h.svg(
     [
       h.Xmlns('http://www.w3.org/2000/svg'),

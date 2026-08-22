@@ -1,5 +1,4 @@
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import clsx from 'clsx';
 
@@ -8,16 +7,14 @@ import { socialChannels } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';
 
-const h = html<Message>();
-
-export const view = (model: Model): Html =>
+export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.section(
     [h.Id('follow'), h.Class('bg-ink py-16 text-paper md:py-24')],
     [
       h.div(
         [h.Class(container)],
         [
-          kicker(model, '07', 'Week-in-week-out', 'ink', '/#follow'),
+          kicker(model, '07', 'Week-in-week-out', 'ink', '/#follow', h),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [
@@ -30,6 +27,7 @@ export const view = (model: Model): Html =>
                 ['Follow the game', h.span([h.Class('text-pink')], ['.'])],
                 'text-fluid-5xl-9xl',
                 0,
+                h,
               ),
             ],
           ),

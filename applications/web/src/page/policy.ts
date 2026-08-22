@@ -1,10 +1,7 @@
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { container } from '../components';
 import type { Message } from '../message';
-
-const h = html<Message>();
 
 // One entry per measurement tool, in plain words. The claims mirror what the
 // code actually does — analytics/gtag.ts loads Google Analytics behind the
@@ -27,8 +24,10 @@ const sections: ReadonlyArray<{ heading: string; body: string }> = [
 
 /**
  * The cookie policy page — the consent banner's "Learn more" target.
+ *
+ * @param h The render frame's HTML builder.
  */
-export const view = (): Html =>
+export const view = (h: HtmlBuilder<Message>): Html =>
   h.section(
     [h.Class('bg-paper pt-28 pb-16 text-ink md:pt-36 md:pb-24')],
     [

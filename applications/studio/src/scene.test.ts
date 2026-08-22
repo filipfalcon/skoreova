@@ -25,7 +25,7 @@ describe('view', () => {
   test('signed out, the sign-in card is shown', () => {
     Scene.scene(
       { update, view },
-      Scene.with(signedOutModel),
+      Scene.given(signedOutModel),
       Scene.expect(Scene.role('heading', { name: 'Sign in' })).toExist(),
       // By LABEL, not placeholder: the field’s accessible name is what a
       // screen reader announces, and a placeholder is only a hint the browser
@@ -39,7 +39,7 @@ describe('view', () => {
   test('signed in, the dashboard greets the editor', () => {
     Scene.scene(
       { update, view },
-      Scene.with(dashboardModel),
+      Scene.given(dashboardModel),
       Scene.expect(Scene.text('Welcome back, editor')).toExist(),
       Scene.expect(Scene.role('button', { name: 'Sign out' })).toExist(),
     );
@@ -48,7 +48,7 @@ describe('view', () => {
   test('the Players section lists loaded records with the add control', () => {
     Scene.scene(
       { update, view },
-      Scene.with(playersListModel),
+      Scene.given(playersListModel),
       Scene.expect(Scene.role('button', { name: '+ Add new' })).toExist(),
       Scene.expect(Scene.text('Sierra Pennock')).toExist(),
     );
@@ -57,7 +57,7 @@ describe('view', () => {
   test('an edition’s competition name is resolved in the view, not the stored id', () => {
     Scene.scene(
       { update, view },
-      Scene.with(editionsListModel),
+      Scene.given(editionsListModel),
       // The row stores 'comp-1' in its Competition cell; the view shows the
       // resolved name from the competitions section instead.
       Scene.expect(Scene.text('First League')).toExist(),
@@ -72,7 +72,7 @@ describe('view', () => {
   test('clicking a record card opens that record in the drawer', () => {
     Scene.scene(
       { update, view },
-      Scene.with(playersListModel),
+      Scene.given(playersListModel),
       Scene.expect(Scene.role('button', { name: 'Save' })).toBeAbsent(),
       // The name span has no handler of its own — the click bubbles to the
       // card <button>, exactly as it does in a browser.
@@ -91,7 +91,7 @@ describe('view', () => {
   test('creating a record without its reference offers a blocked, explained Save', () => {
     Scene.scene(
       { update, view },
-      Scene.with(editionsListModel),
+      Scene.given(editionsListModel),
       Scene.click(Scene.role('button', { name: '+ Add new' })),
       Scene.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
       // AriaDisabled, not the native attribute — a disabled button leaves the
@@ -117,7 +117,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       // Page 1 of 42 players, so Previous is at its end-stop and Next is not.
-      Scene.with({ ...playersListModel, playersPage: 1, playersTotal: 42 }),
+      Scene.given({ ...playersListModel, playersPage: 1, playersTotal: 42 }),
       Scene.expect(Scene.role('button', { name: 'Previous' })).toHaveAttr('aria-disabled', 'true'),
       Scene.expect(Scene.role('button', { name: 'Previous' })).not.toHaveClass('cursor-pointer'),
       Scene.expect(Scene.role('button', { name: 'Previous' })).toHaveClass('cursor-not-allowed'),
@@ -134,7 +134,7 @@ describe('view', () => {
   test('opening a record mounts its stats chart and syncs it', () => {
     Scene.scene(
       { update, view },
-      Scene.with(playerRecordModel),
+      Scene.given(playerRecordModel),
       Scene.Mount.resolve(MountChart, SucceededMountChart({ hostId: CHART_HOST_ID })),
       Scene.Command.resolve(SyncChart, SucceededSyncChart()),
       Scene.expect(Scene.label('Record stats chart')).toExist(),

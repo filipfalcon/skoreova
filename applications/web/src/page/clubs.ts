@@ -1,8 +1,7 @@
-import { Button, RadioGroup } from '@foldkit/ui';
+import { Button } from '@foldkit/ui';
 import clsx from 'clsx';
 import { Option } from 'effect';
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import landsScoutImage from '../assets/lands-scout.webp';
 import {
@@ -18,11 +17,15 @@ import type { Land } from '../czechia';
 import { FIRST_LEAGUE, MAP_LEAGUE_LABELS, SECOND_LEAGUE, clubs, platformUrl } from '../data';
 import type { ClubSlug } from '../data';
 import type { Club } from '../data';
-import { ClosedMapClub, OpenedMapClub, SelectedMapLeague, ToggledAreaUnit } from '../message';
+import {
+  ClosedMapClub,
+  GotMapLeagueGroupMessage,
+  OpenedMapClub,
+  ToggledAreaUnit,
+} from '../message';
+import { MapLeagueRadioGroup } from '../radio-groups';
 import type { Message } from '../message';
-import type { MapLeague, Model } from '../model';
-
-const h = html<Message>();
+import type { Model } from '../model';
 
 // A pin filtered out by the league toggle is hidden outright (display:none
 // on its wrapper — see the pin wrapper below), never removed from the DOM,
@@ -183,7 +186,7 @@ const CREST_SCALE: Partial<Record<ClubSlug, number>> = {
   'hradec-kralove': 1.1,
 };
 
-const clubPin = (model: Model, club: Club): Html => {
+const clubPin = (model: Model, club: Club, h: HtmlBuilder<Message>): Html => {
   // Target-line pin: a white dot marks the exact spot, a thin connector
   // runs from the dot to the crest floating above (angled in crowded
   // cities — see PIN_ANGLE). The button is a zero-size anchor at the dot;
@@ -280,36 +283,39 @@ const clubPin = (model: Model, club: Club): Html => {
           // crests all read as one calm system). A few crest images carry
           // extra transparent padding and read smaller than their peers —
           // CREST_SCALE nudges those up to the same optical size.
-          Button.view({
-            onClick: selected ? ClosedMapClub() : OpenedMapClub({ slug: club.slug }),
-            toView: ({ button }) =>
-              h.button(
-                [
-                  ...button,
-                  h.AriaLabel(`${club.name} — ${club.city}, ${club.league}`),
-                  // The pin toggles its club card open/closed — say so, instead
-                  // of signalling selection by ring color alone.
-                  h.AriaExpanded(selected),
-                  h.Class(
-                    clsx(
-                      'club-pin-chip absolute flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-[scale,box-shadow] delay-[250ms] duration-300 group-hover:scale-110 group-hover:delay-0 group-hover:duration-150 sm:h-14 sm:w-14 sm:p-2.5 md:h-16 md:w-16 md:p-3',
-                      { 'scale-110 ring-2 ring-pink delay-0 md:ring-[3px]': selected },
+          Button.view(
+            {
+              onClick: selected ? ClosedMapClub() : OpenedMapClub({ slug: club.slug }),
+              toView: ({ button }) =>
+                h.button(
+                  [
+                    ...button,
+                    h.AriaLabel(`${club.name} — ${club.city}, ${club.league}`),
+                    // The pin toggles its club card open/closed — say so, instead
+                    // of signalling selection by ring color alone.
+                    h.AriaExpanded(selected),
+                    h.Class(
+                      clsx(
+                        'club-pin-chip absolute flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-[scale,box-shadow] delay-[250ms] duration-300 group-hover:scale-110 group-hover:delay-0 group-hover:duration-150 sm:h-14 sm:w-14 sm:p-2.5 md:h-16 md:w-16 md:p-3',
+                        { 'scale-110 ring-2 ring-pink delay-0 md:ring-[3px]': selected },
+                      ),
                     ),
-                  ),
-                ],
-                [
-                  h.img([
-                    h.Src(club.logo),
-                    h.Alt(''),
-                    h.Loading('lazy'),
-                    h.Class('h-full w-full object-contain'),
-                    ...(CREST_SCALE[club.slug]
-                      ? [h.Style({ transform: `scale(${CREST_SCALE[club.slug]})` })]
-                      : []),
-                  ]),
-                ],
-              ),
-          }),
+                  ],
+                  [
+                    h.img([
+                      h.Src(club.logo),
+                      h.Alt(''),
+                      h.Loading('lazy'),
+                      h.Class('h-full w-full object-contain'),
+                      ...(CREST_SCALE[club.slug]
+                        ? [h.Style({ transform: `scale(${CREST_SCALE[club.slug]})` })]
+                        : []),
+                    ]),
+                  ],
+                ),
+            },
+            h,
+          ),
           // The hover banner — an "achievement toast": a paper bar slides out
           // of the crest to the right. The outer span is a clipping WINDOW
           // whose left boundary sits exactly at the crest’s center, so the
@@ -423,47 +429,51 @@ const clubPin = (model: Model, club: Club): Html => {
 // radiogroup rather than a row of independent buttons (arrow-key roving and
 // the radio semantics come from the component). The selected state is
 // color-only visually, driven by the `data-checked` the component sets.
-const mapLeagueFilter = (model: Model): Html =>
-  RadioGroup.view<MapLeague, Message>({
-    id: 'map-league-filter',
-    selectedValue: Option.some(model.mapLeague),
-    options: ['All', 'First', 'Second'],
-    ariaLabel: 'Filter clubs by league',
-    onSelect: (league) => SelectedMapLeague({ league }),
-    toView: ({ group, options }) =>
-      h.div(
-        [
-          ...group,
-          // Centered on phones (one row, all three side by side); right-aligned
-          // to the stage from md, where it reads as a map control.
-          h.Class(
-            clsx(
-              'mx-auto mt-10 flex max-w-5xl flex-wrap justify-center gap-1.5 md:mt-14 md:justify-end md:gap-2',
-              revealClass(model, 'map-filter'),
+const mapLeagueFilter = (model: Model, h: HtmlBuilder<Message>): Html =>
+  h.submodel({
+    slotId: 'map-league-filter',
+    model: model.mapLeagueGroup,
+    view: MapLeagueRadioGroup.view,
+    toParentMessage: (message) => GotMapLeagueGroupMessage({ message }),
+    viewInputs: {
+      selectedValue: Option.some(model.mapLeague),
+      options: ['All', 'First', 'Second'],
+      ariaLabel: 'Filter clubs by league',
+      toView: ({ group, options }) =>
+        h.div(
+          [
+            ...group,
+            // Centered on phones (one row, all three side by side); right-aligned
+            // to the stage from md, where it reads as a map control.
+            h.Class(
+              clsx(
+                'mx-auto mt-10 flex max-w-5xl flex-wrap justify-center gap-1.5 md:mt-14 md:justify-end md:gap-2',
+                revealClass(model, 'map-filter'),
+              ),
+            ),
+            h.DataAttribute('reveal', 'up'),
+            h.DataAttribute('reveal-key', 'map-filter'),
+          ],
+          options.map((option) =>
+            h.div(
+              [
+                ...option.option,
+                // Compact on phones so all three fit one row (incl. the tighter
+                // tracking — the canonical 0.2em wraps the row); from `md` up the
+                // chips match the outlined-button spec (border-2 + text-xs — the
+                // UEFA strategy link is the reference).
+                h.Class(
+                  'cursor-pointer border border-paper px-2 py-1.5 text-[10px] tracking-[0.15em] text-paper uppercase transition-colors duration-300 hover:border-pink md:border-2 md:px-4 md:py-2 md:text-xs md:tracking-[0.2em] data-[checked]:border-pink data-[checked]:bg-pink data-[checked]:text-ink',
+                ),
+              ],
+              [MAP_LEAGUE_LABELS[option.value]],
             ),
           ),
-          h.DataAttribute('reveal', 'up'),
-          h.DataAttribute('reveal-key', 'map-filter'),
-        ],
-        options.map((option) =>
-          h.div(
-            [
-              ...option.option,
-              // Compact on phones so all three fit one row (incl. the tighter
-              // tracking — the canonical 0.2em wraps the row); from `md` up the
-              // chips match the outlined-button spec (border-2 + text-xs — the
-              // UEFA strategy link is the reference).
-              h.Class(
-                'cursor-pointer border border-paper px-2 py-1.5 text-[10px] tracking-[0.15em] text-paper uppercase transition-colors duration-300 hover:border-pink md:border-2 md:px-4 md:py-2 md:text-xs md:tracking-[0.2em] data-[checked]:border-pink data-[checked]:bg-pink data-[checked]:text-ink',
-              ),
-            ],
-            [MAP_LEAGUE_LABELS[option.value]],
-          ),
         ),
-      ),
+    },
   });
 
-export const view = (model: Model): Html =>
+export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.section(
     // Ink, not paper: the white map line work is the section’s hero, and the
     // dark ground restores the light/dark rhythm around it (competitions is
@@ -515,7 +525,7 @@ export const view = (model: Model): Html =>
       h.div(
         [h.Class(`${container} relative z-10`)],
         [
-          kicker(model, '03', 'Across the lands', 'ink', '/#across-the-lands'),
+          kicker(model, '03', 'Across the lands', 'ink', '/#across-the-lands', h),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [
@@ -525,6 +535,7 @@ export const view = (model: Model): Html =>
                 ['Where ', h.span([h.Class('text-pink')], ['she']), ' plays.'],
                 'text-fluid-6xl-9xl',
                 0,
+                h,
               ),
             ],
           ),
@@ -556,48 +567,51 @@ export const view = (model: Model): Html =>
               // A real button so the unit swap also works from the keyboard
               // and gets the pink focus ring; cursor-help still signals
               // "informational" rather than navigational.
-              Button.view({
-                onClick: ToggledAreaUnit(),
-                toView: ({ button }) =>
-                  h.button(
-                    [
-                      ...button,
-                      h.Class(
-                        // justify-items-start + underline ON THE VARIANTS, not
-                        // the button: the cell is as wide as the wider variant,
-                        // and a centered short variant with a full-width
-                        // underline floated mid-sentence instead of reading as
-                        // plain text. clip-path, NOT overflow-hidden, hides the
-                        // rolling figure — a non-visible overflow moves an
-                        // inline box’s baseline to its bottom edge and the
-                        // number would sink out of the sentence’s line.
-                        'area-swap inline-grid cursor-help justify-items-start whitespace-nowrap select-none [clip-path:inset(0)]',
-                      ),
-                      h.AriaLabel('Toggle between metric and imperial area'),
-                    ],
-                    [
-                      h.span(
-                        [
-                          h.Class(
-                            // The odometer poses: metric parks ABOVE the clip,
-                            // imperial BELOW — toggling rolls one out and the
-                            // other through in the same direction.
-                            `area-metric col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'invisible -translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`,
-                          ),
-                        ],
-                        ['78,871 km².'],
-                      ),
-                      h.span(
-                        [
-                          h.Class(
-                            `area-imperial col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'translate-y-0 opacity-100' : 'invisible translate-y-full opacity-0'}`,
-                          ),
-                        ],
-                        ['30,452 sq mi.'],
-                      ),
-                    ],
-                  ),
-              }),
+              Button.view(
+                {
+                  onClick: ToggledAreaUnit(),
+                  toView: ({ button }) =>
+                    h.button(
+                      [
+                        ...button,
+                        h.Class(
+                          // justify-items-start + underline ON THE VARIANTS, not
+                          // the button: the cell is as wide as the wider variant,
+                          // and a centered short variant with a full-width
+                          // underline floated mid-sentence instead of reading as
+                          // plain text. clip-path, NOT overflow-hidden, hides the
+                          // rolling figure — a non-visible overflow moves an
+                          // inline box’s baseline to its bottom edge and the
+                          // number would sink out of the sentence’s line.
+                          'area-swap inline-grid cursor-help justify-items-start whitespace-nowrap select-none [clip-path:inset(0)]',
+                        ),
+                        h.AriaLabel('Toggle between metric and imperial area'),
+                      ],
+                      [
+                        h.span(
+                          [
+                            h.Class(
+                              // The odometer poses: metric parks ABOVE the clip,
+                              // imperial BELOW — toggling rolls one out and the
+                              // other through in the same direction.
+                              `area-metric col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'invisible -translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`,
+                            ),
+                          ],
+                          ['78,871 km².'],
+                        ),
+                        h.span(
+                          [
+                            h.Class(
+                              `area-imperial col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'translate-y-0 opacity-100' : 'invisible translate-y-full opacity-0'}`,
+                            ),
+                          ],
+                          ['30,452 sq mi.'],
+                        ),
+                      ],
+                    ),
+                },
+                h,
+              ),
               // The second sentence opens its own line — two beats, the same
               // device as 01's ledes.
               h.br([]),
@@ -726,7 +740,7 @@ export const view = (model: Model): Html =>
               // it floated orphaned in the section’s landing frame (the menu
               // jump shows the head of the section while the map it controls
               // is still below the fold).
-              mapLeagueFilter(model),
+              mapLeagueFilter(model, h),
               h.div(
                 // The chips row above owns the band spacing; the stage keeps
                 // a tight gap on phones so the filter reads as part of the
@@ -842,7 +856,7 @@ export const view = (model: Model): Html =>
                                   : 'hidden',
                               ),
                             ],
-                            [clubPin(model, club)],
+                            [clubPin(model, club, h)],
                           ),
                         ),
                       // While a card is open, an invisible backdrop over the map

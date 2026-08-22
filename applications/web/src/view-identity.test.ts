@@ -1,6 +1,10 @@
+import { Scene } from 'foldkit';
 import type { Html } from 'foldkit/html';
 import { expect, test } from 'vite-plus/test';
 
+import { landingModel } from './main.fixtures';
+import { update } from './main';
+import { DetectedHeroPastHeader, ObserveHeroPastHeader } from './motion';
 import * as Hero from './page/hero';
 
 // A canary for the BUILD PIPELINE, not for this app’s code. @foldkit/vite-plugin
@@ -20,6 +24,24 @@ import * as Hero from './page/hero';
 const identityOf = (vnode: Html): unknown =>
   vnode === null ? undefined : Reflect.get(vnode, 'identity');
 
+// The builder comes from the frame that renders a view and cannot be
+// conjured, so the section is built inside a scene rather than called
+// directly, and the stamp is read off what that render produced.
 test('the vite plugin brands view results under test, as it does in a build', () => {
-  expect(identityOf(Hero.view())).toBe('src/page/hero.ts#view');
+  let identity: unknown;
+  Scene.scene(
+    {
+      update,
+      view: (_model, h) => {
+        const hero = Hero.view(h);
+        identity = identityOf(hero);
+        return { title: 'identity probe', body: hero };
+      },
+    },
+    Scene.given(landingModel),
+    // The hero carries its past-header observer; its real effect needs a
+    // browser, and this scene exists only to read the stamp off the render.
+    Scene.Mount.resolve(ObserveHeroPastHeader, DetectedHeroPastHeader({ past: false })),
+  );
+  expect(identity).toBe('src/page/hero.ts#view');
 });

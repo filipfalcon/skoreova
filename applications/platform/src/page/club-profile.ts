@@ -1,7 +1,5 @@
-import { Button, RadioGroup } from '@foldkit/ui';
 import { Array, Match as M, Option } from 'effect';
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import banikHeroPhoto from '../assets/clubs-hero/banik-ostrava.jpg';
 import spartaHeroPhoto from '../assets/clubs-hero/sparta-praha.webp';
@@ -10,8 +8,9 @@ import { clubMatchesSections } from '../club-matches';
 import { clubSection, timesCount } from '../components';
 import { clubCupRun, standingsFor, scorersFor } from '../data';
 import { MATCHDAYS_PLAYED, leagueRoundCount } from '../schedule';
+import { Button } from '@foldkit/ui';
 import type { Club, CupTie, Scorer } from '../data';
-import { SelectedScorerScope, ToggledFollow } from '../message';
+import { ToggledFollow } from '../message';
 import type { Message } from '../message';
 import type { Model, ScorerScope } from '../model';
 import { clubsRouter } from '../route';
@@ -23,11 +22,11 @@ import {
   zoneFor,
 } from '../standings';
 import type { EuroCampaign } from '../standings';
+import { GotScopeGroupMessage } from '../message';
+import { ScopeRadioGroup } from '../radio-groups';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
 import { styles } from '../styles/club-profile';
 import { shared } from '../styles/shared';
-
-const h = html<Message>();
 
 // The per-club statement block — hand-written for the marquee clubs, a
 // season-record fallback for everyone else (see this module’s `view`).
@@ -103,22 +102,26 @@ const clubHeroPhotos: Record<string, { readonly photo: string; readonly focus: s
 // Rounds are a week apart from a fixed season opening, so every club’s
 // dates line up and nothing depends on today’s date.
 
-const clubStandingsSection = (target: Club): Html => {
+const clubStandingsSection = (target: Club, h: HtmlBuilder<Message>): Html => {
   const rows = standingsFor(target.league);
   const totalRounds = leagueRoundCount(target.league);
   return clubSection(
     'Standings',
     [
-      standingsHeadline(target.league),
+      standingsHeadline(target.league, h),
       // The canon’s matchday, not the leader’s played count — in a league with
       // an odd club count the leader can be a bye or two behind the season, and
       // this bar then disagreed with the competition screen’s own stage line.
-      seasonProgress(MATCHDAYS_PLAYED, totalRounds),
-      ...standingsTable(rows, target.name, (position) =>
-        zoneFor(target.league, position, rows.length),
+      seasonProgress(MATCHDAYS_PLAYED, totalRounds, h),
+      ...standingsTable(
+        rows,
+        target.name,
+        (position) => zoneFor(target.league, position, rows.length),
+        h,
       ),
     ],
     'standings',
+    h,
   );
 };
 
@@ -127,18 +130,19 @@ const clubStandingsSection = (target: Club): Html => {
 // through the UWEC one. Tables are simulated rather than hand-typed, so
 // goals for and against balance across each table and the points match
 // the wins and draws behind them. ———
-const clubEuropeSection = (target: Club, campaign: EuroCampaign): Html =>
+const clubEuropeSection = (target: Club, campaign: EuroCampaign, h: HtmlBuilder<Message>): Html =>
   clubSection(
     campaign.competition,
     [
-      standingsHeadline(campaign.stage),
-      seasonProgress(campaign.rows[0]?.played ?? 0, campaign.rounds),
-      ...standingsTable(campaign.rows, target.name, campaign.zoneAt),
+      standingsHeadline(campaign.stage, h),
+      seasonProgress(campaign.rows[0]?.played ?? 0, campaign.rounds, h),
+      ...standingsTable(campaign.rows, target.name, campaign.zoneAt, h),
     ],
     campaign.slug,
+    h,
   );
 
-const clubCupSection = (run: ReadonlyArray<CupTie>): Html =>
+const clubCupSection = (run: ReadonlyArray<CupTie>, h: HtmlBuilder<Message>): Html =>
   clubSection(
     'Domestic Cup',
     [
@@ -171,6 +175,7 @@ const clubCupSection = (run: ReadonlyArray<CupTie>): Html =>
       ),
     ],
     'domestic-cup',
+    h,
   );
 
 // The top-scorers scope selector. These are mutually-exclusive choices (all
@@ -178,41 +183,45 @@ const clubCupSection = (run: ReadonlyArray<CupTie>): Html =>
 // per-button AriaPressed toggle semantics this wore before, which read to a
 // screen reader as N independent toggles rather than one single-select group.
 // The 'league' label is the club’s own league name, so labels come from target.
-const scopeRadioGroup = (target: Club, model: Model): Html => {
+const scopeRadioGroup = (target: Club, model: Model, h: HtmlBuilder<Message>): Html => {
   const labels: Record<ScorerScope, string> = {
     All: 'All',
     League: target.league,
     Cup: 'Domestic Cup',
   };
-  return RadioGroup.view<ScorerScope, Message>({
-    id: 'club-top-scorers-scope',
-    selectedValue: Option.some(model.scorerScope),
-    options: ['All', 'League', 'Cup'],
-    ariaLabel: 'Top-scorers competition',
-    onSelect: (scope) => SelectedScorerScope({ scope }),
-    toView: ({ group, options }) =>
-      h.div(
-        [...group, ...getStyleXAttributes(h, styles.scopeGroup)],
-        options.map((option) => {
-          // Checked derives from the model because StyleX has no attribute selectors (the component still stamps data-checked).
-          const checked = option.value === model.scorerScope;
-          return h.div(
-            [
-              ...option.option,
-              ...getStyleXAttributes(
-                h,
-                styles.scopeOption,
-                checked ? styles.scopeChecked : styles.scopeRest,
-              ),
-            ],
-            [labels[option.value]],
-          );
-        }),
-      ),
+  return h.submodel({
+    slotId: 'club-top-scorers-scope',
+    model: model.scopeGroup,
+    view: ScopeRadioGroup.view,
+    toParentMessage: (message) => GotScopeGroupMessage({ message }),
+    viewInputs: {
+      selectedValue: Option.some(model.scorerScope),
+      options: ['All', 'League', 'Cup'],
+      ariaLabel: 'Top-scorers competition',
+      toView: ({ group, options }) =>
+        h.div(
+          [...group, ...getStyleXAttributes(h, styles.scopeGroup)],
+          options.map((option) => {
+            // Checked derives from the model because StyleX has no attribute selectors (the component still stamps data-checked).
+            const checked = option.value === model.scorerScope;
+            return h.div(
+              [
+                ...option.option,
+                ...getStyleXAttributes(
+                  h,
+                  styles.scopeOption,
+                  checked ? styles.scopeChecked : styles.scopeRest,
+                ),
+              ],
+              [labels[option.value]],
+            );
+          }),
+        ),
+    },
   });
 };
 
-const scorerRow = (scorer: Scorer, index: number): Html =>
+const scorerRow = (scorer: Scorer, index: number, h: HtmlBuilder<Message>): Html =>
   h.li(
     [...getStyleXAttributes(h, styles.scorerRow)],
     [
@@ -225,51 +234,52 @@ const scorerRow = (scorer: Scorer, index: number): Html =>
 // One named list view per scope. Each list carries a LITERAL key — the
 // identity of that scope’s board — so switching scopes swaps subtrees
 // (replaying the `.screen` slide-in) without a data-derived key.
-const allScorersList = (target: Club): Html =>
+const allScorersList = (target: Club, h: HtmlBuilder<Message>): Html =>
   h.ol(
     [h.Key('club-scorers-all'), ...getStyleXAttributesWith(h, 'screen', styles.scorersList)],
-    scorersFor(target, 'All').map(scorerRow),
+    scorersFor(target, 'All').map((entry, index) => scorerRow(entry, index, h)),
   );
-const leagueScorersList = (target: Club): Html =>
+const leagueScorersList = (target: Club, h: HtmlBuilder<Message>): Html =>
   h.ol(
     [h.Key('club-scorers-league'), ...getStyleXAttributesWith(h, 'screen', styles.scorersList)],
-    scorersFor(target, 'League').map(scorerRow),
+    scorersFor(target, 'League').map((entry, index) => scorerRow(entry, index, h)),
   );
-const cupScorersList = (target: Club): Html =>
+const cupScorersList = (target: Club, h: HtmlBuilder<Message>): Html =>
   h.ol(
     [h.Key('club-scorers-cup'), ...getStyleXAttributesWith(h, 'screen', styles.scorersList)],
-    scorersFor(target, 'Cup').map(scorerRow),
+    scorersFor(target, 'Cup').map((entry, index) => scorerRow(entry, index, h)),
   );
 
-const scorersListFor = (target: Club, scope: ScorerScope): Html =>
+const scorersListFor = (target: Club, scope: ScorerScope, h: HtmlBuilder<Message>): Html =>
   M.value(scope).pipe(
     M.withReturnType<Html>(),
-    M.when('All', () => allScorersList(target)),
-    M.when('League', () => leagueScorersList(target)),
-    M.when('Cup', () => cupScorersList(target)),
+    M.when('All', () => allScorersList(target, h)),
+    M.when('League', () => leagueScorersList(target, h)),
+    M.when('Cup', () => cupScorersList(target, h)),
     M.exhaustive,
   );
 
 // ONE top-scorers component, scoped by chips: all competitions, the
 // club’s league, or the cup (user call).
-const clubScorersSection = (target: Club, model: Model): Html => {
+const clubScorersSection = (target: Club, model: Model, h: HtmlBuilder<Message>): Html => {
   return clubSection(
     'Top scorers',
     [
-      scopeRadioGroup(target, model),
-      scorersListFor(target, model.scorerScope),
+      scopeRadioGroup(target, model, h),
+      scorersListFor(target, model.scorerScope, h),
       h.p([...getStyleXAttributes(h, styles.scorersFootnote)], ['Goals — season 2025/26']),
     ],
     'top-scorers',
+    h,
   );
 };
 
-const clubHistorySection = (target: Club): Html => {
+const clubHistorySection = (target: Club, h: HtmlBuilder<Message>): Html => {
   const entries = [
     ...(target.leagueTitles > 0
       ? [
           {
-            value: timesCount(target.leagueTitles),
+            value: timesCount(target.leagueTitles, h),
             label: 'League champions',
             detail: 'Most recently 2024/25',
           },
@@ -278,7 +288,7 @@ const clubHistorySection = (target: Club): Html => {
     ...(target.cupTitles > 0
       ? [
           {
-            value: timesCount(target.cupTitles),
+            value: timesCount(target.cupTitles, h),
             label: 'Cup winners',
             detail: 'Most recently 2024/25',
           },
@@ -309,10 +319,11 @@ const clubHistorySection = (target: Club): Html => {
       ),
     ],
     'history',
+    h,
   );
 };
 
-const clubAllTimeStatsSection = (): Html =>
+const clubAllTimeStatsSection = (h: HtmlBuilder<Message>): Html =>
   clubSection(
     'All-time stats',
     [
@@ -331,9 +342,10 @@ const clubAllTimeStatsSection = (): Html =>
       ),
     ],
     'all-time-stats',
+    h,
   );
 
-const clubFollowSection = (target: Club, model: Model): Html => {
+const clubFollowSection = (target: Club, model: Model, h: HtmlBuilder<Message>): Html => {
   const following = model.followed.includes(target.slug);
   return h.section(
     [...getStyleXAttributes(h, styles.follow)],
@@ -346,32 +358,35 @@ const clubFollowSection = (target: Club, model: Model): Html => {
         [...getStyleXAttributes(h, styles.followSubtitle)],
         ['Follow the club and Her Game builds your feed around it — matches, movers, and records.'],
       ),
-      Button.view({
-        onClick: ToggledFollow({ slug: target.slug }),
-        toView: ({ button }) =>
-          h.button(
-            [
-              ...button,
-              h.AriaPressed(following ? 'true' : 'false'),
-              // On PAPER the states invert from the dark build: the call to
-              // action is the pink fill, and the settled "following" state
-              // goes solid ink — on a light surface a paper fill would have
-              // been the button disappearing, not receding.
-              ...getStyleXAttributes(
-                h,
-                shared.display,
-                styles.followButton,
-                following ? styles.followOn : styles.followOff,
-              ),
-            ],
-            [following ? 'Following ✓' : `Follow ${target.name}`],
-          ),
-      }),
+      Button.view(
+        {
+          onClick: ToggledFollow({ slug: target.slug }),
+          toView: ({ button }) =>
+            h.button(
+              [
+                ...button,
+                h.AriaPressed(following ? 'true' : 'false'),
+                // On PAPER the states invert from the dark build: the call to
+                // action is the pink fill, and the settled "following" state
+                // goes solid ink — on a light surface a paper fill would have
+                // been the button disappearing, not receding.
+                ...getStyleXAttributes(
+                  h,
+                  shared.display,
+                  styles.followButton,
+                  following ? styles.followOn : styles.followOff,
+                ),
+              ],
+              [following ? 'Following ✓' : `Follow ${target.name}`],
+            ),
+        },
+        h,
+      ),
     ],
   );
 };
 
-export const view = (target: Club, model: Model): Html => {
+export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html => {
   const heroArt = clubHeroPhotos[target.slug];
   const honors = clubHonors[target.slug] ?? [];
   const europe = clubEurope[target.slug];
@@ -480,7 +495,7 @@ export const view = (target: Club, model: Model): Html => {
                           ],
                           honor.count === undefined
                             ? [honor.label]
-                            : [...timesCount(honor.count), honor.label],
+                            : [...timesCount(honor.count, h), honor.label],
                         ),
                       ),
                     ),
@@ -494,7 +509,7 @@ export const view = (target: Club, model: Model): Html => {
                           [...getStyleXAttributes(h, shared.display, styles.honorChip)],
                           honor.count === undefined
                             ? [honor.label]
-                            : [...timesCount(honor.count), honor.label],
+                            : [...timesCount(honor.count, h), honor.label],
                         ),
                       ),
                     ),
@@ -617,17 +632,17 @@ export const view = (target: Club, model: Model): Html => {
   const dataBand = h.div(
     [...getStyleXAttributes(h, styles.dataBand)],
     [
-      clubMatchesSections(target),
-      clubStandingsSection(target),
+      clubMatchesSections(target, h),
+      clubStandingsSection(target, h),
       // Europe sits between the league and the cup — only for the clubs
       // actually in a continental campaign.
-      ...(europe ? [clubEuropeSection(target, europe)] : []),
+      ...(europe ? [clubEuropeSection(target, europe, h)] : []),
       // Same gate as Europe above: only the clubs actually still in the cup.
-      ...(cupRun ? [clubCupSection(cupRun)] : []),
-      clubScorersSection(target, model),
-      clubHistorySection(target),
-      clubAllTimeStatsSection(),
-      clubFollowSection(target, model),
+      ...(cupRun ? [clubCupSection(cupRun, h)] : []),
+      clubScorersSection(target, model, h),
+      clubHistorySection(target, h),
+      clubAllTimeStatsSection(h),
+      clubFollowSection(target, model, h),
     ],
   );
 

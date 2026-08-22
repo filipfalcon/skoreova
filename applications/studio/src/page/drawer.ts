@@ -1,8 +1,7 @@
 import { Button, Dialog } from '@foldkit/ui';
 import { Array, Match as M, Option } from 'effect';
 import { AsyncData } from 'foldkit';
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { CHART_HOST_ID, MountChart, POINTS_CHART_HOST_ID } from '../command';
 import type { Column } from '../api';
@@ -51,11 +50,9 @@ import {
   retryButtonStyle,
 } from '../styles';
 
-const h = html<Message>();
-
 const drawerTabs: ReadonlyArray<DrawerTab> = ['Overview', 'Persistency', 'History'];
 
-export const view = (model: Model): Html => {
+export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
   const drawerState = model.drawer;
   const creating = drawerState._tag === 'Creating';
   // The record being edited, resolved by id (undefined while creating/closed
@@ -128,11 +125,14 @@ export const view = (model: Model): Html => {
                 ],
                 [
                   h.span([], [data.error]),
-                  Button.view({
-                    onClick: retryBySection[section],
-                    toView: ({ button }) =>
-                      h.button([...button, h.Class(retryButtonStyle)], ['Retry']),
-                  }),
+                  Button.view(
+                    {
+                      onClick: retryBySection[section],
+                      toView: ({ button }) =>
+                        h.button([...button, h.Class(retryButtonStyle)], ['Retry']),
+                    },
+                    h,
+                  ),
                 ],
               )
             : h.empty,
@@ -253,19 +253,22 @@ export const view = (model: Model): Html => {
                     row.id,
                     [],
                     [
-                      Button.view({
-                        onClick: ClickedRecord({ section: row.section, id: row.id }),
-                        toView: ({ button }) =>
-                          h.button(
-                            [...button, h.Class(entryCardStyle)],
-                            [
-                              h.span(
-                                [h.Class('font-medium text-neutral-900')],
-                                [row.values[0] ?? ''],
-                              ),
-                            ],
-                          ),
-                      }),
+                      Button.view(
+                        {
+                          onClick: ClickedRecord({ section: row.section, id: row.id }),
+                          toView: ({ button }) =>
+                            h.button(
+                              [...button, h.Class(entryCardStyle)],
+                              [
+                                h.span(
+                                  [h.Class('font-medium text-neutral-900')],
+                                  [row.values[0] ?? ''],
+                                ),
+                              ],
+                            ),
+                        },
+                        h,
+                      ),
                     ],
                   ),
                 ),
@@ -289,11 +292,14 @@ export const view = (model: Model): Html => {
               [h.Role('alert'), h.Class('flex flex-wrap items-center gap-3 text-sm text-rose-700')],
               [
                 h.span([], [`Couldn’t load teams: ${model.participations.error}`]),
-                Button.view({
-                  onClick: ClickedRetryParticipations(),
-                  toView: ({ button }) =>
-                    h.button([...button, h.Class(retryButtonStyle)], ['Retry']),
-                }),
+                Button.view(
+                  {
+                    onClick: ClickedRetryParticipations(),
+                    toView: ({ button }) =>
+                      h.button([...button, h.Class(retryButtonStyle)], ['Retry']),
+                  },
+                  h,
+                ),
               ],
             ),
           ],
@@ -331,19 +337,22 @@ export const view = (model: Model): Html => {
                     row.id,
                     [],
                     [
-                      Button.view({
-                        onClick: ClickedRecord({ section: row.section, id: row.id }),
-                        toView: ({ button }) =>
-                          h.button(
-                            [...button, h.Class(entryCardStyle)],
-                            [
-                              h.span(
-                                [h.Class('font-medium text-neutral-900')],
-                                [row.values[0] ?? ''],
-                              ),
-                            ],
-                          ),
-                      }),
+                      Button.view(
+                        {
+                          onClick: ClickedRecord({ section: row.section, id: row.id }),
+                          toView: ({ button }) =>
+                            h.button(
+                              [...button, h.Class(entryCardStyle)],
+                              [
+                                h.span(
+                                  [h.Class('font-medium text-neutral-900')],
+                                  [row.values[0] ?? ''],
+                                ),
+                              ],
+                            ),
+                        },
+                        h,
+                      ),
                     ],
                   ),
                 ),
@@ -425,23 +434,32 @@ export const view = (model: Model): Html => {
               [h.Class('mt-3 flex items-center gap-3')],
               [
                 h.span([h.Class('text-sm font-medium text-rose-900')], ['Delete this record?']),
-                Button.view({
-                  onClick: ClickedConfirmDelete(),
-                  toView: ({ button }) =>
-                    h.button([...button, h.Class(dangerConfirmStyle)], ['Yes, delete']),
-                }),
-                Button.view({
-                  onClick: ClickedCancelDelete(),
-                  toView: ({ button }) =>
-                    h.button([...button, h.Class(dangerCancelStyle)], ['Cancel']),
-                }),
+                Button.view(
+                  {
+                    onClick: ClickedConfirmDelete(),
+                    toView: ({ button }) =>
+                      h.button([...button, h.Class(dangerConfirmStyle)], ['Yes, delete']),
+                  },
+                  h,
+                ),
+                Button.view(
+                  {
+                    onClick: ClickedCancelDelete(),
+                    toView: ({ button }) =>
+                      h.button([...button, h.Class(dangerCancelStyle)], ['Cancel']),
+                  },
+                  h,
+                ),
               ],
             )
-          : Button.view({
-              onClick: ClickedDeleteRecord(),
-              toView: ({ button }) =>
-                h.button([...button, h.Class(dangerButtonStyle)], ['Delete record']),
-            }),
+          : Button.view(
+              {
+                onClick: ClickedDeleteRecord(),
+                toView: ({ button }) =>
+                  h.button([...button, h.Class(dangerButtonStyle)], ['Delete record']),
+              },
+              h,
+            ),
       ],
     );
 

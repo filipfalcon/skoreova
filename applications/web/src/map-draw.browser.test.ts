@@ -32,8 +32,6 @@ beforeAll(async () => {
     Runtime.makeApplication({
       Model,
       Flags,
-      // Deterministic: the guards exercise the full motion path.
-      flags: Effect.sync(() => ({ prefersReducedMotion: false })),
       init,
       update,
       view,
@@ -43,6 +41,7 @@ beforeAll(async () => {
         onUrlChange: (url) => ChangedUrl({ url }),
       },
     }),
+    { flags: Effect.sync(() => ({ prefersReducedMotion: false })) },
   );
 
   await waitUntil(() => document.querySelector('.map-path') !== null);

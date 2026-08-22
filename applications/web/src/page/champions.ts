@@ -1,6 +1,5 @@
 import clsx from 'clsx';
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import championsSquadImage from '../assets/champions-squad.jpg';
 import championsTrophyImage from '../assets/champions-trophy.jpg';
@@ -18,14 +17,15 @@ import { FIRST_LEAGUE, euroTies, honors, platformUrl, seasonCupRun, seasonRouts 
 import type { Message } from '../message';
 import type { Model } from '../model';
 
-const h = html<Message>();
-
 // Anton ships no tabular figures ("1" is a third narrower than "0", and
 // font-variant-numeric does nothing), so right-aligned score columns
 // wobble on any row ending in a 1. A poor man’s tnum instead: every digit
 // sits centered in a 1ch box (1ch = the advance of "0"), which keeps all
 // score edges flush across rows.
-export const tabularScore = (score: string): ReadonlyArray<Html | string> =>
+export const tabularScore = (
+  score: string,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Html | string> =>
   score
     .split('')
     .map((character) =>
@@ -58,7 +58,13 @@ interface SingleMatch {
   readonly pens: string | null;
 }
 
-const singleMatchRow = (model: Model, keyPrefix: string, match: SingleMatch, index: number): Html =>
+const singleMatchRow = (
+  model: Model,
+  keyPrefix: string,
+  match: SingleMatch,
+  index: number,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.li(
     [
       h.Class(
@@ -157,7 +163,7 @@ const singleMatchRow = (model: Model, keyPrefix: string, match: SingleMatch, ind
                         'display text-fluid-2xl-4xl text-pink transition-colors duration-300 group-hover:text-ink sm:text-4xl lg:text-fluid-2xl-4xl',
                       ),
                     ],
-                    [...tabularScore(match.score)],
+                    [...tabularScore(match.score, h)],
                   ),
                   h.p(
                     [h.Class('text-[10px] tracking-[0.2em] uppercase sm:text-xs lg:text-[11px]')],
@@ -199,7 +205,7 @@ const singleMatchRow = (model: Model, keyPrefix: string, match: SingleMatch, ind
     ],
   );
 
-const seasonReceiptsGrid = (model: Model): Html =>
+const seasonReceiptsGrid = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.div(
     [
       // Two columns from lg, NOT md: a half column at 768 is a ~330px
@@ -288,6 +294,7 @@ const seasonReceiptsGrid = (model: Model): Html =>
                   pens: null,
                 },
                 index,
+                h,
               ),
             ),
           ),
@@ -463,7 +470,7 @@ const seasonReceiptsGrid = (model: Model): Html =>
                                         'display text-fluid-2xl-4xl sm:text-4xl lg:text-fluid-2xl-4xl',
                                       ),
                                     ],
-                                    [...tabularScore(tie.homeLeg)],
+                                    [...tabularScore(tie.homeLeg, h)],
                                   ),
                                   h.p(
                                     [
@@ -495,7 +502,7 @@ const seasonReceiptsGrid = (model: Model): Html =>
                                         ),
                                       ),
                                     ],
-                                    [...tabularScore(tie.awayLeg)],
+                                    [...tabularScore(tie.awayLeg, h)],
                                   ),
                                   h.p(
                                     [
@@ -553,7 +560,7 @@ const seasonReceiptsGrid = (model: Model): Html =>
     ],
   );
 
-const cupRunGrid = (model: Model): Html =>
+const cupRunGrid = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.div(
     [
       // Two columns from lg like the receipts grid above — one restructure
@@ -623,6 +630,7 @@ const cupRunGrid = (model: Model): Html =>
                   pens: tie.pens,
                 },
                 index,
+                h,
               ),
             ),
           ),
@@ -679,7 +687,7 @@ const cupRunGrid = (model: Model): Html =>
     ],
   );
 
-const honorsBoard = (model: Model): Html =>
+const honorsBoard = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.div(
     // Two columns from lg like every other grid in the section — the md
     // half column wrapped the honor labels AND the records CTA, and shrank
@@ -890,7 +898,7 @@ const honorsBoard = (model: Model): Html =>
     ],
   );
 
-export const view = (model: Model): Html =>
+export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.section(
     [h.Id('meet-our-champion'), h.Class('relative bg-paper py-16 text-ink md:py-24')],
     [
@@ -925,7 +933,7 @@ export const view = (model: Model): Html =>
               h.DataAttribute('reveal-group', 'replay'),
             ],
             [
-              kicker(model, '04', 'Meet our champion', 'paper', '/#meet-our-champion'),
+              kicker(model, '04', 'Meet our champion', 'paper', '/#meet-our-champion', h),
               h.div(
                 [],
                 [
@@ -948,6 +956,7 @@ export const view = (model: Model): Html =>
                         'Sparta Praha',
                         'text-fluid-6xl-9xl',
                         0,
+                        h,
                       ),
                     ],
                   ),
@@ -1200,14 +1209,14 @@ export const view = (model: Model): Html =>
               ),
             ],
           ),
-          seasonReceiptsGrid(model),
+          seasonReceiptsGrid(model, h),
           // ---- The cup run --------------------------------------------
           // Same anatomy as its two siblings above (kicker → display
           // headline → payoff → table), with the trophy photo beside it
           // (whole, uncropped) as the closing image. No stamps — but the
           // arrow affordance stays: these rows click through to the
           // platform exactly like their two louder siblings.
-          cupRunGrid(model),
+          cupRunGrid(model, h),
           // ---- All time -------------------------------------------------
           // The historical honors board closes the section — the season’s
           // receipts above are the argument, this is the legacy. Mirrors
@@ -1237,7 +1246,7 @@ export const view = (model: Model): Html =>
               ),
             ],
           ),
-          honorsBoard(model),
+          honorsBoard(model, h),
         ],
       ),
     ],

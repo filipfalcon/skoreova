@@ -1,13 +1,10 @@
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import heroImage from '../assets/hero.webp';
 import { displayArrow } from '../components';
 import { platformUrl } from '../data';
 import type { Message } from '../message';
 import { ObserveHeroPastHeader } from '../motion';
-
-const h = html<Message>();
 
 // ONE continuous size curve across every width — no breakpoint tiers, so
 // the lockup never steps when the viewport crosses a boundary. Three legs:
@@ -38,7 +35,7 @@ const heroText =
 // for the (removed) Mexican-wave letters jumping above the line.
 const heroMask = `overflow-hidden ${heroText}`;
 
-export const view = (): Html =>
+export const view = (h: HtmlBuilder<Message>): Html =>
   h.section(
     [
       h.Id('top'),

@@ -1,7 +1,6 @@
 import { Button } from '@foldkit/ui';
 import { Array, Number, Option } from 'effect';
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import firstLeagueAttendancePhoto from './assets/attendance/first-league.jpg';
 import secondLeagueAttendancePhoto from './assets/attendance/second-league.jpg';
@@ -18,8 +17,6 @@ import { styles as componentStyles } from './styles/components';
 import { shared } from './styles/shared';
 import { styles } from './styles/stat-tiles';
 
-const h = html<Message>();
-
 // One trending tile — its own pinnable unit (user call: split the boards).
 // The pin rides over it as an overlay sibling of the card link, like the
 // stat cards. `id` is `trending:<entry id>`.
@@ -28,6 +25,7 @@ export const trendingTile = (
   entry: TrendingEntry,
   index: number,
   withPin = true,
+  h: HtmlBuilder<Message>,
 ): Html => {
   const featured = entry.photo !== '';
   // No col-span here: the leader’s double width belongs to the grid CHILD,
@@ -39,7 +37,7 @@ export const trendingTile = (
       // A pin sends a tile to HER GAME, which is behind the sign-in — so the
       // landing draws the same tiles without one rather than offering a
       // destination the reader has no way to reach.
-      ...(withPin ? [pinOverlay(model, `trending:${entry.id}`, entry.name)] : []),
+      ...(withPin ? [pinOverlay(model, `trending:${entry.id}`, entry.name, h)] : []),
       h.a(
         [
           h.Href(entry.href),
@@ -178,7 +176,7 @@ export const formatCount = (count: number): string => count.toLocaleString('en-U
 // figures (one bar per matchday, the current round pink). Heights spread
 // across the min–max band (zero-based bars would all sit at ~85% and read
 // as a flat wall).
-export const statSpark = (rounds: ReadonlyArray<number>): Html =>
+export const statSpark = (rounds: ReadonlyArray<number>, h: HtmlBuilder<Message>): Html =>
   h.div(
     [...getStyleXAttributes(h, styles.spark), h.AriaHidden(true)],
     rounds.map((value, index) => {
@@ -205,25 +203,33 @@ export const statSpark = (rounds: ReadonlyArray<number>): Html =>
 // and always solid-backed so it reads on any crop (the bordered chip’s
 // outline vanished on a dark photo). Sits over the tile as an absolute
 // sibling of the card link, never inside it.
-export const pinOverlay = (model: Model, id: string, label: string): Html => {
+export const pinOverlay = (
+  model: Model,
+  id: string,
+  label: string,
+  h: HtmlBuilder<Message>,
+): Html => {
   const pinned = model.pinned.includes(id);
-  return Button.view({
-    onClick: ToggledPin({ id }),
-    toView: ({ button }) =>
-      h.button(
-        [
-          ...button,
-          h.AriaPressed(pinned ? 'true' : 'false'),
-          h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
-          ...getStyleXAttributes(
-            h,
-            styles.pinOverlay,
-            pinned ? styles.pinOverlayPinned : styles.pinOverlayUnpinned,
-          ),
-        ],
-        [pinGlyph(componentStyles.pinGlyphOverlay)],
-      ),
-  });
+  return Button.view(
+    {
+      onClick: ToggledPin({ id }),
+      toView: ({ button }) =>
+        h.button(
+          [
+            ...button,
+            h.AriaPressed(pinned ? 'true' : 'false'),
+            h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
+            ...getStyleXAttributes(
+              h,
+              styles.pinOverlay,
+              pinned ? styles.pinOverlayPinned : styles.pinOverlayUnpinned,
+            ),
+          ],
+          [pinGlyph(h, componentStyles.pinGlyphOverlay)],
+        ),
+    },
+    h,
+  );
 };
 
 // 'First League' -> 'first-league', so a card’s pin id is stable and
@@ -240,6 +246,7 @@ export const statCard = (
   index: number,
   pinId: string,
   label: string,
+  h: HtmlBuilder<Message>,
 ): Html => {
   const current = Option.getOrElse(Array.last(entry.rounds), () => 0);
   const previous = Option.getOrElse(
@@ -252,7 +259,7 @@ export const statCard = (
   return h.div(
     [...getStyleXAttributes(h, styles.tileWrapper)],
     [
-      pinOverlay(model, pinId, label),
+      pinOverlay(model, pinId, label, h),
       h.a(
         [
           h.Href(entry.href),
@@ -318,7 +325,7 @@ export const statCard = (
                         up ? styles.cardDeltaUp : styles.cardDeltaDown,
                       ),
                     ],
-                    [tapeArrow(up), `${deltaPct.toFixed(1)} %`],
+                    [tapeArrow(up, h), `${deltaPct.toFixed(1)} %`],
                   ),
                 ],
               ),
@@ -374,7 +381,7 @@ export const statCard = (
                   // footer padding).
                   h.div(
                     [...getStyleXAttributes(h, styles.cardSparkStrip)],
-                    [statSpark(entry.rounds)],
+                    [statSpark(entry.rounds, h)],
                   ),
                 ],
               ),
@@ -405,7 +412,12 @@ export interface BestRecord {
 // tick was always decorative, so making it the control adds no clutter.
 // `standalone` left-aligns it for the Her Game feed (the home grid centers on
 // phones); the id is `best:<record id>`.
-export const bestRecord = (model: Model, record: BestRecord, standalone: boolean): Html => {
+export const bestRecord = (
+  model: Model,
+  record: BestRecord,
+  standalone: boolean,
+  h: HtmlBuilder<Message>,
+): Html => {
   const pinned = model.pinned.includes(`best:${record.id}`);
   return h.li(
     [
@@ -416,33 +428,38 @@ export const bestRecord = (model: Model, record: BestRecord, standalone: boolean
       ),
     ],
     [
-      Button.view({
-        onClick: ToggledPin({ id: `best:${record.id}` }),
-        toView: ({ button }) =>
-          h.button(
-            [
-              ...button,
-              h.AriaPressed(pinned ? 'true' : 'false'),
-              h.AriaLabel(
-                pinned ? `Unpin ${record.label} from Her Game` : `Pin ${record.label} to Her Game`,
-              ),
-              // The tick, now a hit target: pink bar at rest, growing a pin
-              // glyph beside it when pinned so the state reads without color.
-              ...getStyleXAttributes(
-                h,
-                styles.recordPin,
-                pinned ? styles.recordPinPinned : styles.recordPinUnpinned,
-              ),
-            ],
-            [
-              h.div([...getStyleXAttributes(h, styles.recordTick)], []),
-              pinned ? pinGlyph(componentStyles.pinGlyphTick) : h.empty,
-            ],
-          ),
-      }),
+      Button.view(
+        {
+          onClick: ToggledPin({ id: `best:${record.id}` }),
+          toView: ({ button }) =>
+            h.button(
+              [
+                ...button,
+                h.AriaPressed(pinned ? 'true' : 'false'),
+                h.AriaLabel(
+                  pinned
+                    ? `Unpin ${record.label} from Her Game`
+                    : `Pin ${record.label} to Her Game`,
+                ),
+                // The tick, now a hit target: pink bar at rest, growing a pin
+                // glyph beside it when pinned so the state reads without color.
+                ...getStyleXAttributes(
+                  h,
+                  styles.recordPin,
+                  pinned ? styles.recordPinPinned : styles.recordPinUnpinned,
+                ),
+              ],
+              [
+                h.div([...getStyleXAttributes(h, styles.recordTick)], []),
+                pinned ? pinGlyph(h, componentStyles.pinGlyphTick) : h.empty,
+              ],
+            ),
+        },
+        h,
+      ),
       h.p(
         [...getStyleXAttributes(h, shared.display, styles.recordValue)],
-        record.isCount === true ? [record.value, drawnTimes()] : [record.value],
+        record.isCount === true ? [record.value, drawnTimes(h)] : [record.value],
       ),
       h.p([...getStyleXAttributes(h, shared.display, styles.recordHolder)], [record.holder]),
       h.p([...getStyleXAttributes(h, styles.recordLabel)], [record.label]),

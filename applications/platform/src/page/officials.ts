@@ -1,5 +1,4 @@
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { screenHeader } from '../components';
 import { officials } from '../data';
@@ -9,15 +8,14 @@ import { getStyleXAttributes } from '../stylexAttributes';
 import { styles } from '../styles/officials';
 import { shared } from '../styles/shared';
 
-const h = html<Message>();
-
-export const view = (model: Model): Html =>
+export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.div(
     [],
     [
       screenHeader(
         model,
         'The officials of both leagues — appointments, cards, and consistency, out in the open.',
+        h,
       ),
       // A real list, not a div grid — each official is an item AT can
       // count and step through.

@@ -4,22 +4,21 @@ import { load, pushUrl } from 'foldkit/navigation';
 
 import { CompletedLoad, CompletedNavigate, CompletedWritePins, LoadedPins } from './message';
 
-export const Navigate = Command.define(
-  'Navigate',
-  { url: S.String },
-  CompletedNavigate,
-)(({ url }) =>
-  pushUrl(url).pipe(
-    Effect.andThen(Effect.sync(() => window.scrollTo(0, 0))),
-    Effect.as(CompletedNavigate()),
-  ),
-);
+export const Navigate = Command.define('Navigate', {
+  args: { url: S.String },
+  messages: [CompletedNavigate],
+  execute: ({ url }) =>
+    pushUrl(url).pipe(
+      Effect.andThen(Effect.sync(() => window.scrollTo(0, 0))),
+      Effect.as(CompletedNavigate()),
+    ),
+});
 
-export const Load = Command.define(
-  'Load',
-  { href: S.String },
-  CompletedLoad,
-)(({ href }) => load(href).pipe(Effect.as(CompletedLoad())));
+export const Load = Command.define('Load', {
+  args: { href: S.String },
+  messages: [CompletedLoad],
+  execute: ({ href }) => load(href).pipe(Effect.as(CompletedLoad())),
+});
 
 // ——— THE PINS PORT. Every read and write of a visitor’s pins goes through
 // this ONE object, so the whole app is blind to where pins actually live.
@@ -60,13 +59,13 @@ const pinsStore = {
     ),
 };
 
-export const ReadPins = Command.define(
-  'ReadPins',
-  LoadedPins,
-)(pinsStore.load.pipe(Effect.map((ids) => LoadedPins({ ids }))));
+export const ReadPins = Command.define('ReadPins', {
+  messages: [LoadedPins],
+  execute: pinsStore.load.pipe(Effect.map((ids) => LoadedPins({ ids }))),
+});
 
-export const WritePins = Command.define(
-  'WritePins',
-  { ids: S.Array(S.String) },
-  CompletedWritePins,
-)(({ ids }) => pinsStore.save(ids).pipe(Effect.as(CompletedWritePins())));
+export const WritePins = Command.define('WritePins', {
+  args: { ids: S.Array(S.String) },
+  messages: [CompletedWritePins],
+  execute: ({ ids }) => pinsStore.save(ids).pipe(Effect.as(CompletedWritePins())),
+});

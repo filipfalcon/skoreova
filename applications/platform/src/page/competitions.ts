@@ -1,5 +1,4 @@
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { screenHeader } from '../components';
 import { competitions } from '../data';
@@ -10,15 +9,14 @@ import { getStyleXAttributes } from '../stylexAttributes';
 import { styles } from '../styles/competitions';
 import { shared } from '../styles/shared';
 
-const h = html<Message>();
-
-export const view = (model: Model): Html =>
+export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.div(
     [],
     [
       screenHeader(
         model,
         'Both leagues, the cup, Europe, and the national team — every competition tracked in one place.',
+        h,
       ),
       // A real list, not a div grid — each competition is an item AT can
       // count and step through.

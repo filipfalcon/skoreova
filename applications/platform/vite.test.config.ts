@@ -25,6 +25,13 @@ export default defineConfig({
     // reads `--project '@skoreova/platform-application'`. That is what Vitest
     // falls back to when a project config names nothing.
     name: 'platform',
+    // A fixed build id for the server-entry tests: `renderToString` refuses a
+    // hydratable render without one. It rides on `env` rather than the
+    // plugin's `buildId`, because Vitest builds `import.meta.env` itself and
+    // the plugin's compile-time define does not survive into a test run.
+    // Tests compare a render against itself rather than across deployments, so
+    // a constant is the whole of what they need.
+    env: { FOLDKIT_BUILD_ID: 'test' },
     include: ['src/**/*.test.ts'],
     // The app’s own update/view/init never touch the DOM at call time, but the
     // @foldkit/ui components rendered in the view do (CSS.escape when building
@@ -36,7 +43,10 @@ export default defineConfig({
     setupFiles: ['./src/vitest-setup.ts'],
     // Foldkit ships as ESM with subpath exports (foldkit/struct, foldkit/test/*);
     // inline it so Vitest transforms it instead of externalizing to the bun
-    // isolated store, where the subpath resolution trips.
-    server: { deps: { inline: ['foldkit'] } },
+    // isolated store, where the subpath resolution trips. `@foldkit/ui` rides
+    // along because the two must share ONE foldkit instance: the html builder
+    // reads a render frame off a module-level stack, so a component resolving
+    // its own externalized copy finds that stack empty and refuses to build.
+    server: { deps: { inline: ['foldkit', '@foldkit/ui'] } },
   },
 });

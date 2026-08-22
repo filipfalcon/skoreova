@@ -1,5 +1,4 @@
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import duoImage from '../assets/duo.webp';
 import clsx from 'clsx';
@@ -10,9 +9,7 @@ import type { Competition } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';
 
-const h = html<Message>();
-
-const competitionCard = (model: Model, competition: Competition): Html =>
+const competitionCard = (model: Model, competition: Competition, h: HtmlBuilder<Message>): Html =>
   h.article(
     [
       // From sm to lg the card is a media row — a 2/5 photo with the label
@@ -125,7 +122,7 @@ const competitionCard = (model: Model, competition: Competition): Html =>
     ],
   );
 
-export const view = (model: Model): Html =>
+export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.section(
     [
       h.Id('battling-through'),
@@ -162,7 +159,7 @@ export const view = (model: Model): Html =>
       h.div(
         [h.Class(`${container} relative`)],
         [
-          kicker(model, '02', 'Battling through', 'ink', '/#battling-through'),
+          kicker(model, '02', 'Battling through', 'ink', '/#battling-through', h),
           h.h2(
             [h.Class('mt-10 md:mt-16')],
             [
@@ -172,6 +169,7 @@ export const view = (model: Model): Html =>
                 ['How ', h.span([h.Class('text-pink')], ['she']), ' plays.'],
                 'text-fluid-6xl-9xl',
                 0,
+                h,
               ),
             ],
           ),
@@ -190,7 +188,7 @@ export const view = (model: Model): Html =>
                 // in between, the cards are the headline’s direct answer and
                 // follow on the same beat.
                 [h.Class('mt-10 grid gap-10 md:mt-16 lg:grid-cols-3')],
-                competitions.map((competition) => competitionCard(model, competition)),
+                competitions.map((competition) => competitionCard(model, competition, h)),
               ),
               h.div(
                 [

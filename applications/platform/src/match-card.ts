@@ -1,6 +1,5 @@
 import { Match as M } from 'effect';
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { clubRowFace, clubStanding } from './data';
 import type { Match, MatchState } from './data';
@@ -10,8 +9,6 @@ import { getStyleXAttributes } from './stylexAttributes';
 import type { StyleXStyle } from './stylexAttributes';
 import { shared } from './styles/shared';
 import { compactSurface, styles } from './styles/match-card';
-
-const h = html<Message>();
 
 // THE MATCH CARD — one fixture or result, in the one component every surface
 // that shows a match uses. The home page's weekly carousel is its first
@@ -40,7 +37,12 @@ export type MatchCardVariant = 'hero' | 'compact';
 // the fixture carries, exactly as a standings row does — a side with no entry
 // in our clubs table (the cup draws in 48, the table holds 19) keeps its full
 // name and shows no badge, rather than an empty square.
-const side = (team: string, goals: string, nameStyle: StyleXStyle): Html => {
+const side = (
+  team: string,
+  goals: string,
+  nameStyle: StyleXStyle,
+  h: HtmlBuilder<Message>,
+): Html => {
   const face = clubRowFace(team);
   return h.div(
     [...getStyleXAttributes(h, styles.side)],
@@ -125,7 +127,7 @@ const spokenLabel = (match: Match): string => {
 // The separator is × (U+00D7), the mark a fixture is written with. Not the
 // letter x, which a screen reader would spell out and a font would set as a
 // letterform rather than as an operator.
-const headline = (match: Match): Html => {
+const headline = (match: Match, h: HtmlBuilder<Message>): Html => {
   const nameOf = (team: string): string => {
     const face = clubRowFace(team);
     return face?.displayName === '' || face === undefined ? team : face.displayName;
@@ -139,7 +141,7 @@ const headline = (match: Match): Html => {
 // The crests, small, riding above the headline. Only the ones we actually
 // hold: a side with no badge simply does not add one, rather than reserving
 // an empty square — nothing here is a column, so nothing has to line up.
-const heroCrests = (match: Match): Html =>
+const heroCrests = (match: Match, h: HtmlBuilder<Message>): Html =>
   h.div(
     [...getStyleXAttributes(h, styles.heroCrests)],
     [match.home, match.away].flatMap((team) => {
@@ -162,7 +164,11 @@ const heroCrests = (match: Match): Html =>
 // decides how the fixture is DRAWN: a hero sets the two clubs as a headline
 // with the crests above it, everything else keeps the two-row list with the
 // scoreline down the right.
-export const matchCard = (match: Match, variant: MatchCardVariant): Html => {
+export const matchCard = (
+  match: Match,
+  variant: MatchCardVariant,
+  h: HtmlBuilder<Message>,
+): Html => {
   const isHero = variant === 'hero';
   const [homeGoals, awayGoals] = goalsOf(match.state);
   // A finished COMPACT card runs quieter than one still to be played: its two
@@ -291,12 +297,12 @@ export const matchCard = (match: Match, variant: MatchCardVariant): Html => {
               ),
               h.AriaHidden(true),
             ],
-            [side(match.home, homeGoals, nameStyle), side(match.away, awayGoals, nameStyle)],
+            [side(match.home, homeGoals, nameStyle, h), side(match.away, awayGoals, nameStyle, h)],
           ),
         ]
       : [
-          h.div([h.AriaHidden(true)], [heroCrests(match)]),
-          h.div([h.AriaHidden(true)], [headline(match)]),
+          h.div([h.AriaHidden(true)], [heroCrests(match, h)]),
+          h.div([h.AriaHidden(true)], [headline(match, h)]),
         ]),
     ...storyRows,
     // `marginTop: auto` on the footer is what keeps the variants and the
@@ -350,7 +356,7 @@ export const matchCard = (match: Match, variant: MatchCardVariant): Html => {
 // applies to it: with no date set the card says only that there are no
 // matches this week and says nothing about when that changes. It does not
 // print a guess, a dash, or a "date to be confirmed".
-export const returnsCard = (date: string): Html =>
+export const returnsCard = (date: string, h: HtmlBuilder<Message>): Html =>
   h.div(
     [...getStyleXAttributes(h, styles.card, styles.compactCard, compactSurface, styles.pauseCard)],
     [

@@ -94,87 +94,81 @@ export const MountChart = Mount.define(
 );
 
 // Pushes the given stats into an already-mounted chart instance.
-export const SyncChart = Command.define(
-  'SyncChart',
-  {
+export const SyncChart = Command.define('SyncChart', {
+  args: {
     hostId: S.String,
     title: S.String,
     categories: S.Array(S.String),
     values: S.Array(S.Number),
   },
-  SucceededSyncChart,
-  FailedSyncChart,
-)((args) =>
-  Effect.sync(() => {
-    const maybeChart = getChart(args.hostId);
-    if (Option.isNone(maybeChart)) {
-      return FailedSyncChart({ reason: `No live chart for hostId ${args.hostId}.` });
-    }
-    try {
-      maybeChart.value.setOption(makeStatsOption(args), true);
-      return SucceededSyncChart();
-    } catch (error) {
-      return FailedSyncChart({
-        reason: error instanceof Error ? error.message : `${error}`,
-      });
-    }
-  }),
-);
+  messages: [SucceededSyncChart, FailedSyncChart],
+  execute: (args) =>
+    Effect.sync(() => {
+      const maybeChart = getChart(args.hostId);
+      if (Option.isNone(maybeChart)) {
+        return FailedSyncChart({ reason: `No live chart for hostId ${args.hostId}.` });
+      }
+      try {
+        maybeChart.value.setOption(makeStatsOption(args), true);
+        return SucceededSyncChart();
+      } catch (error) {
+        return FailedSyncChart({
+          reason: error instanceof Error ? error.message : `${error}`,
+        });
+      }
+    }),
+});
 
 // Same shape as SyncChart but for the points-over-time line chart, shown
 // only for team records (Clubs/Nationals) — see POINTS_CHART_HOST_ID.
-export const SyncPointsChart = Command.define(
-  'SyncPointsChart',
-  {
+export const SyncPointsChart = Command.define('SyncPointsChart', {
+  args: {
     hostId: S.String,
     title: S.String,
     weeks: S.Array(S.String),
     points: S.Array(S.Number),
   },
-  SucceededSyncChart,
-  FailedSyncChart,
-)((args) =>
-  Effect.sync(() => {
-    const maybeChart = getChart(args.hostId);
-    if (Option.isNone(maybeChart)) {
-      return FailedSyncChart({ reason: `No live chart for hostId ${args.hostId}.` });
-    }
-    try {
-      maybeChart.value.setOption(makePointsOption(args), true);
-      return SucceededSyncChart();
-    } catch (error) {
-      return FailedSyncChart({
-        reason: error instanceof Error ? error.message : `${error}`,
-      });
-    }
-  }),
-);
+  messages: [SucceededSyncChart, FailedSyncChart],
+  execute: (args) =>
+    Effect.sync(() => {
+      const maybeChart = getChart(args.hostId);
+      if (Option.isNone(maybeChart)) {
+        return FailedSyncChart({ reason: `No live chart for hostId ${args.hostId}.` });
+      }
+      try {
+        maybeChart.value.setOption(makePointsOption(args), true);
+        return SucceededSyncChart();
+      } catch (error) {
+        return FailedSyncChart({
+          reason: error instanceof Error ? error.message : `${error}`,
+        });
+      }
+    }),
+});
 
 // Fetches one page of the real player roster and maps it into `Entry` rows.
 // Every other section (see below) fetches everything at once — theirs
 // aren’t paginated.
-export const FetchPlayers = Command.define(
-  'FetchPlayers',
-  { page: S.Number },
-  SucceededFetchPlayers,
-  FailedFetchPlayers,
-)((args) =>
-  getDecoded(playersUrl(args.page), PlayersPage).pipe(
-    Effect.map((page) =>
-      SucceededFetchPlayers({
-        entries: page.items.map((player) => ({
-          section: 'players' as const,
-          id: player.id,
-          isDeleted: false,
-          parentId: '',
-          values: playerToRow(player),
-        })),
-        total: page.total,
-      }),
+export const FetchPlayers = Command.define('FetchPlayers', {
+  args: { page: S.Number },
+  messages: [SucceededFetchPlayers, FailedFetchPlayers],
+  execute: (args) =>
+    getDecoded(playersUrl(args.page), PlayersPage).pipe(
+      Effect.map((page) =>
+        SucceededFetchPlayers({
+          entries: page.items.map((player) => ({
+            section: 'players' as const,
+            id: player.id,
+            isDeleted: false,
+            parentId: '',
+            values: playerToRow(player),
+          })),
+          total: page.total,
+        }),
+      ),
+      Effect.catch((error) => Effect.succeed(FailedFetchPlayers({ reason: error.message }))),
     ),
-    Effect.catch((error) => Effect.succeed(FailedFetchPlayers({ reason: error.message }))),
-  ),
-);
+});
 
 // Fetches teams filtered by kind and maps them into `Entry` rows for the
 // given section. Clubs and Nationals both use this — same backend shape,
@@ -197,35 +191,26 @@ const fetchTeamEntries = (
     ),
   );
 
-export const FetchClubs = Command.define(
-  'FetchClubs',
-  SucceededFetchClubs,
-  FailedFetchClubs,
-)(
-  fetchTeamEntries('CLUB', 'clubs').pipe(
+export const FetchClubs = Command.define('FetchClubs', {
+  messages: [SucceededFetchClubs, FailedFetchClubs],
+  execute: fetchTeamEntries('CLUB', 'clubs').pipe(
     Effect.map((entries) => SucceededFetchClubs({ entries })),
     Effect.catch((error) => Effect.succeed(FailedFetchClubs({ reason: error.message }))),
   ),
-);
+});
 
-export const FetchNationals = Command.define(
-  'FetchNationals',
-  SucceededFetchNationals,
-  FailedFetchNationals,
-)(
-  fetchTeamEntries('NATIONAL', 'nationals').pipe(
+export const FetchNationals = Command.define('FetchNationals', {
+  messages: [SucceededFetchNationals, FailedFetchNationals],
+  execute: fetchTeamEntries('NATIONAL', 'nationals').pipe(
     Effect.map((entries) => SucceededFetchNationals({ entries })),
     Effect.catch((error) => Effect.succeed(FailedFetchNationals({ reason: error.message }))),
   ),
-);
+});
 
 // Fetches every competition in one request (this endpoint isn’t paginated).
-export const FetchCompetitions = Command.define(
-  'FetchCompetitions',
-  SucceededFetchCompetitions,
-  FailedFetchCompetitions,
-)(
-  getDecoded(competitionsUrl(), CompetitionsResponse).pipe(
+export const FetchCompetitions = Command.define('FetchCompetitions', {
+  messages: [SucceededFetchCompetitions, FailedFetchCompetitions],
+  execute: getDecoded(competitionsUrl(), CompetitionsResponse).pipe(
     Effect.map((competitions) =>
       SucceededFetchCompetitions({
         entries: competitions.map((competition) => ({
@@ -239,18 +224,15 @@ export const FetchCompetitions = Command.define(
     ),
     Effect.catch((error) => Effect.succeed(FailedFetchCompetitions({ reason: error.message }))),
   ),
-);
+});
 
 // Fetches every edition across all competitions in one request (this
 // endpoint isn’t paginated). An edition’s Competition cell carries the bare
 // competitionId; the view resolves it to a name (see resolveDerivedCells), so
 // this maps to Entry rows exactly like every other section.
-export const FetchEditions = Command.define(
-  'FetchEditions',
-  SucceededFetchEditions,
-  FailedFetchEditions,
-)(
-  getDecoded(editionsUrl(), EditionsResponse).pipe(
+export const FetchEditions = Command.define('FetchEditions', {
+  messages: [SucceededFetchEditions, FailedFetchEditions],
+  execute: getDecoded(editionsUrl(), EditionsResponse).pipe(
     Effect.map((editions) =>
       SucceededFetchEditions({
         entries: editions.map((edition) => ({
@@ -264,28 +246,22 @@ export const FetchEditions = Command.define(
     ),
     Effect.catch((error) => Effect.succeed(FailedFetchEditions({ reason: error.message }))),
   ),
-);
+});
 
 // Fetches every team/edition pairing in one request (this endpoint isn’t
 // paginated) — used only to resolve an edition’s participating teams.
-export const FetchParticipations = Command.define(
-  'FetchParticipations',
-  SucceededFetchParticipations,
-  FailedFetchParticipations,
-)(
-  getDecoded(participationsUrl(), ParticipationsResponse).pipe(
+export const FetchParticipations = Command.define('FetchParticipations', {
+  messages: [SucceededFetchParticipations, FailedFetchParticipations],
+  execute: getDecoded(participationsUrl(), ParticipationsResponse).pipe(
     Effect.map((participations) => SucceededFetchParticipations({ participations })),
     Effect.catch((error) => Effect.succeed(FailedFetchParticipations({ reason: error.message }))),
   ),
-);
+});
 
 // Fetches every association in one request (this endpoint isn’t paginated).
-export const FetchAssociations = Command.define(
-  'FetchAssociations',
-  SucceededFetchAssociations,
-  FailedFetchAssociations,
-)(
-  getDecoded(associationsUrl(), AssociationsResponse).pipe(
+export const FetchAssociations = Command.define('FetchAssociations', {
+  messages: [SucceededFetchAssociations, FailedFetchAssociations],
+  execute: getDecoded(associationsUrl(), AssociationsResponse).pipe(
     Effect.map((associations) =>
       SucceededFetchAssociations({
         entries: associations.map((association) => ({
@@ -299,50 +275,43 @@ export const FetchAssociations = Command.define(
     ),
     Effect.catch((error) => Effect.succeed(FailedFetchAssociations({ reason: error.message }))),
   ),
-);
+});
 
 // Whether the backend is up at all — drives the diode on every API-backed
 // section’s Refresh button (see serverHealth on the Model).
-export const FetchHealth = Command.define(
-  'FetchHealth',
-  SucceededFetchHealth,
-  FailedFetchHealth,
-)(
-  getDecoded(healthUrl(), HealthResponse).pipe(
+export const FetchHealth = Command.define('FetchHealth', {
+  messages: [SucceededFetchHealth, FailedFetchHealth],
+  execute: getDecoded(healthUrl(), HealthResponse).pipe(
     Effect.map(() => SucceededFetchHealth()),
     Effect.catch((error) => Effect.succeed(FailedFetchHealth({ reason: error.message }))),
   ),
-);
+});
 
 // Reads the current calendar date (through Effect’s Clock, like StampSave) at
 // boot — the date filter DatePickers open their calendar grid onto it.
-export const FetchToday = Command.define(
-  'FetchToday',
-  FetchedToday,
-)(Calendar.today.local.pipe(Effect.map((today) => FetchedToday({ today }))));
+export const FetchToday = Command.define('FetchToday', {
+  messages: [FetchedToday],
+  execute: Calendar.today.local.pipe(Effect.map((today) => FetchedToday({ today }))),
+});
 
 // Reads the wall clock (through Effect’s Clock, so it’s swappable in tests) and
 // hands the formatted timestamp back as SavedRecordAt — the record commit needs
 // a timestamp for its edit log, and this keeps `new Date()` out of `update`.
-export const StampSave = Command.define(
-  'StampSave',
-  SavedRecordAt,
-)(
-  Clock.currentTimeMillis.pipe(
+export const StampSave = Command.define('StampSave', {
+  messages: [SavedRecordAt],
+  execute: Clock.currentTimeMillis.pipe(
     Effect.map((millis) => SavedRecordAt({ at: new Date(millis).toLocaleString('en-US') })),
   ),
-);
+});
 
 // The delete’s own clock read. One Command per intent rather than one shared
 // stamp the handler has to disambiguate from the drawer’s state.
-export const StampDelete = Command.define(
-  'StampDelete',
-  DeletedRecordAt,
-)(
-  Clock.currentTimeMillis.pipe(
+export const StampDelete = Command.define('StampDelete', {
+  messages: [DeletedRecordAt],
+  execute: Clock.currentTimeMillis.pipe(
     Effect.map((millis) => DeletedRecordAt({ at: new Date(millis).toLocaleString('en-US') })),
   ),
-);
+});
 
 // ROUTING
 //
@@ -350,43 +319,41 @@ export const StampDelete = Command.define(
 // Navigate updates the address bar for in-app moves (record opened/closed,
 // section switched), Load is a real page navigation for external links.
 
-export const Navigate = Command.define(
-  'Navigate',
-  { url: S.String },
-  CompletedNavigate,
-)(({ url }) => pushUrl(url).pipe(Effect.as(CompletedNavigate())));
+export const Navigate = Command.define('Navigate', {
+  args: { url: S.String },
+  messages: [CompletedNavigate],
+  execute: ({ url }) => pushUrl(url).pipe(Effect.as(CompletedNavigate())),
+});
 
-export const Load = Command.define(
-  'Load',
-  { href: S.String },
-  CompletedLoad,
-)(({ href }) => loadUrl(href).pipe(Effect.as(CompletedLoad())));
+export const Load = Command.define('Load', {
+  args: { href: S.String },
+  messages: [CompletedLoad],
+  execute: ({ href }) => loadUrl(href).pipe(Effect.as(CompletedLoad())),
+});
 
 // Resolves a single team by id (GET /teams/{id}) when a shared record link
 // points at a team that isn’t already in the loaded list.
-export const FetchTeamById = Command.define(
-  'FetchTeamById',
-  { section: S.Literals(['clubs', 'nationals']), id: S.String },
-  SucceededFetchTeamById,
-  FailedFetchTeamById,
-)((args) =>
-  getDecoded(teamByIdUrl(args.id), S.NullOr(TeamResponse)).pipe(
-    Effect.map((team) =>
-      team === null
-        ? FailedFetchTeamById({ reason: 'This team no longer exists.' })
-        : SucceededFetchTeamById({
-            entry: {
-              section: args.section,
-              id: team.id,
-              isDeleted: false,
-              parentId: '',
-              values: teamToRow(team),
-            },
-          }),
+export const FetchTeamById = Command.define('FetchTeamById', {
+  args: { section: S.Literals(['clubs', 'nationals']), id: S.String },
+  messages: [SucceededFetchTeamById, FailedFetchTeamById],
+  execute: (args) =>
+    getDecoded(teamByIdUrl(args.id), S.NullOr(TeamResponse)).pipe(
+      Effect.map((team) =>
+        team === null
+          ? FailedFetchTeamById({ reason: 'This team no longer exists.' })
+          : SucceededFetchTeamById({
+              entry: {
+                section: args.section,
+                id: team.id,
+                isDeleted: false,
+                parentId: '',
+                values: teamToRow(team),
+              },
+            }),
+      ),
+      Effect.catch((error) => Effect.succeed(FailedFetchTeamById({ reason: error.message }))),
     ),
-    Effect.catch((error) => Effect.succeed(FailedFetchTeamById({ reason: error.message }))),
-  ),
-);
+});
 
 // CALL-SITE FACTORIES
 //

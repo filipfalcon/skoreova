@@ -1,7 +1,6 @@
-import { Button, RadioGroup, Select } from '@foldkit/ui';
+import { Button, Select } from '@foldkit/ui';
 import { Match as M, Option, Record } from 'effect';
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import domesticCupHeroPhoto from '../assets/competitions-hero/domestic-cup.jpg';
 import firstLeagueHeroPhoto from '../assets/competitions-hero/first-league.jpg';
@@ -23,12 +22,12 @@ import {
   formWindow,
 } from '../schedule';
 import type { SeasonShape } from '../schedule';
+import { GotEditionGroupMessage } from '../message';
+import { EditionRadioGroup } from '../radio-groups';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
 import type { StyleXStyle } from '../stylexAttributes';
 import { styles } from '../styles/competition-profile';
 import { shared } from '../styles/shared';
-
-const h = html<Message>();
 
 // Per-competition hero artwork — the club profile's device (user call: the
 // First League page opens like the Sparta Praha page, big picture with the
@@ -73,10 +72,10 @@ const HEADLINE_L_SLUGS: ReadonlyArray<string> = ['second-league', 'domestic-cup'
 const headlineTier = (competition: Competition): StyleXStyle =>
   HEADLINE_L_SLUGS.includes(competition.slug) ? styles.heroNameL : styles.heroNameXL;
 
-const backLink = (href: string, label: string): Html =>
+const backLink = (href: string, label: string, h: HtmlBuilder<Message>): Html =>
   h.a(
     [h.Href(href), ...getStyleXAttributes(h, shared.metaText, styles.backLink)],
-    [chevron('left', styles.backChevron), label],
+    [chevron(h, 'left', styles.backChevron), label],
   );
 
 const profileHeader = (
@@ -84,11 +83,12 @@ const profileHeader = (
   backLabel: string,
   title: string,
   chips: ReadonlyArray<Html>,
+  h: HtmlBuilder<Message>,
 ): Html =>
   h.div(
     [],
     [
-      backLink(backHref, backLabel),
+      backLink(backHref, backLabel, h),
       h.div(
         [...getStyleXAttributes(h, styles.headerBlock)],
         [
@@ -99,10 +99,10 @@ const profileHeader = (
     ],
   );
 
-const honorChip = (text: string): Html =>
+const honorChip = (text: string, h: HtmlBuilder<Message>): Html =>
   h.span([...getStyleXAttributes(h, shared.display, styles.honorChip)], [text]);
 
-const mutedChip = (text: string): Html =>
+const mutedChip = (text: string, h: HtmlBuilder<Message>): Html =>
   h.span([...getStyleXAttributes(h, styles.mutedChip)], [text]);
 
 // The SEASON TIMELINE — the LiveSport device (user call: this instead of a
@@ -128,7 +128,7 @@ const STAGE_GAP = 0.18;
 const INK_STEP = 0.11;
 const INK_DURATION = 0.3;
 
-const seasonTimeline = (shape: SeasonShape): Html => {
+const seasonTimeline = (shape: SeasonShape, h: HtmlBuilder<Message>): Html => {
   const played = shape.played;
   // Each phase's starting offset in the season's running round count — the
   // walk that decides which pieces are already behind us.
@@ -294,7 +294,7 @@ const heroSubtitleParts = (competition: Competition): ReadonlyArray<string> =>
 // not. The spaces on either side are real text rather than margins on the
 // mark, which is what keeps those two phrases from running together when
 // the mark itself is hidden from the accessibility tree.
-const heroSubtitleLine = (competition: Competition): Html =>
+const heroSubtitleLine = (competition: Competition, h: HtmlBuilder<Message>): Html =>
   h.p(
     [...getStyleXAttributes(h, styles.heroSubtitle)],
     heroSubtitleParts(competition).flatMap((part, index) =>
@@ -325,43 +325,50 @@ const heroSubtitleLine = (competition: Competition): Html =>
 // text ▾ is a font-fallback lottery at this size. `color-scheme: dark` is
 // what makes the popup itself render dark — the option list is the one part
 // of this control no stylesheet here can reach.
-const seasonSelect = (competition: Competition, model: Model): Html => {
+const seasonSelect = (competition: Competition, model: Model, h: HtmlBuilder<Message>): Html => {
   const currentLabel = competition.editions.find((entry) => entry.isCurrent)?.label ?? '';
   const openLabel = Option.getOrElse(model.competitionEdition, () => currentLabel);
-  return Select.view<Message>({
-    id: 'competition-season',
-    // The component stamps the value onto the element, so the options carry
-    // no `selected` of their own — one source for which season is open.
-    value: openLabel,
-    // Same wire contract as the archive board below: the current edition
-    // maps back to '' and the handler folds that to None, so the two
-    // controls drive one piece of state and can't disagree.
-    onChange: (label) => SelectedCompetitionEdition({ label: label === currentLabel ? '' : label }),
-    toView: (attributes) =>
-      h.span(
-        [...getStyleXAttributes(h, styles.seasonField)],
-        [
-          // A real <label for> rather than an aria-label — the same trade
-          // the clubs search makes: it names the control for AT without
-          // showing a word next to a value that already reads as one.
-          h.label([...attributes.label, ...getStyleXAttributes(h, shared.srOnly)], ['Season']),
-          // Ui.Select points aria-describedby at this id unconditionally, so
-          // SOMETHING has to answer to it — an unresolved IDREF is what
-          // automated a11y checks flag. Rather than park an empty element
-          // there, it says the one thing a screen reader cannot infer from a
-          // label reading "Season" and a value reading "2025/26".
-          h.span(
-            [...attributes.description, ...getStyleXAttributes(h, shared.srOnly)],
-            ['Changes the season shown on this page.'],
-          ),
-          h.select(
-            [...attributes.select, ...getStyleXAttributes(h, shared.metaText, styles.seasonSelect)],
-            competition.editions.map((entry) => h.option([h.Value(entry.label)], [entry.label])),
-          ),
-          chevron('down', styles.seasonCaret),
-        ],
-      ),
-  });
+  return Select.view(
+    {
+      id: 'competition-season',
+      // The component stamps the value onto the element, so the options carry
+      // no `selected` of their own — one source for which season is open.
+      value: openLabel,
+      // Same wire contract as the archive board below: the current edition
+      // maps back to '' and the handler folds that to None, so the two
+      // controls drive one piece of state and can't disagree.
+      onChange: (label) =>
+        SelectedCompetitionEdition({ label: label === currentLabel ? '' : label }),
+      toView: (attributes) =>
+        h.span(
+          [...getStyleXAttributes(h, styles.seasonField)],
+          [
+            // A real <label for> rather than an aria-label — the same trade
+            // the clubs search makes: it names the control for AT without
+            // showing a word next to a value that already reads as one.
+            h.label([...attributes.label, ...getStyleXAttributes(h, shared.srOnly)], ['Season']),
+            // Ui.Select points aria-describedby at this id unconditionally, so
+            // SOMETHING has to answer to it — an unresolved IDREF is what
+            // automated a11y checks flag. Rather than park an empty element
+            // there, it says the one thing a screen reader cannot infer from a
+            // label reading "Season" and a value reading "2025/26".
+            h.span(
+              [...attributes.description, ...getStyleXAttributes(h, shared.srOnly)],
+              ['Changes the season shown on this page.'],
+            ),
+            h.select(
+              [
+                ...attributes.select,
+                ...getStyleXAttributes(h, shared.metaText, styles.seasonSelect),
+              ],
+              competition.editions.map((entry) => h.option([h.Value(entry.label)], [entry.label])),
+            ),
+            chevron(h, 'down', styles.seasonCaret),
+          ],
+        ),
+    },
+    h,
+  );
 };
 
 // The HERO opening — the club profile's dark act, borrowed whole (user
@@ -375,7 +382,12 @@ const seasonSelect = (competition: Competition, model: Model): Html => {
 // No competition badge here (user call): the club profile's crest is the
 // club's own mark, but a competition badge over its own name said the same
 // word twice, and the name is the bang on its own.
-const competitionHero = (competition: Competition, heroArt: HeroArt, model: Model): Html => {
+const competitionHero = (
+  competition: Competition,
+  heroArt: HeroArt,
+  model: Model,
+  h: HtmlBuilder<Message>,
+): Html => {
   const shape = competitionShape(competition);
   return h.div(
     [...getStyleXAttributes(h, styles.heroBand)],
@@ -423,9 +435,9 @@ const competitionHero = (competition: Competition, heroArt: HeroArt, model: Mode
               h.Href(competitionsRouter()),
               ...getStyleXAttributes(h, shared.metaText, styles.heroBackLink),
             ],
-            [chevron('left', styles.backChevron), 'All competitions'],
+            [chevron(h, 'left', styles.backChevron), 'All competitions'],
           ),
-          seasonSelect(competition, model),
+          seasonSelect(competition, model, h),
         ],
       ),
       h.div(
@@ -446,10 +458,10 @@ const competitionHero = (competition: Competition, heroArt: HeroArt, model: Mode
                 [competition.name],
               ),
               // One quiet line, no surface behind it — see heroSubtitleLine.
-              heroSubtitleLine(competition),
+              heroSubtitleLine(competition, h),
               ...Option.match(shape, {
                 onNone: (): ReadonlyArray<Html> => [],
-                onSome: (open) => [seasonTimeline(open)],
+                onSome: (open) => [seasonTimeline(open, h)],
               }),
             ],
           ),
@@ -473,10 +485,10 @@ const STANDINGS_SECTION = 'Standings';
 // clicking it jumps to the block and leaves #standings in the address bar,
 // so the table is linkable. A real h2, so the section keeps its place in
 // the heading outline rather than being a bare link posing as one.
-const standingsHeading = (): Html =>
+const standingsHeading = (h: HtmlBuilder<Message>): Html =>
   h.h2(
     [...getStyleXAttributes(h, styles.standingsHeading)],
-    [clubChip(STANDINGS_SECTION, STANDINGS_ANCHOR)],
+    [clubChip(STANDINGS_SECTION, STANDINGS_ANCHOR, h)],
   );
 
 // The window: five played, then the next fixture. Six marks is what the
@@ -505,7 +517,7 @@ const FORM_WORD: { readonly [result: string]: string } = {
 // below the 3:1 a UI mark owes on cream, and it was never carrying meaning
 // the left-to-right order does not already give. The squares are drawing,
 // so the run is announced once as a sentence and the marks are hidden.
-const formStrip = (league: string, team: string): Html => {
+const formStrip = (league: string, team: string, h: HtmlBuilder<Message>): Html => {
   const results = formWindow(league, team, FORM_PLAYED, FORM_UPCOMING);
   return h.span(
     [
@@ -529,7 +541,11 @@ const formStrip = (league: string, team: string): Html => {
   );
 };
 
-const standingsPanel = (league: string, highlightTeam: Option.Option<string>): Html => {
+const standingsPanel = (
+  league: string,
+  highlightTeam: Option.Option<string>,
+  h: HtmlBuilder<Message>,
+): Html => {
   const rows = standingsFor(league);
   // The split boundary is competition CONFIGURATION, not a row index typed
   // into the view — a league that splits elsewhere, or not at all, says so
@@ -546,7 +562,7 @@ const standingsPanel = (league: string, highlightTeam: Option.Option<string>): H
       // (user call): the pink chip introduces the section from the content
       // grid's left edge, and the table below runs straight on the page's
       // own paper with its row rules as the only structure.
-      standingsHeading(),
+      standingsHeading(h),
       // Only the two right-hand columns are labelled. Position and club need
       // no header — nothing else a standings row could open with.
       h.div(
@@ -623,7 +639,7 @@ const standingsPanel = (league: string, highlightTeam: Option.Option<string>): H
                       ),
                     ],
                   ),
-                  formStrip(league, row.team),
+                  formStrip(league, row.team, h),
                   h.span(
                     [
                       ...getStyleXAttributes(
@@ -644,16 +660,16 @@ const standingsPanel = (league: string, highlightTeam: Option.Option<string>): H
   );
 };
 
-const competitionStandingsPanel = (competition: Competition): Html =>
+const competitionStandingsPanel = (competition: Competition, h: HtmlBuilder<Message>): Html =>
   M.value(competition.standings).pipe(
     M.withReturnType<Html>(),
     M.tagsExhaustive({
-      TableStandings: ({ league }) => standingsPanel(league, Option.none()),
+      TableStandings: ({ league }) => standingsPanel(league, Option.none(), h),
       TiesStandings: ({ rows }) =>
         h.section(
           [h.Id(STANDINGS_ANCHOR), ...getStyleXAttributes(h, styles.standingsSection)],
           [
-            standingsHeading(),
+            standingsHeading(h),
             h.ol(
               [...getStyleXAttributes(h, styles.list)],
               rows.map((tie) =>
@@ -674,11 +690,11 @@ const competitionStandingsPanel = (competition: Competition): Html =>
     }),
   );
 
-const competitionFormatPanel = (competition: Competition): Html =>
+const competitionFormatPanel = (competition: Competition, h: HtmlBuilder<Message>): Html =>
   h.section(
     [...getStyleXAttributes(h, shared.panel, styles.panelBody)],
     [
-      sectionLabel('How it works'),
+      sectionLabel('How it works', h),
       h.ol(
         [...getStyleXAttributes(h, styles.list)],
         competition.format.map((rule, index) =>
@@ -697,18 +713,18 @@ const competitionFormatPanel = (competition: Competition): Html =>
     ],
   );
 
-const competitionHistoryPanel = (competition: Competition): Html =>
+const competitionHistoryPanel = (competition: Competition, h: HtmlBuilder<Message>): Html =>
   h.section(
     [...getStyleXAttributes(h, shared.panel, styles.panelBody)],
     [
-      sectionLabel('History in numbers'),
+      sectionLabel('History in numbers', h),
       h.ul(
         [...getStyleXAttributes(h, styles.historyGrid)],
         competition.history.map((stat) =>
           h.li(
             [],
             [
-              pinkTick(),
+              pinkTick(h),
               h.p([...getStyleXAttributes(h, shared.display, styles.historyValue)], [stat.value]),
               h.p([...getStyleXAttributes(h, styles.historyLabel)], [stat.label]),
             ],
@@ -724,17 +740,26 @@ const competitionHistoryPanel = (competition: Competition): Html =>
 // competition + round + match); rounds past the current matchday show as
 // upcoming. The arrows page through the rounds.
 
-export const matchesPanel = (competition: Competition, model: Model): Html =>
+export const matchesPanel = (
+  competition: Competition,
+  model: Model,
+  h: HtmlBuilder<Message>,
+): Html =>
   M.value(competition.standings).pipe(
     M.withReturnType<Html>(),
     M.tagsExhaustive({
       // Knockout competitions have no round-robin to page — nothing renders.
       TiesStandings: () => h.empty,
-      TableStandings: ({ league }) => leagueMatchesPanel(competition, league, model),
+      TableStandings: ({ league }) => leagueMatchesPanel(competition, league, model, h),
     }),
   );
 
-const leagueMatchesPanel = (competition: Competition, league: string, model: Model): Html => {
+const leagueMatchesPanel = (
+  competition: Competition,
+  league: string,
+  model: Model,
+  h: HtmlBuilder<Message>,
+): Html => {
   const rounds = leagueRounds(league);
   const total = rounds.length;
   // Always in range — SelectedCompetitionRound clamps in `update` (no entry
@@ -754,26 +779,29 @@ const leagueMatchesPanel = (competition: Competition, league: string, model: Mod
     // looks stay disjoint styles: they disagree on every property they set, and
     // a single merged style would let whichever properties spread later win
     // silently.
-    return Button.view({
-      isDisabled: blocked,
-      ...(blocked
-        ? {}
-        : { onClick: SelectedCompetitionRound({ slug: competition.slug, round: target }) }),
-      toView: ({ button }) =>
-        h.button(
-          [
-            ...button,
-            h.AriaLabel(label),
-            ...getStyleXAttributes(
-              h,
-              shared.display,
-              styles.arrow,
-              blocked ? styles.arrowBlocked : styles.arrowLive,
-            ),
-          ],
-          [glyph],
-        ),
-    });
+    return Button.view(
+      {
+        isDisabled: blocked,
+        ...(blocked
+          ? {}
+          : { onClick: SelectedCompetitionRound({ slug: competition.slug, round: target }) }),
+        toView: ({ button }) =>
+          h.button(
+            [
+              ...button,
+              h.AriaLabel(label),
+              ...getStyleXAttributes(
+                h,
+                shared.display,
+                styles.arrow,
+                blocked ? styles.arrowBlocked : styles.arrowLive,
+              ),
+            ],
+            [glyph],
+          ),
+      },
+      h,
+    );
   };
   return h.section(
     [...getStyleXAttributes(h, shared.panel, styles.panelBody)],
@@ -781,7 +809,7 @@ const leagueMatchesPanel = (competition: Competition, league: string, model: Mod
       h.div(
         [...getStyleXAttributes(h, styles.matchesHeader)],
         [
-          sectionLabel(`Matches — Round ${open} of ${total}`),
+          sectionLabel(`Matches — Round ${open} of ${total}`, h),
           h.div(
             [...getStyleXAttributes(h, styles.arrowRow)],
             [arrow(open - 1, '←', 'Previous round'), arrow(open + 1, '→', 'Next round')],
@@ -818,54 +846,66 @@ const leagueMatchesPanel = (competition: Competition, league: string, model: Mod
 // exclusive, so single-select). The Model holds None for the current edition,
 // so the selected value is resolved to the real label, and a pick of the
 // current edition maps back to '' on the wire (the handler folds it to None).
-const editionRadioGroup = (competition: Competition, model: Model): Html => {
+const editionRadioGroup = (
+  competition: Competition,
+  model: Model,
+  h: HtmlBuilder<Message>,
+): Html => {
   const currentLabel = competition.editions.find((entry) => entry.isCurrent)?.label ?? '';
   const openLabel = Option.getOrElse(model.competitionEdition, () => currentLabel);
-  return RadioGroup.view<string, Message>({
-    id: 'competition-edition',
-    selectedValue: Option.some(openLabel),
-    options: competition.editions.map((entry) => entry.label),
-    ariaLabel: 'Competition edition',
-    onSelect: (label) => SelectedCompetitionEdition({ label: label === currentLabel ? '' : label }),
-    toView: ({ group, options }) =>
-      h.div(
-        [...group, ...getStyleXAttributes(h, styles.editionGroup)],
-        options.map((option) => {
-          // Checked derives from the model because StyleX has no attribute
-          // selectors (the component still stamps data-checked).
-          const checked = option.value === openLabel;
-          return h.div(
-            [
-              ...option.option,
-              ...getStyleXAttributes(
-                h,
-                styles.editionOption,
-                checked ? styles.editionChecked : styles.editionRest,
-              ),
-            ],
-            [option.value],
-          );
-        }),
-      ),
+  return h.submodel({
+    slotId: 'competition-edition',
+    model: model.editionGroup,
+    view: EditionRadioGroup.view,
+    toParentMessage: (message) => GotEditionGroupMessage({ message }),
+    viewInputs: {
+      selectedValue: Option.some(openLabel),
+      options: competition.editions.map((entry) => entry.label),
+      ariaLabel: 'Competition edition',
+      toView: ({ group, options }) =>
+        h.div(
+          [...group, ...getStyleXAttributes(h, styles.editionGroup)],
+          options.map((option) => {
+            // Checked derives from the model because StyleX has no attribute
+            // selectors (the component still stamps data-checked).
+            const checked = option.value === openLabel;
+            return h.div(
+              [
+                ...option.option,
+                ...getStyleXAttributes(
+                  h,
+                  styles.editionOption,
+                  checked ? styles.editionChecked : styles.editionRest,
+                ),
+              ],
+              [option.value],
+            );
+          }),
+        ),
+    },
   });
 };
 
 // The archive BLOCK — the picker plus the heading that earns it a place at
 // the foot of the page. Under the hero the chips explained themselves by
 // position; closing the page they need saying what they are.
-const editionArchive = (competition: Competition, model: Model): Html =>
+const editionArchive = (competition: Competition, model: Model, h: HtmlBuilder<Message>): Html =>
   h.section(
     [...getStyleXAttributes(h, styles.archive)],
-    [sectionLabel('Archive'), editionRadioGroup(competition, model)],
+    [sectionLabel('Archive', h), editionRadioGroup(competition, model, h)],
   );
 
 // A finished edition’s card — the champion holds the stage until the full
 // per-season archive lands with the real data.
-const editionArchivePanel = (competition: Competition, open: Edition): Html =>
+const editionArchivePanel = (
+  competition: Competition,
+  open: Edition,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.section(
     [...getStyleXAttributes(h, shared.panel, styles.panelBody)],
     [
-      sectionLabel(`Edition ${open.label}`),
+      sectionLabel(`Edition ${open.label}`, h),
       h.p([...getStyleXAttributes(h, shared.display, styles.archiveDetail)], [open.detail]),
       h.p(
         [...getStyleXAttributes(h, styles.archiveNote)],
@@ -874,7 +914,7 @@ const editionArchivePanel = (competition: Competition, open: Edition): Html =>
     ],
   );
 
-export const view = (competition: Competition, model: Model): Html => {
+export const view = (competition: Competition, model: Model, h: HtmlBuilder<Message>): Html => {
   const heroArt = competitionHeroArt[competition.slug];
   return h.div(
     [],
@@ -882,16 +922,19 @@ export const view = (competition: Competition, model: Model): Html => {
       // A competition with hero artwork opens on the dark act; the rest
       // keep the flat badge-and-title header until their art lands.
       heroArt
-        ? competitionHero(competition, heroArt, model)
-        : profileHeader(competitionsRouter(), 'All competitions', competition.name, [
-            honorChip(competition.tagline),
-            mutedChip(competition.stage),
-          ]),
+        ? competitionHero(competition, heroArt, model, h)
+        : profileHeader(
+            competitionsRouter(),
+            'All competitions',
+            competition.name,
+            [honorChip(competition.tagline, h), mutedChip(competition.stage, h)],
+            h,
+          ),
       h.div(
         [...getStyleXAttributes(h, styles.stack)],
         [
           ...(Option.isNone(model.competitionEdition)
-            ? [competitionStandingsPanel(competition), matchesPanel(competition, model)]
+            ? [competitionStandingsPanel(competition, h), matchesPanel(competition, model, h)]
             : [
                 editionArchivePanel(
                   competition,
@@ -899,18 +942,19 @@ export const view = (competition: Competition, model: Model): Html => {
                     (entry) => entry.label === Option.getOrNull(model.competitionEdition),
                   ) ??
                     competition.editions[0] ?? { label: '', isCurrent: true, detail: '' },
+                  h,
                 ),
               ]),
           h.div(
             [...getStyleXAttributes(h, styles.panelPair)],
-            [competitionFormatPanel(competition), competitionHistoryPanel(competition)],
+            [competitionFormatPanel(competition, h), competitionHistoryPanel(competition, h)],
           ),
           // THE ARCHIVE closes the page (user call). It used to sit directly
           // under the hero, where a row of season chips was the first thing
           // between the name and the table people came for. At the foot it
           // reads as what it is: the way out of this season, offered after
           // this season has been read.
-          editionArchive(competition, model),
+          editionArchive(competition, model, h),
         ],
       ),
     ],

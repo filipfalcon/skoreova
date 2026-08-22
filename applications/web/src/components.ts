@@ -4,15 +4,13 @@
 import { Button } from '@foldkit/ui';
 import { Option } from 'effect';
 import clsx from 'clsx';
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import { inertHtml as ih } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { homeRouter } from './route';
 import type { Model } from './model';
 import { type Message, ClosedMenu, ToggledMenu } from './message';
 import { menuEntries, platformUrl, socialChannels } from './data';
-
-const h = html<Message>();
 
 export const container = 'mx-auto w-full max-w-7xl px-5 md:px-10';
 
@@ -48,6 +46,7 @@ export const kicker = (
   label: string,
   surface: 'ink' | 'paper' | 'pink',
   target: string,
+  h: HtmlBuilder<Message>,
 ): Html =>
   h.div(
     [h.Class('flex')],
@@ -101,6 +100,7 @@ export const maskedLine = (
   content: string | ReadonlyArray<Html | string>,
   classes: string,
   delaySeconds: number,
+  h: HtmlBuilder<Message>,
 ): Html =>
   h.span(
     [h.Class(`-mt-[0.25em] block overflow-hidden pt-[0.25em] ${classes}`)],
@@ -124,18 +124,18 @@ export const maskedLine = (
 // type: the box spans baseline to cap height (~0.72em in Anton), so the
 // shaft lands on the optical center of the uppercase line.
 export const drawnRightArrow = (classes: string): Html =>
-  h.svg(
+  ih.svg(
     [
-      h.Xmlns('http://www.w3.org/2000/svg'),
-      h.ViewBox('0 0 32 24'),
+      ih.Xmlns('http://www.w3.org/2000/svg'),
+      ih.ViewBox('0 0 32 24'),
       // `drawn-arrow` is the sitewide hover contract: any drawn arrow
       // inside a hovered link or button nudges right (styles.css) — the
       // platform-beckon arrows excluded there, they own their hover.
-      h.Class(`drawn-arrow ${classes}`),
-      h.Fill('currentColor'),
-      h.AriaHidden(true),
+      ih.Class(`drawn-arrow ${classes}`),
+      ih.Fill('currentColor'),
+      ih.AriaHidden(true),
     ],
-    [h.path([h.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')], [])],
+    [ih.path([ih.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')], [])],
   );
 
 // Follows text (the left margin is the word gap)…
@@ -153,19 +153,19 @@ export const displayArrowSolo: Html = drawnRightArrow('inline-block h-[0.72em] w
 // `drawn-arrow-external`: the hover contract nudges it along its own
 // diagonal (styles.css).
 export const drawnExternalArrow = (classes: string): Html =>
-  h.svg(
+  ih.svg(
     [
-      h.Xmlns('http://www.w3.org/2000/svg'),
-      h.ViewBox('0 0 24 24'),
-      h.Class(`drawn-arrow drawn-arrow-external ${classes}`),
-      h.Fill('none'),
-      h.Stroke('currentColor'),
+      ih.Xmlns('http://www.w3.org/2000/svg'),
+      ih.ViewBox('0 0 24 24'),
+      ih.Class(`drawn-arrow drawn-arrow-external ${classes}`),
+      ih.Fill('none'),
+      ih.Stroke('currentColor'),
       // 3.1, not the computed 3.5 — a diagonal reads optically heavier than
       // an upright stroke of the same width (checked against the type at 4×).
-      h.StrokeWidth('3.1'),
-      h.AriaHidden(true),
+      ih.StrokeWidth('3.1'),
+      ih.AriaHidden(true),
     ],
-    [h.path([h.D('M2.5 21.5 L21.5 2.5 M10 2.5 H21.5 V14')], [])],
+    [ih.path([ih.D('M2.5 21.5 L21.5 2.5 M10 2.5 H21.5 V14')], [])],
   );
 // Same 0.72em as the right arrow — next to the small body type of receipts
 // and handles the shaft then matches the text’s own stroke weight, which is
@@ -178,7 +178,7 @@ export const displayArrowExternal: Html = drawnExternalArrow(
 // when open. The three bars persist across the toggle; the morph between
 // the two poses is CSS (menu-glyph / is-open in styles.css), so a state
 // flip animates instead of swapping geometry.
-export const menuGlyph = (open: boolean): Html =>
+export const menuGlyph = (open: boolean, h: HtmlBuilder<Message>): Html =>
   h.svg(
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
@@ -208,7 +208,7 @@ export const menuGlyph = (open: boolean): Html =>
     ],
   );
 
-export const headerView = (model: Model): Html =>
+export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.header(
     // Translucent ink + blur — the platform header’s device, mirrored here
     // so the two apps read as one page (their headers are deliberate
@@ -279,30 +279,33 @@ export const headerView = (model: Model): Html =>
                 ],
                 ['Enter platform', displayArrow],
               ),
-              Button.view({
-                onClick: ToggledMenu(),
-                toView: ({ button }) =>
-                  h.button(
-                    [
-                      ...button,
-                      // The FocusMenuToggle Command returns focus here after
-                      // Escape closes the overlay.
-                      h.Id('menu-toggle'),
-                      h.AriaLabel(model.isMenuOpen ? 'Close menu' : 'Open menu'),
-                      h.AriaExpanded(model.isMenuOpen),
-                      h.AriaControls('menu-overlay'),
-                      // The text size exists for the glyph alone (the button has
-                      // no text): menuGlyph is 0.875em tall, so tracking the
-                      // wordmark’s text-xl/2xl keeps the two the same height.
-                      h.Class(
-                        'display flex cursor-pointer items-center text-2xl text-paper transition-colors duration-300 hover:text-pink md:text-3xl',
-                      ),
-                    ],
-                    // The hamburger/X glyph on every breakpoint — the aria-label
-                    // carries the wording the icon dropped.
-                    [menuGlyph(model.isMenuOpen)],
-                  ),
-              }),
+              Button.view(
+                {
+                  onClick: ToggledMenu(),
+                  toView: ({ button }) =>
+                    h.button(
+                      [
+                        ...button,
+                        // The FocusMenuToggle Command returns focus here after
+                        // Escape closes the overlay.
+                        h.Id('menu-toggle'),
+                        h.AriaLabel(model.isMenuOpen ? 'Close menu' : 'Open menu'),
+                        h.AriaExpanded(model.isMenuOpen),
+                        h.AriaControls('menu-overlay'),
+                        // The text size exists for the glyph alone (the button has
+                        // no text): menuGlyph is 0.875em tall, so tracking the
+                        // wordmark’s text-xl/2xl keeps the two the same height.
+                        h.Class(
+                          'display flex cursor-pointer items-center text-2xl text-paper transition-colors duration-300 hover:text-pink md:text-3xl',
+                        ),
+                      ],
+                      // The hamburger/X glyph on every breakpoint — the aria-label
+                      // carries the wording the icon dropped.
+                      [menuGlyph(model.isMenuOpen, h)],
+                    ),
+                },
+                h,
+              ),
             ],
           ),
         ],
@@ -318,7 +321,7 @@ export const headerView = (model: Model): Html =>
 // to the toggle (FocusMenuToggle), and the toggle carries
 // AriaExpanded/AriaControls. If Ui.Dialog ever grows a fullscreen variant,
 // this is the first candidate to fold in.
-export const menuOverlayView = (model: Model): Html =>
+export const menuOverlayView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.nav(
     [
       h.Id('menu-overlay'),
@@ -447,7 +450,7 @@ export const menuOverlayView = (model: Model): Html =>
     ],
   );
 
-export const footerView = (isMenuOpen: boolean): Html =>
+export const footerView = (isMenuOpen: boolean, h: HtmlBuilder<Message>): Html =>
   h.footer(
     [
       h.Class('border-t border-paper/15 bg-ink py-10 text-paper'),

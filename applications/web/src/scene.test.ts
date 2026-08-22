@@ -36,7 +36,7 @@ describe('view', () => {
   test('the landing page renders the hero and the closed-menu control', () => {
     Scene.scene(
       { update, view },
-      Scene.with(landingModel),
+      Scene.given(landingModel),
       ...acknowledgeMounts,
       Scene.expect(Scene.text('Discover')).toExist(),
       Scene.expect(Scene.role('button', { name: 'Open menu' })).toExist(),
@@ -46,7 +46,7 @@ describe('view', () => {
   test('the map exposes its league filter and area-unit toggle', () => {
     Scene.scene(
       { update, view },
-      Scene.with(landingModel),
+      Scene.given(landingModel),
       ...acknowledgeMounts,
       Scene.expect(Scene.role('radio', { name: 'All clubs' })).toExist(),
       Scene.expect(Scene.label('Toggle between metric and imperial area')).toExist(),
@@ -56,7 +56,7 @@ describe('view', () => {
   test('opening the menu swaps the control and reveals the section links', () => {
     Scene.scene(
       { update, view },
-      Scene.with(menuOpenModel),
+      Scene.given(menuOpenModel),
       ...acknowledgeMounts,
       Scene.expect(Scene.role('button', { name: 'Close menu' })).toExist(),
       Scene.expect(Scene.role('link', { name: 'On the rise' })).toExist(),
@@ -70,7 +70,7 @@ describe('view', () => {
   test('clicking the menu toggle opens the overlay', () => {
     Scene.scene(
       { update, view },
-      Scene.with(landingModel),
+      Scene.given(landingModel),
       ...acknowledgeMounts,
       Scene.click(Scene.role('button', { name: 'Open menu' })),
       // Opening locks the page scroll and asks which section the reader is in.

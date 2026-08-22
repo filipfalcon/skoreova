@@ -1,3 +1,4 @@
+import { RadioGroup } from '@foldkit/ui';
 import { Schema as S } from 'effect';
 import { m } from 'foldkit/message';
 import { UrlRequest } from 'foldkit/navigation';
@@ -28,6 +29,12 @@ export const ChangedUrl = m('ChangedUrl', { url: Url });
 export const CompletedNavigate = m('CompletedNavigate');
 export const CompletedLoad = m('CompletedLoad');
 export const CompletedSetScrollLock = m('CompletedSetScrollLock');
+// The league filter is a Submodel, so its Messages arrive wrapped. The
+// COMMITTED league does not travel this way — it arrives as a `Selected`
+// OutMessage and lands in `mapLeague`.
+export const GotMapLeagueGroupMessage = m('GotMapLeagueGroupMessage', {
+  message: RadioGroup.Message,
+});
 export const SelectedMapLeague = m('SelectedMapLeague', { league: MapLeague });
 export const OpenedMapClub = m('OpenedMapClub', { slug: S.String });
 // Closes the open club card.
@@ -49,6 +56,7 @@ export const Message = S.Union([
   CompletedLoad,
   CompletedSetScrollLock,
   SelectedMapLeague,
+  GotMapLeagueGroupMessage,
   OpenedMapClub,
   ClosedMapClub,
   ToggledAreaUnit,

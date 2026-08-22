@@ -1,7 +1,6 @@
 import { Button, Input } from '@foldkit/ui';
 import { Array } from 'effect';
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { tickerSpark } from '../components';
 import { clubs, featuredClubs } from '../data';
@@ -15,8 +14,6 @@ import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttribute
 import type { StyleXStyle } from '../stylexAttributes';
 import { styles } from '../styles/clubs';
 import { shared } from '../styles/shared';
-
-const h = html<Message>();
 
 const clubBySlug = (slug: string): Club | undefined =>
   clubs.find((candidate) => candidate.slug === slug);
@@ -48,7 +45,11 @@ export const contenderPhrases: ReadonlyArray<string> = [
   [contenderCompetitions.join(' & '), '2025/26'].filter((part) => part !== '').join(' '),
 ];
 
-const featuredArtwork = (entry: FeaturedClub, club: Club | undefined): Html =>
+const featuredArtwork = (
+  entry: FeaturedClub,
+  club: Club | undefined,
+  h: HtmlBuilder<Message>,
+): Html =>
   entry.photo === ''
     ? h.div(
         [...getStyleXAttributes(h, styles.artworkFallback)],
@@ -69,21 +70,29 @@ const featuredArtwork = (entry: FeaturedClub, club: Club | undefined): Html =>
         h.Style({ 'object-position': entry.focus }),
       ]);
 
-const carouselArrow = (target: number, glyph: string, label: string): Html =>
-  Button.view({
-    onClick: SelectedFeaturedClub({ index: target }),
-    toView: ({ button }) =>
-      h.button(
-        [
-          ...button,
-          h.AriaLabel(label),
-          ...getStyleXAttributes(h, shared.display, styles.carouselArrow),
-        ],
-        [glyph],
-      ),
-  });
+const carouselArrow = (
+  target: number,
+  glyph: string,
+  label: string,
+  h: HtmlBuilder<Message>,
+): Html =>
+  Button.view(
+    {
+      onClick: SelectedFeaturedClub({ index: target }),
+      toView: ({ button }) =>
+        h.button(
+          [
+            ...button,
+            h.AriaLabel(label),
+            ...getStyleXAttributes(h, shared.display, styles.carouselArrow),
+          ],
+          [glyph],
+        ),
+    },
+    h,
+  );
 
-const europeanContenders = (model: Model): Html => {
+const europeanContenders = (model: Model, h: HtmlBuilder<Message>): Html => {
   const count = featuredClubs.length;
   // Always in range — SelectedFeaturedClub wraps in `update`.
   const active = model.featuredClub;
@@ -153,14 +162,14 @@ const europeanContenders = (model: Model): Html => {
                   ...getStyleXAttributes(h, styles.neighbor, styles.neighborLeft),
                   h.AriaHidden(true),
                 ],
-                [featuredArtwork(entryAt(previous), clubAt(previous))],
+                [featuredArtwork(entryAt(previous), clubAt(previous), h)],
               ),
               h.div(
                 [
                   ...getStyleXAttributes(h, styles.neighbor, styles.neighborRight),
                   h.AriaHidden(true),
                 ],
-                [featuredArtwork(entryAt(next), clubAt(next))],
+                [featuredArtwork(entryAt(next), clubAt(next), h)],
               ),
               // The artwork rides a pink OFFSET FRAME — the brutalist
               // double-exposure edge.
@@ -174,17 +183,17 @@ const europeanContenders = (model: Model): Html => {
                       h.Href(clubRouter({ slug: entryAt(active).slug })),
                       ...getStyleXAttributesWith(h, 'screen', styles.activeArtwork),
                     ],
-                    [featuredArtwork(entryAt(active), clubAt(active))],
+                    [featuredArtwork(entryAt(active), clubAt(active), h)],
                   ),
                 ],
               ),
               h.div(
                 [...getStyleXAttributes(h, styles.arrowSlot, styles.arrowSlotLeft)],
-                [carouselArrow(active - 1, '←', 'Previous club')],
+                [carouselArrow(active - 1, '←', 'Previous club', h)],
               ),
               h.div(
                 [...getStyleXAttributes(h, styles.arrowSlot, styles.arrowSlotRight)],
-                [carouselArrow(active + 1, '→', 'Next club')],
+                [carouselArrow(active + 1, '→', 'Next club', h)],
               ),
             ],
           ),
@@ -246,7 +255,7 @@ const normalizeQuery = (value: string): string =>
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '');
 
-export const view = (model: Model): Html => {
+export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
   const query = normalizeQuery(model.clubQuery.trim());
   const filtered =
     query === ''
@@ -262,33 +271,36 @@ export const view = (model: Model): Html => {
       // h1 stays for screen readers only; the active nav tab carries the
       // visual "you are here".
       h.h1([...getStyleXAttributes(h, shared.srOnly)], ['Clubs']),
-      europeanContenders(model),
+      europeanContenders(model, h),
       // The search box is unlabeled visually by design, so the real <label>
       // is sr-only — the accessible name stays "Search clubs" without adding
       // a visible caption above the field.
-      Input.view({
-        id: 'clubs-search',
-        type: 'search',
-        placeholder: 'Search clubs…',
-        value: model.clubQuery,
-        onInput: (value) => UpdatedClubQuery({ query: value }),
-        toView: (attributes) =>
-          h.div(
-            [...getStyleXAttributes(h, styles.searchWrapper)],
-            [
-              h.label(
-                [...attributes.label, ...getStyleXAttributes(h, shared.srOnly)],
-                ['Search clubs'],
-              ),
-              // No outline styling here, deliberately. The pink focus ring
-              // is global: styles.css declares `:focus-visible` OUTSIDE any
-              // `@layer`, so it is the only voice on the property and fields
-              // do not restyle outlines. The border tint is the field’s own
-              // addition on top.
-              h.input([...attributes.input, ...getStyleXAttributes(h, styles.searchInput)]),
-            ],
-          ),
-      }),
+      Input.view(
+        {
+          id: 'clubs-search',
+          type: 'search',
+          placeholder: 'Search clubs…',
+          value: model.clubQuery,
+          onInput: (value) => UpdatedClubQuery({ query: value }),
+          toView: (attributes) =>
+            h.div(
+              [...getStyleXAttributes(h, styles.searchWrapper)],
+              [
+                h.label(
+                  [...attributes.label, ...getStyleXAttributes(h, shared.srOnly)],
+                  ['Search clubs'],
+                ),
+                // No outline styling here, deliberately. The pink focus ring
+                // is global: styles.css declares `:focus-visible` OUTSIDE any
+                // `@layer`, so it is the only voice on the property and fields
+                // do not restyle outlines. The border tint is the field’s own
+                // addition on top.
+                h.input([...attributes.input, ...getStyleXAttributes(h, styles.searchInput)]),
+              ],
+            ),
+        },
+        h,
+      ),
       ...(Array.isReadonlyArrayEmpty(filtered)
         ? [
             h.p(

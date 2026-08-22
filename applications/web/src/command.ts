@@ -101,44 +101,40 @@ const animateScrollTo = (target: HTMLElement, reduceMotion: boolean): void => {
 // a missing target is retried across a few frames before giving up (the
 // give-up keeps `#cookie-settings` — markup the banner owns, no element —
 // a scroll no-op, as it always was).
-export const Navigate = Command.define(
-  'Navigate',
-  // `reduceMotion` rides in from the Model (seeded via Flags) so the scroll
-  // animation and the rest of the page obey the same value — this Command
-  // no longer samples matchMedia on its own.
-  { url: S.String, reduceMotion: S.Boolean },
-  CompletedNavigate,
-)(({ url, reduceMotion }) =>
-  pushUrl(url).pipe(
-    Effect.andThen(
-      Effect.sync(() => {
-        const fragment = url.split('#')[1];
-        if (fragment === undefined) {
-          window.scrollTo(0, 0);
-          return;
-        }
-        const scrollWhenRendered = (attemptsLeft: number): void => {
-          const target = document.getElementById(fragment);
-          if (target) {
-            animateScrollTo(target, reduceMotion);
+export const Navigate = Command.define('Navigate', {
+  args: { url: S.String, reduceMotion: S.Boolean },
+  messages: [CompletedNavigate],
+  execute: ({ url, reduceMotion }) =>
+    pushUrl(url).pipe(
+      Effect.andThen(
+        Effect.sync(() => {
+          const fragment = url.split('#')[1];
+          if (fragment === undefined) {
+            window.scrollTo(0, 0);
             return;
           }
-          if (attemptsLeft > 0) {
-            window.requestAnimationFrame(() => scrollWhenRendered(attemptsLeft - 1));
-          }
-        };
-        scrollWhenRendered(10);
-      }),
+          const scrollWhenRendered = (attemptsLeft: number): void => {
+            const target = document.getElementById(fragment);
+            if (target) {
+              animateScrollTo(target, reduceMotion);
+              return;
+            }
+            if (attemptsLeft > 0) {
+              window.requestAnimationFrame(() => scrollWhenRendered(attemptsLeft - 1));
+            }
+          };
+          scrollWhenRendered(10);
+        }),
+      ),
+      Effect.as(CompletedNavigate()),
     ),
-    Effect.as(CompletedNavigate()),
-  ),
-);
+});
 
-export const Load = Command.define(
-  'Load',
-  { href: S.String },
-  CompletedLoad,
-)(({ href }) => loadUrl(href).pipe(Effect.as(CompletedLoad())));
+export const Load = Command.define('Load', {
+  args: { href: S.String },
+  messages: [CompletedLoad],
+  execute: ({ href }) => loadUrl(href).pipe(Effect.as(CompletedLoad())),
+});
 
 // Locks/unlocks page scrolling while the menu overlay is open. Delegates to
 // Foldkit’s Dom.lockScroll/unlockScroll: they lock via `overflow: hidden`
@@ -147,39 +143,34 @@ export const Load = Command.define(
 // locks. Crucially the page keeps its real scroll position — there is no
 // position:fixed offset zeroing window.scrollY — so measurements taken while
 // the lock is up (Navigate’s fragment scroll, DetectActiveSection) read true.
-export const SetScrollLock = Command.define(
-  'SetScrollLock',
-  { locked: S.Boolean },
-  CompletedSetScrollLock,
-)(({ locked }) =>
-  (locked ? Dom.lockScroll : Dom.unlockScroll).pipe(Effect.as(CompletedSetScrollLock())),
-);
+export const SetScrollLock = Command.define('SetScrollLock', {
+  args: { locked: S.Boolean },
+  messages: [CompletedSetScrollLock],
+  execute: ({ locked }) =>
+    (locked ? Dom.lockScroll : Dom.unlockScroll).pipe(Effect.as(CompletedSetScrollLock())),
+});
 
 // Returns focus to the header’s menu toggle after Escape closes the overlay
 // — the native-dialog contract (focus returns to the opener), done as a
 // Command rather than a side effect inside the subscription’s stream. A
 // missing toggle is ignored: the header always renders it, and focus
 // restoration is courtesy, not correctness.
-export const FocusMenuToggle = Command.define(
-  'FocusMenuToggle',
-  CompletedFocusMenuToggle,
-)(
-  Dom.focus('#menu-toggle', { preventScroll: true }).pipe(
+export const FocusMenuToggle = Command.define('FocusMenuToggle', {
+  messages: [CompletedFocusMenuToggle],
+  execute: Dom.focus('#menu-toggle', { preventScroll: true }).pipe(
     Effect.ignore,
     Effect.as(CompletedFocusMenuToggle()),
   ),
-);
+});
 
 // Resolves which landing section the viewport center sits in, so the open
 // menu can mark "you are here". Runs once per menu open. Measures
 // viewport-relative rects (getBoundingClientRect), unaffected by the scroll
 // lock — the page holds its real position under `overflow: hidden`. The
 // candidate ids come from menuEntries itself, so the two can’t drift apart.
-export const DetectActiveSection = Command.define(
-  'DetectActiveSection',
-  DetectedActiveSection,
-)(
-  Effect.sync(() => {
+export const DetectActiveSection = Command.define('DetectActiveSection', {
+  messages: [DetectedActiveSection],
+  execute: Effect.sync(() => {
     const center = window.innerHeight / 2;
     // The last section whose top has passed the center line wins — the
     // unnumbered interludes (statement, marquee) then count toward the
@@ -196,7 +187,7 @@ export const DetectActiveSection = Command.define(
     );
     return DetectedActiveSection({ section });
   }),
-);
+});
 
 // CALL-SITE FACTORIES
 //

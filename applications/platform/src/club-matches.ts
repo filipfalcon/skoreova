@@ -1,6 +1,5 @@
 import { Array, Option } from 'effect';
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { clubSection, drawnArrowInline, drawnRightArrow } from './components';
 import { clubs } from './data';
@@ -18,8 +17,6 @@ import {
 import { getStyleXAttributes } from './stylexAttributes';
 import { shared } from './styles/shared';
 import { styles } from './styles/club-matches';
-
-const h = html<Message>();
 
 interface ClubMatch {
   readonly round: number;
@@ -78,7 +75,7 @@ const crestFor = (team: string): string | undefined =>
   )?.logo;
 
 // One side of the scoreline.
-const clubMatchCrest = (team: string): Html => {
+const clubMatchCrest = (team: string, h: HtmlBuilder<Message>): Html => {
   const crest = crestFor(team);
   return h.div(
     [...getStyleXAttributes(h, styles.crestCell)],
@@ -104,7 +101,7 @@ const clubMatchCrest = (team: string): Html => {
 // half a score made the card look like it had failed to load rather than
 // like it had a winner. The card no longer labels the result at all: the
 // W/D/L letters went with the old calendar strip.
-const clubMatchScore = (home: number, away: number): Html =>
+const clubMatchScore = (home: number, away: number, h: HtmlBuilder<Message>): Html =>
   h.div(
     [
       ...getStyleXAttributes(h, styles.score),
@@ -133,7 +130,7 @@ const clubMatchScore = (home: number, away: number): Html =>
 // A fixture has no numerals to carry the accent, so the pink moves into a
 // filled chip — the same block the section headings are cut from — rather
 // than sitting between the crests as gray lowercase type.
-const clubMatchVersus = (): Html =>
+const clubMatchVersus = (h: HtmlBuilder<Message>): Html =>
   h.span([...getStyleXAttributes(h, shared.display, styles.versus)], ['VS']);
 
 // ONE match, with the CRESTS as the whole point (user call). The badges
@@ -142,7 +139,7 @@ const clubMatchVersus = (): Html =>
 // the top of the card at full size, and every word sits underneath them.
 // The card carries no label: it is the only thing in its section, and the
 // section’s chip has already named it.
-const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
+const clubMatchCard = (target: Club, entry: PlayedMatch, h: HtmlBuilder<Message>): Html => {
   const homeGoals = entry.isHome ? entry.forGoals : entry.againstGoals;
   const awayGoals = entry.isHome ? entry.againstGoals : entry.forGoals;
   // Through fixtureSeed like the scoreline: ONE seed per fixture is the rule
@@ -161,9 +158,9 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
       h.div(
         [...getStyleXAttributes(h, styles.fixtureRow)],
         [
-          clubMatchCrest(entry.match.home),
-          entry.isPlayed ? clubMatchScore(homeGoals, awayGoals) : clubMatchVersus(),
-          clubMatchCrest(entry.match.away),
+          clubMatchCrest(entry.match.home, h),
+          entry.isPlayed ? clubMatchScore(homeGoals, awayGoals, h) : clubMatchVersus(h),
+          clubMatchCrest(entry.match.away, h),
         ],
       ),
       // Everything else, below the badges and behind a hairline so the
@@ -197,7 +194,7 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
               h.Href(matchesRouter()),
               ...getStyleXAttributes(h, shared.display, styles.matchInfoLink),
             ],
-            ['Match info', drawnRightArrow(drawnArrowInline)],
+            ['Match info', drawnRightArrow(h, drawnArrowInline)],
           ),
         ],
       ),
@@ -221,7 +218,7 @@ const clubMatchCard = (target: Club, entry: PlayedMatch): Html => {
 // own anchor and their own card — which also means the chip does the
 // labeling the cards used to do for themselves. Side by side from md
 // (user call), stacked below it.
-export const clubMatchesSections = (target: Club): Html => {
+export const clubMatchesSections = (target: Club, h: HtmlBuilder<Message>): Html => {
   // MATCHDAYS_PLAYED, not the leader’s played count. Reading the season’s
   // position off `standingsFor(league)[0].played` looked equivalent and isn’t:
   // the Second League’s eleven clubs mean one sits out each round, so its
@@ -244,8 +241,14 @@ export const clubMatchesSections = (target: Club): Html => {
       : [
           clubSection(
             'Last match',
-            [h.div([...getStyleXAttributes(h, styles.sectionBody)], [clubMatchCard(target, last)])],
+            [
+              h.div(
+                [...getStyleXAttributes(h, styles.sectionBody)],
+                [clubMatchCard(target, last, h)],
+              ),
+            ],
             'last-match',
+            h,
           ),
         ]),
     ...(next === undefined
@@ -253,8 +256,14 @@ export const clubMatchesSections = (target: Club): Html => {
       : [
           clubSection(
             'Upcoming match',
-            [h.div([...getStyleXAttributes(h, styles.sectionBody)], [clubMatchCard(target, next)])],
+            [
+              h.div(
+                [...getStyleXAttributes(h, styles.sectionBody)],
+                [clubMatchCard(target, next, h)],
+              ),
+            ],
             'upcoming-match',
+            h,
           ),
         ]),
   ];
