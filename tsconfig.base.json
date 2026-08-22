@@ -15,7 +15,7 @@
     "noUncheckedIndexedAccess": true,
     "paths": {
       "@skoreova/studio-application/*": ["./applications/studio/*"],
-      "@skoreova/web-application/*": ["./applications/web/*"]
+      "@skoreova/landing-page-application/*": ["./applications/landing-page/*"]
     },
     "resolveJsonModule": true,
     "resolvePackageJsonExports": true,

@@ -31,7 +31,7 @@ export default defineConfig({
     include: ['foldkit/brand'],
   },
   test: {
-    name: 'web-browser',
+    name: 'landing-page-browser',
     include: ['src/**/*.browser.test.ts'],
     setupFiles: ['./src/vitest-setup.ts'],
     browser: {

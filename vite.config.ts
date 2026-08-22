@@ -144,15 +144,15 @@ export default defineConfig({
     },
     overrides: [
       {
-        files: ['applications/web/src/analytics/**'],
+        files: ['applications/landing-page/src/analytics/**'],
         rules: {
           'skoreova/require-export-doc': 'error',
         },
       },
       {
         files: [
-          'applications/web/src/analytics/gtag.ts',
-          'applications/web/src/analytics/gtag.test.ts',
+          'applications/landing-page/src/analytics/gtag.ts',
+          'applications/landing-page/src/analytics/gtag.test.ts',
         ],
         rules: {
           'no-restricted-properties': 'off',
@@ -165,7 +165,7 @@ export default defineConfig({
       'tsbuild/',
       '**/*.d.ts',
       '**/vite.config.ts',
-      // Sidecar project configs (applications/web/vite.browser.config.ts) are
+      // Sidecar project configs (applications/landing-page/vite.browser.config.ts) are
       // config files like any other and are exempt on the same grounds.
       '**/vite.*.config.ts',
       '**/vitest.config.ts',
@@ -196,8 +196,8 @@ export default defineConfig({
       // note in applications/platform/vite.test.config.ts.
       'applications/platform/vite.test.config.ts',
       'applications/studio/vite.config.ts',
-      'applications/web/vite.config.ts',
-      'applications/web/vite.browser.config.ts',
+      'applications/landing-page/vite.config.ts',
+      'applications/landing-page/vite.browser.config.ts',
     ],
     coverage: {
       provider: 'v8',

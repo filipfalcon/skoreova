@@ -11,7 +11,7 @@ import { defineConfig } from 'vite-plus';
 // lives here any more.
 
 // Pins the inner dev server's port under `alchemy dev` — see the note on
-// this plugin in applications/web/vite.config.ts (alchemy's inline
+// this plugin in applications/landing-page/vite.config.ts (alchemy's inline
 // `server: { port: 0 }` resolves to Vite's 5173 default and outranks this
 // file's `server.port`; a plugin `config` hook merges after it).
 // Alchemy's Cloudflare plugin replaces the `ssr` environment with a workerd

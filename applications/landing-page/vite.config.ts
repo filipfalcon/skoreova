@@ -310,7 +310,7 @@ export default defineConfig({
   // anything shared: a project that `extends` another CONCATENATES the array,
   // so a shared include would hand both runners the whole suite.
   test: {
-    name: 'web',
+    name: 'landing-page',
     include: ['src/**/*.test.ts'],
     exclude: ['src/**/*.browser.test.ts'],
     // The app’s own update/view/init never touch the DOM at call time, but the

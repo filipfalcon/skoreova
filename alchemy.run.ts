@@ -10,7 +10,7 @@ export default Alchemy.Stack(
   },
   Effect.gen(function* () {
     const landingPage = yield* Cloudflare.Website.Foldkit('LandingPage', {
-      rootDir: 'applications/web',
+      rootDir: 'applications/landing-page',
       workersDev: {
         enabled: false,
         previewsEnabled: false,
@@ -23,7 +23,7 @@ export default Alchemy.Stack(
       // Custom Worker entry: a Sentry-wrapped pass-through to the assets
       // binding, so edge-side failures get reported too (the browser SDK
       // in entry.ts covers the client). Builds through the `ssr` Vite
-      // environment — see the buildApp note in applications/web/vite.config.ts.
+      // environment — see the buildApp note in applications/landing-page/vite.config.ts.
       // The Sentry SDK needs AsyncLocalStorage, hence `nodejs_als`.
       main: 'src/worker.ts',
       compatibility: {

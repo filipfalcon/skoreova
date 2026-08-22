@@ -25,7 +25,7 @@ import { defineConfig } from 'vite-plus';
 // in oxlint's ignorePatterns. Removing `plugins` clears it; removing `test`
 // does not.
 // Pins the inner dev server's port under `alchemy dev` — see the note on
-// this plugin in applications/web/vite.config.ts (alchemy's inline
+// this plugin in applications/landing-page/vite.config.ts (alchemy's inline
 // `server: { port: 0 }` resolves to Vite's 5173 default and outranks this
 // file's `server.port`; a plugin `config` hook merges after it).
 const pinAlchemyDevPort = (port: number): Plugin => ({
