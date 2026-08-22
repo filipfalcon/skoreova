@@ -36,8 +36,17 @@ const pinAlchemyDevPort = (port: number): Plugin => ({
       : {},
 });
 
+// The DevTools MCP relay is a LISTENING SOCKET, and this config is a test
+// project as well as the app's — Vitest runs it directly. Started under a test
+// run it outlives the run (an open handle keeps the process alive, holding the
+// port until it is killed by hand) and it collides with a dev server already
+// bound to the same port. The relay is for a dev session, so a test run has no
+// use for one. The platform avoids this a different way, with a sidecar test
+// config that never names a port.
+const devToolsMcpPort = process.env['VITEST'] === undefined ? 9988 : undefined;
+
 export default defineConfig({
-  plugins: [...tailwindcss(), ...foldkit({ devToolsMcpPort: 9988 }), pinAlchemyDevPort(5275)],
+  plugins: [...tailwindcss(), ...foldkit({ devToolsMcpPort }), pinAlchemyDevPort(5275)],
   // Alchemy’s deploy captures the build output through a `buildApp` post
   // hook, but Vite 8 only runs the default environment builds AFTER all
   // buildApp hooks when no real `builder.buildApp` exists — the hook then
