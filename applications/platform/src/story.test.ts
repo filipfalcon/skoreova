@@ -4,9 +4,11 @@ import { External, Internal } from 'foldkit/navigation';
 import { fromString } from 'foldkit/url';
 import { expect, test } from 'vite-plus/test';
 
-import { clubsModel, welcomeModel } from './main.fixtures';
-import { DEFAULT_FEED_BLOCKS, FEED_ADD_WIDGET, FEED_FEATURED_MATCHES } from './model';
+import { clubsModel, feedCappedModel, feedLabelledModel, welcomeModel } from './main.fixtures';
+import { feedKey } from './model';
+import { FEED_FEATURED_MATCHES, FEED_LABEL } from './widgets';
 import {
+  AddedFeedBlock,
   ChangedUrl,
   ClickedLink,
   CompletedLoad,
@@ -15,6 +17,9 @@ import {
   Navigate,
   LoadedPins,
   CompletedWritePins,
+  RemovedFeedLabel,
+  RenamedFeedLabel,
+  RestoredFeedLabel,
   SelectedCompetitionEdition,
   SelectedCompetitionRound,
   SelectedMetric,
@@ -22,6 +27,7 @@ import {
   ToggledFeedEditing,
   ToggledFollow,
   ToggledPin,
+  ToggledWidgetCatalog,
   UnpinnedFeedBlock,
   WritePins,
   init,
@@ -45,7 +51,7 @@ test('the boot fixture still mirrors what init actually produces', () => {
 test('selecting a chart metric records it and fires no command', () => {
   Story.story(
     update,
-    Story.with(welcomeModel),
+    Story.given(welcomeModel),
     Story.message(SelectedMetric({ metric: 'Attendance' })),
     Story.model((model) => {
       expect(model.metric).toBe('Attendance');
@@ -57,7 +63,7 @@ test('selecting a chart metric records it and fires no command', () => {
 test('scope is a field write; edition and round fold their current sentinel to None', () => {
   Story.story(
     update,
-    Story.with(welcomeModel),
+    Story.given(welcomeModel),
     Story.message(SelectedScorerScope({ scope: 'League' })),
     Story.message(SelectedCompetitionEdition({ label: '2023/24' })),
     // The round is clamped against the competition the message names, not
@@ -83,7 +89,7 @@ test('scope is a field write; edition and round fold their current sentinel to N
 test('each competition keeps its own round, clamped against its own schedule', () => {
   Story.story(
     update,
-    Story.with(welcomeModel),
+    Story.given(welcomeModel),
     // Both league panels are on screen at once on /matches: a pick past one
     // league’s end-stop clamps to THAT league’s last round, and neither
     // pick moves the other panel.
@@ -100,7 +106,7 @@ test('each competition keeps its own round, clamped against its own schedule', (
 test('a route change clears the per-screen pickers and keeps the durable lists', () => {
   Story.story(
     update,
-    Story.with({
+    Story.given({
       ...clubsModel,
       clubQuery: 'sparta',
       featuredClub: 2,
@@ -135,7 +141,7 @@ test('a route change clears the per-screen pickers and keeps the durable lists',
 test('following a club adds the slug, following again removes it', () => {
   Story.story(
     update,
-    Story.with(welcomeModel),
+    Story.given(welcomeModel),
     Story.message(ToggledFollow({ slug: 'sparta-praha' })),
     Story.model((model) => {
       expect(model.followed).toContain('sparta-praha');
@@ -151,7 +157,7 @@ test('following a club adds the slug, following again removes it', () => {
 test('pinning a tile updates the model and mirrors it out through WritePins', () => {
   Story.story(
     update,
-    Story.with(welcomeModel),
+    Story.given(welcomeModel),
     Story.message(ToggledPin({ id: 'trending:sparta-praha' })),
     Story.model((model) => {
       expect(model.pinned).toEqual(['trending:sparta-praha']);
@@ -166,7 +172,7 @@ test('pinning a tile updates the model and mirrors it out through WritePins', ()
 test('unpinning the last tile writes the now-empty list', () => {
   Story.story(
     update,
-    Story.with({ ...welcomeModel, pinned: ['trending:sparta-praha'] }),
+    Story.given({ ...welcomeModel, pinned: ['trending:sparta-praha'] }),
     Story.message(ToggledPin({ id: 'trending:sparta-praha' })),
     Story.model((model) => {
       expect(model.pinned).toEqual([]);
@@ -178,7 +184,7 @@ test('unpinning the last tile writes the now-empty list', () => {
 test('ReadPins hydration seeds the pinned list via LoadedPins', () => {
   Story.story(
     update,
-    Story.with(welcomeModel),
+    Story.given(welcomeModel),
     Story.message(LoadedPins({ ids: ['best:sparta', 'trending:pardubice'] })),
     Story.model((model) => {
       expect(model.pinned).toEqual(['best:sparta', 'trending:pardubice']);
@@ -190,7 +196,7 @@ test('ReadPins hydration seeds the pinned list via LoadedPins', () => {
 test('an internal link only pushes the url — ChangedUrl applies the route', () => {
   Story.story(
     update,
-    Story.with(welcomeModel),
+    Story.given(welcomeModel),
     Story.message(ClickedLink({ request: Internal({ url: url('/her-game') }) })),
     // The model is untouched until the runtime answers with ChangedUrl —
     // applying eagerly here too would double-apply every navigation.
@@ -209,7 +215,7 @@ test('an internal link only pushes the url — ChangedUrl applies the route', ()
 test('a browser back/forward to a club profile applies the slug route', () => {
   Story.story(
     update,
-    Story.with(clubsModel),
+    Story.given(clubsModel),
     Story.message(ChangedUrl({ url: url('/clubs/sparta-praha') })),
     Story.model((model) => {
       expect(model.route._tag).toBe('ClubRoute');
@@ -224,7 +230,7 @@ test('a browser back/forward to a club profile applies the slug route', () => {
 test('an external link leaves the model and loads the href', () => {
   Story.story(
     update,
-    Story.with(welcomeModel),
+    Story.given(welcomeModel),
     Story.message(ClickedLink({ request: External({ href: 'https://uefa.com' }) })),
     Story.model((model) => {
       expect(model.route._tag).toBe('WelcomeRoute');
@@ -237,7 +243,7 @@ test('an external link leaves the model and loads the href', () => {
 test('the manage switch toggles the feed in and out of its manage state', () => {
   Story.story(
     update,
-    Story.with(welcomeModel),
+    Story.given(welcomeModel),
     Story.message(ToggledFeedEditing()),
     Story.model((model) => {
       expect(model.isFeedEditing).toBe(true);
@@ -252,10 +258,10 @@ test('the manage switch toggles the feed in and out of its manage state', () => 
 test('unpinning a block takes it out of the feed and writes nothing', () => {
   Story.story(
     update,
-    Story.with({ ...welcomeModel, isFeedEditing: true }),
-    Story.message(UnpinnedFeedBlock({ id: FEED_FEATURED_MATCHES })),
+    Story.given({ ...welcomeModel, isFeedEditing: true }),
+    Story.message(UnpinnedFeedBlock({ key: feedKey(1) })),
     Story.model((model) => {
-      expect(model.feedBlocks).toEqual([FEED_ADD_WIDGET]);
+      expect(model.feedBlocks).toEqual([]);
       // The feed is session-only, so unpinning must NOT reach the pins port —
       // that storage belongs to the boards pinned to Her Game.
       expect(model.pinned).toEqual([]);
@@ -263,32 +269,140 @@ test('unpinning a block takes it out of the feed and writes nothing', () => {
   );
 });
 
-test('the widget block refuses to leave a signed-out feed', () => {
+test('unpinning one block leaves its twin where it is', () => {
   Story.story(
     update,
-    Story.with({ ...welcomeModel, isFeedEditing: true }),
-    Story.message(UnpinnedFeedBlock({ id: FEED_ADD_WIDGET })),
+    Story.given({ ...feedLabelledModel, isFeedEditing: true }),
+    Story.message(UnpinnedFeedBlock({ key: feedKey(1) })),
     Story.model((model) => {
-      expect(model.feedBlocks).toEqual(DEFAULT_FEED_BLOCKS);
-      expect(model.isFeedUnpinRefused).toBe(true);
-    }),
-    // Leaving the manage state clears the refusal, so it never greets a
-    // reader who comes back to manage the feed again.
-    Story.message(ToggledFeedEditing()),
-    Story.model((model) => {
-      expect(model.isFeedUnpinRefused).toBe(false);
+      expect(model.feedBlocks.map((block) => block.key)).toEqual([feedKey(7), feedKey(8)]);
+      // The survivor is the OTHER featured-matches block — a feed keyed by
+      // kind would have taken both.
+      expect(model.feedBlocks.map((block) => block.kind)).toEqual([
+        FEED_LABEL,
+        FEED_FEATURED_MATCHES,
+      ]);
     }),
   );
 });
 
-test('an account is what lets the widget block leave', () => {
+test('a heading is rewritten on its own block and on no other', () => {
   Story.story(
     update,
-    Story.with({ ...welcomeModel, isFeedEditing: true, isSignedIn: true }),
-    Story.message(UnpinnedFeedBlock({ id: FEED_ADD_WIDGET })),
+    Story.given({ ...feedLabelledModel, isFeedEditing: true }),
+    Story.message(RenamedFeedLabel({ key: feedKey(8), text: 'To watch' })),
     Story.model((model) => {
-      expect(model.feedBlocks).toEqual([FEED_FEATURED_MATCHES]);
-      expect(model.isFeedUnpinRefused).toBe(false);
+      expect(model.feedBlocks.map((block) => Option.getOrNull(block.label))).toEqual([
+        'My clubs',
+        'Featured matches',
+        'To watch',
+      ]);
+    }),
+  );
+});
+
+test('a heading removed is gone, and one put back is the kind default', () => {
+  Story.story(
+    update,
+    Story.given({ ...feedLabelledModel, isFeedEditing: true }),
+    Story.message(RemovedFeedLabel({ key: feedKey(8) })),
+    Story.model((model) => {
+      expect(Option.isNone(model.feedBlocks[2]!.label)).toBe(true);
+    }),
+    Story.message(RestoredFeedLabel({ key: feedKey(8) })),
+    Story.model((model) => {
+      // 'Cup week' does not come back — what the reader wrote left with the
+      // removal, so the kind's own default is what returns.
+      expect(Option.getOrNull(model.feedBlocks[2]!.label)).toBe('Featured matches');
+    }),
+  );
+});
+
+test('a standalone heading refuses to give up the heading that IS its block', () => {
+  Story.story(
+    update,
+    Story.given({ ...feedLabelledModel, isFeedEditing: true }),
+    Story.message(RemovedFeedLabel({ key: feedKey(7) })),
+    Story.model((model) => {
+      expect(Option.getOrNull(model.feedBlocks[0]!.label)).toBe('My clubs');
+    }),
+  );
+});
+
+test('a widget added arrives carrying its kind default as a heading', () => {
+  Story.story(
+    update,
+    Story.given(welcomeModel),
+    Story.message(AddedFeedBlock({ kind: FEED_FEATURED_MATCHES })),
+    Story.message(AddedFeedBlock({ kind: FEED_LABEL })),
+    Story.model((model) => {
+      expect(model.feedBlocks.map((block) => block.key)).toEqual([
+        feedKey(1),
+        feedKey(2),
+        feedKey(3),
+      ]);
+      expect(Option.getOrNull(model.feedBlocks[1]!.label)).toBe('Featured matches');
+      // A standalone heading is the reader's own words from the start, so it
+      // arrives blank rather than carrying the word "Label".
+      expect(Option.getOrNull(model.feedBlocks[2]!.label)).toBe('');
+      expect(model.nextFeedKey).toBe(4);
+    }),
+  );
+});
+
+test('the same widget goes into a feed twice', () => {
+  Story.story(
+    update,
+    Story.given(welcomeModel),
+    Story.message(AddedFeedBlock({ kind: FEED_FEATURED_MATCHES })),
+    Story.model((model) => {
+      expect(model.feedBlocks).toHaveLength(2);
+      expect(model.isWidgetAddRefused).toBe(false);
+    }),
+  );
+});
+
+test('a signed-out feed carries three widgets and refuses a fourth', () => {
+  Story.story(
+    update,
+    Story.given({ ...feedCappedModel, isWidgetCatalogOpen: true }),
+    Story.message(AddedFeedBlock({ kind: FEED_FEATURED_MATCHES })),
+    Story.model((model) => {
+      expect(model.feedBlocks).toHaveLength(3);
+      expect(model.isWidgetAddRefused).toBe(true);
+    }),
+    // Shutting the catalog clears the refusal, so it never greets a reader who
+    // comes back to open it again.
+    Story.message(ToggledWidgetCatalog()),
+    Story.model((model) => {
+      expect(model.isWidgetAddRefused).toBe(false);
+    }),
+  );
+});
+
+// The two allowances are counted apart, so a feed full of widgets has spent
+// none of its headings — otherwise three widgets, each arriving with a heading
+// of its own, would leave a signed-out reader unable to place a divider.
+test('a feed full of widgets has spent none of its heading allowance', () => {
+  Story.story(
+    update,
+    Story.given(feedCappedModel),
+    Story.message(AddedFeedBlock({ kind: FEED_LABEL })),
+    Story.model((model) => {
+      expect(model.feedBlocks).toHaveLength(4);
+      expect(model.isWidgetAddRefused).toBe(false);
+    }),
+  );
+});
+
+test('an account is what lifts the cap', () => {
+  Story.story(
+    update,
+    Story.given({ ...feedCappedModel, isSignedIn: true }),
+    Story.message(AddedFeedBlock({ kind: FEED_FEATURED_MATCHES })),
+    Story.model((model) => {
+      expect(model.feedBlocks).toHaveLength(4);
+      expect(model.isWidgetAddRefused).toBe(false);
     }),
   );
 });

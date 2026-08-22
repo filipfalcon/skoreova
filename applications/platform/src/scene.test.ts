@@ -5,9 +5,13 @@ import {
   clubProfileModel,
   clubsModel,
   competitionFirstRoundModel,
+  feedHeadlessModel,
+  feedLabelledModel,
+  feedRefusedModel,
   herGameModel,
   signedInModel,
   welcomeModel,
+  widgetCatalogModel,
 } from './main.fixtures';
 import { update, view } from './main';
 
@@ -15,7 +19,7 @@ describe('view', () => {
   test('the Her Game front page renders inside the platform shell', () => {
     Scene.scene(
       { update, view },
-      Scene.with(herGameModel),
+      Scene.given(herGameModel),
       // The nav's own short label for the competitions section appears nowhere
       // else in the document, and the footer note is on every screen — between
       // them, stable proof the shell mounted around the screen.
@@ -29,7 +33,7 @@ describe('view', () => {
   test('the root is the landing until the visitor signs in', () => {
     Scene.scene(
       { update, view },
-      Scene.with(welcomeModel),
+      Scene.given(welcomeModel),
       // The tape, the trending board and the feed are the landing, and what
       // sits behind the sign-in must not leak onto it. The feed carries the
       // week's fixtures, so the pulse's own chip stays off this page.
@@ -47,11 +51,98 @@ describe('view', () => {
   test('signing in turns the same route into Her Game', () => {
     Scene.scene(
       { update, view },
-      Scene.with(signedInModel),
+      Scene.given(signedInModel),
       // The stat boards are the half of the page that an account buys.
       Scene.expect(Scene.text('Goals')).toExist(),
       // The same tiles, but pinnable now that there is somewhere to pin them.
       Scene.expect(Scene.role('button', { name: 'Pin Sierra Pennock to Her Game' })).toExist(),
+    );
+  });
+
+  // The catalog is the platform's answer to "what else could be here", so what
+  // it must show is EVERY widget, always addable — a feed can carry the same
+  // one as many times as the reader wants it.
+  test('the catalog offers every widget, whatever the feed already carries', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(widgetCatalogModel),
+      Scene.expect(Scene.role('button', { name: 'Add Label to your feed' })).toExist(),
+      Scene.expect(Scene.role('button', { name: 'Add Featured matches to your feed' })).toExist(),
+    );
+  });
+
+  test('a pick that would overfill a signed-out feed is refused out loud', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(feedRefusedModel),
+      Scene.expect(Scene.role('alert')).toExist(),
+      Scene.expect(
+        Scene.text(
+          'Three widgets and three headings is the most a feed carries without an account.',
+        ),
+      ).toExist(),
+    );
+  });
+
+  // Every block arrives carrying a heading, so the default feed's own board is
+  // headed too — which is what the reader sees before touching anything.
+  test('the default feed heads its board without being asked', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(welcomeModel),
+      Scene.expect(Scene.role('heading', { name: 'Featured matches' })).toExist(),
+    );
+  });
+
+  test('two blocks of one kind read as two headings', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(feedLabelledModel),
+      Scene.expect(Scene.role('heading', { name: 'My clubs' })).toExist(),
+      Scene.expect(Scene.role('heading', { name: 'Featured matches' })).toExist(),
+      Scene.expect(Scene.role('heading', { name: 'Cup week' })).toExist(),
+    );
+  });
+
+  // A heading REMOVED and a heading left BLANK look alike in a model that
+  // cannot tell them apart. This is the scene that proves they are not: the
+  // blank one still holds its line, the removed one draws nothing.
+  test('a blank heading holds its line, a removed one does not', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(feedHeadlessModel),
+      Scene.expect(Scene.role('heading', { name: 'Untitled label' })).toExist(),
+      Scene.expect(Scene.role('heading', { name: 'Featured matches' })).not.toExist(),
+    );
+  });
+
+  test('managing the feed gives every block its own field and controls', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given({ ...feedLabelledModel, isFeedEditing: true }),
+      Scene.expect(Scene.role('heading', { name: 'My clubs' })).not.toExist(),
+      Scene.expectAll(Scene.all.role('textbox')).toHaveCount(3),
+      // Two blocks of one kind must not answer to one name. A control named
+      // after the KIND would give both featured-matches blocks the same one,
+      // which is the defect a feed of singletons could never have had.
+      Scene.expect(Scene.role('textbox', { name: 'Featured matches' })).toHaveValue(
+        'Featured matches',
+      ),
+      Scene.expect(Scene.role('textbox', { name: 'Cup week' })).toHaveValue('Cup week'),
+      Scene.expect(Scene.role('button', { name: 'Unpin Cup week from the feed' })).toExist(),
+      Scene.expect(Scene.role('button', { name: 'Remove the Cup week heading' })).toExist(),
+      // A standalone heading IS its block, so it is offered no way to shed the
+      // heading — only the block's own way out.
+      Scene.expect(Scene.role('button', { name: 'Unpin My clubs from the feed' })).toExist(),
+      Scene.expect(Scene.role('button', { name: 'Remove the My clubs heading' })).not.toExist(),
+    );
+  });
+
+  test('a block with no heading is offered one back', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given({ ...feedHeadlessModel, isFeedEditing: true }),
+      Scene.expect(Scene.role('button', { name: 'Give the Featured matches a heading' })).toExist(),
     );
   });
 
@@ -68,7 +159,7 @@ describe('view', () => {
   test('a blocked round arrow announces itself, its live twin does not', () => {
     Scene.scene(
       { update, view },
-      Scene.with(competitionFirstRoundModel),
+      Scene.given(competitionFirstRoundModel),
       Scene.expect(Scene.role('button', { name: 'Previous round' })).toHaveAttr(
         'aria-disabled',
         'true',
@@ -86,7 +177,7 @@ describe('view', () => {
   test('the richest club profile renders end to end', () => {
     Scene.scene(
       { update, view },
-      Scene.with(clubProfileModel),
+      Scene.given(clubProfileModel),
       Scene.expect(Scene.role('heading', { name: 'Sparta Praha' })).toExist(),
       Scene.expect(Scene.role('button', { name: 'Follow Sparta Praha' })).toExist(),
       Scene.expect(Scene.text('Top scorers')).toExist(),
@@ -96,7 +187,7 @@ describe('view', () => {
   test('the clubs directory renders its search field', () => {
     Scene.scene(
       { update, view },
-      Scene.with(clubsModel),
+      Scene.given(clubsModel),
       Scene.expect(Scene.label('Search clubs')).toExist(),
     );
   });
@@ -107,7 +198,7 @@ describe('view', () => {
   test('typing in the search box filters the grid down to the match', () => {
     Scene.scene(
       { update, view },
-      Scene.with(clubsModel),
+      Scene.given(clubsModel),
       // Each card carries its crest, so the alt text is the grid’s identity.
       Scene.expect(Scene.altText('Sparta Praha crest')).toExist(),
       Scene.type(Scene.label('Search clubs'), 'slovacko'),

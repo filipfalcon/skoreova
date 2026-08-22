@@ -1,26 +1,39 @@
 import { Array, Match as M, Option, Record } from 'effect';
+import { Update } from 'foldkit';
 import type { Runtime } from 'foldkit';
 import { Command } from 'foldkit';
 import { evo } from 'foldkit/struct';
+import type { UrlRequest } from 'foldkit/navigation';
 import { toString as urlToString } from 'foldkit/url';
+import type { Url } from 'foldkit/url';
 
 import { AppRoute, WelcomeRoute, urlToAppRoute } from './route';
 import {
   DEFAULT_FEED_BLOCKS,
+  DEFAULT_NEXT_FEED_KEY,
   Metric,
   Model,
   Screen,
   ScorerScope,
-  isUnpinnableWithoutAccount,
+  countTowardLimit,
+  feedKey,
+  isLabelBlock,
+  limitFor,
 } from './model';
 import {
+  AddedFeedBlock,
   ChangedUrl,
   ClickedLink,
   CompletedLoad,
   CompletedNavigate,
   CompletedWritePins,
+  GotEditionGroupMessage,
+  GotScopeGroupMessage,
   LoadedPins,
   Message,
+  RemovedFeedLabel,
+  RenamedFeedLabel,
+  RestoredFeedLabel,
   SelectedCompetitionEdition,
   SelectedCompetitionRound,
   SelectedFeaturedClub,
@@ -29,12 +42,21 @@ import {
   ToggledFeedEditing,
   ToggledFollow,
   ToggledPin,
+  ToggledWidgetCatalog,
   UnpinnedFeedBlock,
   UpdatedClubQuery,
 } from './message';
 import { Load, Navigate, ReadPins, WritePins } from './command';
 import { competitionBySlug, featuredClubs } from './data';
 import { competitionRoundCount } from './schedule';
+import { RadioGroup } from '@foldkit/ui';
+import {
+  EDITION_GROUP_ID,
+  EditionRadioGroup,
+  SCOPE_GROUP_ID,
+  ScopeRadioGroup,
+} from './radio-groups';
+import { widgetKind } from './widgets';
 
 // The Model, Messages, Commands, data, shared components, and the screens each
 // live in their own module (model.ts, message.ts, command.ts, data.ts,
@@ -45,6 +67,7 @@ export { Metric, Model, Screen, ScorerScope };
 
 // MESSAGE — see message.ts.
 export {
+  AddedFeedBlock,
   ChangedUrl,
   ClickedLink,
   CompletedLoad,
@@ -52,6 +75,9 @@ export {
   CompletedWritePins,
   LoadedPins,
   Message,
+  RemovedFeedLabel,
+  RenamedFeedLabel,
+  RestoredFeedLabel,
   SelectedCompetitionEdition,
   SelectedCompetitionRound,
   SelectedFeaturedClub,
@@ -60,8 +86,23 @@ export {
   ToggledFeedEditing,
   ToggledFollow,
   ToggledPin,
+  ToggledWidgetCatalog,
   UnpinnedFeedBlock,
   UpdatedClubQuery,
+};
+
+// The routing config, stated once and read by BOTH entries. The server render
+// and the hydrating client have to agree that this is a routing application,
+// because that is what decides whether `init` is handed a URL — an entry that
+// disagreed would build a different first Model and hydration would rebuild
+// the tree it was supposed to adopt.
+
+/**
+ * How the runtime turns link clicks and history moves into Messages.
+ */
+export const routing = {
+  onUrlRequest: (request: UrlRequest): Message => ClickedLink({ request }),
+  onUrlChange: (url: Url): Message => ChangedUrl({ url }),
 };
 
 // UPDATE
@@ -76,11 +117,15 @@ const initialModel: Model = {
   // Real value arrives from storage via ReadPins (init) — empty until then.
   pinned: [],
   scorerScope: 'All',
+  scopeGroup: RadioGroup.init({ id: SCOPE_GROUP_ID }),
+  editionGroup: RadioGroup.init({ id: EDITION_GROUP_ID }),
   metric: 'Goals',
   isSignedIn: false,
   feedBlocks: DEFAULT_FEED_BLOCKS,
   isFeedEditing: false,
-  isFeedUnpinRefused: false,
+  isWidgetCatalogOpen: false,
+  isWidgetAddRefused: false,
+  nextFeedKey: DEFAULT_NEXT_FEED_KEY,
 };
 
 // A route change stores the new route and resets the transient per-view state
@@ -95,7 +140,8 @@ const applyRoute = (model: Model, route: AppRoute): Model =>
     featuredClub: () => 0,
     scorerScope: (current) => (route._tag === 'ClubRoute' ? 'All' : current),
     isFeedEditing: () => false,
-    isFeedUnpinRefused: () => false,
+    isWidgetCatalogOpen: () => false,
+    isWidgetAddRefused: () => false,
   });
 
 export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => [
@@ -168,6 +214,34 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         [],
       ],
       UpdatedClubQuery: ({ query }) => [evo(model, { clubQuery: () => query }), []],
+      GotScopeGroupMessage: ({ message }) =>
+        Update.foldChild({
+          update: ScopeRadioGroup.update,
+          read: (parent: Model) => Option.some(parent.scopeGroup),
+          write: (parent: Model, scopeGroup) => evo(parent, { scopeGroup: () => scopeGroup }),
+          toParentMessage: (childMessage) => GotScopeGroupMessage({ message: childMessage }),
+          foldOutMessage:
+            ({ value }) =>
+            (parent: Model) => [evo(parent, { scorerScope: () => value }), []],
+        })(message)(model),
+      GotEditionGroupMessage: ({ message }) =>
+        Update.foldChild({
+          update: EditionRadioGroup.update,
+          read: (parent: Model) => Option.some(parent.editionGroup),
+          write: (parent: Model, editionGroup) => evo(parent, { editionGroup: () => editionGroup }),
+          toParentMessage: (childMessage) => GotEditionGroupMessage({ message: childMessage }),
+          // The picker's own chip for the current edition sends the empty
+          // label, which is what the Model holds for "the current one" — the
+          // sentinel never becomes state.
+          foldOutMessage:
+            ({ value }) =>
+            (parent: Model) => [
+              evo(parent, {
+                competitionEdition: () => (value === '' ? Option.none() : Option.some(value)),
+              }),
+              [],
+            ],
+        })(message)(model),
       // Wrapped HERE, not in the view — `featuredClub` is always a valid
       // index into featuredClubs, so consumers read it straight.
       SelectedFeaturedClub: ({ index }) => [
@@ -189,23 +263,84 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         return [evo(model, { pinned: () => pinned }), [WritePins({ ids: pinned })]];
       },
       CompletedWritePins: () => [model, []],
-      ToggledFeedEditing: () => [
+      ToggledFeedEditing: () => [evo(model, { isFeedEditing: (editing) => !editing }), []],
+      ToggledWidgetCatalog: () => [
         evo(model, {
-          isFeedEditing: (editing) => !editing,
-          isFeedUnpinRefused: () => false,
+          isWidgetCatalogOpen: (open) => !open,
+          isWidgetAddRefused: () => false,
         }),
         [],
       ],
-      UnpinnedFeedBlock: ({ id }) =>
-        isUnpinnableWithoutAccount(id) || model.isSignedIn
-          ? [
+      // What an account buys is ROOM, not the feature: a signed-out reader
+      // builds a real feed up to the cap and meets the offer at the point the
+      // cap bites, which is the point they have something to lose by walking
+      // away. Browsing the catalog is never gated — seeing the whole of what a
+      // feed could hold is the argument, and hiding it would be arguing with
+      // nothing.
+      AddedFeedBlock: ({ kind }) => {
+        const widget = widgetKind(kind);
+        if (widget === undefined) {
+          return [model, []];
+        }
+        const isCapped =
+          !model.isSignedIn && countTowardLimit(model.feedBlocks, kind) >= limitFor(kind);
+        return isCapped
+          ? [evo(model, { isWidgetAddRefused: () => true }), []]
+          : [
               evo(model, {
-                feedBlocks: (blocks) => blocks.filter((block) => block !== id),
-                isFeedUnpinRefused: () => false,
+                feedBlocks: (blocks) => [
+                  ...blocks,
+                  {
+                    kind,
+                    key: feedKey(model.nextFeedKey),
+                    label: Option.some(widget.defaultLabel),
+                  },
+                ],
+                nextFeedKey: (sequence) => sequence + 1,
               }),
               [],
-            ]
-          : [evo(model, { isFeedUnpinRefused: () => true }), []],
+            ];
+      },
+      UnpinnedFeedBlock: ({ key }) => [
+        evo(model, { feedBlocks: (blocks) => blocks.filter((block) => block.key !== key) }),
+        [],
+      ],
+      RenamedFeedLabel: ({ key, text }) => [
+        evo(model, {
+          feedBlocks: (blocks) =>
+            blocks.map((block) =>
+              block.key === key ? { ...block, label: Option.some(text) } : block,
+            ),
+        }),
+        [],
+      ],
+      // A standalone heading IS its block, so taking its label away would
+      // leave a block that draws nothing. Only the block itself can go.
+      RemovedFeedLabel: ({ key }) => [
+        evo(model, {
+          feedBlocks: (blocks) =>
+            blocks.map((block) =>
+              block.key === key && !isLabelBlock(block)
+                ? { ...block, label: Option.none() }
+                : block,
+            ),
+        }),
+        [],
+      ],
+      // A heading put back arrives as the one its kind ships with, not as the
+      // one the reader had written: what they wrote left with the removal, and
+      // guessing at it would be inventing their words for them.
+      RestoredFeedLabel: ({ key }) => [
+        evo(model, {
+          feedBlocks: (blocks) =>
+            blocks.map((block) =>
+              block.key === key
+                ? { ...block, label: Option.some(widgetKind(block.kind)?.defaultLabel ?? '') }
+                : block,
+            ),
+        }),
+        [],
+      ],
     }),
   );
 

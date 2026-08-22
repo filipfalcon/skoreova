@@ -1,7 +1,6 @@
-import { Array, Number } from 'effect';
-import { Button } from '@foldkit/ui';
-import { html } from 'foldkit/html';
-import type { Html } from 'foldkit/html';
+import { Array, Number, Option } from 'effect';
+import { Button, Input } from '@foldkit/ui';
+import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import banikOstravaLogo from '../assets/clubs/BanikOstrava.png';
 import slaviaPrahaLogo from '../assets/clubs/SlaviaPraha.png';
@@ -14,10 +13,18 @@ import { chipHeading, tapeArrow, tickerSpark } from '../components';
 import { clubs, competitions, officials, savedCharts, trending } from '../data';
 import type { Club } from '../data';
 import { matchCard, returnsCard } from '../match-card';
-import { ToggledFeedEditing, UnpinnedFeedBlock } from '../message';
+import {
+  AddedFeedBlock,
+  RemovedFeedLabel,
+  RenamedFeedLabel,
+  RestoredFeedLabel,
+  ToggledFeedEditing,
+  ToggledWidgetCatalog,
+  UnpinnedFeedBlock,
+} from '../message';
 import type { Message } from '../message';
-import { FEED_ADD_WIDGET, FEED_FEATURED_MATCHES } from '../model';
-import type { Model } from '../model';
+import { isLabelBlock } from '../model';
+import type { FeedBlock, Model } from '../model';
 import { resumesLabel, thisWeek } from '../pulse';
 import type { Pulse } from '../pulse';
 import {
@@ -43,8 +50,8 @@ import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttribute
 import { shared } from '../styles/shared';
 import { styles } from '../styles/her-game';
 import { tickerQuotes } from '../ticker';
-
-const h = html<Message>();
+import { widgetCatalog, widgetKind } from '../widgets';
+import type { WidgetKind } from '../widgets';
 
 // HER GAME — the platform's ONE front page, at `/her-game`: the ticker, the
 // weekend board, the club crests, trending, what's new, the all-time bests and
@@ -70,7 +77,7 @@ const newContent: ReadonlyArray<RecentEntry> = [
 
 // NEW CONTENT — the same pink-chip section grammar as Trending/Goals/
 // Attendance, with the list riding in a paper panel beneath.
-const newContentPanel = (): Html =>
+const newContentPanel = (h: HtmlBuilder<Message>): Html =>
   h.section(
     [...getStyleXAttributes(h, styles.section)],
     [
@@ -104,11 +111,16 @@ const newContentPanel = (): Html =>
 // The TRENDING board — the pink chip stamps its top edge like the section
 // kickers. Every tile is a LINK into the data, and carries one line saying why
 // it is here: a name and a kind alone did not earn the space the board took.
-const trendingTiles = (model: Model, withPin = true, isFirst = false): Html =>
+const trendingTiles = (
+  model: Model,
+  h: HtmlBuilder<Message>,
+  withPin = true,
+  isFirst = false,
+): Html =>
   h.section(
     [...getStyleXAttributes(h, styles.section, isFirst ? styles.sectionUnderTicker : null)],
     [
-      chipHeading('Trending'),
+      chipHeading('Trending', h),
       // A real list — each tile is an item assistive tech can count and step
       // through, whichever way the track is scrolled.
       h.ul(
@@ -116,7 +128,7 @@ const trendingTiles = (model: Model, withPin = true, isFirst = false): Html =>
         trending.map((entry, index) =>
           h.li(
             [...getStyleXAttributes(h, styles.trendingCard)],
-            [trendingTile(model, entry, index, withPin)],
+            [trendingTile(model, entry, index, withPin, h)],
           ),
         ),
       ),
@@ -133,11 +145,12 @@ const statBoard = (
   noun: string,
   entries: ReadonlyArray<StatEntry>,
   model: Model,
+  h: HtmlBuilder<Message>,
 ): Html =>
   h.section(
     [...getStyleXAttributes(h, styles.section)],
     [
-      chipHeading(title),
+      chipHeading(title, h),
       h.div(
         [...getStyleXAttributes(h, styles.statGrid)],
         entries.map((entry, index) =>
@@ -147,15 +160,17 @@ const statBoard = (
             index,
             `${noun}:${leagueSlug(entry.league)}`,
             `${entry.league} ${noun}`,
+            h,
           ),
         ),
       ),
     ],
   );
 
-const goalsTiles = (model: Model): Html => statBoard('Goals', 'goals', goals, model);
-const attendanceTiles = (model: Model): Html =>
-  statBoard('Attendance', 'attendance', attendance, model);
+const goalsTiles = (model: Model, h: HtmlBuilder<Message>): Html =>
+  statBoard('Goals', 'goals', goals, model, h);
+const attendanceTiles = (model: Model, h: HtmlBuilder<Message>): Html =>
+  statBoard('Attendance', 'attendance', attendance, model, h);
 
 // The LIVE TICKER, stock-market style (user call): QUOTES ONLY — every
 // item is an entity with a movement in the MARKET colors (green rise, red
@@ -180,7 +195,7 @@ const tape: ReadonlyArray<TapeQuote> = tickerQuotes.map((quote) => ({
   isUp: quote.isUp,
 }));
 
-const quoteView = (entry: TapeQuote): ReadonlyArray<Html> => [
+const quoteView = (entry: TapeQuote, h: HtmlBuilder<Message>): ReadonlyArray<Html> => [
   h.span(
     [...getStyleXAttributes(h, shared.display, styles.quote)],
     [
@@ -193,20 +208,20 @@ const quoteView = (entry: TapeQuote): ReadonlyArray<Html> => [
             entry.isUp ? styles.quoteDeltaUp : styles.quoteDeltaDown,
           ),
         ],
-        [tapeArrow(entry.isUp), h.span([], [entry.delta])],
+        [tapeArrow(entry.isUp, h), h.span([], [entry.delta])],
       ),
     ],
   ),
   tickerSpark,
 ];
 
-const heroTicker = (): Html => {
+const heroTicker = (h: HtmlBuilder<Message>): Html => {
   // Two identical runs make the loop seamless; the copy is aria-hidden so
   // screen readers hear the tape once.
   const run = (hidden: boolean): Html =>
     h.div(
       [...getStyleXAttributes(h, styles.tickerRun), ...(hidden ? [h.AriaHidden(true)] : [])],
-      tape.flatMap(quoteView),
+      tape.flatMap((entry) => quoteView(entry, h)),
     );
   return h.div(
     [...getStyleXAttributesWith(h, 'ticker', styles.tickerStrip)],
@@ -219,7 +234,7 @@ const heroTicker = (): Html => {
 // Hover floods the cell flat pink — the cell’s own :hover, since the
 // span fills the link’s whole hit area — and cells pop in with a small
 // cascade (`trend-row` + --row-delay).
-const crestChip = (entry: Club, delaySeconds: number): Html =>
+const crestChip = (entry: Club, delaySeconds: number, h: HtmlBuilder<Message>): Html =>
   h.a(
     [
       h.Href(clubRouter({ slug: entry.slug })),
@@ -277,7 +292,7 @@ const CREST_ROW_SIZES: ReadonlyArray<number> = [5, 4, 5, 4];
 // rail stacks into centered 5-4-5-… rows (user call — the staggered
 // formation reads like a lineup, and no row is left with an orphan flush
 // left); from `md` everything fits one straight row.
-const crestRail = (): Html => {
+const crestRail = (h: HtmlBuilder<Message>): Html => {
   const bySlug = (slug: string): Club | undefined => clubs.find((entry) => entry.slug === slug);
   const aSides = CREST_ORDER.flatMap((slug) => {
     const found = bySlug(slug);
@@ -288,7 +303,7 @@ const crestRail = (): Html => {
     const start = Number.sumAll(CREST_ROW_SIZES.slice(0, rowIndex));
     return aSides
       .slice(start, start + size)
-      .map((entry, cell) => crestChip(entry, delay(start + cell)));
+      .map((entry, cell) => crestChip(entry, delay(start + cell), h));
   }).filter(Array.isReadonlyArrayNonEmpty);
   // No label (user call) — the crests speak for themselves, sitting first
   // with just a little air under the ticker.
@@ -310,7 +325,7 @@ const crestRail = (): Html => {
       ),
       h.div(
         [...getStyleXAttributes(h, styles.crestLine)],
-        aSides.map((entry, index) => crestChip(entry, delay(index))),
+        aSides.map((entry, index) => crestChip(entry, delay(index), h)),
       ),
     ],
   );
@@ -344,21 +359,28 @@ const slot = (card: Html): PulseSlot => ({ card, isHero: false });
 // The INVITATION half of a week: the fixtures, hero first. A week can be all
 // invitation (the feed) or invitation then chronicle (the pulse), so the half
 // is assembled once and the caller decides what follows it.
-const invitationSlots = ({ hero, upcoming }: Pulse): ReadonlyArray<PulseSlot> => [
+const invitationSlots = (
+  { hero, upcoming }: Pulse,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<PulseSlot> => [
   // The hero leads, when there is one. There is no hero on a week with no
   // fixtures, and none on a week where nothing the desk could lead with has
   // a photograph — pulse.ts decides that, not the view.
-  ...(hero === undefined ? [] : [{ card: matchCard(hero, 'hero'), isHero: true }]),
+  ...(hero === undefined ? [] : [{ card: matchCard(hero, 'hero', h), isHero: true }]),
   // The pause card stands in only when the WHOLE invitation half is empty:
   // no hero and nothing upcoming.
   ...(hero === undefined && upcoming.length === 0
-    ? [slot(returnsCard(resumesLabel()))]
-    : upcoming.map((match) => slot(matchCard(match, 'compact')))),
+    ? [slot(returnsCard(resumesLabel(), h))]
+    : upcoming.map((match) => slot(matchCard(match, 'compact', h)))),
 ];
 
 // A real list, so assistive tech can count the week and step through it rather
 // than meeting a run of loose links.
-const matchTrack = (cards: ReadonlyArray<PulseSlot>, isFramed = false): Html =>
+const matchTrack = (
+  cards: ReadonlyArray<PulseSlot>,
+  h: HtmlBuilder<Message>,
+  isFramed = false,
+): Html =>
   h.ul(
     [
       ...getStyleXAttributesWith(
@@ -376,19 +398,22 @@ const matchTrack = (cards: ReadonlyArray<PulseSlot>, isFramed = false): Html =>
     ),
   );
 
-const pulseSection = (): Html => {
+const pulseSection = (h: HtmlBuilder<Message>): Html => {
   const week = thisWeek();
   return h.section(
     [...getStyleXAttributes(h, styles.section, styles.pulseSection)],
     [
       // The ticker kisses the header (the negative top margins cancel
       // main’s padding).
-      h.div([...getStyleXAttributes(h, styles.tickerPull)], [heroTicker()]),
-      h.div([...getStyleXAttributes(h, styles.pulseChipRow)], [chipHeading(PULSE_SECTION)]),
-      matchTrack([
-        ...invitationSlots(week),
-        ...week.finished.map((match) => slot(matchCard(match, 'compact'))),
-      ]),
+      h.div([...getStyleXAttributes(h, styles.tickerPull)], [heroTicker(h)]),
+      h.div([...getStyleXAttributes(h, styles.pulseChipRow)], [chipHeading(PULSE_SECTION, h)]),
+      matchTrack(
+        [
+          ...invitationSlots(week, h),
+          ...week.finished.map((match) => slot(matchCard(match, 'compact', h))),
+        ],
+        h,
+      ),
     ],
   );
 };
@@ -401,93 +426,274 @@ const FEED_SECTION = 'Feed';
 // The MANAGE switch. It carries the state in its label rather than in an icon
 // that would have to mean "editing" on its own, and `aria-pressed` is what
 // says which way it is currently thrown.
-const feedManageToggle = (model: Model): Html =>
-  Button.view({
-    onClick: ToggledFeedEditing(),
-    toView: ({ button }) =>
-      h.button(
-        [
-          ...button,
-          h.AriaPressed(model.isFeedEditing ? 'true' : 'false'),
-          ...getStyleXAttributes(h, styles.feedManage),
-        ],
-        [model.isFeedEditing ? 'Done' : 'Manage'],
-      ),
-  });
+const feedManageToggle = (model: Model, h: HtmlBuilder<Message>): Html =>
+  Button.view(
+    {
+      onClick: ToggledFeedEditing(),
+      toView: ({ button }) =>
+        h.button(
+          [
+            ...button,
+            h.AriaPressed(model.isFeedEditing ? 'true' : 'false'),
+            ...getStyleXAttributes(h, styles.feedManage),
+          ],
+          [model.isFeedEditing ? 'Done' : 'Manage'],
+        ),
+    },
+    h,
+  );
 
 // One block's way out of the feed, shown only while the feed is being
 // managed. The label names the block, so the row of them a longer feed will
 // grow into does not read as a column of identical "Remove" buttons.
-const feedUnpinButton = (id: string, label: string): Html =>
-  Button.view({
-    onClick: UnpinnedFeedBlock({ id }),
-    toView: ({ button }) =>
-      h.button(
-        [
-          ...button,
-          h.AriaLabel(`Unpin ${label} from the feed`),
-          ...getStyleXAttributes(h, styles.feedUnpin),
-        ],
-        ['Unpin'],
-      ),
-  });
+const feedUnpinButton = (key: string, label: string, h: HtmlBuilder<Message>): Html =>
+  Button.view(
+    {
+      onClick: UnpinnedFeedBlock({ key }),
+      toView: ({ button }) =>
+        h.button(
+          [
+            ...button,
+            h.AriaLabel(`Unpin ${label} from the feed`),
+            ...getStyleXAttributes(h, styles.feedUnpin),
+          ],
+          ['Unpin'],
+        ),
+    },
+    h,
+  );
 
 // A feed with everything taken out of it still has to say so — an empty
 // frame reads as something that failed to load.
-const feedEmpty = (): Html =>
+const feedEmpty = (h: HtmlBuilder<Message>): Html =>
   h.p([...getStyleXAttributes(h, styles.feedEmpty)], ['Nothing pinned.']);
 
-// ADD A WIDGET — the feed's own invitation, and the one block that will not
-// leave a signed-out feed. It leads, because an empty-handed reader needs the
-// way to fill the feed before they need anything already in it.
-const addWidgetBlock = (): Html =>
-  h.p([...getStyleXAttributes(h, shared.display, styles.feedAddWidget)], ['Add a widget']);
+// ADD A WIDGET — the feed's own invitation, and part of the frame rather than
+// a block in it, so no feed can end up without one. It leads: for a reader
+// with no account it is the page's case for making one, and an argument put
+// at the bottom of a feed is an argument nobody reaches.
+const addWidgetInvitation = (model: Model, h: HtmlBuilder<Message>): Html =>
+  Button.view(
+    {
+      onClick: ToggledWidgetCatalog(),
+      toView: ({ button }) =>
+        h.button(
+          [
+            ...button,
+            h.AriaExpanded(model.isWidgetCatalogOpen),
+            ...getStyleXAttributes(h, shared.display, styles.feedAddWidget),
+          ],
+          [model.isWidgetCatalogOpen ? 'Close' : 'Add a widget'],
+        ),
+    },
+    h,
+  );
 
 // The refusal, announced rather than merely drawn: it answers a press, so a
 // reader who cannot see the feed still learns why nothing moved.
-const feedRefusal = (): Html =>
+const feedRefusal = (h: HtmlBuilder<Message>): Html =>
   h.p(
     [h.Role('alert'), ...getStyleXAttributes(h, styles.feedRefusal)],
-    ['This widget could be unpinned only if you are logged in.'],
+    ['Three widgets and three headings is the most a feed carries without an account.'],
   );
 
-// One block, wrapped with the bar that carries its way out while the feed is
-// being managed.
-const feedBlock = (model: Model, id: string, label: string, body: Html): Html =>
+// ONE CATALOG ENTRY. Every kind is always on offer — a feed can carry the same
+// widget as many times as the reader wants it, so there is no taken state for
+// the catalog to draw.
+const catalogEntry = (kind: WidgetKind, h: HtmlBuilder<Message>): Html =>
+  h.li(
+    [...getStyleXAttributes(h, styles.catalogEntry)],
+    [
+      h.p([...getStyleXAttributes(h, shared.display, styles.catalogName)], [kind.name]),
+      h.p([...getStyleXAttributes(h, styles.catalogSummary)], [kind.summary]),
+      Button.view(
+        {
+          onClick: AddedFeedBlock({ kind: kind.id }),
+          toView: ({ button }) =>
+            h.button(
+              [
+                ...button,
+                h.AriaLabel(`Add ${kind.name} to your feed`),
+                ...getStyleXAttributes(h, styles.catalogAdd),
+              ],
+              ['Add'],
+            ),
+        },
+        h,
+      ),
+    ],
+  );
+
+// THE CATALOG — every widget that exists, not only the ones this feed is
+// carrying. It is a list so assistive tech can count the offer and step
+// through it.
+const widgetCatalogList = (h: HtmlBuilder<Message>): Html =>
+  h.ul(
+    [...getStyleXAttributes(h, styles.catalog)],
+    widgetCatalog.map((kind) => catalogEntry(kind, h)),
+  );
+
+// What a block's controls call it. A feed can carry the same widget twice, so
+// naming a control after the KIND would leave a manage state where two blocks
+// answer to one name; the heading the reader wrote is what tells them apart,
+// and a block carrying none still needs something to be called.
+const feedBlockName = (block: FeedBlock, kind: WidgetKind): string =>
+  Option.match(block.label, {
+    onNone: () => kind.name,
+    onSome: (text) => (text === '' ? `Untitled ${kind.name.toLowerCase()}` : text),
+  });
+
+// THE HEADING every block carries. Out of the manage state it is a chip — the
+// same one the sections above it use, which is what makes a heading the reader
+// wrote read as part of the page rather than as something pasted onto it.
+const blockLabel = (
+  model: Model,
+  block: FeedBlock,
+  name: string,
+  text: string,
+  h: HtmlBuilder<Message>,
+): Html =>
+  model.isFeedEditing
+    ? Input.view(
+        {
+          id: `feed-label-${block.key}`,
+          type: 'text',
+          placeholder: 'Name this part of your feed…',
+          value: text,
+          onInput: (value) => RenamedFeedLabel({ key: block.key, text: value }),
+          toView: (attributes) =>
+            h.div(
+              [...getStyleXAttributes(h, styles.labelField)],
+              [
+                h.label([...attributes.label, ...getStyleXAttributes(h, shared.srOnly)], [name]),
+                h.input([
+                  ...attributes.input,
+                  ...getStyleXAttributes(h, shared.display, styles.labelInput),
+                ]),
+              ],
+            ),
+        },
+        h,
+      )
+    : h.h3(
+        [...getStyleXAttributes(h, styles.labelRow)],
+        [
+          h.span(
+            [...getStyleXAttributes(h, shared.display, shared.chip)],
+            // A blank heading still holds its line, or a reader who clears one
+            // and leaves the manage state loses the place they made.
+            [name],
+          ),
+        ],
+      );
+
+// The heading's own controls, which exist only while the feed is being
+// managed. A standalone label is offered neither: its heading IS the block, so
+// the way to be rid of it is the block's own.
+const labelControl = (block: FeedBlock, name: string, h: HtmlBuilder<Message>): Html =>
+  Option.isSome(block.label)
+    ? Button.view(
+        {
+          onClick: RemovedFeedLabel({ key: block.key }),
+          toView: ({ button }) =>
+            h.button(
+              [
+                ...button,
+                h.AriaLabel(`Remove the ${name} heading`),
+                ...getStyleXAttributes(h, styles.labelControl),
+              ],
+              ['Remove heading'],
+            ),
+        },
+        h,
+      )
+    : Button.view(
+        {
+          onClick: RestoredFeedLabel({ key: block.key }),
+          toView: ({ button }) =>
+            h.button(
+              [
+                ...button,
+                h.AriaLabel(`Give the ${name} a heading`),
+                ...getStyleXAttributes(h, styles.labelControl),
+              ],
+              ['Add heading'],
+            ),
+        },
+        h,
+      );
+
+// One block: its manage bar, its heading, and its body, in that order.
+const feedBlockFrame = (
+  model: Model,
+  block: FeedBlock,
+  kind: WidgetKind,
+  name: string,
+  body: ReadonlyArray<Html>,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.div(
     [],
     [
       ...(model.isFeedEditing
-        ? [h.div([...getStyleXAttributes(h, styles.feedBlockBar)], [feedUnpinButton(id, label)])]
+        ? [
+            h.div(
+              [...getStyleXAttributes(h, styles.feedBlockBar)],
+              [
+                ...(isLabelBlock(block) ? [] : [labelControl(block, name, h)]),
+                feedUnpinButton(block.key, name, h),
+              ],
+            ),
+          ]
         : []),
-      body,
-      ...(model.isFeedEditing && model.isFeedUnpinRefused && id === FEED_ADD_WIDGET
-        ? [feedRefusal()]
-        : []),
+      ...Option.match(block.label, {
+        onNone: () => [],
+        onSome: (text) => [blockLabel(model, block, name, text, h)],
+      }),
+      ...body,
     ],
   );
 
 // The feed draws what it carries, in the order it carries it, so a block that
-// leaves takes its slot with it.
-const feedBody = (model: Model, id: string): Html | undefined =>
-  id === FEED_ADD_WIDGET
-    ? feedBlock(model, id, 'Add a widget', addWidgetBlock())
-    : id === FEED_FEATURED_MATCHES
-      ? feedBlock(model, id, 'Featured matches', matchTrack(invitationSlots(thisWeek()), true))
-      : undefined;
+// leaves takes its slot with it. A kind the catalog no longer offers draws
+// nothing rather than an error: the feed outlives the catalog it was built
+// from.
+const feedBody = (model: Model, block: FeedBlock, h: HtmlBuilder<Message>): Html | undefined => {
+  const kind = widgetKind(block.kind);
+  if (kind === undefined) {
+    return undefined;
+  }
+  return feedBlockFrame(
+    model,
+    block,
+    kind,
+    feedBlockName(block, kind),
+    // A standalone label has no body — its heading is the whole of it.
+    isLabelBlock(block) ? [] : [matchTrack(invitationSlots(thisWeek(), h), h, true)],
+    h,
+  );
+};
 
-const feedSection = (model: Model): Html => {
+const feedSection = (model: Model, h: HtmlBuilder<Message>): Html => {
   const blocks = model.feedBlocks
-    .map((id) => feedBody(model, id))
+    .map((block) => feedBody(model, block, h))
     .filter((block): block is Html => block !== undefined);
   return h.section(
-    [...getStyleXAttributes(h, styles.section, styles.feedFrame)],
+    [...getStyleXAttributes(h, styles.section)],
     [
       h.div(
         [...getStyleXAttributes(h, styles.feedHeader)],
-        [chipHeading(FEED_SECTION), feedManageToggle(model)],
+        [chipHeading(FEED_SECTION, h), feedManageToggle(model, h)],
       ),
-      ...(blocks.length === 0 ? [feedEmpty()] : blocks),
+      h.div(
+        [...getStyleXAttributes(h, styles.feedFrame)],
+        [
+          addWidgetInvitation(model, h),
+          ...(model.isWidgetAddRefused ? [feedRefusal(h)] : []),
+          ...(model.isWidgetCatalogOpen ? [widgetCatalogList(h)] : []),
+          ...(blocks.length === 0 ? [feedEmpty(h)] : blocks),
+        ],
+      ),
     ],
   );
 };
@@ -497,7 +703,7 @@ const feedSection = (model: Model): Html => {
 // the ticker + crest rail are enough of a welcome). The real <h1> is
 // screen-reader-only, and it stays FIRST in the document even though the
 // Pulse is the first thing on screen: it is what names the page.
-const welcomeHero = (): Html =>
+const welcomeHero = (h: HtmlBuilder<Message>): Html =>
   h.section(
     [],
     [
@@ -563,7 +769,7 @@ const sectionTiles: ReadonlyArray<SectionTile> = [
   },
 ];
 
-const sectionTileView = (tile: SectionTile): Html =>
+const sectionTileView = (tile: SectionTile, h: HtmlBuilder<Message>): Html =>
   h.a(
     [
       h.Href(tile.href),
@@ -610,14 +816,14 @@ const sectionTileView = (tile: SectionTile): Html =>
 
 // ALL-TIME BESTS — the same section grammar as Trending/Goals/Attendance.
 // New content: pink chip heading, frameless records straight on the paper.
-const allTimeBestsPanel = (model: Model): Html =>
+const allTimeBestsPanel = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.section(
     [...getStyleXAttributes(h, styles.section)],
     [
-      chipHeading('All-time bests'),
+      chipHeading('All-time bests', h),
       h.ul(
         [...getStyleXAttributes(h, styles.bestsGrid)],
-        allTimeBests.map((record) => bestRecord(model, record, false)),
+        allTimeBests.map((record) => bestRecord(model, record, false, h)),
       ),
     ],
   );
@@ -626,44 +832,44 @@ const allTimeBestsPanel = (model: Model): Html =>
 // it is public data that needs no account to mean anything, and the tape butts
 // straight against the navigation, so the page opens on one dark band rather
 // than on a heading.
-const landingView = (model: Model): Html =>
+const landingView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.div(
     [],
     [
-      welcomeHero(),
-      h.div([...getStyleXAttributes(h, styles.tickerPull)], [heroTicker()]),
-      trendingTiles(model, false, true),
-      feedSection(model),
+      welcomeHero(h),
+      h.div([...getStyleXAttributes(h, styles.tickerPull)], [heroTicker(h)]),
+      trendingTiles(model, h, false, true),
+      feedSection(model, h),
     ],
   );
 
 // `/` IS TWO PAGES, told apart by nothing but whether the visitor is signed
 // in: the landing above, and Her Game below.
-export const view = (model: Model): Html =>
-  model.isSignedIn ? signedInView(model) : landingView(model);
+export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
+  model.isSignedIn ? signedInView(model, h) : landingView(model, h);
 
-const signedInView = (model: Model): Html =>
+const signedInView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.div(
     [],
     [
-      welcomeHero(),
+      welcomeHero(h),
       // THE PULSE leads the page — the weekend before the boards.
-      pulseSection(),
-      crestRail(),
+      pulseSection(h),
+      crestRail(h),
       // The movers first (results wait for the sections — user call). The
       // trending board’s chip overflows its top edge, so the row gets
       // breathing room (mt covers the chip). Each board carries a pin that
       // sends it to Her Game.
-      trendingTiles(model),
-      goalsTiles(model),
-      attendanceTiles(model),
-      newContentPanel(),
+      trendingTiles(model, h),
+      goalsTiles(model, h),
+      attendanceTiles(model, h),
+      newContentPanel(h),
       // All-time bests ABOVE the browse tiles; the "platform in numbers"
       // stat strip is gone entirely (user calls).
-      allTimeBestsPanel(model),
+      allTimeBestsPanel(model, h),
       h.div(
         [...getStyleXAttributes(h, styles.sectionTilesGrid)],
-        sectionTiles.map(sectionTileView),
+        sectionTiles.map((tile) => sectionTileView(tile, h)),
       ),
     ],
   );

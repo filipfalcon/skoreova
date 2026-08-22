@@ -34,13 +34,18 @@ export const styles = stylex.create({
   sectionUnderTicker: {
     marginTop: spacing.lg,
   },
-  // THE FEED FRAME — a hairline box holding the chip and the fixtures
-  // together, so the cards read as something inside the feed rather than as
-  // the next band down the page.
+  // THE FEED FRAME — a hairline box around the blocks, so a feed of several
+  // reads as one board rather than as that many bands down the page. The chip
+  // sits outside it, on the same line as every other section's chip.
   feedFrame: {
+    marginTop: spacing.md,
     borderWidth: 1,
     borderColor: 'color-mix(in srgb, var(--color-ink) 15%, transparent)',
-    paddingBlock: spacing.md,
+    // Every block opens with its own `md` top margin, which the border keeps
+    // from collapsing out of the box, so the top inset is already there and
+    // the bottom padding is what matches it.
+    paddingBlockStart: 0,
+    paddingBlockEnd: spacing.md,
     paddingInline: spacing.md,
   },
   // The track bleeds back out to the frame's edge, so a peeking card is cut
@@ -76,7 +81,9 @@ export const styles = stylex.create({
   feedBlockBar: {
     marginTop: spacing.md,
     display: 'flex',
+    flexWrap: 'wrap',
     justifyContent: 'flex-end',
+    gap: spacing.sm,
   },
   // The destructive half of the manage state, so it carries the pink the rest
   // of the feed withholds.
@@ -102,17 +109,112 @@ export const styles = stylex.create({
     color: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
   },
   // The invitation reads as an empty slot waiting to be filled, which is what
-  // the dashed rule says and a solid one would not.
+  // the dashed rule says and a solid one would not. Full width because it is
+  // a button now, and a button the width of its label would stop reading as
+  // the slot.
   feedAddWidget: {
     marginTop: spacing.md,
+    width: '100%',
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: 'color-mix(in srgb, var(--color-ink) 30%, transparent)',
+    borderColor: {
+      default: 'color-mix(in srgb, var(--color-ink) 30%, transparent)',
+      ':hover': tokens.pink,
+    },
     paddingBlock: spacing.lg,
     textAlign: 'center',
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
-    color: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
+    backgroundColor: 'transparent',
+    color: {
+      default: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
+      ':hover': tokens.ink,
+    },
+  },
+  // THE CATALOG — one column on a phone, two once there is room for a name
+  // and its line side by side without either wrapping to three lines.
+  catalog: {
+    marginTop: spacing.md,
+    display: 'grid',
+    gridTemplateColumns: { default: '1fr', [SM]: '1fr 1fr' },
+    gap: spacing.sm,
+  },
+  // Each entry is a small stack with its control pinned to the bottom, so a
+  // row of them keeps the Add buttons on one line however long the summaries
+  // run.
+  catalogEntry: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '0.25rem',
+    borderWidth: 1,
+    borderColor: 'color-mix(in srgb, var(--color-ink) 15%, transparent)',
+    padding: spacing.sm,
+  },
+  catalogName: {
+    fontSize: '1.125rem',
+    textTransform: 'uppercase',
+  },
+  catalogSummary: {
+    flexGrow: 1,
+    fontSize: '0.875rem',
+    color: 'color-mix(in srgb, var(--color-ink) 70%, transparent)',
+  },
+  catalogAdd: {
+    marginTop: spacing.sm,
+    fontSize: '0.8125rem',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    borderWidth: 1,
+    borderColor: tokens.pink,
+    paddingBlock: '0.25rem',
+    paddingInline: spacing.sm,
+    color: {
+      default: tokens.ink,
+      ':hover': tokens.paper,
+    },
+    backgroundColor: {
+      default: 'transparent',
+      ':hover': tokens.pink,
+    },
+  },
+  // The heading's own control sits beside the block's way out, quieter than
+  // it: taking a heading off is a smaller act than taking the block off, and
+  // the pink outline is what marks the one that cannot be undone.
+  labelControl: {
+    fontSize: '0.8125rem',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    borderWidth: 1,
+    borderColor: 'color-mix(in srgb, var(--color-ink) 30%, transparent)',
+    paddingBlock: '0.25rem',
+    paddingInline: spacing.sm,
+    backgroundColor: 'transparent',
+    color: {
+      default: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
+      ':hover': tokens.ink,
+    },
+  },
+  labelRow: {
+    marginTop: spacing.md,
+    display: 'flex',
+  },
+  labelField: {
+    marginTop: spacing.md,
+  },
+  // The field carries the chip's own type at the chip's own size, so what the
+  // reader types looks like what it will become the moment manage is thrown.
+  labelInput: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: 'color-mix(in srgb, var(--color-ink) 30%, transparent)',
+    paddingBlock: '0.375rem',
+    paddingInline: spacing.sm,
+    fontSize: '1.25rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    backgroundColor: 'transparent',
+    color: tokens.ink,
   },
   // The refusal is the one place the feed speaks in the fall color the tape
   // uses for a drop — it is a no, and it should not look like a caption.
