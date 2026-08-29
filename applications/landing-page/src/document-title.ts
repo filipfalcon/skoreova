@@ -8,6 +8,6 @@ export const SITE_ORIGIN = 'https://skoreova.com';
 
 // An unknown path renders the landing page, so it is titled as one.
 export const documentTitle = (route: AppRoute): string =>
-  route._tag === 'PolicyRoute'
+  route._tag === 'Policy'
     ? 'Cookies & Privacy — Skóreová'
     : 'Skóreová — Czech Women’s Football Coverage';

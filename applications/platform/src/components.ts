@@ -10,7 +10,7 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import brandLogo from './assets/brand/logo.svg';
 import type { Model, Screen } from './model';
-import { type Message, ToggledPin } from './message';
+import { Message } from './message';
 import { type NavEntry, navEntries, screenOf, screenTitles } from './data';
 import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
 import type { StyleXStyle } from './stylexAttributes';
@@ -100,7 +100,7 @@ export const pinToggle = (
   const pinned = model.pinned.includes(id);
   return Button.view(
     {
-      onClick: ToggledPin({ id }),
+      onClick: Message.ToggledPin({ id }),
       toView: ({ button }) =>
         h.button(
           [

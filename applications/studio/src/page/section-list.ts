@@ -23,25 +23,10 @@ import {
   retryBySection,
   toIsoDate,
 } from '../data';
-import {
-  ClearedDateFilter,
-  ClickedAddNew,
-  ClickedClientPage,
-  ClickedDashboard,
-  ClickedPlayersPage,
-  ClickedRecord,
-  ClickedSignOut,
-  GotDateFilterMessage,
-  GotFilterListboxMessage,
-  SelectedFilter,
-  SelectedSection,
-  ToggledMenu,
-  UpdatedSearch,
-} from '../message';
-import type { Message } from '../message';
-import { FilterListbox } from '../model';
+import { Message } from '../message';
+import { ColumnFilter, FilterListbox } from '../model';
 import type { Entry, Model } from '../model';
-import { routeSection } from '../route';
+import { AppRoute, routeSection } from '../route';
 import { Section } from '../section';
 import {
   addNewStyle,
@@ -89,20 +74,17 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
 
   // The document title follows the route: a section’s name on its list, the
   // open record’s own title when one is addressed, 'Dashboard' otherwise.
-  const documentTitle = M.value(model.route).pipe(
-    M.withReturnType<string>(),
-    M.tagsExhaustive({
-      HomeRoute: () => 'Dashboard',
-      NotFoundRoute: () => 'Dashboard',
-      SectionRoute: ({ section }) => sectionLabels[section],
-      RecordRoute: ({ section, id }) => {
-        const recordTitle = findRecord(model, section, id)?.values[0] ?? '';
-        return recordTitle === ''
-          ? sectionLabels[section]
-          : `${recordTitle} — ${sectionLabels[section]}`;
-      },
-    }),
-  );
+  const documentTitle = AppRoute.match<string>(model.route, {
+    Home: () => 'Dashboard',
+    NotFound: () => 'Dashboard',
+    Section: ({ section }) => sectionLabels[section],
+    Record: ({ section, id }) => {
+      const recordTitle = findRecord(model, section, id)?.values[0] ?? '';
+      return recordTitle === ''
+        ? sectionLabels[section]
+        : `${recordTitle} — ${sectionLabels[section]}`;
+    },
+  });
 
   return {
     title: `Skóreová Studio — ${documentTitle}`,
@@ -117,7 +99,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
               [
                 Button.view(
                   {
-                    onClick: ClickedDashboard(),
+                    onClick: Message.ClickedDashboard(),
                     toView: ({ button }) =>
                       h.button([...button, h.Class(brandButtonStyle)], ['Skóreová']),
                   },
@@ -135,7 +117,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
                 ),
                 Button.view(
                   {
-                    onClick: ClickedSignOut(),
+                    onClick: Message.ClickedSignOut(),
                     toView: ({ button }) =>
                       h.button([...button, h.Class(signOutStyle)], ['Sign out']),
                   },
@@ -143,7 +125,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
                 ),
                 Button.view(
                   {
-                    onClick: ToggledMenu(),
+                    onClick: Message.ToggledMenu(),
                     toView: ({ button }) =>
                       h.button(
                         [
@@ -187,7 +169,7 @@ const sidebar = (current: Option.Option<Section>, open: boolean, h: HtmlBuilder<
   const leafItem = (leaf: MenuLeaf): Html =>
     Button.view(
       {
-        onClick: SelectedSection({ section: leaf.section }),
+        onClick: Message.SelectedSection({ section: leaf.section }),
         toView: ({ button }) =>
           h.button(
             [
@@ -213,7 +195,7 @@ const sidebar = (current: Option.Option<Section>, open: boolean, h: HtmlBuilder<
 
   const dashboardItem: Html = Button.view(
     {
-      onClick: ClickedDashboard(),
+      onClick: Message.ClickedDashboard(),
       toView: ({ button }) =>
         h.button(
           [...button, h.Class(Option.isNone(current) ? navItemActiveStyle : navItemStyle)],
@@ -245,7 +227,7 @@ const dashboardHome = (model: Model, h: HtmlBuilder<Message>): Html => {
     const count = countFor(section);
     return Button.view(
       {
-        onClick: SelectedSection({ section }),
+        onClick: Message.SelectedSection({ section }),
         toView: ({ button }) =>
           h.button(
             [...button, h.Class(homeCardStyle)],
@@ -307,15 +289,12 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
       }
       const filter = model.filters[column.label];
       if (!filter) return true;
-      return M.value(filter).pipe(
-        M.withReturnType<boolean>(),
-        M.tagsExhaustive({
-          ExactFilter: ({ value: selected }) => value === selected,
-          // The *excluded* (unchecked) set; a row passes unless its value is
-          // in it.
-          ExcludedFilter: ({ excluded }) => !excluded.includes(value),
-        }),
-      );
+      return ColumnFilter.match<boolean>(filter, {
+        Exact: ({ value: selected }) => value === selected,
+        // The *excluded* (unchecked) set; a row passes unless its value is
+        // in it.
+        Excluded: ({ excluded }) => !excluded.includes(value),
+      });
     });
     const matchesQuery =
       query === '' || entry.values.some((cell) => cell.toLowerCase().includes(query));
@@ -361,7 +340,7 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
       [
         Button.view(
           {
-            onClick: ClickedRecord({ section: entry.section, id: entry.id }),
+            onClick: Message.ClickedRecord({ section: entry.section, id: entry.id }),
             toView: ({ button }) =>
               h.button(
                 [...button, h.Class(entryCardStyle)],
@@ -383,13 +362,16 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
 
   const filterSelect = (column: string, columnIndex: number): Html => {
     const active = model.filters[column];
-    const selected = active?._tag === 'ExactFilter' ? active.value : '';
+    const selected = active?._tag === 'Exact' ? active.value : '';
 
     const option = (optionValue: string, optionLabel: string): Html =>
       h.option([h.Value(optionValue), h.Selected(optionValue === selected)], [optionLabel]);
 
     return h.select(
-      [h.OnChange((value) => SelectedFilter({ column, value })), h.Class(filterSelectStyle)],
+      [
+        h.OnChange((value) => Message.SelectedFilter({ column, value })),
+        h.Class(filterSelectStyle),
+      ],
       [
         option('', `All ${column}`),
         ...optionsFor(columnIndex).map((value) => option(value, value)),
@@ -426,7 +408,7 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
           panelClassName: datePickerPanelStyle,
           toCalendarView: (attributes) => calendarView(attributes, h),
         },
-        toParentMessage: (message) => GotDateFilterMessage({ column, bound, message }),
+        toParentMessage: (message) => Message.GotDateFilterMessage({ column, bound, message }),
       });
 
     return h.div(
@@ -438,7 +420,7 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
         hasRange
           ? Button.view(
               {
-                onClick: ClearedDateFilter({ column }),
+                onClick: Message.ClearedDateFilter({ column }),
                 toView: ({ button }) =>
                   h.button(
                     [...button, h.AriaLabel(`Clear ${column} filter`), h.Class(filterClearStyle)],
@@ -456,7 +438,7 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
     // The filter stores the set of *excluded* (unchecked) values. No filter =
     // nothing excluded = every option checked, which is the default.
     const active = model.filters[column];
-    const excludedValues = active?._tag === 'ExcludedFilter' ? active.excluded : [];
+    const excludedValues = active?._tag === 'Excluded' ? active.excluded : [];
     const listbox = model.filterListboxes[column];
     if (!listbox) return h.empty;
     const options = optionsFor(columnIndex);
@@ -490,7 +472,7 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
         ariaLabel: `${column} filter`,
         anchor: { placement: 'bottom-start', gap: 4 },
       },
-      toParentMessage: (message) => GotFilterListboxMessage({ column, message }),
+      toParentMessage: (message) => Message.GotFilterListboxMessage({ column, message }),
     });
   };
 
@@ -567,11 +549,15 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
           h.div(
             [h.Class('flex gap-2')],
             [
-              pageButton('Previous', busy || page <= 1, ClickedPlayersPage({ page: page - 1 })),
+              pageButton(
+                'Previous',
+                busy || page <= 1,
+                Message.ClickedPlayersPage({ page: page - 1 }),
+              ),
               pageButton(
                 'Next',
                 busy || page >= totalPages,
-                ClickedPlayersPage({ page: page + 1 }),
+                Message.ClickedPlayersPage({ page: page + 1 }),
               ),
             ],
           ),
@@ -591,11 +577,15 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
         h.div(
           [h.Class('flex gap-2')],
           [
-            pageButton('Previous', clientPage <= 1, ClickedClientPage({ page: clientPage - 1 })),
+            pageButton(
+              'Previous',
+              clientPage <= 1,
+              Message.ClickedClientPage({ page: clientPage - 1 }),
+            ),
             pageButton(
               'Next',
               clientPage >= clientTotalPages,
-              ClickedClientPage({ page: clientPage + 1 }),
+              Message.ClickedClientPage({ page: clientPage + 1 }),
             ),
           ],
         ),
@@ -715,7 +705,7 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
               ),
               Button.view(
                 {
-                  onClick: ClickedAddNew(),
+                  onClick: Message.ClickedAddNew(),
                   toView: ({ button }) =>
                     h.button([...button, h.Class(addNewStyle)], ['+ Add new']),
                 },
@@ -735,7 +725,7 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
           type: 'search',
           placeholder: `Search ${label.toLowerCase()}…`,
           value: model.search,
-          onInput: (value) => UpdatedSearch({ value }),
+          onInput: (value) => Message.UpdatedSearch({ value }),
           toView: (attributes) =>
             h.div(
               [h.Class('mt-6')],

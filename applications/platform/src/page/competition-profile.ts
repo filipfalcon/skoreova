@@ -8,8 +8,7 @@ import secondLeagueHeroPhoto from '../assets/competitions-hero/second-league.jpg
 import { chevron, clubChip, pinkTick, sectionLabel } from '../components';
 import { POINTS_DRAW, POINTS_WIN, clubRowFace, leagueTeams, standingsFor } from '../data';
 import type { Competition, Edition } from '../data';
-import { SelectedCompetitionEdition, SelectedCompetitionRound } from '../message';
-import type { Message } from '../message';
+import { Message } from '../message';
 import type { Model } from '../model';
 import { clubRouter, competitionsRouter } from '../route';
 import {
@@ -22,7 +21,6 @@ import {
   formWindow,
 } from '../schedule';
 import type { SeasonShape } from '../schedule';
-import { GotEditionGroupMessage } from '../message';
 import { EditionRadioGroup } from '../radio-groups';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
 import type { StyleXStyle } from '../stylexAttributes';
@@ -338,7 +336,7 @@ const seasonSelect = (competition: Competition, model: Model, h: HtmlBuilder<Mes
       // maps back to '' and the handler folds that to None, so the two
       // controls drive one piece of state and can't disagree.
       onChange: (label) =>
-        SelectedCompetitionEdition({ label: label === currentLabel ? '' : label }),
+        Message.SelectedCompetitionEdition({ label: label === currentLabel ? '' : label }),
       toView: (attributes) =>
         h.span(
           [...getStyleXAttributes(h, styles.seasonField)],
@@ -784,7 +782,9 @@ const leagueMatchesPanel = (
         isDisabled: blocked,
         ...(blocked
           ? {}
-          : { onClick: SelectedCompetitionRound({ slug: competition.slug, round: target }) }),
+          : {
+              onClick: Message.SelectedCompetitionRound({ slug: competition.slug, round: target }),
+            }),
         toView: ({ button }) =>
           h.button(
             [
@@ -857,7 +857,7 @@ const editionRadioGroup = (
     slotId: 'competition-edition',
     model: model.editionGroup,
     view: EditionRadioGroup.view,
-    toParentMessage: (message) => GotEditionGroupMessage({ message }),
+    toParentMessage: (message) => Message.GotEditionGroupMessage({ message }),
     viewInputs: {
       selectedValue: Option.some(openLabel),
       options: competition.editions.map((entry) => entry.label),

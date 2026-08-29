@@ -1,9 +1,8 @@
 import { page } from 'vite-plus/test/browser';
-import { Effect } from 'effect';
 import { Runtime } from 'foldkit';
 import { afterAll, beforeAll, expect, test } from 'vite-plus/test';
 
-import { ChangedUrl, ClickedLink, Flags, Model, init, update, view } from './main';
+import { Model, init, routing, update, view } from './main';
 import './styles.css';
 
 // Geometric guard for the map’s pin system: measures the real rendered
@@ -134,17 +133,12 @@ beforeAll(async () => {
   Runtime.run(
     Runtime.makeApplication({
       Model,
-      Flags,
       init,
       update,
       view,
       container: root,
-      routing: {
-        onUrlRequest: (request) => ClickedLink({ request }),
-        onUrlChange: (url) => ChangedUrl({ url }),
-      },
+      routing,
     }),
-    { flags: Effect.sync(() => ({ prefersReducedMotion: false })) },
   );
   await waitUntil(() => document.querySelectorAll('.club-pin').length > 0);
 });

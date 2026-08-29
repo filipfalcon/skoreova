@@ -29,7 +29,16 @@ const isUnderAlchemy = process.env['ALCHEMY_CLOUDFLARE_VITE_INJECTED'] === '1';
 // deployed with different rendering inputs — so CI supplies a per-deployment
 // value and a local build falls back to a fresh one rather than a constant
 // that would make a stale page look current.
-const BUILD_ID = process.env['FOLDKIT_BUILD_ID'] ?? `local-${Date.now().toString(36)}`;
+//
+// The fallback is written BACK into the environment, and that is load-bearing.
+// Vite evaluates this config once per environment — once for `client`, once for
+// `ssr` — so a bare `Date.now()` produced two ids milliseconds apart: the Worker
+// stamped one, the client bundle carried the other, and every page refused to
+// hydrate with "This page could not start safely. Reload to get the current
+// version." Both evaluations share a process, so memoizing through `process.env`
+// is what makes the second read the first's value. CI sets the variable and none
+// of this runs.
+const BUILD_ID = (process.env['FOLDKIT_BUILD_ID'] ??= `local-${Date.now().toString(36)}`);
 
 const pinAlchemyDevPort = (port: number): Plugin => ({
   name: 'skoreova:pin-alchemy-dev-port',

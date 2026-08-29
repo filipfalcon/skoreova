@@ -9,17 +9,7 @@ import {
   playersListModel,
   signedOutModel,
 } from './main.fixtures';
-import {
-  CHART_HOST_ID,
-  CompletedNavigate,
-  SucceededSyncChart,
-  MountChart,
-  Navigate,
-  SucceededMountChart,
-  SyncChart,
-  update,
-  view,
-} from './main';
+import { CHART_HOST_ID, Message, MountChart, Navigate, SyncChart, update, view } from './main';
 
 describe('view', () => {
   test('signed out, the sign-in card is shown', () => {
@@ -77,10 +67,10 @@ describe('view', () => {
       // The name span has no handler of its own — the click bubbles to the
       // card <button>, exactly as it does in a browser.
       Scene.click(Scene.text('Sierra Pennock')),
-      Scene.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
-      Scene.Command.resolve(Navigate, CompletedNavigate()),
-      Scene.Mount.resolve(MountChart, SucceededMountChart({ hostId: CHART_HOST_ID })),
-      Scene.Command.resolve(SyncChart, SucceededSyncChart()),
+      Scene.Command.resolve(Dialog.ShowDialog, Dialog.Message.CompletedShowDialog()),
+      Scene.Command.resolve(Navigate, Message.CompletedNavigate()),
+      Scene.Mount.resolve(MountChart, Message.SucceededMountChart({ hostId: CHART_HOST_ID })),
+      Scene.Command.resolve(SyncChart, Message.SucceededSyncChart()),
       // The drawer’s own footer control — it exists only with a record open.
       Scene.expect(Scene.role('button', { name: 'Save' })).toExist(),
     );
@@ -93,7 +83,7 @@ describe('view', () => {
       { update, view },
       Scene.given(editionsListModel),
       Scene.click(Scene.role('button', { name: '+ Add new' })),
-      Scene.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
+      Scene.Command.resolve(Dialog.ShowDialog, Dialog.Message.CompletedShowDialog()),
       // AriaDisabled, not the native attribute — a disabled button leaves the
       // tab order and takes its own description with it.
       Scene.expect(Scene.role('button', { name: 'Save' })).toHaveAttr('aria-disabled', 'true'),
@@ -135,8 +125,8 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(playerRecordModel),
-      Scene.Mount.resolve(MountChart, SucceededMountChart({ hostId: CHART_HOST_ID })),
-      Scene.Command.resolve(SyncChart, SucceededSyncChart()),
+      Scene.Mount.resolve(MountChart, Message.SucceededMountChart({ hostId: CHART_HOST_ID })),
+      Scene.Command.resolve(SyncChart, Message.SucceededSyncChart()),
       Scene.expect(Scene.label('Record stats chart')).toExist(),
       // The drawer’s own footer control — unique to the open record.
       Scene.expect(Scene.role('button', { name: 'Save' })).toExist(),

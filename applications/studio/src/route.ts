@@ -1,9 +1,9 @@
 import { Option, Schema as S, pipe } from 'effect';
 import {
+  defineRouteUnion,
   mapTo,
   oneOf,
   parseUrlWithFallback,
-  r,
   root,
   schemaSegment,
   slash,
@@ -12,40 +12,34 @@ import {
 
 import { Section } from './section';
 
-export const HomeRoute = r('HomeRoute');
-// `/<section>` — a section’s list, e.g. /players or /clubs.
-export const SectionRoute = r('SectionRoute', { section: Section });
-// `/<section>/<id>` — one record’s drawer open, addressed by its server id.
-// Only Clubs/Nationals can be resolved by id when they aren’t loaded yet
-// (GET /teams/{id}); every other section’s deep link falls back to the
-// section list — see applyRoute’s RecordRoute branch in main.ts.
-export const RecordRoute = r('RecordRoute', { section: Section, id: S.String });
-export const NotFoundRoute = r('NotFoundRoute', { path: S.String });
-
-export const AppRoute = S.Union([HomeRoute, RecordRoute, SectionRoute, NotFoundRoute]);
-export type HomeRoute = typeof HomeRoute.Type;
-export type SectionRoute = typeof SectionRoute.Type;
-export type RecordRoute = typeof RecordRoute.Type;
-export type NotFoundRoute = typeof NotFoundRoute.Type;
+// - Section is `/<section>` — a section’s list, e.g. /players or /clubs.
+// - Record is `/<section>/<id>` — one record’s drawer open, addressed by its
+//   server id. Only Clubs/Nationals can be resolved by id when they aren’t
+//   loaded yet (GET /teams/{id}); every other section’s deep link falls back
+//   to the section list — see applyRoute’s Record branch in main.ts.
+export const AppRoute = defineRouteUnion({
+  Home: {},
+  Section: { section: Section },
+  Record: { section: Section, id: S.String },
+  NotFound: { path: S.String },
+});
 export type AppRoute = typeof AppRoute.Type;
 
-export const homeRouter = pipe(root, mapTo(HomeRoute));
-export const sectionRouter = pipe(schemaSegment('section', Section), mapTo(SectionRoute));
+export const homeRouter = pipe(root, mapTo(AppRoute.Home));
+export const sectionRouter = pipe(schemaSegment('section', Section), mapTo(AppRoute.Section));
 export const recordRouter = pipe(
   schemaSegment('section', Section),
   slash(string('id')),
-  mapTo(RecordRoute),
+  mapTo(AppRoute.Record),
 );
 
 const routeParser = oneOf(recordRouter, sectionRouter, homeRouter);
 
-export const urlToAppRoute = parseUrlWithFallback(routeParser, NotFoundRoute);
+export const urlToAppRoute = parseUrlWithFallback(routeParser, AppRoute.NotFound);
 
 // The section a route addresses, or None on the dashboard landing page (and
 // the 404 fallback, which renders it). What’s on screen is derived from the
 // stored route through this — there is no separate section/dashboard flag to
 // keep in sync.
 export const routeSection = (route: AppRoute): Option.Option<Section> =>
-  route._tag === 'SectionRoute' || route._tag === 'RecordRoute'
-    ? Option.some(route.section)
-    : Option.none();
+  route._tag === 'Section' || route._tag === 'Record' ? Option.some(route.section) : Option.none();

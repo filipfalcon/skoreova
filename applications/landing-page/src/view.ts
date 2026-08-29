@@ -70,12 +70,13 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
   // element lists are captured at setup, so a mount surviving a page swap
   // would drive detached nodes and leave the new page inert. NotFound renders
   // the landing, and shares its key so the swap is a no-op.
-  const isPolicy = model.route._tag === 'PolicyRoute';
+  const isPolicy = model.route._tag === 'Policy';
   const rootKey = `motion-${model.prefersReducedMotion}-${isPolicy ? 'policy' : 'landing'}`;
   return {
-    // `canonical` and `ogUrl` are left off: omitting them tells the runtime to
-    // use the current URL, and the Worker has already written that same URL
-    // into the served HTML for anything reading it before the app boots.
+    // `canonical` and `ogUrl` are left off HERE and set in entry.server.ts,
+    // which has the request path this route was parsed from and can drop the
+    // query string. Omitting them would default both to the request URL with
+    // the query kept — one page per tracking parameter.
     title: documentTitle(model.route),
     // American English, the language every string in this app is written in; the runtime writes it after the first render, so what a crawler reads is whatever the served document already carried.
     lang: 'en-US',

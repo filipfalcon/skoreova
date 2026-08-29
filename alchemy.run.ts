@@ -20,17 +20,31 @@ export default Alchemy.Stack(
         aliases: ['skoreova.cz'],
       },
       dev: { port: 5180, strictPort: true },
-      // Custom Worker entry: a Sentry-wrapped pass-through to the assets
-      // binding, so edge-side failures get reported too (the browser SDK
-      // in entry.ts covers the client). Builds through the `ssr` Vite
-      // environment — see the buildApp note in applications/landing-page/vite.config.ts.
+      // Custom Worker entry: a Sentry-wrapped server render, so edge-side
+      // failures get reported too (the browser SDK in entry.ts covers the
+      // client). Builds through the `ssr` Vite environment — see the buildApp
+      // note in applications/landing-page/vite.config.ts.
       // The Sentry SDK needs AsyncLocalStorage, hence `nodejs_als`.
       main: 'src/worker.ts',
       compatibility: {
         flags: ['nodejs_als'],
       },
+      // THE LANDING PAGE RENDERS ON THE SERVER, so neither asset default may
+      // stand — the same pair the platform runs, for the same reasons.
+      // `single-page-application` answered every unmatched path with the
+      // un-rendered shell, which is the whole of what server rendering
+      // replaces. `htmlHandling: 'none'` is the other half: without it the
+      // asset layer resolves `/` to `/index.html` on its own and the front
+      // page alone would arrive unrendered — which, on a one-page site, is
+      // the entire point of the change.
+      //
+      // Files still come from the asset layer directly — only requests that
+      // match no file reach the Worker, which is exactly the set of pages.
+      // `/index.html` keeps matching literally, which is what the Worker
+      // reads its shell from.
       assets: {
-        notFoundHandling: 'single-page-application',
+        htmlHandling: 'none',
+        notFoundHandling: 'none',
       },
     });
 

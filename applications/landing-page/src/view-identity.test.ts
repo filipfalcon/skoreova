@@ -3,8 +3,8 @@ import type { Html } from 'foldkit/html';
 import { expect, test } from 'vite-plus/test';
 
 import { landingModel } from './main.fixtures';
-import { update } from './main';
-import { DetectedHeroPastHeader, ObserveHeroPastHeader } from './motion';
+import { Message, update } from './main';
+import { ObserveHeroPastHeader } from './motion';
 import * as Hero from './page/hero';
 
 // A canary for the BUILD PIPELINE, not for this app’s code. @foldkit/vite-plugin
@@ -41,7 +41,7 @@ test('the vite plugin brands view results under test, as it does in a build', ()
     Scene.given(landingModel),
     // The hero carries its past-header observer; its real effect needs a
     // browser, and this scene exists only to read the stamp off the render.
-    Scene.Mount.resolve(ObserveHeroPastHeader, DetectedHeroPastHeader({ past: false })),
+    Scene.Mount.resolve(ObserveHeroPastHeader, Message.DetectedHeroPastHeader({ past: false })),
   );
   expect(identity).toBe('src/page/hero.ts#view');
 });

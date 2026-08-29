@@ -1,8 +1,7 @@
-import { Effect } from 'effect';
 import { Runtime } from 'foldkit';
 import { beforeAll, expect, test } from 'vite-plus/test';
 
-import { ChangedUrl, ClickedLink, Flags, Model, init, update, view } from './main';
+import { Model, init, routing, update, view } from './main';
 import './styles.css';
 
 // The land counters above the map must REACT to the league filter — and
@@ -34,17 +33,12 @@ beforeAll(async () => {
   Runtime.run(
     Runtime.makeApplication({
       Model,
-      Flags,
       init,
       update,
       view,
       container: root,
-      routing: {
-        onUrlRequest: (request) => ClickedLink({ request }),
-        onUrlChange: (url) => ChangedUrl({ url }),
-      },
+      routing,
     }),
-    { flags: Effect.sync(() => ({ prefersReducedMotion: false })) },
   );
   await waitUntil(() => document.querySelector('#across-the-lands') !== null);
 

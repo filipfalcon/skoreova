@@ -1,20 +1,9 @@
 import '@fontsource/anton/400.css';
 import '@fontsource-variable/archivo/index.css';
-import { Effect } from 'effect';
 import { Runtime } from 'foldkit';
 
 import { isMeasurementOff } from '#analytics/config';
-import {
-  ChangedUrl,
-  ClickedLink,
-  Flags,
-  Message,
-  Model,
-  init,
-  subscriptions,
-  update,
-  view,
-} from './main';
+import { Message, Model, init, routing, subscriptions, update, view } from './main';
 
 // Error monitoring ONLY — no tracing, no replay, no PII beyond Sentry’s
 // defaults — so the cookie banner’s "analytics only, we count visits"
@@ -132,24 +121,22 @@ if (import.meta.env.DEV) {
 
 const application = Runtime.makeApplication({
   Model,
-  Flags,
   init,
   update,
   view,
   subscriptions,
   container: document.getElementById('root'),
-  routing: {
-    onUrlRequest: (request) => ClickedLink({ request }),
-    onUrlChange: (url) => ChangedUrl({ url }),
-  },
+  routing,
   devTools: { Message },
 });
 
-// The boot-time reduced-motion read — mid-session flips arrive through the
-// reducedMotion subscription. It rides with `run` rather than the application
-// because a hydrating entry takes its Flags off the server handoff instead.
-Runtime.run(application, {
-  flags: Effect.sync(() => ({
-    prefersReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  })),
-});
+// HYDRATE, not run: the document arrives already rendered, so the client adopts
+// that DOM instead of rebuilding it. The build id is what makes that safe —
+// hydration compares it against the one the server stamped and refuses a page
+// from another deployment rather than adopting markup whose shape it only
+// appears to share.
+//
+// No flags ride along. The boot-time reduced-motion read used to live here;
+// a prerendered document is one file for every visitor, so the value now comes
+// from the reducedMotion subscription, which reads the query on subscribe.
+Runtime.hydrate(application, { buildId: import.meta.env.FOLDKIT_BUILD_ID });

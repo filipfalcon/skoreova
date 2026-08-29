@@ -1,9 +1,8 @@
-import { Effect } from 'effect';
 import { Runtime } from 'foldkit';
 import { beforeAll, expect, test } from 'vite-plus/test';
 import { page } from 'vite-plus/test/browser';
 
-import { ChangedUrl, ClickedLink, Flags, Model, init, subscriptions, update, view } from './main';
+import { Model, init, routing, subscriptions, update, view } from './main';
 import './styles.css';
 
 // A browser-mode integration test: it mounts the real app into a real DOM so
@@ -37,18 +36,13 @@ beforeAll(async () => {
   Runtime.run(
     Runtime.makeApplication({
       Model,
-      Flags,
       init,
       update,
       view,
       subscriptions,
       container: root,
-      routing: {
-        onUrlRequest: (request) => ClickedLink({ request }),
-        onUrlChange: (url) => ChangedUrl({ url }),
-      },
+      routing,
     }),
-    { flags: Effect.sync(() => ({ prefersReducedMotion: false })) },
   );
 
   await waitUntil(() => document.querySelector('.menu-overlay') !== null);

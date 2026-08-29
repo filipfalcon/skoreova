@@ -3,22 +3,8 @@ import { Scene } from 'foldkit';
 import { describe, test } from 'vite-plus/test';
 
 import { landingModel, menuOpenModel } from './main.fixtures';
-import {
-  CompletedSetScrollLock,
-  DetectActiveSection,
-  DetectedActiveSection,
-  SetScrollLock,
-  update,
-  view,
-} from './main';
-import {
-  ChangedReveals,
-  CompletedMountMotion,
-  DetectedHeroPastHeader,
-  MountMotion,
-  ObserveHeroPastHeader,
-  ObserveReveals,
-} from './motion';
+import { DetectActiveSection, Message, SetScrollLock, update, view } from './main';
+import { MountMotion, ObserveHeroPastHeader, ObserveReveals } from './motion';
 
 // The landing view mounts three decorative controllers — the motion loop on
 // <main> (`MountMotion`), the reveal observers on the root
@@ -27,9 +13,12 @@ import {
 // effects need a browser and IntersectionObserver and never run here — the
 // motion-regression browser tests cover those paths.
 const acknowledgeMounts = [
-  Scene.Mount.resolve(MountMotion, CompletedMountMotion()),
-  Scene.Mount.resolve(ObserveReveals, ChangedReveals({ revealed: [], concealed: [], drawn: [] })),
-  Scene.Mount.resolve(ObserveHeroPastHeader, DetectedHeroPastHeader({ past: false })),
+  Scene.Mount.resolve(MountMotion, Message.CompletedMountMotion()),
+  Scene.Mount.resolve(
+    ObserveReveals,
+    Message.ChangedReveals({ revealed: [], concealed: [], drawn: [] }),
+  ),
+  Scene.Mount.resolve(ObserveHeroPastHeader, Message.DetectedHeroPastHeader({ past: false })),
 ];
 
 describe('view', () => {
@@ -74,8 +63,11 @@ describe('view', () => {
       ...acknowledgeMounts,
       Scene.click(Scene.role('button', { name: 'Open menu' })),
       // Opening locks the page scroll and asks which section the reader is in.
-      Scene.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
-      Scene.Command.resolve(DetectActiveSection, DetectedActiveSection({ section: Option.none() })),
+      Scene.Command.resolve(SetScrollLock, Message.CompletedSetScrollLock()),
+      Scene.Command.resolve(
+        DetectActiveSection,
+        Message.DetectedActiveSection({ section: Option.none() }),
+      ),
       Scene.expect(Scene.role('button', { name: 'Close menu' })).toExist(),
       Scene.expect(Scene.role('link', { name: 'On the rise' })).toExist(),
     );

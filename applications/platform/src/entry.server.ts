@@ -40,8 +40,7 @@ export const renderPage = (request: Request): Promise<Server.EntryResult> =>
       // says so in the status line instead of answering 200 for a page that
       // is not there.
       const parsed = fromString(request.url);
-      const isNotFound =
-        Option.isSome(parsed) && urlToAppRoute(parsed.value)._tag === 'NotFoundRoute';
+      const isNotFound = Option.isSome(parsed) && urlToAppRoute(parsed.value)._tag === 'NotFound';
 
       return Server.Rendered(application, isNotFound ? { status: 404 } : undefined);
     }),

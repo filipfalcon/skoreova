@@ -4,18 +4,15 @@ import { NotValidated } from 'foldkit/fieldValidation';
 
 import { initialDateFilterPickers, initialFilterListboxes } from './data';
 import {
-  Anonymous,
+  AppRoute,
   DRAWER_DIALOG_ID,
   DRAWER_TABS_ID,
-  DrawerClosed,
-  DrawerEditing,
+  DrawerState,
   Entry,
-  HomeRoute,
   Model,
   ParticipationsData,
   SectionData,
-  SectionRoute,
-  SignedIn,
+  Session,
 } from './main';
 
 // A single player record — enough columns to fill the drawer’s fields and feed
@@ -59,12 +56,12 @@ export const sampleEdition: Entry = Entry.make({
 // The signed-out boot model — mirrors `initialModel` in main.ts (kept here so a
 // fixture tweak can never quietly reshape the app’s real starting state).
 export const signedOutModel = Model.make({
-  session: Anonymous({ emailInput: '', passwordInput: '' }),
-  route: HomeRoute(),
+  session: Session.Anonymous({ emailInput: '', passwordInput: '' }),
+  route: AppRoute.Home(),
   isMenuOpen: false,
   search: '',
   filters: {},
-  drawer: DrawerClosed(),
+  drawer: DrawerState.Closed(),
   dialog: Dialog.init({ id: DRAWER_DIALOG_ID }),
   tabs: Tabs.init({ id: DRAWER_TABS_ID }),
   nextLocalId: 1,
@@ -95,14 +92,14 @@ export const signedOutModel = Model.make({
 // generic 'editor'.
 export const dashboardModel = Model.make({
   ...signedOutModel,
-  session: SignedIn({ email: '' }),
+  session: Session.SignedIn({ email: '' }),
 });
 
 // Signed in, viewing the Players section list with one loaded row.
 export const playersListModel = Model.make({
   ...signedOutModel,
-  session: SignedIn({ email: '' }),
-  route: SectionRoute({ section: 'players' }),
+  session: Session.SignedIn({ email: '' }),
+  route: AppRoute.Section({ section: 'players' }),
   players: SectionData.Success({ data: [samplePlayer] }),
   playersTotal: 1,
   serverHealth: 'Ok',
@@ -112,8 +109,8 @@ export const playersListModel = Model.make({
 // "Competition" cell must render the resolved name, not the stored id.
 export const editionsListModel = Model.make({
   ...signedOutModel,
-  session: SignedIn({ email: '' }),
-  route: SectionRoute({ section: 'editions' }),
+  session: Session.SignedIn({ email: '' }),
+  route: AppRoute.Section({ section: 'editions' }),
   competitions: SectionData.Success({ data: [sampleCompetition] }),
   editions: SectionData.Success({ data: [sampleEdition] }),
   serverHealth: 'Ok',
@@ -124,11 +121,11 @@ export const editionsListModel = Model.make({
 // stats one — the only state that exercises SyncPointsChart.
 export const clubRecordModel = Model.make({
   ...signedOutModel,
-  session: SignedIn({ email: '' }),
-  route: SectionRoute({ section: 'clubs' }),
+  session: Session.SignedIn({ email: '' }),
+  route: AppRoute.Section({ section: 'clubs' }),
   clubs: SectionData.Success({ data: [sampleClub] }),
   serverHealth: 'Ok',
-  drawer: DrawerEditing({
+  drawer: DrawerState.Editing({
     section: 'clubs',
     id: sampleClub.id,
     tab: 'Overview',
@@ -143,7 +140,7 @@ export const clubRecordModel = Model.make({
 // drawer addresses the record by id, resolved against the players section.
 export const playerRecordModel = Model.make({
   ...playersListModel,
-  drawer: DrawerEditing({
+  drawer: DrawerState.Editing({
     section: 'players',
     id: samplePlayer.id,
     tab: 'Overview',

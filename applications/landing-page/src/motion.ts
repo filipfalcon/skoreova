@@ -1,6 +1,7 @@
 import { Effect, Queue, Schema as S, Stream } from 'effect';
 import { Mount } from 'foldkit';
-import { m } from 'foldkit/message';
+
+import { Message } from './message';
 
 // The page’s scroll and pointer choreography, in two mounts. The PER-FRAME
 // work (MountMotion: parallax, scrubs, marquee, neon) is deliberately
@@ -37,22 +38,6 @@ import { m } from 'foldkit/message';
 //
 // With `prefers-reduced-motion`, everything is revealed immediately, numbers
 // show their final value, and no listeners or loops are installed.
-
-export const CompletedMountMotion = m('CompletedMountMotion');
-export const FailedMountMotion = m('FailedMountMotion', { reason: S.String });
-// Reports whether the hero has scrolled up under the fixed header — `past`
-// drives the header’s persistent CTA in the Model. See ObserveHeroPastHeader.
-export const DetectedHeroPastHeader = m('DetectedHeroPastHeader', { past: S.Boolean });
-// One reveal-observer notification, already resolved to reveal keys: which
-// targets entered the viewport (render `.is-in`), which left (back to
-// rest), and which must stand fully DRAWN — a pen that finished its lap
-// (transitionend) or a downward-only pen re-entered from below. See
-// ObserveReveals.
-export const ChangedReveals = m('ChangedReveals', {
-  revealed: S.Array(S.String),
-  concealed: S.Array(S.String),
-  drawn: S.Array(S.String),
-});
 
 const REVEAL_CLIPPED_VARIANTS = new Set(['mask', 'wipe']);
 const COUNT_UP_MILLISECONDS = 1000;
@@ -198,7 +183,7 @@ interface MarqueeTrack {
 // the numbers rest on their final values.
 const setUpReveals = (
   root: HTMLElement,
-  emit: (message: typeof ChangedReveals.Type) => void,
+  emit: (message: typeof Message.ChangedReveals.Type) => void,
 ): (() => void) => {
   const cleanups: Array<() => void> = [];
 
@@ -595,7 +580,7 @@ const setUpReveals = (
         // so the whole figure is drawn. Bubbling transitions from the
         // region paths (their clips, the tint) must not stamp early.
         if (event.target === target && event.propertyName === 'stroke-dashoffset') {
-          emit(ChangedReveals({ revealed: [], concealed: [], drawn: [key] }));
+          emit(Message.ChangedReveals({ revealed: [], concealed: [], drawn: [key] }));
         }
       };
       target.addEventListener('transitionend', onTransitionEnd);
@@ -705,7 +690,7 @@ const setUpReveals = (
       // imperative DOM zone, and importing effect’s `Array` module into this
       // file would shadow the global `Array<T>` its own annotations use.
       if (revealed.length > 0 || concealed.length > 0 || drawn.length > 0) {
-        emit(ChangedReveals({ revealed, concealed, drawn }));
+        emit(Message.ChangedReveals({ revealed, concealed, drawn }));
       }
     };
 
@@ -752,7 +737,7 @@ const setUpReveals = (
               }
             }
             if (revealed.length > 0 || concealed.length > 0) {
-              emit(ChangedReveals({ revealed, concealed, drawn: [] }));
+              emit(Message.ChangedReveals({ revealed, concealed, drawn: [] }));
             }
           },
           { threshold: [0, 0.5] },
@@ -1257,12 +1242,12 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
 
 export const MountMotion = Mount.define(
   'MountMotion',
-  CompletedMountMotion,
-  FailedMountMotion,
+  Message.CompletedMountMotion,
+  Message.FailedMountMotion,
 )((element) =>
   Effect.gen(function* () {
     if (!(element instanceof HTMLElement)) {
-      return FailedMountMotion({ reason: 'Motion host is not an HTMLElement.' });
+      return Message.FailedMountMotion({ reason: 'Motion host is not an HTMLElement.' });
     }
 
     return yield* Effect.acquireRelease(
@@ -1273,8 +1258,8 @@ export const MountMotion = Mount.define(
       }),
       (tearDown) => Effect.sync(tearDown),
     ).pipe(
-      Effect.map(() => CompletedMountMotion()),
-      Effect.catch((error) => Effect.succeed(FailedMountMotion({ reason: error.message }))),
+      Effect.map(() => Message.CompletedMountMotion()),
+      Effect.catch((error) => Effect.succeed(Message.FailedMountMotion({ reason: error.message }))),
     );
   }),
 );
@@ -1288,11 +1273,11 @@ export const MountMotion = Mount.define(
 export const ObserveReveals = Mount.defineStream(
   'ObserveReveals',
   { reduceMotion: S.Boolean },
-  ChangedReveals,
+  Message.ChangedReveals,
 )(
   ({ reduceMotion }) =>
     (element) =>
-      Stream.callback<typeof ChangedReveals.Type>((queue) =>
+      Stream.callback<typeof Message.ChangedReveals.Type>((queue) =>
         Effect.gen(function* () {
           yield* Effect.acquireRelease(
             Effect.sync(() =>
@@ -1316,9 +1301,9 @@ export const ObserveReveals = Mount.defineStream(
 // class off the Model, so a header re-render can no longer wipe it.
 export const ObserveHeroPastHeader = Mount.defineStream(
   'ObserveHeroPastHeader',
-  DetectedHeroPastHeader,
+  Message.DetectedHeroPastHeader,
 )((element) =>
-  Stream.callback<typeof DetectedHeroPastHeader.Type>((queue) =>
+  Stream.callback<typeof Message.DetectedHeroPastHeader.Type>((queue) =>
     Effect.gen(function* () {
       yield* Effect.acquireRelease(
         Effect.sync(() => {
@@ -1333,7 +1318,10 @@ export const ObserveHeroPastHeader = Mount.defineStream(
             (entries) => {
               const entry = entries[entries.length - 1];
               if (entry) {
-                Queue.offerUnsafe(queue, DetectedHeroPastHeader({ past: !entry.isIntersecting }));
+                Queue.offerUnsafe(
+                  queue,
+                  Message.DetectedHeroPastHeader({ past: !entry.isIntersecting }),
+                );
               }
             },
             { rootMargin: `-${headerHeight}px 0px 0px 0px` },

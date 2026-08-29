@@ -11,19 +11,11 @@ import type { Column, ColumnKind } from './api';
 import { associationColumns } from './associationsApi';
 import { competitionColumns } from './competitionsApi';
 import { editionColumns } from './editionsApi';
-import {
-  ClickedRetryAssociations,
-  ClickedRetryClubs,
-  ClickedRetryCompetitions,
-  ClickedRetryEditions,
-  ClickedRetryNationals,
-  ClickedRetryPlayers,
-} from './message';
-import type { Message } from './message';
+import { Message } from './message';
 import { playerColumns } from './playersApi';
 import { teamColumns } from './teamsApi';
 import { Section } from './section';
-import { type DrawerState, type Entry, type Model, DrawerEditing } from './model';
+import { type Entry, type Model, DrawerState } from './model';
 
 // The signed-in editor’s display name ('editor' when the email was blank).
 export const accountName = (model: Model): string =>
@@ -99,7 +91,7 @@ const toDraft = (values: ReadonlyArray<string>): ReadonlyArray<FieldValidation.F
 
 // Opens the drawer on an existing record, populating the edit buffer from it.
 export const editRecord = (entry: Entry): DrawerState =>
-  DrawerEditing({
+  DrawerState.Editing({
     section: entry.section,
     id: entry.id,
     tab: 'Overview',
@@ -294,12 +286,12 @@ export type Table = Readonly<{
 // in the section list, because the drawer’s reference picker needs the same
 // escape hatch when the section it reads from is the one that failed.
 export const retryBySection: Record<Section, Message> = {
-  players: ClickedRetryPlayers(),
-  clubs: ClickedRetryClubs(),
-  nationals: ClickedRetryNationals(),
-  competitions: ClickedRetryCompetitions(),
-  editions: ClickedRetryEditions(),
-  associations: ClickedRetryAssociations(),
+  players: Message.ClickedRetryPlayers(),
+  clubs: Message.ClickedRetryClubs(),
+  nationals: Message.ClickedRetryNationals(),
+  competitions: Message.ClickedRetryCompetitions(),
+  editions: Message.ClickedRetryEditions(),
+  associations: Message.ClickedRetryAssociations(),
 };
 
 export const sectionData: Record<Section, Table> = {

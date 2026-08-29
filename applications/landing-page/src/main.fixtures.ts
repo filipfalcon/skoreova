@@ -3,11 +3,11 @@ import { Option } from 'effect';
 
 import { Model } from './main';
 import { MAP_LEAGUE_GROUP_ID } from './radio-groups';
-import { HomeRoute } from './route';
+import { AppRoute } from './route';
 
 // The landing page at rest — mirrors `initialModel` in main.ts.
 export const landingModel = Model.make({
-  route: HomeRoute(),
+  route: AppRoute.Home(),
   isMenuOpen: false,
   activeSection: Option.none(),
   mapLeague: 'All',

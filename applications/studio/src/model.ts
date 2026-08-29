@@ -4,7 +4,7 @@ import { Schema as S } from 'effect';
 import { DatePicker, Dialog, Listbox, Tabs } from '@foldkit/ui';
 import { AsyncData, Calendar } from 'foldkit';
 import { Field } from 'foldkit/fieldValidation';
-import { ts } from 'foldkit/schema';
+import { defineTaggedUnion } from 'foldkit/schema';
 
 import { ParticipationResponse } from './participationsApi';
 import { AppRoute } from './route';
@@ -17,12 +17,13 @@ export const DRAWER_DIALOG_ID = 'record-drawer';
 // Who is using the studio. A tagged union so the credential inputs only
 // exist while signing in — after sign-in the model carries the email alone,
 // and the plaintext password can’t linger in state (or DevTools snapshots).
-export const Anonymous = ts('Anonymous', {
-  emailInput: S.String,
-  passwordInput: S.String,
+export const Session = defineTaggedUnion({
+  Anonymous: {
+    emailInput: S.String,
+    passwordInput: S.String,
+  },
+  SignedIn: { email: S.String },
 });
-export const SignedIn = ts('SignedIn', { email: S.String });
-export const Session = S.Union([Anonymous, SignedIn]);
 export type Session = typeof Session.Type;
 
 // One record. `values` line up with the section’s columns (see `sectionData`).
@@ -70,9 +71,10 @@ export const FilterListbox: ReturnType<typeof Listbox.Multi.create<string>> =
 // value is in it. Tagged variants replace the old per-index string slot that
 // multiplexed both encodings comma-joined (a value containing a comma
 // corrupted the excluded set).
-export const ExactFilter = ts('ExactFilter', { value: S.String });
-export const ExcludedFilter = ts('ExcludedFilter', { excluded: S.Array(S.String) });
-export const ColumnFilter = S.Union([ExactFilter, ExcludedFilter]);
+export const ColumnFilter = defineTaggedUnion({
+  Exact: { value: S.String },
+  Excluded: { excluded: S.Array(S.String) },
+});
 export type ColumnFilter = typeof ColumnFilter.Type;
 
 // A date column’s from/to range filter as typed CalendarDates — replaces the
@@ -95,19 +97,20 @@ export type DateRangeFilter = typeof DateRangeFilter.Type;
 // data.ts; this is where the answer for the value currently typed lives, so
 // the view can render an error without re-deriving it and the save can refuse
 // without a bespoke check of its own.
-export const DrawerClosed = ts('Closed');
-export const DrawerCreating = ts('Creating', {
-  section: Section,
-  draft: S.Array(Field(S.String)),
+export const DrawerState = defineTaggedUnion({
+  Closed: {},
+  Creating: {
+    section: Section,
+    draft: S.Array(Field(S.String)),
+  },
+  Editing: {
+    section: Section,
+    id: S.String,
+    tab: DrawerTab,
+    draft: S.Array(Field(S.String)),
+    isConfirmingDelete: S.Boolean,
+  },
 });
-export const DrawerEditing = ts('Editing', {
-  section: Section,
-  id: S.String,
-  tab: DrawerTab,
-  draft: S.Array(Field(S.String)),
-  isConfirmingDelete: S.Boolean,
-});
-export const DrawerState = S.Union([DrawerClosed, DrawerCreating, DrawerEditing]);
 export type DrawerState = typeof DrawerState.Type;
 
 // One recorded change to a field, for the drawer’s History tab. Keyed by the
@@ -119,16 +122,17 @@ export type DrawerState = typeof DrawerState.Type;
 // with empty strings or not logging them at all, and it was the second. Every
 // event carries a clock-stamped `at`: each intent has its own Command, so none
 // of them has to invent a timestamp inside `update`.
-export const FieldChanged = ts('FieldChanged', {
-  recordId: S.String,
-  field: S.String,
-  from: S.String,
-  to: S.String,
-  at: S.String,
+export const LogEntry = defineTaggedUnion({
+  FieldChanged: {
+    recordId: S.String,
+    field: S.String,
+    from: S.String,
+    to: S.String,
+    at: S.String,
+  },
+  RecordCreated: { recordId: S.String, at: S.String },
+  RecordDeleted: { recordId: S.String, at: S.String },
 });
-export const RecordCreated = ts('RecordCreated', { recordId: S.String, at: S.String });
-export const RecordDeleted = ts('RecordDeleted', { recordId: S.String, at: S.String });
-export const LogEntry = S.Union([FieldChanged, RecordCreated, RecordDeleted]);
 export type LogEntry = typeof LogEntry.Type;
 
 // A section’s fetch is a six-state AsyncData: Idle before sign-in, Loading on

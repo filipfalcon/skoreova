@@ -1,30 +1,11 @@
 import { Option } from 'effect';
 import { Story } from 'foldkit';
-import { External, Internal } from 'foldkit/navigation';
+import { UrlRequest } from 'foldkit/navigation';
 import { fromString } from 'foldkit/url';
 import { expect, test } from 'vite-plus/test';
 
-import { ChangedReveals, DetectedHeroPastHeader } from './motion';
 import { landingModel, menuOpenModel, secondLeagueMapModel } from './main.fixtures';
-import {
-  ChangedUrl,
-  ClickedLink,
-  ClosedMapClub,
-  ClosedMenu,
-  CompletedLoad,
-  CompletedNavigate,
-  CompletedSetScrollLock,
-  DetectActiveSection,
-  DetectedActiveSection,
-  Load,
-  Navigate,
-  OpenedMapClub,
-  SelectedMapLeague,
-  SetScrollLock,
-  ToggledAreaUnit,
-  ToggledMenu,
-  update,
-} from './main';
+import { DetectActiveSection, Load, Message, Navigate, SetScrollLock, update } from './main';
 
 const url = (path: string) => Option.getOrThrow(fromString(`https://skoreova.example${path}`));
 
@@ -32,18 +13,18 @@ test('opening the menu locks scroll and kicks off active-section detection', () 
   Story.story(
     update,
     Story.given(landingModel),
-    Story.message(ToggledMenu()),
+    Story.message(Message.ToggledMenu()),
     Story.model((model) => {
       expect(model.isMenuOpen).toBe(true);
       // Opening resets the marker so a stale highlight can’t flash.
       expect(model.activeSection).toEqual(Option.none());
     }),
     Story.Command.expectExact(SetScrollLock, DetectActiveSection),
-    Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
+    Story.Command.resolve(SetScrollLock, Message.CompletedSetScrollLock()),
     // Detection resolves with whichever section the viewport sat in.
     Story.Command.resolve(
       DetectActiveSection,
-      DetectedActiveSection({ section: Option.some('on-the-rise') }),
+      Message.DetectedActiveSection({ section: Option.some('on-the-rise') }),
     ),
     Story.model((model) => {
       expect(model.activeSection).toEqual(Option.some('on-the-rise'));
@@ -55,12 +36,12 @@ test('closing the menu releases the scroll lock', () => {
   Story.story(
     update,
     Story.given(menuOpenModel),
-    Story.message(ToggledMenu()),
+    Story.message(Message.ToggledMenu()),
     Story.model((model) => {
       expect(model.isMenuOpen).toBe(false);
     }),
     Story.Command.expectExact(SetScrollLock),
-    Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
+    Story.Command.resolve(SetScrollLock, Message.CompletedSetScrollLock()),
   );
 });
 
@@ -68,11 +49,11 @@ test('ClosedMenu closes the overlay and releases the lock', () => {
   Story.story(
     update,
     Story.given(menuOpenModel),
-    Story.message(ClosedMenu()),
+    Story.message(Message.ClosedMenu()),
     Story.model((model) => {
       expect(model.isMenuOpen).toBe(false);
     }),
-    Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
+    Story.Command.resolve(SetScrollLock, Message.CompletedSetScrollLock()),
   );
 });
 
@@ -80,7 +61,7 @@ test('selecting a map league switches the filter and closes any open club card',
   Story.story(
     update,
     Story.given(secondLeagueMapModel),
-    Story.message(SelectedMapLeague({ league: 'First' })),
+    Story.message(Message.SelectedMapLeague({ league: 'First' })),
     Story.model((model) => {
       expect(model.mapLeague).toBe('First');
       expect(model.mapClub).toEqual(Option.none());
@@ -93,16 +74,16 @@ test('opening a club card records its slug; the area unit toggles', () => {
   Story.story(
     update,
     Story.given(landingModel),
-    Story.message(OpenedMapClub({ slug: 'slavia-praha' })),
+    Story.message(Message.OpenedMapClub({ slug: 'slavia-praha' })),
     Story.model((model) => {
       expect(model.mapClub).toEqual(Option.some('slavia-praha'));
     }),
     // Closing is its own message now, not OpenedMapClub with an empty slug.
-    Story.message(ClosedMapClub()),
+    Story.message(Message.ClosedMapClub()),
     Story.model((model) => {
       expect(model.mapClub).toEqual(Option.none());
     }),
-    Story.message(ToggledAreaUnit()),
+    Story.message(Message.ToggledAreaUnit()),
     Story.model((model) => {
       // Rests imperial, so the first toggle flips it to metric.
       expect(model.isMapAreaImperial).toBe(false);
@@ -116,12 +97,12 @@ test('the hero observer drives the header CTA flag', () => {
     update,
     Story.given(landingModel),
     // Hero scrolled under the header → the persistent CTA takes over.
-    Story.message(DetectedHeroPastHeader({ past: true })),
+    Story.message(Message.DetectedHeroPastHeader({ past: true })),
     Story.model((model) => {
       expect(model.heroPastHeader).toBe(true);
     }),
     // Back on the hero → the CTA yields to the hero’s own.
-    Story.message(DetectedHeroPastHeader({ past: false })),
+    Story.message(Message.DetectedHeroPastHeader({ past: false })),
     Story.model((model) => {
       expect(model.heroPastHeader).toBe(false);
     }),
@@ -133,29 +114,29 @@ test('the reveal fold enters, keeps drawn state, drops stale drawn reports, and 
   Story.story(
     update,
     Story.given(landingModel),
-    Story.message(ChangedReveals({ revealed: ['map', 'stat'], concealed: [], drawn: [] })),
+    Story.message(Message.ChangedReveals({ revealed: ['map', 'stat'], concealed: [], drawn: [] })),
     Story.model((model) => {
       expect(model.reveals).toEqual({ map: 'entered', stat: 'entered' });
     }),
     // The draw finishing promotes that one key; the others are untouched.
-    Story.message(ChangedReveals({ revealed: [], concealed: [], drawn: ['map'] })),
+    Story.message(Message.ChangedReveals({ revealed: [], concealed: [], drawn: ['map'] })),
     Story.model((model) => {
       expect(model.reveals).toEqual({ map: 'drawn', stat: 'entered' });
     }),
     // NO DOWNGRADE: a re-entry report for an already-drawn target must not
     // send it back to 'entered' — the pen would replay under the reader.
-    Story.message(ChangedReveals({ revealed: ['map'], concealed: [], drawn: [] })),
+    Story.message(Message.ChangedReveals({ revealed: ['map'], concealed: [], drawn: [] })),
     Story.model((model) => {
       expect(model.reveals['map']).toBe('drawn');
     }),
     // Concealed drops the key outright, so nothing renders is-in for it…
-    Story.message(ChangedReveals({ revealed: [], concealed: ['map'], drawn: [] })),
+    Story.message(Message.ChangedReveals({ revealed: [], concealed: ['map'], drawn: [] })),
     Story.model((model) => {
       expect(model.reveals).toEqual({ stat: 'entered' });
     }),
     // …and a late 'drawn' for a target that has since left cannot resurrect
     // it: the fold only maps over keys that are present.
-    Story.message(ChangedReveals({ revealed: [], concealed: [], drawn: ['map'] })),
+    Story.message(Message.ChangedReveals({ revealed: [], concealed: [], drawn: ['map'] })),
     Story.model((model) => {
       expect(model.reveals).toEqual({ stat: 'entered' });
     }),
@@ -163,7 +144,7 @@ test('the reveal fold enters, keeps drawn state, drops stale drawn reports, and 
     // same key arriving as revealed AND drawn in one message — a downward-only
     // pen re-entered from below, which has to land fully drawn rather than
     // replaying its lap under the reader.
-    Story.message(ChangedReveals({ revealed: ['map'], concealed: [], drawn: ['map'] })),
+    Story.message(Message.ChangedReveals({ revealed: ['map'], concealed: [], drawn: ['map'] })),
     Story.model((model) => {
       expect(model.reveals['map']).toBe('drawn');
     }),
@@ -175,14 +156,14 @@ test('an internal link applies the route, pushes it, and releases the lock', () 
   Story.story(
     update,
     Story.given(menuOpenModel),
-    Story.message(ClickedLink({ request: Internal({ url: url('/') }) })),
+    Story.message(Message.ClickedLink({ request: UrlRequest.Internal({ url: url('/') }) })),
     Story.model((model) => {
       // Navigating always closes the menu and any open club card.
       expect(model.isMenuOpen).toBe(false);
     }),
     Story.Command.expectExact(Navigate, SetScrollLock),
-    Story.Command.resolve(Navigate, CompletedNavigate()),
-    Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
+    Story.Command.resolve(Navigate, Message.CompletedNavigate()),
+    Story.Command.resolve(SetScrollLock, Message.CompletedSetScrollLock()),
   );
 });
 
@@ -190,17 +171,17 @@ test('the policy link routes to the policy page and back', () => {
   Story.story(
     update,
     Story.given(landingModel),
-    Story.message(ClickedLink({ request: Internal({ url: url('/policy') }) })),
+    Story.message(Message.ClickedLink({ request: UrlRequest.Internal({ url: url('/policy') }) })),
     Story.model((model) => {
-      expect(model.route._tag).toBe('PolicyRoute');
+      expect(model.route._tag).toBe('Policy');
     }),
-    Story.Command.resolve(Navigate, CompletedNavigate()),
-    Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
-    Story.message(ChangedUrl({ url: url('/') })),
+    Story.Command.resolve(Navigate, Message.CompletedNavigate()),
+    Story.Command.resolve(SetScrollLock, Message.CompletedSetScrollLock()),
+    Story.message(Message.ChangedUrl({ url: url('/') })),
     Story.model((model) => {
-      expect(model.route._tag).toBe('HomeRoute');
+      expect(model.route._tag).toBe('Home');
     }),
-    Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
+    Story.Command.resolve(SetScrollLock, Message.CompletedSetScrollLock()),
   );
 });
 
@@ -208,11 +189,11 @@ test('browser back/forward re-applies the route and releases the lock', () => {
   Story.story(
     update,
     Story.given(menuOpenModel),
-    Story.message(ChangedUrl({ url: url('/') })),
+    Story.message(Message.ChangedUrl({ url: url('/') })),
     Story.model((model) => {
       expect(model.isMenuOpen).toBe(false);
     }),
-    Story.Command.resolve(SetScrollLock, CompletedSetScrollLock()),
+    Story.Command.resolve(SetScrollLock, Message.CompletedSetScrollLock()),
   );
 });
 
@@ -220,11 +201,13 @@ test('an external link loads the href and leaves the model alone', () => {
   Story.story(
     update,
     Story.given(landingModel),
-    Story.message(ClickedLink({ request: External({ href: 'https://uefa.com' }) })),
+    Story.message(
+      Message.ClickedLink({ request: UrlRequest.External({ href: 'https://uefa.com' }) }),
+    ),
     Story.model((model) => {
       expect(model.isMenuOpen).toBe(false);
     }),
     Story.Command.expectHas(Load),
-    Story.Command.resolve(Load, CompletedLoad()),
+    Story.Command.resolve(Load, Message.CompletedLoad()),
   );
 });

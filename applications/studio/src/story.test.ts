@@ -16,35 +16,11 @@ import {
   signedOutModel,
 } from './main.fixtures';
 import {
+  AppRoute,
   CHART_HOST_ID,
-  ChangedUrl,
-  ClickedAddNew,
-  ClickedConfirmDelete,
-  ClickedDeleteRecord,
-  ClickedPlayersPage,
-  ClickedRetryClubs,
-  ClickedRetryPlayers,
-  ClickedSaveRecord,
-  SubmittedSignIn,
-  CompletedNavigate,
   DRAWER_DIALOG_ID,
-  DrawerClosed,
-  DrawerEditing,
+  DrawerState,
   Entry,
-  ParticipationsData,
-  SectionData,
-  SucceededSyncChart,
-  FailedFetchAssociations,
-  FailedFetchClubs,
-  FailedFetchCompetitions,
-  FailedFetchEditions,
-  FailedFetchHealth,
-  FailedFetchNationals,
-  FailedFetchParticipations,
-  FailedFetchPlayers,
-  FailedFetchTeamById,
-  FailedMountChart,
-  FailedSyncChart,
   FetchAssociations,
   FetchClubs,
   FetchCompetitions,
@@ -53,27 +29,16 @@ import {
   FetchNationals,
   FetchParticipations,
   FetchPlayers,
+  Message,
   Navigate,
   POINTS_CHART_HOST_ID,
-  SavedRecordAt,
-  DeletedRecordAt,
+  ParticipationsData,
+  SectionData,
+  Session,
   StampDelete,
-  SectionRoute,
-  SignedIn,
   StampSave,
-  SucceededFetchAssociations,
-  SucceededFetchClubs,
-  SucceededFetchCompetitions,
-  SucceededFetchEditions,
-  SucceededFetchHealth,
-  SucceededFetchNationals,
-  SucceededFetchParticipations,
-  SucceededFetchPlayers,
-  SucceededFetchTeamById,
-  SucceededMountChart,
   SyncChart,
   SyncPointsChart,
-  UpdatedDraftField,
   update,
 } from './main';
 
@@ -84,7 +49,7 @@ const url = (path: string) => Option.getOrThrow(fromString(`https://studio.examp
 // on. (`signedOutModel` starts every section Idle.)
 const loadingModel = {
   ...signedOutModel,
-  session: SignedIn({ email: '' }),
+  session: Session.SignedIn({ email: '' }),
   players: SectionData.Loading(),
   clubs: SectionData.Loading(),
   nationals: SectionData.Loading(),
@@ -104,7 +69,7 @@ test('signing in fans out one fetch per section, and each success loads it', () 
   Story.story(
     update,
     Story.given(signedOutModel),
-    Story.message(SubmittedSignIn()),
+    Story.message(Message.SubmittedSignIn()),
     Story.model((model) => {
       expect(model.session._tag).toBe('SignedIn');
       expect(model.players._tag).toBe('Loading');
@@ -122,17 +87,17 @@ test('signing in fans out one fetch per section, and each success loads it', () 
       FetchHealth,
     ),
     // Every fallible fetch’s SUCCESS path — each settles into Success.
-    Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 0 })),
-    Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [] })),
-    Story.Command.resolve(FetchNationals, SucceededFetchNationals({ entries: [] })),
-    Story.Command.resolve(FetchCompetitions, SucceededFetchCompetitions({ entries: [] })),
-    Story.Command.resolve(FetchEditions, SucceededFetchEditions({ entries: [] })),
-    Story.Command.resolve(FetchAssociations, SucceededFetchAssociations({ entries: [] })),
+    Story.Command.resolve(FetchPlayers, Message.SucceededFetchPlayers({ entries: [], total: 0 })),
+    Story.Command.resolve(FetchClubs, Message.SucceededFetchClubs({ entries: [] })),
+    Story.Command.resolve(FetchNationals, Message.SucceededFetchNationals({ entries: [] })),
+    Story.Command.resolve(FetchCompetitions, Message.SucceededFetchCompetitions({ entries: [] })),
+    Story.Command.resolve(FetchEditions, Message.SucceededFetchEditions({ entries: [] })),
+    Story.Command.resolve(FetchAssociations, Message.SucceededFetchAssociations({ entries: [] })),
     Story.Command.resolve(
       FetchParticipations,
-      SucceededFetchParticipations({ participations: [] }),
+      Message.SucceededFetchParticipations({ participations: [] }),
     ),
-    Story.Command.resolve(FetchHealth, SucceededFetchHealth()),
+    Story.Command.resolve(FetchHealth, Message.SucceededFetchHealth()),
     Story.model((model) => {
       expect(model.players._tag).toBe('Success');
       expect(model.clubs._tag).toBe('Success');
@@ -156,28 +121,28 @@ test('signing in refetches a section a pre-auth deep link had force-populated', 
       ...signedOutModel,
       clubs: SectionData.Success({ data: [sampleClub] }),
     }),
-    Story.message(SubmittedSignIn()),
+    Story.message(Message.SubmittedSignIn()),
     Story.model((model) => {
       // Refreshing, not Loading: the deep-linked row stays on screen while the
       // full list loads.
       expect(model.clubs._tag).toBe('Refreshing');
     }),
     Story.Command.expectHas(FetchClubs),
-    Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [sampleClub] })),
+    Story.Command.resolve(FetchClubs, Message.SucceededFetchClubs({ entries: [sampleClub] })),
     Story.model((model) => {
       expect(model.clubs._tag).toBe('Success');
     }),
     // The rest of the fan-out still has to be answered for the story to close.
-    Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 0 })),
-    Story.Command.resolve(FetchNationals, SucceededFetchNationals({ entries: [] })),
-    Story.Command.resolve(FetchCompetitions, SucceededFetchCompetitions({ entries: [] })),
-    Story.Command.resolve(FetchEditions, SucceededFetchEditions({ entries: [] })),
-    Story.Command.resolve(FetchAssociations, SucceededFetchAssociations({ entries: [] })),
+    Story.Command.resolve(FetchPlayers, Message.SucceededFetchPlayers({ entries: [], total: 0 })),
+    Story.Command.resolve(FetchNationals, Message.SucceededFetchNationals({ entries: [] })),
+    Story.Command.resolve(FetchCompetitions, Message.SucceededFetchCompetitions({ entries: [] })),
+    Story.Command.resolve(FetchEditions, Message.SucceededFetchEditions({ entries: [] })),
+    Story.Command.resolve(FetchAssociations, Message.SucceededFetchAssociations({ entries: [] })),
     Story.Command.resolve(
       FetchParticipations,
-      SucceededFetchParticipations({ participations: [] }),
+      Message.SucceededFetchParticipations({ participations: [] }),
     ),
-    Story.Command.resolve(FetchHealth, SucceededFetchHealth()),
+    Story.Command.resolve(FetchHealth, Message.SucceededFetchHealth()),
   );
 });
 
@@ -186,11 +151,11 @@ test('a successful players fetch loads its rows and records the total', () => {
     update,
     Story.given({
       ...signedOutModel,
-      session: SignedIn({ email: '' }),
+      session: Session.SignedIn({ email: '' }),
       players: SectionData.Loading(),
     }),
     Story.message(
-      SucceededFetchPlayers({
+      Message.SucceededFetchPlayers({
         entries: [
           {
             section: 'players',
@@ -216,14 +181,14 @@ test('every fetch FAILURE settles the section into Failure with the reason', () 
   Story.story(
     update,
     Story.given(loadingModel),
-    Story.message(FailedFetchPlayers({ reason: 'players down' })),
-    Story.message(FailedFetchClubs({ reason: 'clubs down' })),
-    Story.message(FailedFetchNationals({ reason: 'nationals down' })),
-    Story.message(FailedFetchCompetitions({ reason: 'competitions down' })),
-    Story.message(FailedFetchEditions({ reason: 'editions down' })),
-    Story.message(FailedFetchAssociations({ reason: 'associations down' })),
-    Story.message(FailedFetchParticipations({ reason: 'participations down' })),
-    Story.message(FailedFetchHealth({ reason: 'health down' })),
+    Story.message(Message.FailedFetchPlayers({ reason: 'players down' })),
+    Story.message(Message.FailedFetchClubs({ reason: 'clubs down' })),
+    Story.message(Message.FailedFetchNationals({ reason: 'nationals down' })),
+    Story.message(Message.FailedFetchCompetitions({ reason: 'competitions down' })),
+    Story.message(Message.FailedFetchEditions({ reason: 'editions down' })),
+    Story.message(Message.FailedFetchAssociations({ reason: 'associations down' })),
+    Story.message(Message.FailedFetchParticipations({ reason: 'participations down' })),
+    Story.message(Message.FailedFetchHealth({ reason: 'health down' })),
     Story.model((model) => {
       expectFailure(model.players, 'players down');
       expectFailure(model.clubs, 'clubs down');
@@ -243,14 +208,14 @@ test('retrying a failed section reloads it and re-probes health', () => {
   Story.story(
     update,
     Story.given({ ...loadingModel, players: SectionData.Failure({ error: 'boom' }) }),
-    Story.message(ClickedRetryPlayers()),
+    Story.message(Message.ClickedRetryPlayers()),
     Story.model((model) => {
       // Failure has no data to keep, so a retry starts a fresh Loading.
       expect(model.players._tag).toBe('Loading');
     }),
     Story.Command.expectExact(FetchPlayers, FetchHealth),
-    Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 0 })),
-    Story.Command.resolve(FetchHealth, SucceededFetchHealth()),
+    Story.Command.resolve(FetchPlayers, Message.SucceededFetchPlayers({ entries: [], total: 0 })),
+    Story.Command.resolve(FetchHealth, Message.SucceededFetchHealth()),
   );
 });
 
@@ -261,13 +226,13 @@ test('paging the players list revalidates while keeping the current page', () =>
     // (stale-while-revalidate) rather than discarding the rows. 42 records at
     // ten a page is five pages, so page 3 is a real one.
     Story.given({ ...playersListModel, playersTotal: 42 }),
-    Story.message(ClickedPlayersPage({ page: 3 })),
+    Story.message(Message.ClickedPlayersPage({ page: 3 })),
     Story.model((model) => {
       expect(model.playersPage).toBe(3);
       expect(model.players._tag).toBe('Refreshing');
     }),
     Story.Command.expectHas(FetchPlayers),
-    Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 42 })),
+    Story.Command.resolve(FetchPlayers, Message.SucceededFetchPlayers({ entries: [], total: 42 })),
   );
 });
 
@@ -277,12 +242,12 @@ test('a players page past the end clamps to the last page', () => {
     // 42 records = five pages; the arrows disable at the end-stop, but a
     // double click can still send a sixth.
     Story.given({ ...playersListModel, playersTotal: 42 }),
-    Story.message(ClickedPlayersPage({ page: 6 })),
+    Story.message(Message.ClickedPlayersPage({ page: 6 })),
     Story.model((model) => {
       expect(model.playersPage).toBe(5);
     }),
     Story.Command.expectHas(FetchPlayers),
-    Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 42 })),
+    Story.Command.resolve(FetchPlayers, Message.SucceededFetchPlayers({ entries: [], total: 42 })),
   );
 });
 
@@ -291,10 +256,10 @@ test('a deep-linked team resolves by id, upserts the row, and opens its drawer',
     update,
     Story.given({
       ...signedOutModel,
-      session: SignedIn({ email: '' }),
-      route: SectionRoute({ section: 'clubs' }),
+      session: Session.SignedIn({ email: '' }),
+      route: AppRoute.Section({ section: 'clubs' }),
     }),
-    Story.message(SucceededFetchTeamById({ entry: sampleClub })),
+    Story.message(Message.SucceededFetchTeamById({ entry: sampleClub })),
     Story.model((model) => {
       expect(
         Option.getOrElse(AsyncData.getData(model.clubs), () => []).some(
@@ -311,7 +276,7 @@ test('a deep-linked team resolves by id, upserts the row, and opens its drawer',
     }),
     // Opening the drawer opens its Dialog (the native <dialog> element).
     Story.Command.expectExact(Dialog.ShowDialog),
-    Story.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
+    Story.Command.resolve(Dialog.ShowDialog, Dialog.Message.CompletedShowDialog()),
   );
 });
 
@@ -320,10 +285,10 @@ test('a team that cannot be resolved by id surfaces a link error', () => {
     update,
     Story.given({
       ...signedOutModel,
-      session: SignedIn({ email: '' }),
-      route: SectionRoute({ section: 'clubs' }),
+      session: Session.SignedIn({ email: '' }),
+      route: AppRoute.Section({ section: 'clubs' }),
     }),
-    Story.message(FailedFetchTeamById({ reason: 'No such team' })),
+    Story.message(Message.FailedFetchTeamById({ reason: 'No such team' })),
     Story.model((model) => {
       expect(model.linkError).toBe('No such team');
     }),
@@ -335,12 +300,12 @@ test('once the chart host mounts, the current record is synced into it', () => {
   Story.story(
     update,
     Story.given(playerRecordModel),
-    Story.message(SucceededMountChart({ hostId: CHART_HOST_ID })),
+    Story.message(Message.SucceededMountChart({ hostId: CHART_HOST_ID })),
     Story.model((model) => {
       expect(model.chartError).toEqual(Option.none());
     }),
     Story.Command.expectHas(SyncChart),
-    Story.Command.resolve(SyncChart, SucceededSyncChart()),
+    Story.Command.resolve(SyncChart, Message.SucceededSyncChart()),
   );
 });
 
@@ -350,15 +315,15 @@ test('a team record’s points host syncs through SyncPointsChart, and reports i
     Story.given(clubRecordModel),
     // Two hosts share SucceededMountChart — the hostId is what picks the
     // series. The points chart is team-only (see POINTS_CHART_HOST_ID).
-    Story.message(SucceededMountChart({ hostId: POINTS_CHART_HOST_ID })),
+    Story.message(Message.SucceededMountChart({ hostId: POINTS_CHART_HOST_ID })),
     Story.Command.expectHas(SyncPointsChart),
-    Story.Command.resolve(SyncPointsChart, SucceededSyncChart()),
+    Story.Command.resolve(SyncPointsChart, Message.SucceededSyncChart()),
     Story.model((model) => {
       expect(model.chartError).toEqual(Option.none());
     }),
     // …and the same Command’s failure path lands in chartError.
-    Story.message(SucceededMountChart({ hostId: POINTS_CHART_HOST_ID })),
-    Story.Command.resolve(SyncPointsChart, FailedSyncChart({ reason: 'no live chart' })),
+    Story.message(Message.SucceededMountChart({ hostId: POINTS_CHART_HOST_ID })),
+    Story.Command.resolve(SyncPointsChart, Message.FailedSyncChart({ reason: 'no live chart' })),
     Story.model((model) => {
       expect(model.chartError).toEqual(Option.some('no live chart'));
     }),
@@ -369,25 +334,25 @@ test('a fetch failure arrives through its own Command, not just its message', ()
   Story.story(
     update,
     Story.given(signedOutModel),
-    Story.message(SubmittedSignIn()),
+    Story.message(Message.SubmittedSignIn()),
     // Dispatching FailedFetchPlayers by hand (as the failure sweep above does)
     // proves the handler. Resolving the COMMAND with it is what proves the
     // wiring — that FetchPlayers can actually deliver this message.
-    Story.Command.resolve(FetchPlayers, FailedFetchPlayers({ reason: 'players down' })),
+    Story.Command.resolve(FetchPlayers, Message.FailedFetchPlayers({ reason: 'players down' })),
     Story.model((model) => {
       expectFailure(model.players, 'players down');
     }),
     // The rest of the fan-out still has to be answered for the story to close.
-    Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [] })),
-    Story.Command.resolve(FetchNationals, SucceededFetchNationals({ entries: [] })),
-    Story.Command.resolve(FetchCompetitions, SucceededFetchCompetitions({ entries: [] })),
-    Story.Command.resolve(FetchEditions, SucceededFetchEditions({ entries: [] })),
-    Story.Command.resolve(FetchAssociations, SucceededFetchAssociations({ entries: [] })),
+    Story.Command.resolve(FetchClubs, Message.SucceededFetchClubs({ entries: [] })),
+    Story.Command.resolve(FetchNationals, Message.SucceededFetchNationals({ entries: [] })),
+    Story.Command.resolve(FetchCompetitions, Message.SucceededFetchCompetitions({ entries: [] })),
+    Story.Command.resolve(FetchEditions, Message.SucceededFetchEditions({ entries: [] })),
+    Story.Command.resolve(FetchAssociations, Message.SucceededFetchAssociations({ entries: [] })),
     Story.Command.resolve(
       FetchParticipations,
-      SucceededFetchParticipations({ participations: [] }),
+      Message.SucceededFetchParticipations({ participations: [] }),
     ),
-    Story.Command.resolve(FetchHealth, FailedFetchHealth({ reason: 'health down' })),
+    Story.Command.resolve(FetchHealth, Message.FailedFetchHealth({ reason: 'health down' })),
     Story.model((model) => {
       expect(model.serverHealth).toBe('Down');
     }),
@@ -400,16 +365,16 @@ test('a new edition names its competition through the picker, and is filed under
     // On the Editions list with the competitions loaded — what the picker
     // offers. Creating opens a blank draft over the section’s columns.
     Story.given(editionsListModel),
-    Story.message(ClickedAddNew()),
-    Story.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
+    Story.message(Message.ClickedAddNew()),
+    Story.Command.resolve(Dialog.ShowDialog, Dialog.Message.CompletedShowDialog()),
     Story.model((model) => {
       expect(model.drawer._tag).toBe('Creating');
     }),
     // Column 1 is the derived Competition cell; the picker writes the chosen
     // competition’s ID into the draft.
-    Story.message(UpdatedDraftField({ index: 0, value: '2026/2027' })),
-    Story.message(UpdatedDraftField({ index: 1, value: sampleCompetition.id })),
-    Story.message(ClickedSaveRecord()),
+    Story.message(Message.UpdatedDraftField({ index: 0, value: '2026/2027' })),
+    Story.message(Message.UpdatedDraftField({ index: 1, value: sampleCompetition.id })),
+    Story.message(Message.ClickedSaveRecord()),
     Story.model((model) => {
       const editions = Option.getOrElse(AsyncData.getData(model.editions), () => []);
       const created = editions.find((row) => row.id === 'local-1');
@@ -419,9 +384,9 @@ test('a new edition names its competition through the picker, and is filed under
       expect(created?.parentId).toBe(sampleCompetition.id);
       expect(created?.values[1]).toBe(sampleCompetition.id);
     }),
-    Story.Command.resolve(StampSave, SavedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
-    Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
-    Story.Command.resolve(Navigate, CompletedNavigate()),
+    Story.Command.resolve(StampSave, Message.SavedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
+    Story.Command.resolve(Dialog.CloseDialog, Dialog.Message.CompletedCloseDialog()),
+    Story.Command.resolve(Navigate, Message.CompletedNavigate()),
   );
 });
 
@@ -429,14 +394,14 @@ test('a new edition with no competition chosen is refused, not filed', () => {
   Story.story(
     update,
     Story.given(editionsListModel),
-    Story.message(ClickedAddNew()),
-    Story.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
+    Story.message(Message.ClickedAddNew()),
+    Story.Command.resolve(Dialog.ShowDialog, Dialog.Message.CompletedShowDialog()),
     // Everything but the reference filled in. The drawer disables Save here;
     // `update` refuses the same way, so a held Enter can’t slip a record
     // through with parentId '' — the cell it would need goes read-only the
     // moment the record exists.
-    Story.message(UpdatedDraftField({ index: 0, value: '2026/2027' })),
-    Story.message(ClickedSaveRecord()),
+    Story.message(Message.UpdatedDraftField({ index: 0, value: '2026/2027' })),
+    Story.message(Message.ClickedSaveRecord()),
     Story.model((model) => {
       expect(model.drawer._tag).toBe('Creating');
       // Still just the one fetched edition — nothing was created.
@@ -450,7 +415,7 @@ test('a failed chart mount records the reason as a chart error', () => {
   Story.story(
     update,
     Story.given(playerRecordModel),
-    Story.message(FailedMountChart({ reason: 'no canvas' })),
+    Story.message(Message.FailedMountChart({ reason: 'no canvas' })),
     Story.model((model) => {
       expect(model.chartError).toEqual(Option.some('no canvas'));
     }),
@@ -462,7 +427,7 @@ test('a failed chart sync records the reason as a chart error', () => {
   Story.story(
     update,
     Story.given(playerRecordModel),
-    Story.message(FailedSyncChart({ reason: 'no live chart' })),
+    Story.message(Message.FailedSyncChart({ reason: 'no live chart' })),
     Story.model((model) => {
       expect(model.chartError).toEqual(Option.some('no live chart'));
     }),
@@ -476,7 +441,7 @@ test('saving an edited record defers to the clock, then commits with that timest
     // A player record open with one field edited in the draft (index 1).
     Story.given({
       ...playerRecordModel,
-      drawer: DrawerEditing({
+      drawer: DrawerState.Editing({
         section: 'players',
         id: samplePlayer.id,
         tab: 'Overview',
@@ -486,10 +451,10 @@ test('saving an edited record defers to the clock, then commits with that timest
         isConfirmingDelete: false,
       }),
     }),
-    Story.message(ClickedSaveRecord()),
+    Story.message(Message.ClickedSaveRecord()),
     // update stays pure: the commit waits on the clock via StampSave.
     Story.Command.expectHas(StampSave),
-    Story.Command.resolve(StampSave, SavedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
+    Story.Command.resolve(StampSave, Message.SavedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
     Story.model((model) => {
       // Drawer closed, and the change logged with the injected timestamp.
       expect(model.drawer._tag).toBe('Closed');
@@ -509,9 +474,9 @@ test('saving an edited record defers to the clock, then commits with that timest
     }),
     // The commit also closes the drawer’s Dialog alongside the navigation.
     Story.Command.expectHas(Dialog.CloseDialog),
-    Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
+    Story.Command.resolve(Dialog.CloseDialog, Dialog.Message.CompletedCloseDialog()),
     Story.Command.expectHas(Navigate),
-    Story.Command.resolve(Navigate, CompletedNavigate()),
+    Story.Command.resolve(Navigate, Message.CompletedNavigate()),
   );
 });
 
@@ -520,11 +485,11 @@ test('a deleted record stays deleted when the browser replays its route', () => 
     update,
     // A club open in its drawer, deep-linkable by id.
     Story.given(clubRecordModel),
-    Story.message(ClickedDeleteRecord()),
-    Story.message(ClickedConfirmDelete()),
-    Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
-    Story.Command.resolve(StampDelete, DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
-    Story.Command.resolve(Navigate, CompletedNavigate()),
+    Story.message(Message.ClickedDeleteRecord()),
+    Story.message(Message.ClickedConfirmDelete()),
+    Story.Command.resolve(Dialog.CloseDialog, Dialog.Message.CompletedCloseDialog()),
+    Story.Command.resolve(StampDelete, Message.DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
+    Story.Command.resolve(Navigate, Message.CompletedNavigate()),
     Story.model((model) => {
       const rows = Option.getOrElse(AsyncData.getData(model.clubs), () => []);
       expect(rows.find((row) => row.id === sampleClub.id)?.isDeleted).toBe(true);
@@ -532,7 +497,7 @@ test('a deleted record stays deleted when the browser replays its route', () => 
     // Back. The route is replayed — and must NOT fetch the record by id: that
     // request still succeeds (the delete never left the client) and would
     // upsert the row back as live.
-    Story.message(ChangedUrl({ url: url(`/clubs/${sampleClub.id}`) })),
+    Story.message(Message.ChangedUrl({ url: url(`/clubs/${sampleClub.id}`) })),
     Story.model((model) => {
       const rows = Option.getOrElse(AsyncData.getData(model.clubs), () => []);
       expect(rows.find((row) => row.id === sampleClub.id)?.isDeleted).toBe(true);
@@ -560,17 +525,17 @@ test('a refetch cannot resurrect a deleted record or drop a locally created one'
       ...clubRecordModel,
       clubs: SectionData.Success({ data: [sampleClub, localClub] }),
     }),
-    Story.message(ClickedDeleteRecord()),
-    Story.message(ClickedConfirmDelete()),
-    Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
-    Story.Command.resolve(StampDelete, DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
-    Story.Command.resolve(Navigate, CompletedNavigate()),
+    Story.message(Message.ClickedDeleteRecord()),
+    Story.message(Message.ClickedConfirmDelete()),
+    Story.Command.resolve(Dialog.CloseDialog, Dialog.Message.CompletedCloseDialog()),
+    Story.Command.resolve(StampDelete, Message.DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
+    Story.Command.resolve(Navigate, Message.CompletedNavigate()),
     // Refresh. The wire replies with the record alive, because the delete is
     // client-side and never reached it — and with no knowledge of anything the
     // editor created for the same reason.
-    Story.message(ClickedRetryClubs()),
-    Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [sampleClub] })),
-    Story.Command.resolve(FetchHealth, SucceededFetchHealth()),
+    Story.message(Message.ClickedRetryClubs()),
+    Story.Command.resolve(FetchClubs, Message.SucceededFetchClubs({ entries: [sampleClub] })),
+    Story.Command.resolve(FetchHealth, Message.SucceededFetchHealth()),
     Story.model((model) => {
       const rows = Option.getOrElse(AsyncData.getData(model.clubs), () => []);
       expect(rows.find((row) => row.id === sampleClub.id)?.isDeleted).toBe(true);
@@ -591,7 +556,7 @@ test('a delete on one players page survives paging away and back', () => {
     Story.given({
       ...playersListModel,
       playersTotal: 42,
-      drawer: DrawerEditing({
+      drawer: DrawerState.Editing({
         section: 'players',
         id: samplePlayer.id,
         tab: 'Overview',
@@ -599,18 +564,18 @@ test('a delete on one players page survives paging away and back', () => {
         isConfirmingDelete: true,
       }),
     }),
-    Story.message(ClickedConfirmDelete()),
-    Story.Command.resolve(StampDelete, DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
-    Story.Command.resolve(Navigate, CompletedNavigate()),
+    Story.message(Message.ClickedConfirmDelete()),
+    Story.Command.resolve(StampDelete, Message.DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
+    Story.Command.resolve(Navigate, Message.CompletedNavigate()),
     // Page 2 arrives without the deleted player in it at all.
-    Story.message(ClickedPlayersPage({ page: 2 })),
-    Story.Command.resolve(FetchPlayers, SucceededFetchPlayers({ entries: [], total: 42 })),
+    Story.message(Message.ClickedPlayersPage({ page: 2 })),
+    Story.Command.resolve(FetchPlayers, Message.SucceededFetchPlayers({ entries: [], total: 42 })),
     // …and page 1 comes back with the record alive, because the wire never
     // heard about the delete.
-    Story.message(ClickedPlayersPage({ page: 1 })),
+    Story.message(Message.ClickedPlayersPage({ page: 1 })),
     Story.Command.resolve(
       FetchPlayers,
-      SucceededFetchPlayers({ entries: [samplePlayer], total: 42 }),
+      Message.SucceededFetchPlayers({ entries: [samplePlayer], total: 42 }),
     ),
     Story.model((model) => {
       const rows = Option.getOrElse(AsyncData.getData(model.players), () => []);
@@ -623,21 +588,21 @@ test('the ledger outranks a list that no longer carries the deleted record', () 
   Story.story(
     update,
     Story.given(clubRecordModel),
-    Story.message(ClickedDeleteRecord()),
-    Story.message(ClickedConfirmDelete()),
-    Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
-    Story.Command.resolve(StampDelete, DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
-    Story.Command.resolve(Navigate, CompletedNavigate()),
+    Story.message(Message.ClickedDeleteRecord()),
+    Story.message(Message.ClickedConfirmDelete()),
+    Story.Command.resolve(Dialog.CloseDialog, Dialog.Message.CompletedCloseDialog()),
+    Story.Command.resolve(StampDelete, Message.DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
+    Story.Command.resolve(Navigate, Message.CompletedNavigate()),
     // A refetch whose response has dropped the record entirely — so the row
     // that carried `isDeleted` is gone and only the ledger remembers.
-    Story.message(ClickedRetryClubs()),
-    Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [] })),
-    Story.Command.resolve(FetchHealth, SucceededFetchHealth()),
+    Story.message(Message.ClickedRetryClubs()),
+    Story.Command.resolve(FetchClubs, Message.SucceededFetchClubs({ entries: [] })),
+    Story.Command.resolve(FetchHealth, Message.SucceededFetchHealth()),
     Story.model((model) => {
       expect(Option.getOrElse(AsyncData.getData(model.clubs), () => [])).toHaveLength(0);
     }),
     // Deep-linking to it must NOT fetch it back by id and open the drawer.
-    Story.message(ChangedUrl({ url: url(`/clubs/${sampleClub.id}`) })),
+    Story.message(Message.ChangedUrl({ url: url(`/clubs/${sampleClub.id}`) })),
     Story.model((model) => {
       expect(model.drawer._tag).toBe('Closed');
       expect(model.linkError).toBe('That record was deleted.');
@@ -657,12 +622,12 @@ test('a row the wire already reports deleted does not open either', () => {
     // because this client never performed it.
     Story.given({
       ...clubRecordModel,
-      drawer: DrawerClosed(),
+      drawer: DrawerState.Closed(),
       dialog: Dialog.init({ id: DRAWER_DIALOG_ID }),
       clubs: SectionData.Success({ data: [{ ...sampleClub, isDeleted: true }] }),
       deletedRecordIds: [],
     }),
-    Story.message(ChangedUrl({ url: url(`/clubs/${sampleClub.id}`) })),
+    Story.message(Message.ChangedUrl({ url: url(`/clubs/${sampleClub.id}`) })),
     Story.model((model) => {
       expect(model.deletedRecordIds).toHaveLength(0);
       expect(model.drawer._tag).toBe('Closed');
@@ -676,23 +641,23 @@ test('a by-id response in flight when the delete happens cannot land the record'
   Story.story(
     update,
     Story.given(clubRecordModel),
-    Story.message(ClickedDeleteRecord()),
-    Story.message(ClickedConfirmDelete()),
-    Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
-    Story.Command.resolve(StampDelete, DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
-    Story.Command.resolve(Navigate, CompletedNavigate()),
+    Story.message(Message.ClickedDeleteRecord()),
+    Story.message(Message.ClickedConfirmDelete()),
+    Story.Command.resolve(Dialog.CloseDialog, Dialog.Message.CompletedCloseDialog()),
+    Story.Command.resolve(StampDelete, Message.DeletedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
+    Story.Command.resolve(Navigate, Message.CompletedNavigate()),
     // The list drops the record entirely, so nothing on screen carries the
     // `isDeleted` flag any more — from here only the LEDGER remembers, which
     // is the half of `isLedgerDeleted` this story is about.
-    Story.message(ClickedRetryClubs()),
-    Story.Command.resolve(FetchClubs, SucceededFetchClubs({ entries: [] })),
-    Story.Command.resolve(FetchHealth, SucceededFetchHealth()),
+    Story.message(Message.ClickedRetryClubs()),
+    Story.Command.resolve(FetchClubs, Message.SucceededFetchClubs({ entries: [] })),
+    Story.Command.resolve(FetchHealth, Message.SucceededFetchHealth()),
     // And NOW the by-id request that a deep link fired before any of this
     // finally answers. It is the wire’s view of the record and the wire never
     // heard about the delete, so it reports the record alive. The route guard
     // cannot help here: it ran before the delete, which is exactly why this
     // handler needs its own guard rather than trusting the one upstream.
-    Story.message(SucceededFetchTeamById({ entry: sampleClub })),
+    Story.message(Message.SucceededFetchTeamById({ entry: sampleClub })),
     Story.model((model) => {
       expect(Option.getOrElse(AsyncData.getData(model.clubs), () => [])).toHaveLength(0);
       expect(model.drawer._tag).toBe('Closed');
@@ -706,37 +671,37 @@ test('the column rules decide what saves, and the same rules refuse in update', 
   Story.story(
     update,
     Story.given(editionsListModel),
-    Story.message(ClickedAddNew()),
-    Story.Command.resolve(Dialog.ShowDialog, Dialog.CompletedShowDialog()),
+    Story.message(Message.ClickedAddNew()),
+    Story.Command.resolve(Dialog.ShowDialog, Dialog.Message.CompletedShowDialog()),
     // Edition (title, required), Competition (reference, required), then two
     // dates. A malformed date is Invalid, so the draft is not savable even
     // though every cell has been filled in.
-    Story.message(UpdatedDraftField({ index: 0, value: '2026/2027' })),
-    Story.message(UpdatedDraftField({ index: 1, value: sampleCompetition.id })),
-    Story.message(UpdatedDraftField({ index: 2, value: 'next August' })),
+    Story.message(Message.UpdatedDraftField({ index: 0, value: '2026/2027' })),
+    Story.message(Message.UpdatedDraftField({ index: 1, value: sampleCompetition.id })),
+    Story.message(Message.UpdatedDraftField({ index: 2, value: 'next August' })),
     Story.model((model) => {
       const drawer = model.drawer;
       expect(drawer._tag).toBe('Creating');
       if (drawer._tag !== 'Creating') return;
       expect(drawer.draft[2]?._tag).toBe('Invalid');
     }),
-    Story.message(ClickedSaveRecord()),
+    Story.message(Message.ClickedSaveRecord()),
     Story.model((model) => {
       // Refused: still creating, nothing filed.
       expect(model.drawer._tag).toBe('Creating');
       expect(Option.getOrElse(AsyncData.getData(model.editions), () => [])).toHaveLength(1);
     }),
     // Correct the date and the same draft goes through.
-    Story.message(UpdatedDraftField({ index: 2, value: '2026-08-01' })),
-    Story.message(UpdatedDraftField({ index: 3, value: '2027-05-31' })),
-    Story.message(ClickedSaveRecord()),
+    Story.message(Message.UpdatedDraftField({ index: 2, value: '2026-08-01' })),
+    Story.message(Message.UpdatedDraftField({ index: 3, value: '2027-05-31' })),
+    Story.message(Message.ClickedSaveRecord()),
     Story.model((model) => {
       const editions = Option.getOrElse(AsyncData.getData(model.editions), () => []);
       expect(editions.find((row) => row.id === 'local-1')?.parentId).toBe(sampleCompetition.id);
     }),
-    Story.Command.resolve(StampSave, SavedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
-    Story.Command.resolve(Dialog.CloseDialog, Dialog.CompletedCloseDialog()),
-    Story.Command.resolve(Navigate, CompletedNavigate()),
+    Story.Command.resolve(StampSave, Message.SavedRecordAt({ at: '6/1/2026, 12:00:00 PM' })),
+    Story.Command.resolve(Dialog.CloseDialog, Dialog.Message.CompletedCloseDialog()),
+    Story.Command.resolve(Navigate, Message.CompletedNavigate()),
     Story.model((model) => {
       // The create is in the record’s History, as its own event rather than a
       // field change with empty strings in it.

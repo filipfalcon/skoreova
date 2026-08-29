@@ -5,8 +5,7 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 import { tickerSpark } from '../components';
 import { clubs, featuredClubs } from '../data';
 import type { Club, FeaturedClub } from '../data';
-import { SelectedFeaturedClub, UpdatedClubQuery } from '../message';
-import type { Message } from '../message';
+import { Message } from '../message';
 import type { Model } from '../model';
 import { clubRouter } from '../route';
 import { clubEurope } from '../standings';
@@ -78,7 +77,7 @@ const carouselArrow = (
 ): Html =>
   Button.view(
     {
-      onClick: SelectedFeaturedClub({ index: target }),
+      onClick: Message.SelectedFeaturedClub({ index: target }),
       toView: ({ button }) =>
         h.button(
           [
@@ -281,7 +280,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
           type: 'search',
           placeholder: 'Search clubs…',
           value: model.clubQuery,
-          onInput: (value) => UpdatedClubQuery({ query: value }),
+          onInput: (value) => Message.UpdatedClubQuery({ query: value }),
           toView: (attributes) =>
             h.div(
               [...getStyleXAttributes(h, styles.searchWrapper)],

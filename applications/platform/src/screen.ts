@@ -4,10 +4,8 @@
 // carry those. data.ts re-exports the whole module, so every existing import of
 // these names still resolves through it.
 
-import { Match as M } from 'effect';
-
 import type { Screen } from './model';
-import type { AppRoute } from './route';
+import { AppRoute } from './route';
 
 export const screenTitles: Record<Screen, string> = {
   Welcome: 'Her Game',
@@ -25,24 +23,20 @@ export const screenTitles: Record<Screen, string> = {
 // screenView resolving the slug), and NotFound onto the root (the mock has no
 // error page).
 export const screenOf = (route: AppRoute): Screen =>
-  M.value(route).pipe(
-    M.withReturnType<Screen>(),
-    M.tagsExhaustive({
-      WelcomeRoute: () => 'Welcome',
-      HerGameRoute: () => 'HerGame',
-      ClubsRoute: () => 'Clubs',
-      ClubRoute: () => 'Clubs',
-      PlayersRoute: () => 'Players',
-      MatchesRoute: () => 'Matches',
-      CompetitionsRoute: () => 'Competitions',
-      CompetitionRoute: () => 'Competitions',
-      OfficialsRoute: () => 'Officials',
-      NotFoundRoute: () => 'Welcome',
-    }),
-  );
+  AppRoute.match<Screen>(route, {
+    Welcome: () => 'Welcome',
+    HerGame: () => 'HerGame',
+    Clubs: () => 'Clubs',
+    Club: () => 'Clubs',
+    Players: () => 'Players',
+    Matches: () => 'Matches',
+    Competitions: () => 'Competitions',
+    Competition: () => 'Competitions',
+    Officials: () => 'Officials',
+    NotFound: () => 'Welcome',
+  });
 
 // The open club / competition slug, or '' when the route is not that profile.
-export const routeClubSlug = (route: AppRoute): string =>
-  route._tag === 'ClubRoute' ? route.slug : '';
+export const routeClubSlug = (route: AppRoute): string => (route._tag === 'Club' ? route.slug : '');
 export const routeCompetitionSlug = (route: AppRoute): string =>
-  route._tag === 'CompetitionRoute' ? route.slug : '';
+  route._tag === 'Competition' ? route.slug : '';

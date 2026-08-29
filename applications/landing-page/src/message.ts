@@ -1,69 +1,58 @@
 import { RadioGroup } from '@foldkit/ui';
 import { Schema as S } from 'effect';
-import { m } from 'foldkit/message';
+import { defineMessageUnion } from 'foldkit/message';
 import { UrlRequest } from 'foldkit/navigation';
 import { Url } from 'foldkit/url';
 
-import {
-  ChangedReveals,
-  CompletedMountMotion,
-  DetectedHeroPastHeader,
-  FailedMountMotion,
-} from './motion';
 import { MapLeague } from './model';
 
-export const ToggledMenu = m('ToggledMenu');
-// Sent by every anchor inside the overlay: close the menu and let navigation
-// take care of the rest.
-export const ClosedMenu = m('ClosedMenu');
-// Escape pressed while the overlay is open — closes it AND returns focus to
-// the toggle (via the FocusMenuToggle Command), like a native dialog hands
-// focus back to its opener.
-export const PressedMenuEscape = m('PressedMenuEscape');
-export const CompletedFocusMenuToggle = m('CompletedFocusMenuToggle');
-// Reports which landing section the viewport is in (None at the hero) — see
-// DetectActiveSection.
-export const DetectedActiveSection = m('DetectedActiveSection', { section: S.Option(S.String) });
-export const ClickedLink = m('ClickedLink', { request: UrlRequest });
-export const ChangedUrl = m('ChangedUrl', { url: Url });
-export const CompletedNavigate = m('CompletedNavigate');
-export const CompletedLoad = m('CompletedLoad');
-export const CompletedSetScrollLock = m('CompletedSetScrollLock');
-// The league filter is a Submodel, so its Messages arrive wrapped. The
-// COMMITTED league does not travel this way — it arrives as a `Selected`
-// OutMessage and lands in `mapLeague`.
-export const GotMapLeagueGroupMessage = m('GotMapLeagueGroupMessage', {
-  message: RadioGroup.Message,
+export const Message = defineMessageUnion({
+  ToggledMenu: {},
+  // Sent by every anchor inside the overlay: close the menu and let navigation
+  // take care of the rest.
+  ClosedMenu: {},
+  // Escape pressed while the overlay is open — closes it AND returns focus to
+  // the toggle (via the FocusMenuToggle Command), like a native dialog hands
+  // focus back to its opener.
+  PressedMenuEscape: {},
+  CompletedFocusMenuToggle: {},
+  // Reports which landing section the viewport is in (None at the hero) — see
+  // DetectActiveSection.
+  DetectedActiveSection: { section: S.Option(S.String) },
+  ClickedLink: { request: UrlRequest },
+  ChangedUrl: { url: Url },
+  CompletedNavigate: {},
+  CompletedLoad: {},
+  CompletedSetScrollLock: {},
+  SelectedMapLeague: { league: MapLeague },
+  // The league filter is a Submodel, so its Messages arrive wrapped. The
+  // COMMITTED league does not travel this way — it arrives as a `Selected`
+  // OutMessage and lands in `mapLeague`.
+  GotMapLeagueGroupMessage: {
+    message: RadioGroup.Message,
+  },
+  OpenedMapClub: { slug: S.String },
+  // Closes the open club card.
+  ClosedMapClub: {},
+  ToggledAreaUnit: {},
+  // The OS-level `prefers-reduced-motion` setting flipped mid-session — see
+  // the reducedMotion subscription.
+  ChangedReducedMotion: { reduce: S.Boolean },
+  CompletedMountMotion: {},
+  FailedMountMotion: { reason: S.String },
+  // Reports whether the hero has scrolled up under the fixed header — `past`
+  // drives the header’s persistent CTA in the Model. See ObserveHeroPastHeader
+  // in motion.ts.
+  DetectedHeroPastHeader: { past: S.Boolean },
+  // One reveal-observer notification, already resolved to reveal keys: which
+  // targets entered the viewport (render `.is-in`), which left (back to
+  // rest), and which must stand fully DRAWN — a pen that finished its lap
+  // (transitionend) or a downward-only pen re-entered from below. See
+  // ObserveReveals in motion.ts.
+  ChangedReveals: {
+    revealed: S.Array(S.String),
+    concealed: S.Array(S.String),
+    drawn: S.Array(S.String),
+  },
 });
-export const SelectedMapLeague = m('SelectedMapLeague', { league: MapLeague });
-export const OpenedMapClub = m('OpenedMapClub', { slug: S.String });
-// Closes the open club card.
-export const ClosedMapClub = m('ClosedMapClub');
-export const ToggledAreaUnit = m('ToggledAreaUnit');
-// The OS-level `prefers-reduced-motion` setting flipped mid-session — see
-// the reducedMotion subscription.
-export const ChangedReducedMotion = m('ChangedReducedMotion', { reduce: S.Boolean });
-
-export const Message = S.Union([
-  ToggledMenu,
-  ClosedMenu,
-  PressedMenuEscape,
-  CompletedFocusMenuToggle,
-  DetectedActiveSection,
-  ClickedLink,
-  ChangedUrl,
-  CompletedNavigate,
-  CompletedLoad,
-  CompletedSetScrollLock,
-  SelectedMapLeague,
-  GotMapLeagueGroupMessage,
-  OpenedMapClub,
-  ClosedMapClub,
-  ToggledAreaUnit,
-  ChangedReducedMotion,
-  CompletedMountMotion,
-  FailedMountMotion,
-  DetectedHeroPastHeader,
-  ChangedReveals,
-]);
 export type Message = typeof Message.Type;

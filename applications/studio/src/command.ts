@@ -17,36 +17,7 @@ import { ParticipationsResponse, participationsUrl } from './participationsApi';
 import { PlayersPage, playerToRow, playersUrl } from './playersApi';
 import { TeamResponse, TeamsResponse, teamByIdUrl, teamToRow, teamsUrl } from './teamsApi';
 import { type Entry } from './model';
-import type { Message } from './message';
-import {
-  CompletedLoad,
-  CompletedNavigate,
-  FailedFetchAssociations,
-  FailedFetchClubs,
-  FailedFetchCompetitions,
-  FailedFetchEditions,
-  FailedFetchHealth,
-  FailedFetchNationals,
-  FailedFetchParticipations,
-  FailedFetchPlayers,
-  FailedFetchTeamById,
-  FailedMountChart,
-  FailedSyncChart,
-  FetchedToday,
-  SavedRecordAt,
-  DeletedRecordAt,
-  SucceededFetchAssociations,
-  SucceededFetchClubs,
-  SucceededFetchCompetitions,
-  SucceededFetchEditions,
-  SucceededFetchHealth,
-  SucceededFetchNationals,
-  SucceededFetchParticipations,
-  SucceededFetchPlayers,
-  SucceededFetchTeamById,
-  SucceededMountChart,
-  SucceededSyncChart,
-} from './message';
+import { Message } from './message';
 
 export const CHART_HOST_ID = 'studio-record-chart';
 export const POINTS_CHART_HOST_ID = 'studio-record-points-chart';
@@ -56,14 +27,14 @@ export const POINTS_CHART_HOST_ID = 'studio-record-points-chart';
 export const MountChart = Mount.define(
   'MountChart',
   { hostId: S.String },
-  SucceededMountChart,
-  FailedMountChart,
+  Message.SucceededMountChart,
+  Message.FailedMountChart,
 )(
   ({ hostId }) =>
     (element) =>
       Effect.gen(function* () {
         if (!(element instanceof HTMLElement)) {
-          return FailedMountChart({ reason: 'Chart host is not an HTMLElement.' });
+          return Message.FailedMountChart({ reason: 'Chart host is not an HTMLElement.' });
         }
 
         return yield* Effect.acquireRelease(
@@ -87,8 +58,10 @@ export const MountChart = Mount.define(
               releaseChart(hostId, chart);
             }),
         ).pipe(
-          Effect.map(() => SucceededMountChart({ hostId })),
-          Effect.catch((error) => Effect.succeed(FailedMountChart({ reason: error.message }))),
+          Effect.map(() => Message.SucceededMountChart({ hostId })),
+          Effect.catch((error) =>
+            Effect.succeed(Message.FailedMountChart({ reason: error.message })),
+          ),
         );
       }),
 );
@@ -101,18 +74,18 @@ export const SyncChart = Command.define('SyncChart', {
     categories: S.Array(S.String),
     values: S.Array(S.Number),
   },
-  messages: [SucceededSyncChart, FailedSyncChart],
+  messages: [Message.SucceededSyncChart, Message.FailedSyncChart],
   execute: (args) =>
     Effect.sync(() => {
       const maybeChart = getChart(args.hostId);
       if (Option.isNone(maybeChart)) {
-        return FailedSyncChart({ reason: `No live chart for hostId ${args.hostId}.` });
+        return Message.FailedSyncChart({ reason: `No live chart for hostId ${args.hostId}.` });
       }
       try {
         maybeChart.value.setOption(makeStatsOption(args), true);
-        return SucceededSyncChart();
+        return Message.SucceededSyncChart();
       } catch (error) {
-        return FailedSyncChart({
+        return Message.FailedSyncChart({
           reason: error instanceof Error ? error.message : `${error}`,
         });
       }
@@ -128,18 +101,18 @@ export const SyncPointsChart = Command.define('SyncPointsChart', {
     weeks: S.Array(S.String),
     points: S.Array(S.Number),
   },
-  messages: [SucceededSyncChart, FailedSyncChart],
+  messages: [Message.SucceededSyncChart, Message.FailedSyncChart],
   execute: (args) =>
     Effect.sync(() => {
       const maybeChart = getChart(args.hostId);
       if (Option.isNone(maybeChart)) {
-        return FailedSyncChart({ reason: `No live chart for hostId ${args.hostId}.` });
+        return Message.FailedSyncChart({ reason: `No live chart for hostId ${args.hostId}.` });
       }
       try {
         maybeChart.value.setOption(makePointsOption(args), true);
-        return SucceededSyncChart();
+        return Message.SucceededSyncChart();
       } catch (error) {
-        return FailedSyncChart({
+        return Message.FailedSyncChart({
           reason: error instanceof Error ? error.message : `${error}`,
         });
       }
@@ -151,11 +124,11 @@ export const SyncPointsChart = Command.define('SyncPointsChart', {
 // aren’t paginated.
 export const FetchPlayers = Command.define('FetchPlayers', {
   args: { page: S.Number },
-  messages: [SucceededFetchPlayers, FailedFetchPlayers],
+  messages: [Message.SucceededFetchPlayers, Message.FailedFetchPlayers],
   execute: (args) =>
     getDecoded(playersUrl(args.page), PlayersPage).pipe(
       Effect.map((page) =>
-        SucceededFetchPlayers({
+        Message.SucceededFetchPlayers({
           entries: page.items.map((player) => ({
             section: 'players' as const,
             id: player.id,
@@ -166,7 +139,9 @@ export const FetchPlayers = Command.define('FetchPlayers', {
           total: page.total,
         }),
       ),
-      Effect.catch((error) => Effect.succeed(FailedFetchPlayers({ reason: error.message }))),
+      Effect.catch((error) =>
+        Effect.succeed(Message.FailedFetchPlayers({ reason: error.message })),
+      ),
     ),
 });
 
@@ -192,27 +167,29 @@ const fetchTeamEntries = (
   );
 
 export const FetchClubs = Command.define('FetchClubs', {
-  messages: [SucceededFetchClubs, FailedFetchClubs],
+  messages: [Message.SucceededFetchClubs, Message.FailedFetchClubs],
   execute: fetchTeamEntries('CLUB', 'clubs').pipe(
-    Effect.map((entries) => SucceededFetchClubs({ entries })),
-    Effect.catch((error) => Effect.succeed(FailedFetchClubs({ reason: error.message }))),
+    Effect.map((entries) => Message.SucceededFetchClubs({ entries })),
+    Effect.catch((error) => Effect.succeed(Message.FailedFetchClubs({ reason: error.message }))),
   ),
 });
 
 export const FetchNationals = Command.define('FetchNationals', {
-  messages: [SucceededFetchNationals, FailedFetchNationals],
+  messages: [Message.SucceededFetchNationals, Message.FailedFetchNationals],
   execute: fetchTeamEntries('NATIONAL', 'nationals').pipe(
-    Effect.map((entries) => SucceededFetchNationals({ entries })),
-    Effect.catch((error) => Effect.succeed(FailedFetchNationals({ reason: error.message }))),
+    Effect.map((entries) => Message.SucceededFetchNationals({ entries })),
+    Effect.catch((error) =>
+      Effect.succeed(Message.FailedFetchNationals({ reason: error.message })),
+    ),
   ),
 });
 
 // Fetches every competition in one request (this endpoint isn’t paginated).
 export const FetchCompetitions = Command.define('FetchCompetitions', {
-  messages: [SucceededFetchCompetitions, FailedFetchCompetitions],
+  messages: [Message.SucceededFetchCompetitions, Message.FailedFetchCompetitions],
   execute: getDecoded(competitionsUrl(), CompetitionsResponse).pipe(
     Effect.map((competitions) =>
-      SucceededFetchCompetitions({
+      Message.SucceededFetchCompetitions({
         entries: competitions.map((competition) => ({
           section: 'competitions' as const,
           id: competition.id,
@@ -222,7 +199,9 @@ export const FetchCompetitions = Command.define('FetchCompetitions', {
         })),
       }),
     ),
-    Effect.catch((error) => Effect.succeed(FailedFetchCompetitions({ reason: error.message }))),
+    Effect.catch((error) =>
+      Effect.succeed(Message.FailedFetchCompetitions({ reason: error.message })),
+    ),
   ),
 });
 
@@ -231,10 +210,10 @@ export const FetchCompetitions = Command.define('FetchCompetitions', {
 // competitionId; the view resolves it to a name (see resolveDerivedCells), so
 // this maps to Entry rows exactly like every other section.
 export const FetchEditions = Command.define('FetchEditions', {
-  messages: [SucceededFetchEditions, FailedFetchEditions],
+  messages: [Message.SucceededFetchEditions, Message.FailedFetchEditions],
   execute: getDecoded(editionsUrl(), EditionsResponse).pipe(
     Effect.map((editions) =>
-      SucceededFetchEditions({
+      Message.SucceededFetchEditions({
         entries: editions.map((edition) => ({
           section: 'editions' as const,
           id: edition.id,
@@ -244,26 +223,28 @@ export const FetchEditions = Command.define('FetchEditions', {
         })),
       }),
     ),
-    Effect.catch((error) => Effect.succeed(FailedFetchEditions({ reason: error.message }))),
+    Effect.catch((error) => Effect.succeed(Message.FailedFetchEditions({ reason: error.message }))),
   ),
 });
 
 // Fetches every team/edition pairing in one request (this endpoint isn’t
 // paginated) — used only to resolve an edition’s participating teams.
 export const FetchParticipations = Command.define('FetchParticipations', {
-  messages: [SucceededFetchParticipations, FailedFetchParticipations],
+  messages: [Message.SucceededFetchParticipations, Message.FailedFetchParticipations],
   execute: getDecoded(participationsUrl(), ParticipationsResponse).pipe(
-    Effect.map((participations) => SucceededFetchParticipations({ participations })),
-    Effect.catch((error) => Effect.succeed(FailedFetchParticipations({ reason: error.message }))),
+    Effect.map((participations) => Message.SucceededFetchParticipations({ participations })),
+    Effect.catch((error) =>
+      Effect.succeed(Message.FailedFetchParticipations({ reason: error.message })),
+    ),
   ),
 });
 
 // Fetches every association in one request (this endpoint isn’t paginated).
 export const FetchAssociations = Command.define('FetchAssociations', {
-  messages: [SucceededFetchAssociations, FailedFetchAssociations],
+  messages: [Message.SucceededFetchAssociations, Message.FailedFetchAssociations],
   execute: getDecoded(associationsUrl(), AssociationsResponse).pipe(
     Effect.map((associations) =>
-      SucceededFetchAssociations({
+      Message.SucceededFetchAssociations({
         entries: associations.map((association) => ({
           section: 'associations' as const,
           id: association.id,
@@ -273,43 +254,47 @@ export const FetchAssociations = Command.define('FetchAssociations', {
         })),
       }),
     ),
-    Effect.catch((error) => Effect.succeed(FailedFetchAssociations({ reason: error.message }))),
+    Effect.catch((error) =>
+      Effect.succeed(Message.FailedFetchAssociations({ reason: error.message })),
+    ),
   ),
 });
 
 // Whether the backend is up at all — drives the diode on every API-backed
 // section’s Refresh button (see serverHealth on the Model).
 export const FetchHealth = Command.define('FetchHealth', {
-  messages: [SucceededFetchHealth, FailedFetchHealth],
+  messages: [Message.SucceededFetchHealth, Message.FailedFetchHealth],
   execute: getDecoded(healthUrl(), HealthResponse).pipe(
-    Effect.map(() => SucceededFetchHealth()),
-    Effect.catch((error) => Effect.succeed(FailedFetchHealth({ reason: error.message }))),
+    Effect.map(() => Message.SucceededFetchHealth()),
+    Effect.catch((error) => Effect.succeed(Message.FailedFetchHealth({ reason: error.message }))),
   ),
 });
 
 // Reads the current calendar date (through Effect’s Clock, like StampSave) at
 // boot — the date filter DatePickers open their calendar grid onto it.
 export const FetchToday = Command.define('FetchToday', {
-  messages: [FetchedToday],
-  execute: Calendar.today.local.pipe(Effect.map((today) => FetchedToday({ today }))),
+  messages: [Message.FetchedToday],
+  execute: Calendar.today.local.pipe(Effect.map((today) => Message.FetchedToday({ today }))),
 });
 
 // Reads the wall clock (through Effect’s Clock, so it’s swappable in tests) and
-// hands the formatted timestamp back as SavedRecordAt — the record commit needs
+// hands the formatted timestamp back as Message.SavedRecordAt — the record commit needs
 // a timestamp for its edit log, and this keeps `new Date()` out of `update`.
 export const StampSave = Command.define('StampSave', {
-  messages: [SavedRecordAt],
+  messages: [Message.SavedRecordAt],
   execute: Clock.currentTimeMillis.pipe(
-    Effect.map((millis) => SavedRecordAt({ at: new Date(millis).toLocaleString('en-US') })),
+    Effect.map((millis) => Message.SavedRecordAt({ at: new Date(millis).toLocaleString('en-US') })),
   ),
 });
 
 // The delete’s own clock read. One Command per intent rather than one shared
 // stamp the handler has to disambiguate from the drawer’s state.
 export const StampDelete = Command.define('StampDelete', {
-  messages: [DeletedRecordAt],
+  messages: [Message.DeletedRecordAt],
   execute: Clock.currentTimeMillis.pipe(
-    Effect.map((millis) => DeletedRecordAt({ at: new Date(millis).toLocaleString('en-US') })),
+    Effect.map((millis) =>
+      Message.DeletedRecordAt({ at: new Date(millis).toLocaleString('en-US') }),
+    ),
   ),
 });
 
@@ -321,27 +306,27 @@ export const StampDelete = Command.define('StampDelete', {
 
 export const Navigate = Command.define('Navigate', {
   args: { url: S.String },
-  messages: [CompletedNavigate],
-  execute: ({ url }) => pushUrl(url).pipe(Effect.as(CompletedNavigate())),
+  messages: [Message.CompletedNavigate],
+  execute: ({ url }) => pushUrl(url).pipe(Effect.as(Message.CompletedNavigate())),
 });
 
 export const Load = Command.define('Load', {
   args: { href: S.String },
-  messages: [CompletedLoad],
-  execute: ({ href }) => loadUrl(href).pipe(Effect.as(CompletedLoad())),
+  messages: [Message.CompletedLoad],
+  execute: ({ href }) => loadUrl(href).pipe(Effect.as(Message.CompletedLoad())),
 });
 
 // Resolves a single team by id (GET /teams/{id}) when a shared record link
 // points at a team that isn’t already in the loaded list.
 export const FetchTeamById = Command.define('FetchTeamById', {
   args: { section: S.Literals(['clubs', 'nationals']), id: S.String },
-  messages: [SucceededFetchTeamById, FailedFetchTeamById],
+  messages: [Message.SucceededFetchTeamById, Message.FailedFetchTeamById],
   execute: (args) =>
     getDecoded(teamByIdUrl(args.id), S.NullOr(TeamResponse)).pipe(
       Effect.map((team) =>
         team === null
-          ? FailedFetchTeamById({ reason: 'This team no longer exists.' })
-          : SucceededFetchTeamById({
+          ? Message.FailedFetchTeamById({ reason: 'This team no longer exists.' })
+          : Message.SucceededFetchTeamById({
               entry: {
                 section: args.section,
                 id: team.id,
@@ -351,7 +336,9 @@ export const FetchTeamById = Command.define('FetchTeamById', {
               },
             }),
       ),
-      Effect.catch((error) => Effect.succeed(FailedFetchTeamById({ reason: error.message }))),
+      Effect.catch((error) =>
+        Effect.succeed(Message.FailedFetchTeamById({ reason: error.message })),
+      ),
     ),
 });
 

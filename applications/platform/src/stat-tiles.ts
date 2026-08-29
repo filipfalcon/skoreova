@@ -8,7 +8,7 @@ import firstLeagueGoalsPhoto from './assets/goals/first-league.jpg';
 import secondLeagueGoalsPhoto from './assets/goals/second-league.jpg';
 import { drawnTimes, pinGlyph, tapeArrow } from './components';
 import type { TrendingEntry } from './data';
-import { type Message, ToggledPin } from './message';
+import { Message } from './message';
 import type { Model } from './model';
 import { competitionRouter } from './route';
 import { MATCHDAYS_PLAYED } from './schedule';
@@ -212,7 +212,7 @@ export const pinOverlay = (
   const pinned = model.pinned.includes(id);
   return Button.view(
     {
-      onClick: ToggledPin({ id }),
+      onClick: Message.ToggledPin({ id }),
       toView: ({ button }) =>
         h.button(
           [
@@ -430,7 +430,7 @@ export const bestRecord = (
     [
       Button.view(
         {
-          onClick: ToggledPin({ id: `best:${record.id}` }),
+          onClick: Message.ToggledPin({ id: `best:${record.id}` }),
           toView: ({ button }) =>
             h.button(
               [

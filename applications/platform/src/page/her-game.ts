@@ -13,16 +13,7 @@ import { chipHeading, tapeArrow, tickerSpark } from '../components';
 import { clubs, competitions, officials, savedCharts, trending } from '../data';
 import type { Club } from '../data';
 import { matchCard, returnsCard } from '../match-card';
-import {
-  AddedFeedBlock,
-  RemovedFeedLabel,
-  RenamedFeedLabel,
-  RestoredFeedLabel,
-  ToggledFeedEditing,
-  ToggledWidgetCatalog,
-  UnpinnedFeedBlock,
-} from '../message';
-import type { Message } from '../message';
+import { Message } from '../message';
 import { isLabelBlock } from '../model';
 import type { FeedBlock, Model } from '../model';
 import { resumesLabel, thisWeek } from '../pulse';
@@ -429,7 +420,7 @@ const FEED_SECTION = 'Feed';
 const feedManageToggle = (model: Model, h: HtmlBuilder<Message>): Html =>
   Button.view(
     {
-      onClick: ToggledFeedEditing(),
+      onClick: Message.ToggledFeedEditing(),
       toView: ({ button }) =>
         h.button(
           [
@@ -449,7 +440,7 @@ const feedManageToggle = (model: Model, h: HtmlBuilder<Message>): Html =>
 const feedUnpinButton = (key: string, label: string, h: HtmlBuilder<Message>): Html =>
   Button.view(
     {
-      onClick: UnpinnedFeedBlock({ key }),
+      onClick: Message.UnpinnedFeedBlock({ key }),
       toView: ({ button }) =>
         h.button(
           [
@@ -475,7 +466,7 @@ const feedEmpty = (h: HtmlBuilder<Message>): Html =>
 const addWidgetInvitation = (model: Model, h: HtmlBuilder<Message>): Html =>
   Button.view(
     {
-      onClick: ToggledWidgetCatalog(),
+      onClick: Message.ToggledWidgetCatalog(),
       toView: ({ button }) =>
         h.button(
           [
@@ -508,7 +499,7 @@ const catalogEntry = (kind: WidgetKind, h: HtmlBuilder<Message>): Html =>
       h.p([...getStyleXAttributes(h, styles.catalogSummary)], [kind.summary]),
       Button.view(
         {
-          onClick: AddedFeedBlock({ kind: kind.id }),
+          onClick: Message.AddedFeedBlock({ kind: kind.id }),
           toView: ({ button }) =>
             h.button(
               [
@@ -560,7 +551,7 @@ const blockLabel = (
           type: 'text',
           placeholder: 'Name this part of your feed…',
           value: text,
-          onInput: (value) => RenamedFeedLabel({ key: block.key, text: value }),
+          onInput: (value) => Message.RenamedFeedLabel({ key: block.key, text: value }),
           toView: (attributes) =>
             h.div(
               [...getStyleXAttributes(h, styles.labelField)],
@@ -594,7 +585,7 @@ const labelControl = (block: FeedBlock, name: string, h: HtmlBuilder<Message>): 
   Option.isSome(block.label)
     ? Button.view(
         {
-          onClick: RemovedFeedLabel({ key: block.key }),
+          onClick: Message.RemovedFeedLabel({ key: block.key }),
           toView: ({ button }) =>
             h.button(
               [
@@ -609,7 +600,7 @@ const labelControl = (block: FeedBlock, name: string, h: HtmlBuilder<Message>): 
       )
     : Button.view(
         {
-          onClick: RestoredFeedLabel({ key: block.key }),
+          onClick: Message.RestoredFeedLabel({ key: block.key }),
           toView: ({ button }) =>
             h.button(
               [

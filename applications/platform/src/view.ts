@@ -55,7 +55,7 @@ const openCompetition = (model: Model): Option.Option<Competition> =>
 const screenView = (model: Model, h: HtmlBuilder<Message>): Html => {
   // An unknown PATH names itself — only unknown club/competition SLUGS
   // still fall back to their directory screen (see openClub below).
-  if (model.route._tag === 'NotFoundRoute') return NotFound.view(model.route.path, h);
+  if (model.route._tag === 'NotFound') return NotFound.view(model.route.path, h);
   const club = openClub(model);
   if (Option.isSome(club)) return ClubProfile.view(club.value, model, h);
   const competition = openCompetition(model);

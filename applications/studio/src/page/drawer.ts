@@ -18,20 +18,9 @@ import {
   sectionSingularLabels,
   unsatisfiedColumns,
 } from '../data';
-import {
-  ClickedCancelDelete,
-  ClickedConfirmDelete,
-  ClickedDeleteRecord,
-  ClickedRecord,
-  ClickedRetryParticipations,
-  ClickedSaveRecord,
-  GotDialogMessage,
-  GotTabsMessage,
-  UpdatedDraftField,
-} from '../message';
-import type { Message } from '../message';
-import { DrawerTabs } from '../model';
-import type { DrawerTab, LogEntry, Model } from '../model';
+import { Message } from '../message';
+import { DrawerTabs, LogEntry } from '../model';
+import type { DrawerTab, Model } from '../model';
 import type { Section } from '../section';
 import {
   dangerButtonStyle,
@@ -155,7 +144,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
 
     return h.select(
       [
-        h.OnChange((value) => UpdatedDraftField({ index, value })),
+        h.OnChange((value) => Message.UpdatedDraftField({ index, value })),
         h.Class(`${drawerInputStyle} cursor-pointer`),
       ],
       [
@@ -205,7 +194,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
           ? h.input([
               h.Type('text'),
               h.Value(values[index] ?? ''),
-              h.OnInput((value) => UpdatedDraftField({ index, value })),
+              h.OnInput((value) => Message.UpdatedDraftField({ index, value })),
               h.Class(drawerInputStyle),
             ])
           : creating
@@ -255,7 +244,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
                     [
                       Button.view(
                         {
-                          onClick: ClickedRecord({ section: row.section, id: row.id }),
+                          onClick: Message.ClickedRecord({ section: row.section, id: row.id }),
                           toView: ({ button }) =>
                             h.button(
                               [...button, h.Class(entryCardStyle)],
@@ -294,7 +283,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
                 h.span([], [`Couldn’t load teams: ${model.participations.error}`]),
                 Button.view(
                   {
-                    onClick: ClickedRetryParticipations(),
+                    onClick: Message.ClickedRetryParticipations(),
                     toView: ({ button }) =>
                       h.button([...button, h.Class(retryButtonStyle)], ['Retry']),
                   },
@@ -339,7 +328,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
                     [
                       Button.view(
                         {
-                          onClick: ClickedRecord({ section: row.section, id: row.id }),
+                          onClick: Message.ClickedRecord({ section: row.section, id: row.id }),
                           toView: ({ button }) =>
                             h.button(
                               [...button, h.Class(entryCardStyle)],
@@ -436,7 +425,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
                 h.span([h.Class('text-sm font-medium text-rose-900')], ['Delete this record?']),
                 Button.view(
                   {
-                    onClick: ClickedConfirmDelete(),
+                    onClick: Message.ClickedConfirmDelete(),
                     toView: ({ button }) =>
                       h.button([...button, h.Class(dangerConfirmStyle)], ['Yes, delete']),
                   },
@@ -444,7 +433,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
                 ),
                 Button.view(
                   {
-                    onClick: ClickedCancelDelete(),
+                    onClick: Message.ClickedCancelDelete(),
                     toView: ({ button }) =>
                       h.button([...button, h.Class(dangerCancelStyle)], ['Cancel']),
                   },
@@ -454,7 +443,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
             )
           : Button.view(
               {
-                onClick: ClickedDeleteRecord(),
+                onClick: Message.ClickedDeleteRecord(),
                 toView: ({ button }) =>
                   h.button([...button, h.Class(dangerButtonStyle)], ['Delete record']),
               },
@@ -490,18 +479,15 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
           ],
         );
 
-      return M.value(change).pipe(
-        M.withReturnType<Html>(),
-        M.tagsExhaustive({
-          FieldChanged: ({ field, from, to }) =>
-            shell(field, `${from === '' ? '—' : from} → ${to === '' ? '—' : to}`),
-          RecordCreated: () => shell('Created', 'Added in the studio.'),
-          // Reachable only if a deleted record is ever openable again — the
-          // event is logged regardless, so the history is honest rather than
-          // shaped by what today’s UI happens to show.
-          RecordDeleted: () => shell('Deleted', 'Removed from the list.'),
-        }),
-      );
+      return LogEntry.match<Html>(change, {
+        FieldChanged: ({ field, from, to }) =>
+          shell(field, `${from === '' ? '—' : from} → ${to === '' ? '—' : to}`),
+        RecordCreated: () => shell('Created', 'Added in the studio.'),
+        // Reachable only if a deleted record is ever openable again — the
+        // event is logged regardless, so the history is honest rather than
+        // shaped by what today’s UI happens to show.
+        RecordDeleted: () => shell('Deleted', 'Removed from the list.'),
+      });
     };
 
     return h.div(
@@ -559,7 +545,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
             ],
           ),
       },
-      toParentMessage: (message) => GotTabsMessage({ message }),
+      toParentMessage: (message) => Message.GotTabsMessage({ message }),
     });
 
   // The panel’s content, laid out with the Dialog’s attribute bundles: the
@@ -634,7 +620,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
               // path unreachable from the UI that is supposed to exercise it.
               h.button(
                 [
-                  h.OnClick(ClickedSaveRecord()),
+                  h.OnClick(Message.ClickedSaveRecord()),
                   // AriaDisabled, not Disabled: a natively disabled button
                   // leaves the tab order, taking its own explanation with it —
                   // the keyboard and screen-reader users who most need to know
@@ -681,6 +667,6 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
             : [],
         ),
     },
-    toParentMessage: (message) => GotDialogMessage({ message }),
+    toParentMessage: (message) => Message.GotDialogMessage({ message }),
   });
 };

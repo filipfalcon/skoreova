@@ -1003,6 +1003,28 @@ body {
   opacity: 1;
 }
 
+/* motion.ts blacks this element out and then ignites it — but only once the
+   bundle has arrived. The document paints well before that now the page is
+   server-rendered, so the unguarded fallback above would show the sign already
+   lit, black it out when the bundle lands, and ignite it: a flicker that could
+   not happen while nothing painted before JS. Starting dark wherever scripting
+   is available means the sign only ever powers ON.
+
+   Order matters and specificity does not — a media query adds none, so this
+   wins over the rule above by sitting after it. Nothing here fights motion.ts:
+   the steps it sets are inline styles, which outrank both.
+
+   What each reader gets: no JS, or a browser too old to know `scripting`, falls
+   through to the lit fallback (no ignition, nothing missing). The exposure this
+   adds is the reader who HAS scripting but never receives the bundle — the sign
+   stays dark and the h1's middle line renders blank, though its text is still in
+   the markup for anything that reads rather than paints. */
+@media (scripting: enabled) {
+  .hero-neon {
+    opacity: 0;
+  }
+}
+
 .hero-glam {
   color: transparent;
   -webkit-text-stroke: 0.024em #ffe6f2;

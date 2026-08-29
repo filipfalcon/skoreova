@@ -3,7 +3,7 @@ import { Option } from 'effect';
 
 import { Model } from './main';
 import { DEFAULT_FEED_BLOCKS, DEFAULT_NEXT_FEED_KEY, feedKey } from './model';
-import { ClubRoute, ClubsRoute, CompetitionRoute, HerGameRoute, WelcomeRoute } from './route';
+import { AppRoute } from './route';
 import { EDITION_GROUP_ID, SCOPE_GROUP_ID } from './radio-groups';
 import { FEED_FEATURED_MATCHES, FEED_LABEL } from './widgets';
 
@@ -12,7 +12,7 @@ import { FEED_FEATURED_MATCHES, FEED_LABEL } from './widgets';
 // derives from this by spreading over the route (and any other differing
 // field).
 export const welcomeModel = Model.make({
-  route: WelcomeRoute(),
+  route: AppRoute.Welcome(),
   competitionEdition: Option.none(),
   competitionRounds: {},
   clubQuery: '',
@@ -87,7 +87,7 @@ export const feedCappedModel = Model.make({
   nextFeedKey: 4,
 });
 
-export const herGameModel = Model.make({ ...welcomeModel, route: HerGameRoute() });
+export const herGameModel = Model.make({ ...welcomeModel, route: AppRoute.HerGame() });
 
 // The root as a SIGNED-IN visitor sees it — the same route as `welcomeModel`,
 // the other half of the same page.
@@ -97,17 +97,17 @@ export const signedInModel = Model.make({ ...welcomeModel, isSignedIn: true });
 // branch of the view (empty vs populated).
 export const herGamePinnedModel = Model.make({
   ...welcomeModel,
-  route: HerGameRoute(),
+  route: AppRoute.HerGame(),
   pinned: ['trending:sparta-praha'],
 });
 
-export const clubsModel = Model.make({ ...welcomeModel, route: ClubsRoute() });
+export const clubsModel = Model.make({ ...welcomeModel, route: AppRoute.Clubs() });
 
 // The richest club profile — hero artwork, honors, Europe, the cup run —
 // so a render of it walks every section the profile can grow.
 export const clubProfileModel = Model.make({
   ...welcomeModel,
-  route: ClubRoute({ slug: 'sparta-praha' }),
+  route: AppRoute.Club({ slug: 'sparta-praha' }),
 });
 
 // The First League’s profile with its round pager parked on matchday 1 — the
@@ -115,6 +115,6 @@ export const clubProfileModel = Model.make({
 // (aria-disabled, no click handler, still focusable).
 export const competitionFirstRoundModel = Model.make({
   ...welcomeModel,
-  route: CompetitionRoute({ slug: 'first-league' }),
+  route: AppRoute.Competition({ slug: 'first-league' }),
   competitionRounds: { 'first-league': 1 },
 });

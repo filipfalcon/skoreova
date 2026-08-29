@@ -9,7 +9,7 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { homeRouter } from './route';
 import type { Model } from './model';
-import { type Message, ClosedMenu, ToggledMenu } from './message';
+import { Message } from './message';
 import { menuEntries, platformUrl, socialChannels } from './data';
 
 export const container = 'mx-auto w-full max-w-7xl px-5 md:px-10';
@@ -281,7 +281,7 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
               ),
               Button.view(
                 {
-                  onClick: ToggledMenu(),
+                  onClick: Message.ToggledMenu(),
                   toView: ({ button }) =>
                     h.button(
                       [
@@ -384,7 +384,7 @@ export const menuOverlayView = (model: Model, h: HtmlBuilder<Message>): Html =>
                 h.a(
                   [
                     h.Href(entry.target),
-                    h.OnClick(ClosedMenu()),
+                    h.OnClick(Message.ClosedMenu()),
                     ...(active ? [h.AriaCurrent('location')] : []),
                     // Hover = the sliding pink underlay (menu-anchor in
                     // styles.css), not a pink text flip — pink type stays

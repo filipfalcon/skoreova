@@ -49,7 +49,7 @@ export const competitionNames: Record<string, string> = {
 // An unrecognized slug falls through to the directory screen's title, matching
 // the screen the view draws for it.
 export const documentTitle = (route: AppRoute): string => {
-  if (route._tag === 'NotFoundRoute') return `Page not found — ${SITE_NAME}`;
+  if (route._tag === 'NotFound') return `Page not found — ${SITE_NAME}`;
   if (screenOf(route) === 'Welcome') return SITE_NAME;
   const name =
     clubNames[routeClubSlug(route)] ??

@@ -10,8 +10,7 @@ import { clubCupRun, standingsFor, scorersFor } from '../data';
 import { MATCHDAYS_PLAYED, leagueRoundCount } from '../schedule';
 import { Button } from '@foldkit/ui';
 import type { Club, CupTie, Scorer } from '../data';
-import { ToggledFollow } from '../message';
-import type { Message } from '../message';
+import { Message } from '../message';
 import type { Model, ScorerScope } from '../model';
 import { clubsRouter } from '../route';
 import {
@@ -22,7 +21,6 @@ import {
   zoneFor,
 } from '../standings';
 import type { EuroCampaign } from '../standings';
-import { GotScopeGroupMessage } from '../message';
 import { ScopeRadioGroup } from '../radio-groups';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
 import { styles } from '../styles/club-profile';
@@ -193,7 +191,7 @@ const scopeRadioGroup = (target: Club, model: Model, h: HtmlBuilder<Message>): H
     slotId: 'club-top-scorers-scope',
     model: model.scopeGroup,
     view: ScopeRadioGroup.view,
-    toParentMessage: (message) => GotScopeGroupMessage({ message }),
+    toParentMessage: (message) => Message.GotScopeGroupMessage({ message }),
     viewInputs: {
       selectedValue: Option.some(model.scorerScope),
       options: ['All', 'League', 'Cup'],
@@ -360,7 +358,7 @@ const clubFollowSection = (target: Club, model: Model, h: HtmlBuilder<Message>):
       ),
       Button.view(
         {
-          onClick: ToggledFollow({ slug: target.slug }),
+          onClick: Message.ToggledFollow({ slug: target.slug }),
           toView: ({ button }) =>
             h.button(
               [

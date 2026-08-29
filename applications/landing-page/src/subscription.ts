@@ -5,7 +5,7 @@ import { Effect, Option, Schema as S, Stream } from 'effect';
 import { Subscription } from 'foldkit';
 
 import type { Model } from './model';
-import { type Message, ChangedReducedMotion, ClosedMapClub, PressedMenuEscape } from './message';
+import { Message } from './message';
 
 // SUBSCRIPTIONS
 
@@ -96,15 +96,17 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
               // Just the Message — the menu path’s focus hand-back to the
               // toggle runs as a Command from the update handler
               // (FocusMenuToggle), not as a DOM side effect in the stream.
-              Stream.map(() => (isMenuOpen ? PressedMenuEscape() : ClosedMapClub())),
+              Stream.map(() =>
+                isMenuOpen ? Message.PressedMenuEscape() : Message.ClosedMapClub(),
+              ),
             )
           : Stream.empty,
     },
   ),
   // Smooth wheel scrolling runs while the menu is closed and motion is
   // allowed. An open overlay owns its own (native) scroll, so the wheel hijack
-  // stands down. Reduced motion comes from the Model (seeded via Flags, kept
-  // fresh below) — not from a private matchMedia read.
+  // stands down. Reduced motion comes from the Model (established and kept
+  // fresh by the subscription below) — not from a private matchMedia read.
   smoothWheel: entry(
     { isMenuOpen: S.Boolean, prefersReducedMotion: S.Boolean },
     {
@@ -116,17 +118,29 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
         isMenuOpen || prefersReducedMotion ? Stream.empty : smoothWheelScroll,
     },
   ),
-  // Follows the OS-level `prefers-reduced-motion` setting for the rest of
-  // the session — the boot value arrives via Flags; this reports flips.
+  // Follows the OS-level `prefers-reduced-motion` setting: the CURRENT value on
+  // subscribe, then every flip for the rest of the session.
+  //
+  // The boot value used to arrive via Flags, and this reported flips only. A
+  // prerendered document cannot carry it that way — one HTML file answers every
+  // visitor, so a baked-in flag would assert one person's preference for
+  // everyone, and a `change` listener never fires for someone who set it before
+  // they arrived. Reading the query here keeps the answer per-visitor: the
+  // served Model says `false` and this corrects it as the runtime subscribes,
+  // before any frame the user could act on.
   reducedMotion: entry(
     {},
     {
       modelToDependencies: () => ({}),
-      dependenciesToStream: () =>
-        Stream.fromEventListener<MediaQueryListEvent>(
-          window.matchMedia('(prefers-reduced-motion: reduce)'),
-          'change',
-        ).pipe(Stream.map((event) => ChangedReducedMotion({ reduce: event.matches }))),
+      dependenciesToStream: () => {
+        const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+        return Stream.concat(
+          Stream.make(Message.ChangedReducedMotion({ reduce: query.matches })),
+          Stream.fromEventListener<MediaQueryListEvent>(query, 'change').pipe(
+            Stream.map((event) => Message.ChangedReducedMotion({ reduce: event.matches })),
+          ),
+        );
+      },
     },
   ),
 }));

@@ -17,14 +17,8 @@ import type { Land } from '../czechia';
 import { FIRST_LEAGUE, MAP_LEAGUE_LABELS, SECOND_LEAGUE, clubs, platformUrl } from '../data';
 import type { ClubSlug } from '../data';
 import type { Club } from '../data';
-import {
-  ClosedMapClub,
-  GotMapLeagueGroupMessage,
-  OpenedMapClub,
-  ToggledAreaUnit,
-} from '../message';
+import { Message } from '../message';
 import { MapLeagueRadioGroup } from '../radio-groups';
-import type { Message } from '../message';
 import type { Model } from '../model';
 
 // A pin filtered out by the league toggle is hidden outright (display:none
@@ -285,7 +279,9 @@ const clubPin = (model: Model, club: Club, h: HtmlBuilder<Message>): Html => {
           // CREST_SCALE nudges those up to the same optical size.
           Button.view(
             {
-              onClick: selected ? ClosedMapClub() : OpenedMapClub({ slug: club.slug }),
+              onClick: selected
+                ? Message.ClosedMapClub()
+                : Message.OpenedMapClub({ slug: club.slug }),
               toView: ({ button }) =>
                 h.button(
                   [
@@ -434,7 +430,7 @@ const mapLeagueFilter = (model: Model, h: HtmlBuilder<Message>): Html =>
     slotId: 'map-league-filter',
     model: model.mapLeagueGroup,
     view: MapLeagueRadioGroup.view,
-    toParentMessage: (message) => GotMapLeagueGroupMessage({ message }),
+    toParentMessage: (message) => Message.GotMapLeagueGroupMessage({ message }),
     viewInputs: {
       selectedValue: Option.some(model.mapLeague),
       options: ['All', 'First', 'Second'],
@@ -569,7 +565,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
               // "informational" rather than navigational.
               Button.view(
                 {
-                  onClick: ToggledAreaUnit(),
+                  onClick: Message.ToggledAreaUnit(),
                   toView: ({ button }) =>
                     h.button(
                       [
@@ -869,7 +865,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                             h.div(
                               [
                                 h.Class('absolute inset-0 z-[5]'),
-                                h.OnClick(ClosedMapClub()),
+                                h.OnClick(Message.ClosedMapClub()),
                                 h.AriaHidden(true),
                               ],
                               [],

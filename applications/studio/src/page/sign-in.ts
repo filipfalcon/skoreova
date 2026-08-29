@@ -2,8 +2,7 @@ import { Button, Input } from '@foldkit/ui';
 import type { Document, HtmlBuilder } from 'foldkit/html';
 
 import loginBackground from '../assets/login-background.jpg';
-import { SubmittedSignIn, UpdatedEmail, UpdatedPassword } from '../message';
-import type { Message } from '../message';
+import { Message } from '../message';
 import type { Model } from '../model';
 import { cardStyle, chipStyle, inputStyle, submitStyle } from '../styles';
 
@@ -43,7 +42,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
                 // A real form, so Enter in either field submits it — the
                 // arrow button is its type=submit control.
                 h.form(
-                  [h.OnSubmit(SubmittedSignIn())],
+                  [h.OnSubmit(Message.SubmittedSignIn())],
                   [
                     h.div(
                       [h.Class('mt-6 flex flex-col gap-3')],
@@ -57,7 +56,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
                             type: 'email',
                             placeholder: 'email address',
                             value: emailInput,
-                            onInput: (value) => UpdatedEmail({ value }),
+                            onInput: (value) => Message.UpdatedEmail({ value }),
                             toView: (attributes) =>
                               h.div(
                                 [],
@@ -83,7 +82,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
                             type: 'password',
                             placeholder: 'password',
                             value: passwordInput,
-                            onInput: (value) => UpdatedPassword({ value }),
+                            onInput: (value) => Message.UpdatedPassword({ value }),
                             toView: (attributes) =>
                               h.div(
                                 [],

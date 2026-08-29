@@ -27,6 +27,32 @@ const INLINE_ENTRIES: ReadonlyArray<{ entry: string; after?: string }> = [
   { entry: 'src/analytics/start.ts', after: 'id="cookie-consent"' },
 ];
 
+// Alchemy's Cloudflare plugin replaces the `ssr` environment with a workerd
+// one, which is not runnable, and `foldkitSsr`'s dev middleware loads the
+// server entry through `ssrLoadModule` — which requires a runnable one. Under
+// `alchemy dev` the middleware is redundant as well as broken: requests reach
+// workerd running `src/worker.ts`, which renders through the same entry
+// anyway. So the dev integration belongs to a PLAIN vite dev server, and the
+// Worker owns rendering everywhere else.
+const isUnderAlchemy = process.env['ALCHEMY_CLOUDFLARE_VITE_INJECTED'] === '1';
+
+// The deployment this build belongs to, stamped into the server render and
+// compiled into the client bundle; hydration refuses a page whose id is not
+// this one. A commit is not enough on its own — the same revision can be
+// deployed with different rendering inputs — so CI supplies a per-deployment
+// value and a local build falls back to a fresh one rather than a constant
+// that would make a stale page look current.
+//
+// The fallback is written BACK into the environment, and that is load-bearing.
+// Vite evaluates this config once per environment — once for `client`, once for
+// `ssr` — so a bare `Date.now()` produced two ids milliseconds apart: the Worker
+// stamped one, the client bundle carried the other, and every page refused to
+// hydrate with "This page could not start safely. Reload to get the current
+// version." Both evaluations share a process, so memoizing through `process.env`
+// is what makes the second read the first's value. CI sets the variable and none
+// of this runs.
+const BUILD_ID = (process.env['FOLDKIT_BUILD_ID'] ??= `local-${Date.now().toString(36)}`);
+
 const placeholderFor = (entry: string): string => `<!-- @inline ${entry} -->`;
 
 const bundleEntry = async (root: string, entry: string): Promise<string> => {
@@ -238,10 +264,7 @@ const preloadFonts = (): Plugin => ({
 // builds keep Vite's own behavior.
 const pinAlchemyDevPort = (port: number): Plugin => ({
   name: 'skoreova:pin-alchemy-dev-port',
-  config: () =>
-    process.env['ALCHEMY_CLOUDFLARE_VITE_INJECTED'] === '1'
-      ? { server: { port, strictPort: true } }
-      : {},
+  config: () => (isUnderAlchemy ? { server: { port, strictPort: true } } : {}),
 });
 
 // The DevTools MCP relay is a LISTENING SOCKET, and this config is a test
@@ -263,7 +286,14 @@ export default defineConfig({
   // Studio claims 9988 — each app needs its own DevTools MCP port.
   plugins: [
     ...tailwindcss(),
-    ...foldkit({ devToolsMcpPort }),
+    ...foldkit({
+      devToolsMcpPort,
+      // A plain `vp dev` renders through the same entry the Worker calls, so
+      // a hydration mismatch shows up while editing rather than after a
+      // deploy. See `isUnderAlchemy` for why it is not always on.
+      ...(isUnderAlchemy ? {} : { ssr: { serverEntry: '/src/entry.server.ts' } }),
+      buildId: BUILD_ID,
+    }),
     inlineConsent(import.meta.dirname),
     inlineStylesheet(),
     preloadHero(),
@@ -311,6 +341,13 @@ export default defineConfig({
   // so a shared include would hand both runners the whole suite.
   test: {
     name: 'landing-page',
+    // A fixed build id for the server-entry tests: `renderToString` refuses a
+    // hydratable render without one. It rides on `env` rather than the
+    // plugin's `buildId`, because Vitest builds `import.meta.env` itself and
+    // the plugin's compile-time define does not survive into a test run.
+    // Tests compare a render against itself rather than across deployments, so
+    // a constant is the whole of what they need.
+    env: { FOLDKIT_BUILD_ID: 'test' },
     include: ['src/**/*.test.ts'],
     exclude: ['src/**/*.browser.test.ts'],
     // The app’s own update/view/init never touch the DOM at call time, but the

@@ -5,14 +5,7 @@ import { Array, Effect, Option, Schema as S, pipe } from 'effect';
 import { Command, Dom } from 'foldkit';
 import { load as loadUrl, pushUrl } from 'foldkit/navigation';
 
-import {
-  CompletedFocusMenuToggle,
-  CompletedLoad,
-  CompletedNavigate,
-  CompletedSetScrollLock,
-  DetectedActiveSection,
-} from './message';
-import type { Message } from './message';
+import { Message } from './message';
 import { menuEntries } from './data';
 
 // COMMAND
@@ -103,7 +96,7 @@ const animateScrollTo = (target: HTMLElement, reduceMotion: boolean): void => {
 // a scroll no-op, as it always was).
 export const Navigate = Command.define('Navigate', {
   args: { url: S.String, reduceMotion: S.Boolean },
-  messages: [CompletedNavigate],
+  messages: [Message.CompletedNavigate],
   execute: ({ url, reduceMotion }) =>
     pushUrl(url).pipe(
       Effect.andThen(
@@ -126,14 +119,14 @@ export const Navigate = Command.define('Navigate', {
           scrollWhenRendered(10);
         }),
       ),
-      Effect.as(CompletedNavigate()),
+      Effect.as(Message.CompletedNavigate()),
     ),
 });
 
 export const Load = Command.define('Load', {
   args: { href: S.String },
-  messages: [CompletedLoad],
-  execute: ({ href }) => loadUrl(href).pipe(Effect.as(CompletedLoad())),
+  messages: [Message.CompletedLoad],
+  execute: ({ href }) => loadUrl(href).pipe(Effect.as(Message.CompletedLoad())),
 });
 
 // Locks/unlocks page scrolling while the menu overlay is open. Delegates to
@@ -145,9 +138,9 @@ export const Load = Command.define('Load', {
 // the lock is up (Navigate’s fragment scroll, DetectActiveSection) read true.
 export const SetScrollLock = Command.define('SetScrollLock', {
   args: { locked: S.Boolean },
-  messages: [CompletedSetScrollLock],
+  messages: [Message.CompletedSetScrollLock],
   execute: ({ locked }) =>
-    (locked ? Dom.lockScroll : Dom.unlockScroll).pipe(Effect.as(CompletedSetScrollLock())),
+    (locked ? Dom.lockScroll : Dom.unlockScroll).pipe(Effect.as(Message.CompletedSetScrollLock())),
 });
 
 // Returns focus to the header’s menu toggle after Escape closes the overlay
@@ -156,10 +149,10 @@ export const SetScrollLock = Command.define('SetScrollLock', {
 // missing toggle is ignored: the header always renders it, and focus
 // restoration is courtesy, not correctness.
 export const FocusMenuToggle = Command.define('FocusMenuToggle', {
-  messages: [CompletedFocusMenuToggle],
+  messages: [Message.CompletedFocusMenuToggle],
   execute: Dom.focus('#menu-toggle', { preventScroll: true }).pipe(
     Effect.ignore,
-    Effect.as(CompletedFocusMenuToggle()),
+    Effect.as(Message.CompletedFocusMenuToggle()),
   ),
 });
 
@@ -169,7 +162,7 @@ export const FocusMenuToggle = Command.define('FocusMenuToggle', {
 // lock — the page holds its real position under `overflow: hidden`. The
 // candidate ids come from menuEntries itself, so the two can’t drift apart.
 export const DetectActiveSection = Command.define('DetectActiveSection', {
-  messages: [DetectedActiveSection],
+  messages: [Message.DetectedActiveSection],
   execute: Effect.sync(() => {
     const center = window.innerHeight / 2;
     // The last section whose top has passed the center line wins — the
@@ -185,7 +178,7 @@ export const DetectActiveSection = Command.define('DetectActiveSection', {
       }),
       Option.map((entry) => entry.target.split('#')[1] ?? ''),
     );
-    return DetectedActiveSection({ section });
+    return Message.DetectedActiveSection({ section });
   }),
 });
 
