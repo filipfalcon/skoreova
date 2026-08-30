@@ -118,11 +118,11 @@ export default defineConfig({
     environment: 'happy-dom',
     setupFiles: ['./src/vitest-setup.ts'],
     // Foldkit and ECharts ship as ESM with subpath exports; inline them so
-    // Vitest transforms them instead of externalizing to the bun isolated
-    // store, where the subpath resolution trips. @foldkit/ui must be inlined
-    // alongside foldkit: externalized it would natively import a second
-    // foldkit instance, whose render-dispatch singleton is not the one Scene
-    // drives (its submodel views then throw "built outside a view").
+    // Vitest transforms them instead of externalizing them to a native
+    // import. @foldkit/ui must be inlined alongside foldkit: externalized it
+    // would natively import a second foldkit instance, whose render-dispatch
+    // singleton is not the one Scene drives (its submodel views then throw
+    // "built outside a view").
     server: { deps: { inline: ['foldkit', '@foldkit/ui', 'echarts'] } },
   },
 });

@@ -5,6 +5,6 @@
   "compilerOptions": {
     "outDir": "./tsbuild",
     "lib": ["esnext"],
-    "types": ["bun"]
+    "types": ["node"]
   }
 }

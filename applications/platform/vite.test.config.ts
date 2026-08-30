@@ -42,11 +42,11 @@ export default defineConfig({
     environment: 'happy-dom',
     setupFiles: ['./src/vitest-setup.ts'],
     // Foldkit ships as ESM with subpath exports (foldkit/struct, foldkit/test/*);
-    // inline it so Vitest transforms it instead of externalizing to the bun
-    // isolated store, where the subpath resolution trips. `@foldkit/ui` rides
-    // along because the two must share ONE foldkit instance: the html builder
-    // reads a render frame off a module-level stack, so a component resolving
-    // its own externalized copy finds that stack empty and refuses to build.
+    // inline it so Vitest transforms it instead of externalizing it to a
+    // native import. `@foldkit/ui` rides along because the two must share ONE
+    // foldkit instance: the html builder reads a render frame off a
+    // module-level stack, so a component resolving its own externalized copy
+    // finds that stack empty and refuses to build.
     server: { deps: { inline: ['foldkit', '@foldkit/ui'] } },
   },
 });

@@ -358,11 +358,11 @@ export default defineConfig({
     // Registers Foldkit’s Scene matchers for story.test.ts / scene.test.ts.
     setupFiles: ['./src/vitest-setup.ts'],
     // Foldkit ships as ESM with subpath exports (foldkit/struct, foldkit/test/*);
-    // inline it so Vitest transforms it instead of externalizing to the bun
-    // isolated store, where the subpath resolution trips. @foldkit/ui must be
-    // inlined alongside foldkit: externalized it would natively import a second
-    // foldkit instance, whose render-dispatch singleton is not the one Scene
-    // drives (its submodel views then throw "built outside a view").
+    // inline it so Vitest transforms it instead of externalizing it to a
+    // native import. @foldkit/ui must be inlined alongside foldkit:
+    // externalized it would natively import a second foldkit instance, whose
+    // render-dispatch singleton is not the one Scene drives (its submodel
+    // views then throw "built outside a view").
     server: { deps: { inline: ['foldkit', '@foldkit/ui'] } },
   },
 });

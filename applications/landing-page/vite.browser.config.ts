@@ -12,7 +12,7 @@ import { defineConfig } from 'vite-plus';
 // derive its project list from `workspaces`: a package is not a runner.
 //
 // A sidecar config file rather than an inline project entry in the root, for
-// two reasons. `bunx vp test run` inside this app keeps working (it runs the
+// two reasons. `npx vp test run` inside this app keeps working (it runs the
 // fast half from vite.config.ts, and this half with `--config`), and inline
 // entries take their root from the ROOT project unless told otherwise, which
 // silently matches zero files.
