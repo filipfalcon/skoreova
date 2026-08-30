@@ -276,7 +276,7 @@ test('a deep-linked team resolves by id, upserts the row, and opens its drawer',
     }),
     // Opening the drawer opens its Dialog (the native <dialog> element).
     Story.Command.expectExact(Dialog.ShowDialog),
-    Story.Command.resolve(Dialog.ShowDialog, Dialog.Message.CompletedShowDialog()),
+    Story.Command.resolve(Dialog.ShowDialog, Dialog.Message.SucceededShowDialog()),
   );
 });
 
@@ -366,7 +366,7 @@ test('a new edition names its competition through the picker, and is filed under
     // offers. Creating opens a blank draft over the section’s columns.
     Story.given(editionsListModel),
     Story.message(Message.ClickedAddNew()),
-    Story.Command.resolve(Dialog.ShowDialog, Dialog.Message.CompletedShowDialog()),
+    Story.Command.resolve(Dialog.ShowDialog, Dialog.Message.SucceededShowDialog()),
     Story.model((model) => {
       expect(model.drawer._tag).toBe('Creating');
     }),
@@ -395,7 +395,7 @@ test('a new edition with no competition chosen is refused, not filed', () => {
     update,
     Story.given(editionsListModel),
     Story.message(Message.ClickedAddNew()),
-    Story.Command.resolve(Dialog.ShowDialog, Dialog.Message.CompletedShowDialog()),
+    Story.Command.resolve(Dialog.ShowDialog, Dialog.Message.SucceededShowDialog()),
     // Everything but the reference filled in. The drawer disables Save here;
     // `update` refuses the same way, so a held Enter can’t slip a record
     // through with parentId '' — the cell it would need goes read-only the
@@ -672,7 +672,7 @@ test('the column rules decide what saves, and the same rules refuse in update', 
     update,
     Story.given(editionsListModel),
     Story.message(Message.ClickedAddNew()),
-    Story.Command.resolve(Dialog.ShowDialog, Dialog.Message.CompletedShowDialog()),
+    Story.Command.resolve(Dialog.ShowDialog, Dialog.Message.SucceededShowDialog()),
     // Edition (title, required), Competition (reference, required), then two
     // dates. A malformed date is Invalid, so the draft is not savable even
     // though every cell has been filled in.

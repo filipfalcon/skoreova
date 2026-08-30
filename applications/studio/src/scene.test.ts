@@ -67,7 +67,7 @@ describe('view', () => {
       // The name span has no handler of its own — the click bubbles to the
       // card <button>, exactly as it does in a browser.
       Scene.click(Scene.text('Sierra Pennock')),
-      Scene.Command.resolve(Dialog.ShowDialog, Dialog.Message.CompletedShowDialog()),
+      Scene.Command.resolve(Dialog.ShowDialog, Dialog.Message.SucceededShowDialog()),
       Scene.Command.resolve(Navigate, Message.CompletedNavigate()),
       Scene.Mount.resolve(MountChart, Message.SucceededMountChart({ hostId: CHART_HOST_ID })),
       Scene.Command.resolve(SyncChart, Message.SucceededSyncChart()),
@@ -83,7 +83,7 @@ describe('view', () => {
       { update, view },
       Scene.given(editionsListModel),
       Scene.click(Scene.role('button', { name: '+ Add new' })),
-      Scene.Command.resolve(Dialog.ShowDialog, Dialog.Message.CompletedShowDialog()),
+      Scene.Command.resolve(Dialog.ShowDialog, Dialog.Message.SucceededShowDialog()),
       // AriaDisabled, not the native attribute — a disabled button leaves the
       // tab order and takes its own description with it.
       Scene.expect(Scene.role('button', { name: 'Save' })).toHaveAttr('aria-disabled', 'true'),

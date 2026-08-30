@@ -1240,29 +1240,29 @@ const setUpMotion = (root: HTMLElement): (() => void) => {
   };
 };
 
-export const MountMotion = Mount.define(
-  'MountMotion',
-  Message.CompletedMountMotion,
-  Message.FailedMountMotion,
-)((element) =>
-  Effect.gen(function* () {
-    if (!(element instanceof HTMLElement)) {
-      return Message.FailedMountMotion({ reason: 'Motion host is not an HTMLElement.' });
-    }
+export const MountMotion = Mount.define('MountMotion', {
+  messages: [Message.CompletedMountMotion, Message.FailedMountMotion],
+  execute: ({ element }) =>
+    Effect.gen(function* () {
+      if (!(element instanceof HTMLElement)) {
+        return Message.FailedMountMotion({ reason: 'Motion host is not an HTMLElement.' });
+      }
 
-    return yield* Effect.acquireRelease(
-      Effect.try({
-        try: () => setUpMotion(element),
-        catch: (error) =>
-          error instanceof Error ? error : new Error(`Failed to set up motion: ${error}`),
-      }),
-      (tearDown) => Effect.sync(tearDown),
-    ).pipe(
-      Effect.map(() => Message.CompletedMountMotion()),
-      Effect.catch((error) => Effect.succeed(Message.FailedMountMotion({ reason: error.message }))),
-    );
-  }),
-);
+      return yield* Effect.acquireRelease(
+        Effect.try({
+          try: () => setUpMotion(element),
+          catch: (error) =>
+            error instanceof Error ? error : new Error(`Failed to set up motion: ${error}`),
+        }),
+        (tearDown) => Effect.sync(tearDown),
+      ).pipe(
+        Effect.map(() => Message.CompletedMountMotion()),
+        Effect.catch((error) =>
+          Effect.succeed(Message.FailedMountMotion({ reason: error.message })),
+        ),
+      );
+    }),
+});
 
 // The reveal observers as their own streaming Mount — MountMotion keeps the
 // per-frame choreography; this one only OBSERVES and reports, because
@@ -1270,27 +1270,24 @@ export const MountMotion = Mount.define(
 // in from the Model (one OnMount per element, so this sits on the page
 // root while <main> carries MountMotion; the root is keyed on the flag, so
 // a flip re-runs this factory with the fresh value).
-export const ObserveReveals = Mount.defineStream(
-  'ObserveReveals',
-  { reduceMotion: S.Boolean },
-  Message.ChangedReveals,
-)(
-  ({ reduceMotion }) =>
-    (element) =>
-      Stream.callback<typeof Message.ChangedReveals.Type>((queue) =>
-        Effect.gen(function* () {
-          yield* Effect.acquireRelease(
-            Effect.sync(() =>
-              !reduceMotion && element instanceof HTMLElement
-                ? setUpReveals(element, (message) => Queue.offerUnsafe(queue, message))
-                : (): void => {},
-            ),
-            (teardown) => Effect.sync(teardown),
-          );
-          return yield* Effect.never;
-        }),
-      ),
-);
+export const ObserveReveals = Mount.defineStream('ObserveReveals', {
+  args: { reduceMotion: S.Boolean },
+  messages: [Message.ChangedReveals],
+  execute: ({ element, reduceMotion }) =>
+    Stream.callback<typeof Message.ChangedReveals.Type>((queue) =>
+      Effect.gen(function* () {
+        yield* Effect.acquireRelease(
+          Effect.sync(() =>
+            !reduceMotion && element instanceof HTMLElement
+              ? setUpReveals(element, (message) => Queue.offerUnsafe(queue, message))
+              : (): void => {},
+          ),
+          (teardown) => Effect.sync(teardown),
+        );
+        return yield* Effect.never;
+      }),
+    ),
+});
 
 // Watches the hero and reports when its bottom slips under the fixed header,
 // so the header’s persistent "Enter platform" CTA can take over from the
@@ -1299,39 +1296,38 @@ export const ObserveReveals = Mount.defineStream(
 // element directly (rather than sampling geometry every frame) is both the
 // element-scoped shape a Mount wants and cheaper. The header renders the
 // class off the Model, so a header re-render can no longer wipe it.
-export const ObserveHeroPastHeader = Mount.defineStream(
-  'ObserveHeroPastHeader',
-  Message.DetectedHeroPastHeader,
-)((element) =>
-  Stream.callback<typeof Message.DetectedHeroPastHeader.Type>((queue) =>
-    Effect.gen(function* () {
-      yield* Effect.acquireRelease(
-        Effect.sync(() => {
-          // The fixed header’s own height is the observer’s top inset: the
-          // hero counts as "past" the instant its bottom crosses under the
-          // bar, not once it clears the whole viewport. Measured once at
-          // mount (3.5rem on phones, 4rem from md up) — a mid-session
-          // breakpoint cross is rare enough not to warrant re-observing.
-          const headerHeight =
-            document.querySelector('header')?.getBoundingClientRect().height ?? 64;
-          const observer = new IntersectionObserver(
-            (entries) => {
-              const entry = entries[entries.length - 1];
-              if (entry) {
-                Queue.offerUnsafe(
-                  queue,
-                  Message.DetectedHeroPastHeader({ past: !entry.isIntersecting }),
-                );
-              }
-            },
-            { rootMargin: `-${headerHeight}px 0px 0px 0px` },
-          );
-          observer.observe(element);
-          return observer;
-        }),
-        (observer) => Effect.sync(() => observer.disconnect()),
-      );
-      return yield* Effect.never;
-    }),
-  ),
-);
+export const ObserveHeroPastHeader = Mount.defineStream('ObserveHeroPastHeader', {
+  messages: [Message.DetectedHeroPastHeader],
+  execute: ({ element }) =>
+    Stream.callback<typeof Message.DetectedHeroPastHeader.Type>((queue) =>
+      Effect.gen(function* () {
+        yield* Effect.acquireRelease(
+          Effect.sync(() => {
+            // The fixed header’s own height is the observer’s top inset: the
+            // hero counts as "past" the instant its bottom crosses under the
+            // bar, not once it clears the whole viewport. Measured once at
+            // mount (3.5rem on phones, 4rem from md up) — a mid-session
+            // breakpoint cross is rare enough not to warrant re-observing.
+            const headerHeight =
+              document.querySelector('header')?.getBoundingClientRect().height ?? 64;
+            const observer = new IntersectionObserver(
+              (entries) => {
+                const entry = entries[entries.length - 1];
+                if (entry) {
+                  Queue.offerUnsafe(
+                    queue,
+                    Message.DetectedHeroPastHeader({ past: !entry.isIntersecting }),
+                  );
+                }
+              },
+              { rootMargin: `-${headerHeight}px 0px 0px 0px` },
+            );
+            observer.observe(element);
+            return observer;
+          }),
+          (observer) => Effect.sync(() => observer.disconnect()),
+        );
+        return yield* Effect.never;
+      }),
+    ),
+});

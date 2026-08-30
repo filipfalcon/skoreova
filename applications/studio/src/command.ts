@@ -24,47 +24,43 @@ export const POINTS_CHART_HOST_ID = 'studio-record-points-chart';
 
 // Mounts an ECharts instance into the host element and tears it down when the
 // element is removed (e.g. switching drawer tabs or closing the drawer).
-export const MountChart = Mount.define(
-  'MountChart',
-  { hostId: S.String },
-  Message.SucceededMountChart,
-  Message.FailedMountChart,
-)(
-  ({ hostId }) =>
-    (element) =>
-      Effect.gen(function* () {
-        if (!(element instanceof HTMLElement)) {
-          return Message.FailedMountChart({ reason: 'Chart host is not an HTMLElement.' });
-        }
+export const MountChart = Mount.define('MountChart', {
+  args: { hostId: S.String },
+  messages: [Message.SucceededMountChart, Message.FailedMountChart],
+  execute: ({ element, hostId }) =>
+    Effect.gen(function* () {
+      if (!(element instanceof HTMLElement)) {
+        return Message.FailedMountChart({ reason: 'Chart host is not an HTMLElement.' });
+      }
 
-        return yield* Effect.acquireRelease(
-          Effect.try({
-            try: () => {
-              const chart = echarts.init(element, undefined, { renderer: 'canvas' });
-              const resizeObserver = new ResizeObserver(() => chart.resize());
-              resizeObserver.observe(element);
-              setChart(hostId, chart);
-              // The release carries the instance it created, so a remount
-              // that already claimed this hostId can’t be torn down by the
-              // mount it replaced (see releaseChart).
-              return { chart, resizeObserver };
-            },
-            catch: (error) =>
-              error instanceof Error ? error : new Error(`Failed to mount chart: ${error}`),
+      return yield* Effect.acquireRelease(
+        Effect.try({
+          try: () => {
+            const chart = echarts.init(element, undefined, { renderer: 'canvas' });
+            const resizeObserver = new ResizeObserver(() => chart.resize());
+            resizeObserver.observe(element);
+            setChart(hostId, chart);
+            // The release carries the instance it created, so a remount
+            // that already claimed this hostId can’t be torn down by the
+            // mount it replaced (see releaseChart).
+            return { chart, resizeObserver };
+          },
+          catch: (error) =>
+            error instanceof Error ? error : new Error(`Failed to mount chart: ${error}`),
+        }),
+        ({ chart, resizeObserver }) =>
+          Effect.sync(() => {
+            resizeObserver.disconnect();
+            releaseChart(hostId, chart);
           }),
-          ({ chart, resizeObserver }) =>
-            Effect.sync(() => {
-              resizeObserver.disconnect();
-              releaseChart(hostId, chart);
-            }),
-        ).pipe(
-          Effect.map(() => Message.SucceededMountChart({ hostId })),
-          Effect.catch((error) =>
-            Effect.succeed(Message.FailedMountChart({ reason: error.message })),
-          ),
-        );
-      }),
-);
+      ).pipe(
+        Effect.map(() => Message.SucceededMountChart({ hostId })),
+        Effect.catch((error) =>
+          Effect.succeed(Message.FailedMountChart({ reason: error.message })),
+        ),
+      );
+    }),
+});
 
 // Pushes the given stats into an already-mounted chart instance.
 export const SyncChart = Command.define('SyncChart', {
