@@ -6,7 +6,7 @@ import { UrlRequest } from 'foldkit/navigation';
 import { toString as urlToString } from 'foldkit/url';
 import type { Url } from 'foldkit/url';
 
-import { AppRoute, urlToAppRoute } from './route';
+import { AppRoute, routePath, urlToAppRoute } from './route';
 import {
   DEFAULT_FEED_BLOCKS,
   DEFAULT_NEXT_FEED_KEY,
@@ -20,11 +20,13 @@ import {
   limitFor,
 } from './model';
 import { Message } from './message';
-import { Load, Navigate, ReadPins, WritePins } from './command';
-import { competitionBySlug, featuredClubs } from './data';
+import { Load, Navigate, ReadPins, RevealJumpChip, ScrollTrending, WritePins } from './command';
+import { competitionBySlug, featuredClubs, trending } from './data';
 import { competitionRoundCount } from './schedule';
 import { RadioGroup } from '@foldkit/ui';
 import {
+  COMPETITION_GROUP_ID,
+  CompetitionRadioGroup,
   EDITION_GROUP_ID,
   EditionRadioGroup,
   SCOPE_GROUP_ID,
@@ -64,9 +66,18 @@ const initialModel: Model = {
   competitionRounds: {},
   clubQuery: '',
   featuredClub: 0,
+  trendingIndex: 0,
+  isTrendingHeld: false,
+  // Corrected by the reducedMotion subscription on the first tick.
+  prefersReducedMotion: false,
   followed: [],
   // Real value arrives from storage via ReadPins (init) — empty until then.
   pinned: [],
+  expandedClubSections: [],
+  activeClubSection: Option.none(),
+  isQuoteOverflowing: false,
+  competitionTab: 'League',
+  competitionGroup: RadioGroup.init({ id: COMPETITION_GROUP_ID }),
   scorerScope: 'All',
   scopeGroup: RadioGroup.init({ id: SCOPE_GROUP_ID }),
   editionGroup: RadioGroup.init({ id: EDITION_GROUP_ID }),
@@ -90,6 +101,11 @@ const applyRoute = (model: Model, route: AppRoute): Model =>
     clubQuery: () => '',
     featuredClub: () => 0,
     scorerScope: (current) => (route._tag === 'Club' ? 'All' : current),
+    // A hash jump within a profile arrives here as the same route again; the sections the reader opened stay open across it and fold only on leaving the page.
+    expandedClubSections: (current) => (routePath(route) === routePath(model.route) ? current : []),
+    activeClubSection: (current) =>
+      routePath(route) === routePath(model.route) ? current : Option.none(),
+    competitionTab: (current) => (routePath(route) === routePath(model.route) ? current : 'League'),
     isFeedEditing: () => false,
     isWidgetCatalogOpen: () => false,
     isWidgetAddRefused: () => false,
@@ -162,6 +178,18 @@ export const update = (model: Model, message: Message) =>
           ({ value }) =>
           (parent: Model) => ({ model: evo(parent, { scorerScope: () => value }) }),
       })(message)(model),
+    GotCompetitionGroupMessage: ({ message }) =>
+      Update.foldChild({
+        update: CompetitionRadioGroup.update,
+        read: (parent: Model) => Option.some(parent.competitionGroup),
+        write: (parent: Model, competitionGroup) =>
+          evo(parent, { competitionGroup: () => competitionGroup }),
+        toParentMessage: (childMessage) =>
+          Message.GotCompetitionGroupMessage({ message: childMessage }),
+        foldOutMessage:
+          ({ value }) =>
+          (parent: Model) => ({ model: evo(parent, { competitionTab: () => value }) }),
+      })(message)(model),
     GotEditionGroupMessage: ({ message }) =>
       Update.foldChild({
         update: EditionRadioGroup.update,
@@ -188,8 +216,41 @@ export const update = (model: Model, message: Message) =>
           ((index % featuredClubs.length) + featuredClubs.length) % featuredClubs.length,
       }),
     }),
+    // The countdown ran out. The Model advances first and the scroll follows
+    // it as a Command, so a story can assert the move without a DOM; the
+    // track's own observer answers back with ScrolledTrending once the glide
+    // settles, which for this scroll is a no-op confirmation.
+    AdvancedTrending: () => {
+      const next = (model.trendingIndex + 1) % Math.max(trending.length, 1);
+      return {
+        model: evo(model, { trendingIndex: () => next }),
+        commands: [ScrollTrending({ index: next })],
+      };
+    },
+    ScrolledTrending: ({ index }) => ({ model: evo(model, { trendingIndex: () => index }) }),
+    HeldTrending: ({ isHeld }) => ({ model: evo(model, { isTrendingHeld: () => isHeld }) }),
+    ChangedReducedMotion: ({ reduce }) => ({
+      model: evo(model, { prefersReducedMotion: () => reduce }),
+    }),
+    CompletedScrollTrending: () => ({ model }),
     ToggledFollow: ({ slug }) => ({
       model: evo(model, { followed: (followed) => toggleEntry(followed, slug) }),
+    }),
+    ToggledClubSection: ({ anchor }) => ({
+      model: evo(model, { expandedClubSections: (open) => toggleEntry(open, anchor) }),
+    }),
+    // The jump row follows the reader: the chip of the section now in view is brought into the row's own scroll, so the active mark is never off the edge of the phone.
+    ScrolledClubPage: ({ anchor }) => ({
+      model: evo(model, {
+        activeClubSection: () => (anchor === '' ? Option.none() : Option.some(anchor)),
+      }),
+      commands:
+        anchor === '' ? [] : [RevealJumpChip({ anchor, reduce: model.prefersReducedMotion })],
+    }),
+    CompletedRevealJumpChip: () => ({ model }),
+    CompletedMatchStripScroll: () => ({ model }),
+    MeasuredQuoteOverflow: ({ isOverflowing }) => ({
+      model: evo(model, { isQuoteOverflowing: () => isOverflowing }),
     }),
     LoadedPins: ({ ids }) => ({ model: evo(model, { pinned: () => ids }) }),
     ToggledPin: ({ id }) => {
@@ -275,8 +336,9 @@ export const update = (model: Model, message: Message) =>
   });
 
 // COMMAND — see command.ts.
-export { Load, Navigate, ReadPins, WritePins };
+export { Load, Navigate, ReadPins, RevealJumpChip, ScrollTrending, WritePins };
 
 // The view composition lives in view.ts; each screen in its own module under
 // page/, reached through that directory’s barrel.
 export { view } from './view';
+export { subscriptions } from './subscription';

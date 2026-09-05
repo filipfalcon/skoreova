@@ -5,6 +5,7 @@ import {
   mapTo,
   oneOf,
   parseUrlWithFallback,
+  query,
   root,
   slash,
   string,
@@ -28,7 +29,8 @@ export const AppRoute = defineRouteUnion({
   Clubs: {},
   Club: { slug: S.String },
   Players: {},
-  Matches: {},
+  // `club` narrows the schedule to one club's season; absent, every league shows. A query rather than a path segment because it is a filter on the one matches screen, not a second screen — `/matches?club=sparta-praha` is the same page, narrowed.
+  Matches: { club: S.optionalKey(S.String) },
   Competitions: {},
   Competition: { slug: S.String },
   Officials: {},
@@ -41,7 +43,11 @@ export const herGameRouter = pipe(literal('her-game'), mapTo(AppRoute.HerGame));
 export const clubsRouter = pipe(literal('clubs'), mapTo(AppRoute.Clubs));
 export const clubRouter = pipe(literal('clubs'), slash(string('slug')), mapTo(AppRoute.Club));
 export const playersRouter = pipe(literal('players'), mapTo(AppRoute.Players));
-export const matchesRouter = pipe(literal('matches'), mapTo(AppRoute.Matches));
+export const matchesRouter = pipe(
+  literal('matches'),
+  query(S.Struct({ club: S.optionalKey(S.String) })),
+  mapTo(AppRoute.Matches),
+);
 export const competitionsRouter = pipe(literal('competitions'), mapTo(AppRoute.Competitions));
 export const competitionRouter = pipe(
   literal('competitions'),
@@ -81,7 +87,7 @@ export const routePath = (route: AppRoute): string =>
     Clubs: () => clubsRouter(),
     Club: ({ slug }) => clubRouter({ slug }),
     Players: () => playersRouter(),
-    Matches: () => matchesRouter(),
+    Matches: ({ club }) => matchesRouter(club === undefined ? {} : { club }),
     Competitions: () => competitionsRouter(),
     Competition: ({ slug }) => competitionRouter({ slug }),
     Officials: () => officialsRouter(),

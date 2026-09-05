@@ -108,7 +108,7 @@ export const sitemapPaths = (): ReadonlyArray<string> => [
   herGameRouter(),
   clubsRouter(),
   playersRouter(),
-  matchesRouter(),
+  matchesRouter({}),
   competitionsRouter(),
   officialsRouter(),
   ...Object.keys(clubNames).map((slug) => clubRouter({ slug })),

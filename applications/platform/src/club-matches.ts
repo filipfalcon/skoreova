@@ -1,7 +1,9 @@
 import { Array, Option } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
-import { clubSection, drawnArrowInline, drawnRightArrow } from './components';
+import { clubSection, clubSectionLink } from './components';
+import { MATCH_STRIP_ID, ScrollMatchStripToNext } from './command';
+import type { ClubSectionEntry } from './components';
 import { clubs } from './data';
 import type { Club } from './data';
 import type { Message } from './message';
@@ -9,12 +11,14 @@ import { matchesRouter } from './route';
 import {
   MATCHDAYS_PLAYED,
   fixtureSeed,
+  formWindow,
   kickoffFor,
   leagueRounds,
   mockScore,
   roundDay,
 } from './schedule';
-import { getStyleXAttributes } from './stylexAttributes';
+import type { FormResult } from './schedule';
+import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
 import { shared } from './styles/shared';
 import { styles } from './styles/club-matches';
 
@@ -139,7 +143,13 @@ const clubMatchVersus = (h: HtmlBuilder<Message>): Html =>
 // the top of the card at full size, and every word sits underneath them.
 // The card carries no label: it is the only thing in its section, and the
 // section’s chip has already named it.
-const clubMatchCard = (target: Club, entry: PlayedMatch, h: HtmlBuilder<Message>): Html => {
+// `tag` is the card's one word of status at its top — what this card is in the strip — since the strip's cards share one heading where two sections used to name them.
+const clubMatchCard = (
+  target: Club,
+  entry: PlayedMatch,
+  tag: string,
+  h: HtmlBuilder<Message>,
+): Html => {
   const homeGoals = entry.isHome ? entry.forGoals : entry.againstGoals;
   const awayGoals = entry.isHome ? entry.againstGoals : entry.forGoals;
   // Through fixtureSeed like the scoreline: ONE seed per fixture is the rule
@@ -149,9 +159,11 @@ const clubMatchCard = (target: Club, entry: PlayedMatch, h: HtmlBuilder<Message>
   const kickoff = kickoffFor(
     fixtureSeed(target.league, entry.match.round, entry.match.home, entry.match.away),
   );
-  return h.div(
-    [...getStyleXAttributes(h, styles.card)],
+  // The whole card is the link through to the match — the season list narrowed to this club, since no per-match route exists yet — so the caption carries no button of its own.
+  return h.a(
+    [h.Href(matchesRouter({ club: target.slug })), ...getStyleXAttributes(h, styles.card)],
     [
+      h.p([...getStyleXAttributes(h, styles.cardTag)], [tag]),
       // THE FIXTURE — crests at hero scale with the scoreline between
       // them. Generous padding so the badges own the space rather than
       // sharing it; crest order carries home and away.
@@ -185,91 +197,125 @@ const clubMatchCard = (target: Club, entry: PlayedMatch, h: HtmlBuilder<Message>
                 : `${roundDate(entry.match.round)} · ${kickoff}`,
             ],
           ),
-          // Through to the match itself as a STANDARD button (user call) —
-          // a bordered ink control that fills on hover, the app’s secondary
-          // button grammar, not a text link. No per-match route exists yet,
-          // so it points at the matches section rather than a dead href.
-          h.a(
-            [
-              h.Href(matchesRouter()),
-              ...getStyleXAttributes(h, shared.display, styles.matchInfoLink),
-            ],
-            ['Match info', drawnRightArrow(h, drawnArrowInline)],
-          ),
         ],
       ),
     ],
   );
 };
 
-// ——— MATCHES — the LAST result, then the UPCOMING fixture beneath it
-// (user call: the calendar was "too chaotic", it took enormous cognitive
-// load to read). The strip of five dates is gone, and with it the
-// selection state, the paging arrows and the W/D/L letters. Both questions
-// a supporter actually arrives with — how did we do, who’s next — are now
-// answered without a single interaction, and each card names its
-// competition and stage outright instead of leaving the reader to infer it
-// from a date. STACKED rather than side by side (user call): reading down
-// the page puts them in the order they happen, and each card gets the full
-// column, so the crests stay the biggest thing on it. Browsing the whole
-// season belongs in the matches section, not here. ———
-// TWO sections, not one holding two cards (user call): one component per
-// chip. LAST MATCH and UPCOMING MATCH each get their own heading, their
-// own anchor and their own card — which also means the chip does the
-// labeling the cards used to do for themselves. Side by side from md
-// (user call), stacked below it.
-export const clubMatchesSections = (target: Club, h: HtmlBuilder<Message>): Html => {
-  // MATCHDAYS_PLAYED, not the leader’s played count. Reading the season’s
-  // position off `standingsFor(league)[0].played` looked equivalent and isn’t:
-  // the Second League’s eleven clubs mean one sits out each round, so its
-  // leader has ten games to the other clubs' eleven, and rounds 11–12 came
-  // back here as unplayed "VS" cards while the competition screen showed the
-  // same fixtures with final scores. The canon has exactly one current
-  // matchday, and this is it.
-  const entries = clubMatches(target).map((match) =>
-    describeMatch(target, match, match.round <= MATCHDAYS_PLAYED),
-  );
-  const played = entries.filter((entry) => entry.isPlayed);
-  const last = Option.getOrUndefined(Array.last(played));
-  const next = entries.find((entry) => !entry.isPlayed);
-  // Start of the season has no result yet, the end has no fixture left —
-  // each section simply drops out on its own, and the survivor takes the
-  // full width.
-  const sections = [
-    ...(last === undefined
-      ? []
-      : [
-          clubSection(
-            'Last match',
-            [
-              h.div(
-                [...getStyleXAttributes(h, styles.sectionBody)],
-                [clubMatchCard(target, last, h)],
-              ),
-            ],
-            'last-match',
-            h,
-          ),
-        ]),
-    ...(next === undefined
-      ? []
-      : [
-          clubSection(
-            'Upcoming match',
-            [
-              h.div(
-                [...getStyleXAttributes(h, styles.sectionBody)],
-                [clubMatchCard(target, next, h)],
-              ),
-            ],
-            'upcoming-match',
-            h,
-          ),
-        ]),
+// The club's season, played and unplayed. MATCHDAYS_PLAYED, not the leader’s played count: in a league with an odd club count one club sits out each round, so the leader can be a matchday behind the season, and its count returned played fixtures as unplayed "VS" cards. The canon has exactly one current matchday, and this is it.
+const seasonEntries = (target: Club): ReadonlyArray<PlayedMatch> =>
+  clubMatches(target).map((match) => describeMatch(target, match, match.round <= MATCHDAYS_PLAYED));
+
+/**
+ * How many matches the form guide under the strip covers.
+ */
+export const FORM_LENGTH = 5;
+
+interface StripCard {
+  readonly entry: PlayedMatch;
+  readonly tag: string;
+}
+
+// The strip's cards in the order they happen: the last result, the upcoming match, and the one after it. The season's start has no result and its end has no fixture, so the strip simply carries what exists.
+const stripCards = (target: Club): ReadonlyArray<StripCard> => {
+  const entries = seasonEntries(target);
+  const last = Option.getOrUndefined(Array.last(entries.filter((entry) => entry.isPlayed)));
+  const [next, after] = entries.filter((entry) => !entry.isPlayed);
+  return [
+    ...(last === undefined ? [] : [{ entry: last, tag: 'Result' }]),
+    ...(next === undefined ? [] : [{ entry: next, tag: 'Next' }]),
+    ...(after === undefined ? [] : [{ entry: after, tag: `Round ${after.match.round}` }]),
   ];
-  // Column gap only: stacked, the sections' own mt keeps the page’s
-  // section rhythm, and a row gap on top of it would open a hole between
-  // two blocks that belong together. Side by side, both sit in row one and
-  // that same mt aligns their chips.
-  return h.div([...getStyleXAttributes(h, styles.sections)], sections);
+};
+
+/**
+ * The anchor and label of the match strip when the profile draws one — the same presence rule as
+ * the strip itself, so the jump row never offers a section that is not there.
+ *
+ * @param target The club.
+ */
+export const clubMatchesIndex = (target: Club): ReadonlyArray<ClubSectionEntry> =>
+  stripCards(target).length === 0 ? [] : [{ anchor: 'matches', label: 'Matches' }];
+
+// The form guide: the last five results as squares, a win solid, a draw faint, a loss an empty pink frame. The squares are the picture and the list's label is the words, so a screen reader hears the run once.
+const formGuide = (target: Club, h: HtmlBuilder<Message>): ReadonlyArray<Html> => {
+  const results = formWindow(target.league, target.name, FORM_LENGTH, 0);
+  const words: Record<FormResult, string> = { W: 'win', D: 'draw', L: 'loss', U: 'unplayed' };
+  return results.length === 0
+    ? []
+    : [
+        h.div(
+          [...getStyleXAttributes(h, styles.form)],
+          [
+            h.ol(
+              [
+                h.AriaLabel(
+                  `Form, last ${results.length}: ${results.map((result) => words[result]).join(', ')}`,
+                ),
+                ...getStyleXAttributes(h, styles.formSquares),
+              ],
+              results.map((result) =>
+                h.li(
+                  [
+                    h.AriaHidden(true),
+                    ...getStyleXAttributes(
+                      h,
+                      styles.formSquare,
+                      result === 'W'
+                        ? styles.formWin
+                        : result === 'D'
+                          ? styles.formDraw
+                          : styles.formLoss,
+                    ),
+                  ],
+                  [],
+                ),
+              ),
+            ),
+            h.p([...getStyleXAttributes(h, styles.formCaption)], [`Form · last ${results.length}`]),
+          ],
+        ),
+      ];
+};
+
+// MATCHES — one strip of cards where two sections and a list of rows stood: the last result, the upcoming match, and the one after, in the order they happen. On a phone it is a native snap scroller that opens on the upcoming match with the result one swipe back and the next card peeking in from the right; from md the three sit side by side. The way out to the whole season is the heading link to the matches screen narrowed to this club — a season is unbounded on a profile and does not open in place. The form guide runs under the strip.
+/**
+ * The MATCHES section, or nothing at the very start of a season with no result and no fixture —
+ * spread it into the profile.
+ *
+ * @param target The club.
+ * @param h The builder the section is drawn with.
+ */
+export const clubMatchStrip = (target: Club, h: HtmlBuilder<Message>): ReadonlyArray<Html> => {
+  const cards = stripCards(target);
+  if (cards.length === 0) return [];
+  const nextIndex = Math.max(
+    0,
+    cards.findIndex((card) => !card.entry.isPlayed),
+  );
+  return [
+    clubSection(
+      'Matches',
+      [
+        h.ul(
+          [
+            h.Id(MATCH_STRIP_ID),
+            h.OnMount(ScrollMatchStripToNext({ index: nextIndex })),
+            ...getStyleXAttributesWith(h, 'no-scrollbar', styles.strip),
+          ],
+          cards.map((card) =>
+            h.li(
+              [...getStyleXAttributes(h, styles.stripCard)],
+              [clubMatchCard(target, card.entry, card.tag, h)],
+            ),
+          ),
+        ),
+        ...formGuide(target, h),
+      ],
+      'matches',
+      h,
+      clubSectionLink('All fixtures', matchesRouter({ club: target.slug }), h),
+    ),
+  ];
 };

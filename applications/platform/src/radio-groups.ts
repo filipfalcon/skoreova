@@ -1,6 +1,6 @@
 import { RadioGroup } from '@foldkit/ui';
 
-import type { ScorerScope } from './model';
+import type { CompetitionKind, ScorerScope } from './model';
 
 // The platform's two radio groups, created once at module scope so the view
 // and the update fold share one Value-typed pair. Creating one per render
@@ -22,9 +22,19 @@ export const SCOPE_GROUP_ID = 'club-top-scorers-scope';
 export const EDITION_GROUP_ID = 'competition-edition';
 
 /**
+ * The DOM id of the club profile's competition picker.
+ */
+export const COMPETITION_GROUP_ID = 'club-competitions';
+
+/**
  * The top-scorers scope picker, typed to the scopes a club profile offers.
  */
 export const ScopeRadioGroup = RadioGroup.create<ScorerScope>();
+
+/**
+ * The competition picker, typed to the kinds of competition a club can be in.
+ */
+export const CompetitionRadioGroup = RadioGroup.create<CompetitionKind>();
 
 /**
  * The edition picker. Its options are season labels read off the competition, so the value stays an

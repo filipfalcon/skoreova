@@ -5,12 +5,14 @@
 // styles.css (StyleX has no descendant selectors).
 
 import { Button } from '@foldkit/ui';
+import { Option } from 'effect';
 import { inertHtml as ih } from 'foldkit/html';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import brandLogo from './assets/brand/logo.svg';
 import type { Model, Screen } from './model';
 import { Message } from './message';
+import { JUMP_ROW_ID, jumpChipId } from './command';
 import { type NavEntry, navEntries, screenOf, screenTitles } from './data';
 import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
 import type { StyleXStyle } from './stylexAttributes';
@@ -233,6 +235,34 @@ export const desktopNavLink = (model: Model, entry: NavEntry, h: HtmlBuilder<Mes
 // TERMINATES the backdrop blur — backdrop-filter samples beyond the element's
 // own box, so over a bright backdrop the blur smears the picture a few pixels
 // up into the bar and the boundary reads as a soft halo instead of an edge.
+/**
+ * Where a back link leads and what it says.
+ */
+export interface Back {
+  readonly label: string;
+  readonly href: string;
+}
+
+/**
+ * The back link — the one component every profile's way back is: meta type on paper in a small ink
+ * block, so it reads on any photo, inside a 44px hit area that the anchor's own box provides rather
+ * than the visible block. Where it sits is the caller's: `placement` is the position it takes in
+ * its band.
+ *
+ * @param back Where it leads and what it says.
+ * @param h The builder the link is drawn with.
+ * @param placement The caller's positioning styles.
+ */
+export const backLink = (
+  back: Back,
+  h: HtmlBuilder<Message>,
+  ...placement: ReadonlyArray<StyleXStyle>
+): Html =>
+  h.a(
+    [h.Href(back.href), ...getStyleXAttributes(h, styles.backHit, ...placement)],
+    [h.span([...getStyleXAttributes(h, styles.backPill)], [`← ${back.label}`])],
+  );
+
 export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.header(
     [...getStyleXAttributes(h, styles.header)],
@@ -356,17 +386,134 @@ export const clubChip = (text: string, anchor: string, h: HtmlBuilder<Message>):
 // the chrome, which reads as having jumped to the wrong place.
 // The chip anchor rides inside a REAL h2 so each club section owns a spot
 // in the heading outline instead of a bare link posing as one.
+// `control` is the heading row's end: the toggle that opens a folded section or the link that leads out of an unbounded one. It rides beside the h2 rather than inside it, so the heading outline carries the chip alone and no interactive control sits within a heading.
 export const clubSection = (
   title: string,
   children: ReadonlyArray<Html>,
   anchor: string,
   h: HtmlBuilder<Message>,
+  control?: Html,
 ): Html =>
+  // Labelled by its own heading, the section is a named region: a landmark assistive tech lists and jumps between, which is the index the jump row gives a sighted reader.
   h.section(
-    [h.Id(anchor), ...getStyleXAttributes(h, styles.clubSection)],
     [
-      h.h2([...getStyleXAttributes(h, styles.clubSectionHeading)], [clubChip(title, anchor, h)]),
+      h.Id(anchor),
+      h.AriaLabelledBy(`${anchor}-heading`),
+      ...getStyleXAttributes(h, styles.clubSection),
+    ],
+    [
+      h.div(
+        [...getStyleXAttributes(h, styles.clubSectionHeading)],
+        [
+          h.h2(
+            [h.Id(`${anchor}-heading`), ...getStyleXAttributes(h, styles.clubSectionTitle)],
+            [clubChip(title, anchor, h)],
+          ),
+          ...(control === undefined ? [] : [control]),
+        ],
+      ),
       ...children,
+    ],
+  );
+
+/**
+ * The heading-row control that opens a club section past its first bite and folds it back. It sits
+ * beside the chip rather than under the rows, so folding never leaves the reader stranded below the
+ * section they just closed. `openLabel` says what opening shows ("Show all 12 clubs"); folding is
+ * always "Show less".
+ *
+ * @param anchor The section's anchor, which is also its key in `expandedClubSections`.
+ * @param isExpanded Whether the section is currently open.
+ * @param openLabel The label while folded.
+ * @param h The builder the control is drawn with.
+ */
+export const clubSectionToggle = (
+  anchor: string,
+  isExpanded: boolean,
+  openLabel: string,
+  h: HtmlBuilder<Message>,
+): Html =>
+  Button.view(
+    {
+      onClick: Message.ToggledClubSection({ anchor }),
+      toView: ({ button }) =>
+        h.button(
+          [
+            ...button,
+            h.AriaExpanded(isExpanded),
+            ...getStyleXAttributes(h, styles.clubSectionControl),
+          ],
+          [isExpanded ? 'Show less' : openLabel],
+        ),
+    },
+    h,
+  );
+
+/**
+ * The heading-row control of a section whose whole is too long for a profile — it leads to the
+ * screen that holds all of it instead of opening in place. Same voice and place as the toggle, and
+ * the drawn arrow says it goes somewhere else.
+ *
+ * @param label What the reader gets there.
+ * @param href The screen.
+ * @param h The builder the control is drawn with.
+ */
+export const clubSectionLink = (label: string, href: string, h: HtmlBuilder<Message>): Html =>
+  h.a(
+    [h.Href(href), ...getStyleXAttributes(h, styles.clubSectionControl)],
+    [label, drawnRightArrow(h, drawnArrowInline)],
+  );
+
+/**
+ * One entry of the club profile's jump row: a section's anchor and the label it goes by.
+ */
+export interface ClubSectionEntry {
+  readonly anchor: string;
+  readonly label: string;
+}
+
+/**
+ * The jump row under the hero — one link per section the profile is drawing, to that section's own
+ * anchor, with the section in view marked. On a phone the row pins under the app header and its
+ * mark follows the reader; from md it is a static row that wraps in place. Fed the sections
+ * actually rendered, so a club without a Europe campaign never offers a jump to one.
+ *
+ * @param entries The sections, in page order.
+ * @param active The anchor of the section in view, from the scroll-spy.
+ * @param h The builder the row is drawn with.
+ */
+export const clubSectionIndex = (
+  entries: ReadonlyArray<ClubSectionEntry>,
+  active: Option.Option<string>,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.nav(
+    [h.AriaLabel('On this page'), ...getStyleXAttributes(h, styles.sectionIndex)],
+    [
+      h.ul(
+        [h.Id(JUMP_ROW_ID), ...getStyleXAttributesWith(h, 'no-scrollbar', styles.sectionIndexList)],
+        entries.map((entry) => {
+          const isActive = Option.contains(active, entry.anchor);
+          return h.li(
+            [],
+            [
+              h.a(
+                [
+                  h.Id(jumpChipId(entry.anchor)),
+                  h.Href(`#${entry.anchor}`),
+                  ...(isActive ? [h.AriaCurrent('true')] : []),
+                  ...getStyleXAttributes(
+                    h,
+                    styles.sectionIndexLink,
+                    isActive && styles.sectionIndexLinkActive,
+                  ),
+                ],
+                [entry.label],
+              ),
+            ],
+          );
+        }),
+      ),
     ],
   );
 

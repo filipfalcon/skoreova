@@ -1,4 +1,7 @@
+import { Option } from 'effect';
+import { RadioGroup } from '@foldkit/ui';
 import { Scene } from 'foldkit';
+import { fromString } from 'foldkit/url';
 import { describe, test } from 'vite-plus/test';
 
 import {
@@ -14,12 +17,41 @@ import {
   widgetCatalogModel,
 } from './main.fixtures';
 import { update, view } from './main';
+import { ObserveQuoteOverflow, ObserveTrendingScroll, ScrollMatchStripToNext } from './command';
+import { Message } from './message';
+import { clubArchive, clubs, scorersFor, standingsFor } from './data';
+import { AppRoute, urlToAppRoute } from './route';
+import { STANDINGS_WINDOW_RADIUS, zoneFor } from './standings';
+
+// A parsed Url from a path, the way the runtime hands one to ChangedUrl.
+const url = (path: string) => Option.getOrThrow(fromString(`https://skoreova.example${path}`));
+
+// The club every profile scene opens on.
+const sparta = clubs.find((club) => club.slug === 'sparta-praha')!;
+
+// Every '/' scene renders the trending track, whose scroll observer is a
+// Mount; Scene requires each rendered Mount acknowledged. Index 0 mirrors the
+// boot Model — the observer's real measuring needs a browser and never runs
+// here.
+const acknowledgeMounts = [
+  Scene.Mount.resolve(ObserveTrendingScroll, Message.ScrolledTrending({ index: 0 })),
+];
+
+// Every club profile scene renders the commentary, whose overflow measurement is a Mount, and the match strip, whose opening scroll is another; Scene requires both acknowledged. "Not overflowing" mirrors the boot Model — the real measuring needs a browser.
+const acknowledgeQuote = [
+  Scene.Mount.resolve(
+    ObserveQuoteOverflow,
+    Message.MeasuredQuoteOverflow({ isOverflowing: false }),
+  ),
+  Scene.Mount.resolve(ScrollMatchStripToNext, Message.CompletedMatchStripScroll()),
+];
 
 describe('view', () => {
   test('the Her Game front page renders inside the platform shell', () => {
     Scene.scene(
       { update, view },
       Scene.given(herGameModel),
+      ...acknowledgeMounts,
       // The nav's own short label for the competitions section appears nowhere
       // else in the document, and the footer note is on every screen — between
       // them, stable proof the shell mounted around the screen.
@@ -34,6 +66,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(welcomeModel),
+      ...acknowledgeMounts,
       // The tape, the trending board and the feed are the landing, and what
       // sits behind the sign-in must not leak onto it. The feed carries the
       // week's fixtures, so the pulse's own chip stays off this page.
@@ -52,6 +85,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(signedInModel),
+      ...acknowledgeMounts,
       // The stat boards are the half of the page that an account buys.
       Scene.expect(Scene.text('Goals')).toExist(),
       // The same tiles, but pinnable now that there is somewhere to pin them.
@@ -66,6 +100,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(widgetCatalogModel),
+      ...acknowledgeMounts,
       Scene.expect(Scene.role('button', { name: 'Add Label to your feed' })).toExist(),
       Scene.expect(Scene.role('button', { name: 'Add Featured matches to your feed' })).toExist(),
     );
@@ -75,6 +110,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(feedRefusedModel),
+      ...acknowledgeMounts,
       Scene.expect(Scene.role('alert')).toExist(),
       Scene.expect(
         Scene.text(
@@ -86,11 +122,14 @@ describe('view', () => {
 
   // Every block arrives carrying a heading, so the default feed's own board is
   // headed too — which is what the reader sees before touching anything.
-  test('the default feed heads its board without being asked', () => {
+  test('the default feed heads its three boards without being asked', () => {
     Scene.scene(
       { update, view },
       Scene.given(welcomeModel),
+      ...acknowledgeMounts,
       Scene.expect(Scene.role('heading', { name: 'Featured matches' })).toExist(),
+      Scene.expect(Scene.role('heading', { name: 'Top scorers' })).toExist(),
+      Scene.expect(Scene.role('heading', { name: 'Attendance' })).toExist(),
     );
   });
 
@@ -98,6 +137,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(feedLabelledModel),
+      ...acknowledgeMounts,
       Scene.expect(Scene.role('heading', { name: 'My clubs' })).toExist(),
       Scene.expect(Scene.role('heading', { name: 'Featured matches' })).toExist(),
       Scene.expect(Scene.role('heading', { name: 'Cup week' })).toExist(),
@@ -111,6 +151,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(feedHeadlessModel),
+      ...acknowledgeMounts,
       Scene.expect(Scene.role('heading', { name: 'Untitled label' })).toExist(),
       Scene.expect(Scene.role('heading', { name: 'Featured matches' })).not.toExist(),
     );
@@ -120,8 +161,9 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given({ ...feedLabelledModel, isFeedEditing: true }),
+      ...acknowledgeMounts,
       Scene.expect(Scene.role('heading', { name: 'My clubs' })).not.toExist(),
-      Scene.expectAll(Scene.all.role('textbox')).toHaveCount(3),
+      Scene.expectAll(Scene.all.role('textbox')).toHaveCount(5),
       // Two blocks of one kind must not answer to one name. A control named
       // after the KIND would give both featured-matches blocks the same one,
       // which is the defect a feed of singletons could never have had.
@@ -142,6 +184,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given({ ...feedHeadlessModel, isFeedEditing: true }),
+      ...acknowledgeMounts,
       Scene.expect(Scene.role('button', { name: 'Give the Featured matches a heading' })).toExist(),
     );
   });
@@ -178,9 +221,112 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
+      ...acknowledgeQuote,
       Scene.expect(Scene.role('heading', { name: 'Sparta Praha' })).toExist(),
       Scene.expect(Scene.role('button', { name: 'Follow Sparta Praha' })).toExist(),
       Scene.expect(Scene.text('Top scorers')).toExist(),
+      // The jump row and the fixtures list — the two blocks the profile grew
+      // when its sections learned to fold.
+      Scene.expect(Scene.role('navigation', { name: 'On this page' })).toExist(),
+      Scene.expect(Scene.role('heading', { name: 'Matches' })).toExist(),
+      Scene.expect(Scene.role('link', { name: 'All fixtures' })).toExist(),
+      // The strip's cards, each named by its status word, and the form guide.
+      Scene.expect(Scene.text('Result')).toExist(),
+      Scene.expect(Scene.text('Next')).toExist(),
+      Scene.expect(Scene.text('Form · last 5')).toExist(),
+    );
+  });
+
+  // The competitions share one section: the league table by default, the cup
+  // run once its chip is picked, each with its own way out.
+  test('the competitions section switches its body on the chip row', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(clubProfileModel),
+      ...acknowledgeQuote,
+      Scene.inside(
+        Scene.role('region', { name: 'Competitions' }),
+        Scene.expect(Scene.role('radio', { name: 'League' })).toExist(),
+        Scene.expect(Scene.role('link', { name: 'Full table' })).toExist(),
+        Scene.expect(Scene.text('Round of 16')).not.toExist(),
+        Scene.click(Scene.role('radio', { name: 'Cup' })),
+        // Picking an option moves focus to it, a Command the group issues and the parent wraps.
+        Scene.Command.resolve(RadioGroup.FocusOption, RadioGroup.Message.CompletedFocusOption()),
+        Scene.expect(Scene.text('Round of 16')).toExist(),
+        Scene.expect(Scene.role('link', { name: 'Full draw' })).toExist(),
+        Scene.expect(Scene.role('button', { name: /Show all/ })).not.toExist(),
+      ),
+    );
+  });
+
+  // Scorers and history fold like the standings: a podium and the headline
+  // counts first, the whole list on the heading control.
+  test('top scorers and history open on their heading controls', () => {
+    const scorers = scorersFor(sparta, 'All').length;
+    const seasons = clubArchive(sparta).length;
+    Scene.scene(
+      { update, view },
+      Scene.given(clubProfileModel),
+      ...acknowledgeQuote,
+      Scene.inside(
+        Scene.role('region', { name: 'Top scorers' }),
+        Scene.expectAll(Scene.all.role('listitem')).toHaveCount(3),
+        Scene.click(Scene.role('button', { name: `Show all ${scorers} scorers` })),
+        Scene.expectAll(Scene.all.role('listitem')).toHaveCount(scorers),
+      ),
+      Scene.inside(
+        Scene.role('region', { name: 'History' }),
+        // Folded, the latest three seasons show under the counts.
+        Scene.expectAll(Scene.all.role('listitem')).toHaveCount(3),
+        Scene.click(Scene.role('button', { name: `Show all ${seasons} seasons` })),
+        Scene.expectAll(Scene.all.role('listitem')).toHaveCount(seasons),
+      ),
+    );
+  });
+
+  // The standings show a window around the club and nothing opens in place: the whole table is one link away on the competition page.
+  test('the club standings show a window and link out to the table', () => {
+    const size = standingsFor('First League').length;
+    // The section's list items are the rows drawn plus the legend, which
+    // describes the whole competition and so does not shrink with the window.
+    const legend = new Set(
+      Array.from({ length: size }, (_, index) => zoneFor('First League', index + 1, size)).flatMap(
+        (zone) => (Option.isSome(zone) ? [zone.value.label] : []),
+      ),
+    ).size;
+    Scene.scene(
+      { update, view },
+      Scene.given(clubProfileModel),
+      ...acknowledgeQuote,
+      Scene.inside(
+        Scene.role('region', { name: 'Competitions' }),
+        Scene.expectAll(Scene.all.role('listitem')).toHaveCount(
+          STANDINGS_WINDOW_RADIUS * 2 + 1 + legend,
+        ),
+        Scene.expect(Scene.role('button', { name: /Show all/ })).not.toExist(),
+        Scene.expect(Scene.role('link', { name: 'Full table' })).toExist(),
+      ),
+    );
+  });
+
+  // The matches screen narrows to one club's season when the route names it, and offers the way back.
+  test('the matches screen narrows to a club and offers all clubs back', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given({ ...welcomeModel, route: urlToAppRoute(url('/matches')) }),
+      Scene.expect(Scene.role('heading', { name: 'First League' })).toExist(),
+      Scene.expect(Scene.role('heading', { name: 'Second League' })).toExist(),
+      Scene.expect(Scene.role('link', { name: 'All clubs' })).not.toExist(),
+    );
+    Scene.scene(
+      { update, view },
+      Scene.given({ ...welcomeModel, route: AppRoute.Matches({ club: 'sparta-praha' }) }),
+      Scene.expect(
+        Scene.text('Sparta Praha, round by round — refreshed after every matchday.'),
+      ).toExist(),
+      Scene.expect(Scene.role('heading', { name: 'First League' })).toExist(),
+      Scene.expect(Scene.role('heading', { name: 'Second League' })).not.toExist(),
+      Scene.expect(Scene.role('link', { name: 'All clubs' })).toExist(),
     );
   });
 

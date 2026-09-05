@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { tokens } from '../tokens.stylex';
+import { spacing, tokens } from '../tokens.stylex';
 
 // Styles for the shared view helpers and the app shell (components.ts).
 // Follows the translation discipline stated in shared.ts: every fontSize
@@ -242,6 +242,31 @@ export const styles = stylex.create({
       [MD]: '1.5rem',
     },
   },
+  // The back link's hit area: the anchor is a 44px-tall box with the visible block at its top edge, so the target is generous while the block stays the size of its text.
+  backHit: {
+    display: 'inline-flex',
+    alignItems: 'flex-start',
+    minHeight: '2.75rem',
+    color: {
+      default: tokens.paper,
+      ':hover': tokens.pink,
+    },
+    transitionProperty: 'color',
+    transitionDuration: '0.15s',
+    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  // The visible block: paper meta type on ink at 85%, square-cornered like every chip on the platform, padded to its text so it reads as a small label rather than a button.
+  backPill: {
+    display: 'inline-block',
+    paddingInline: '0.6rem',
+    paddingBlock: '0.6rem',
+    backgroundColor: 'color-mix(in srgb, var(--color-ink) 85%, transparent)',
+    whiteSpace: 'nowrap',
+    fontSize: '10px',
+    lineHeight: '1rem',
+    letterSpacing: '0.2em',
+    textTransform: 'uppercase',
+  },
   sectionRailGrid: {
     marginInline: 'auto',
     display: 'grid',
@@ -290,16 +315,112 @@ export const styles = stylex.create({
   },
   clubSection: {
     marginTop: {
-      default: '4rem',
+      default: spacing.section,
       [MD]: '5rem',
     },
+    // Clears the fixed header and, on a phone, the pinned jump row under it: the header's measured height plus a 60px row, with a little air.
     scrollMarginTop: {
-      default: '7rem',
-      [MD]: '8rem',
+      default: 'calc(var(--header-height) + 4.3125rem)',
+      [MD]: 'calc(var(--header-height) + 4.9375rem)',
     },
   },
+  // The heading row: the chip's h2 at one end, the section's control at the other.
   clubSectionHeading: {
     display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '1rem',
+  },
+  clubSectionTitle: {
+    display: 'flex',
+  },
+  // The heading-row control — a toggle or a link out — as plain meta text, right-aligned. The 44px hit area comes from padding alone: a drawn box was one more rectangle per section and wrapped the heading row on phones. The side padding is cancelled by a negative margin so the text stays flush with the column's edge.
+  clubSectionControl: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    minHeight: '2.75rem',
+    paddingInline: '0.5rem',
+    marginRight: '-0.5rem',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    fontSize: '10px',
+    letterSpacing: '0.2em',
+    textTransform: 'uppercase',
+    color: {
+      default: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
+      ':hover': tokens.ink,
+    },
+    transitionProperty: 'color',
+    transitionDuration: '0.15s',
+    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  // The jump row. On a phone it is a bar pinned flush under the fixed header — at the header's measured height — on opaque paper, bleeding to the column's edges, its chips scrolling as one line so one peeks in from the right. From md it is a static, wrapped block.
+  sectionIndex: {
+    position: {
+      default: 'sticky',
+      [MD]: 'static',
+    },
+    top: {
+      default: 'var(--header-height)',
+      [MD]: 'auto',
+    },
+    zIndex: 40,
+    marginTop: '2.5rem',
+    marginInline: {
+      default: '-1.25rem',
+      [MD]: 0,
+    },
+    paddingInline: {
+      default: '1.25rem',
+      [MD]: 0,
+    },
+    paddingBlock: {
+      default: '0.5rem',
+      [MD]: 0,
+    },
+    backgroundColor: {
+      default: tokens.paper,
+      [MD]: 'transparent',
+    },
+  },
+  sectionIndexList: {
+    display: 'flex',
+    gap: '0.5rem',
+    flexWrap: {
+      default: 'nowrap',
+      [MD]: 'wrap',
+    },
+    overflowX: {
+      default: 'auto',
+      [MD]: 'visible',
+    },
+    scrollPaddingInline: '1.25rem',
+  },
+  sectionIndexLinkActive: {
+    borderColor: tokens.pink,
+    color: tokens.ink,
+  },
+  sectionIndexLink: {
+    display: 'inline-block',
+    whiteSpace: 'nowrap',
+    borderWidth: 1,
+    paddingInline: '0.875rem',
+    paddingBlock: '0.5rem',
+    fontSize: '10px',
+    letterSpacing: '0.2em',
+    textTransform: 'uppercase',
+    borderColor: {
+      default: 'color-mix(in srgb, var(--color-ink) 20%, transparent)',
+      ':hover': tokens.pink,
+    },
+    color: {
+      default: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
+      ':hover': tokens.ink,
+    },
+    transitionProperty: 'color, border-color',
+    transitionDuration: '0.15s',
+    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
   screenChip: {
     display: 'inline-block',

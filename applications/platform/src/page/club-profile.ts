@@ -4,27 +4,41 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 import banikHeroPhoto from '../assets/clubs-hero/banik-ostrava.jpg';
 import spartaHeroPhoto from '../assets/clubs-hero/sparta-praha.webp';
 import commentaryAvatar from '../assets/commentary-avatar.png';
-import { clubMatchesSections } from '../club-matches';
-import { clubSection, timesCount } from '../components';
-import { clubCupRun, standingsFor, scorersFor } from '../data';
+import { clubMatchStrip, clubMatchesIndex } from '../club-matches';
+import { ObserveQuoteOverflow } from '../command';
+import {
+  backLink,
+  clubSection,
+  clubSectionIndex,
+  clubSectionLink,
+  clubSectionToggle,
+  timesCount,
+} from '../components';
+import type { ClubSectionEntry } from '../components';
+import { clubAllTimeStats, clubArchive, clubCupRun, standingsFor, scorersFor } from '../data';
 import { MATCHDAYS_PLAYED, leagueRoundCount } from '../schedule';
 import { Button } from '@foldkit/ui';
-import type { Club, CupTie, Scorer } from '../data';
+import type { AllTimeStats, ArchiveSeason, Club, CupTie, Scorer, StandingsRow } from '../data';
 import { Message } from '../message';
-import type { Model, ScorerScope } from '../model';
-import { clubsRouter } from '../route';
+import type { CompetitionKind, Model, ScorerScope } from '../model';
+import { clubsRouter, competitionRouter } from '../route';
+import { leagueSlug } from '../stat-tiles';
 import {
   clubEurope,
   seasonProgress,
   standingsHeadline,
   standingsTable,
+  standingsWindow,
   zoneFor,
 } from '../standings';
-import type { EuroCampaign } from '../standings';
-import { ScopeRadioGroup } from '../radio-groups';
+import type { StandingsZone } from '../standings';
+import { COMPETITION_GROUP_ID, CompetitionRadioGroup, ScopeRadioGroup } from '../radio-groups';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
 import { styles } from '../styles/club-profile';
 import { shared } from '../styles/shared';
+
+// The commentary's key in `expandedClubSections`.
+const QUOTE_ANCHOR = 'commentary';
 
 // The per-club statement block — hand-written for the marquee clubs, a
 // season-record fallback for everyone else (see this module’s `view`).
@@ -32,7 +46,7 @@ const clubHighlights: Record<string, { readonly kicker: string; readonly stateme
   'sparta-praha': {
     kicker: 'Reigning champions',
     statement:
-      'Our most successful club and reigning champion stormed into the Europa Cup semifinals first, then closed out the season with the domestic double in hand.',
+      'Our most successful club: a Europa Cup semifinal first, then the domestic double to close the season.',
   },
   'slavia-praha': {
     kicker: 'The eternal rivals',
@@ -100,81 +114,183 @@ const clubHeroPhotos: Record<string, { readonly photo: string; readonly focus: s
 // Rounds are a week apart from a fixed season opening, so every club’s
 // dates line up and nothing depends on today’s date.
 
-const clubStandingsSection = (target: Club, h: HtmlBuilder<Message>): Html => {
-  const rows = standingsFor(target.league);
-  const totalRounds = leagueRoundCount(target.league);
-  return clubSection(
-    'Standings',
-    [
-      standingsHeadline(target.league, h),
-      // The canon’s matchday, not the leader’s played count — in a league with
-      // an odd club count the leader can be a bye or two behind the season, and
-      // this bar then disagreed with the competition screen’s own stage line.
-      seasonProgress(MATCHDAYS_PLAYED, totalRounds, h),
-      ...standingsTable(
-        rows,
-        target.name,
-        (position) => zoneFor(target.league, position, rows.length),
-        h,
-      ),
-    ],
-    'standings',
-    h,
-  );
-};
+// One competition the club is in this season, as the COMPETITIONS section draws it: the chip that selects it, the competition page its link leads to, and its body. The league is always present; the cup and Europe join while the club is still in them.
+interface ActiveCompetition {
+  readonly kind: CompetitionKind;
+  readonly label: string;
+  readonly slug: string;
+  readonly render: (h: HtmlBuilder<Message>) => ReadonlyArray<Html>;
+}
 
-// ——— EUROPE — the continental campaign, for the clubs that have one.
-// Sparta and Slavia are in the UWCL league phase, Slovan Liberec came
-// through the UWEC one. Tables are simulated rather than hand-typed, so
-// goals for and against balance across each table and the points match
-// the wins and draws behind them. ———
-const clubEuropeSection = (target: Club, campaign: EuroCampaign, h: HtmlBuilder<Message>): Html =>
-  clubSection(
-    campaign.competition,
-    [
-      standingsHeadline(campaign.stage, h),
-      seasonProgress(campaign.rows[0]?.played ?? 0, campaign.rounds, h),
-      ...standingsTable(campaign.rows, target.name, campaign.zoneAt, h),
-    ],
-    campaign.slug,
-    h,
-  );
+// A standings body is a window around the club's own row, positions intact — the club's place in the table at a glance. The whole table is one tap away on the competition page (the link under the body), so nothing opens in place here: one control per section, and a link out is the right one for a competition.
+const standingsBody = (
+  lead: ReadonlyArray<Html>,
+  rows: ReadonlyArray<StandingsRow>,
+  zoneAt: (position: number) => Option.Option<StandingsZone>,
+  target: Club,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Html> => [
+  ...lead,
+  ...standingsTable(rows, target.name, zoneAt, h, standingsWindow(rows, target.name)),
+];
 
-const clubCupSection = (run: ReadonlyArray<CupTie>, h: HtmlBuilder<Message>): Html =>
-  clubSection(
-    'Domestic Cup',
-    [
-      h.ol(
-        [...getStyleXAttributes(h, styles.cupList)],
-        run.map((tie) =>
-          h.li(
+const cupRunList = (run: ReadonlyArray<CupTie>, h: HtmlBuilder<Message>): Html =>
+  h.ol(
+    [...getStyleXAttributes(h, styles.cupList)],
+    run.map((tie) =>
+      h.li(
+        [
+          ...getStyleXAttributes(
+            h,
+            styles.tieRow,
+            tie.isUpcoming ? styles.tieUpcoming : styles.tieRest,
+          ),
+        ],
+        [
+          h.span([...getStyleXAttributes(h, shared.display, styles.tieRound)], [tie.round]),
+          h.span(
             [
               ...getStyleXAttributes(
                 h,
-                styles.tieRow,
-                tie.isUpcoming ? styles.tieUpcoming : styles.tieRest,
+                styles.tieResult,
+                tie.isUpcoming ? styles.tieResultUpcoming : styles.tieResultRest,
               ),
             ],
-            [
-              h.span([...getStyleXAttributes(h, shared.display, styles.tieRound)], [tie.round]),
-              h.span(
-                [
-                  ...getStyleXAttributes(
-                    h,
-                    styles.tieResult,
-                    tie.isUpcoming ? styles.tieResultUpcoming : styles.tieResultRest,
-                  ),
-                ],
-                [tie.result],
-              ),
-            ],
+            [tie.result],
           ),
+        ],
+      ),
+    ),
+  );
+
+// The competitions the club is in, in tab order: league, cup, Europe. The league table's progress reads the canon's matchday, not the leader's played count — in a league with an odd club count the leader can be a bye behind the season, and this bar then disagreed with the competition screen's own stage line.
+const clubActiveCompetitions = (target: Club): ReadonlyArray<ActiveCompetition> => {
+  const rows = standingsFor(target.league);
+  const europe = clubEurope[target.slug];
+  const cupRun = clubCupRun[target.slug];
+  // With a chip row the selected chip names the competition and the table needs no headline of its own; a club in nothing but its league has no chips, so its table keeps the league's name.
+  const isAlone = europe === undefined && cupRun === undefined;
+  const league: ActiveCompetition = {
+    kind: 'League',
+    label: 'League',
+    slug: leagueSlug(target.league),
+    render: (h) =>
+      standingsBody(
+        [
+          ...(isAlone ? [standingsHeadline(target.league, h)] : []),
+          seasonProgress(MATCHDAYS_PLAYED, leagueRoundCount(target.league), h),
+        ],
+        rows,
+        (position) => zoneFor(target.league, position, rows.length),
+        target,
+        h,
+      ),
+  };
+  const cup: ReadonlyArray<ActiveCompetition> =
+    cupRun === undefined
+      ? []
+      : [
+          {
+            kind: 'Cup',
+            label: 'Cup',
+            slug: 'domestic-cup',
+            render: (h) => [cupRunList(cupRun, h)],
+          },
+        ];
+  const continental: ReadonlyArray<ActiveCompetition> =
+    europe === undefined
+      ? []
+      : [
+          {
+            kind: 'Europe',
+            // The competition's initials — its slug in capitals — so the three chips hold one line on a 320px phone. The stage headline stays: it says something the chip does not.
+            label: europe.slug.toUpperCase(),
+            slug: europe.slug,
+            render: (h) =>
+              standingsBody(
+                [
+                  standingsHeadline(europe.stage, h),
+                  seasonProgress(europe.rows[0]?.played ?? 0, europe.rounds, h),
+                ],
+                europe.rows,
+                europe.zoneAt,
+                target,
+                h,
+              ),
+          },
+        ];
+  return [league, ...cup, ...continental];
+};
+
+// The competition picker — the scope picker's grammar, over the competitions this club is actually in. A single-select group, so a real radiogroup.
+const competitionRadioGroup = (
+  competitions: ReadonlyArray<ActiveCompetition>,
+  model: Model,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.submodel({
+    slotId: COMPETITION_GROUP_ID,
+    model: model.competitionGroup,
+    view: CompetitionRadioGroup.view,
+    toParentMessage: (message) => Message.GotCompetitionGroupMessage({ message }),
+    viewInputs: {
+      selectedValue: Option.some(model.competitionTab),
+      options: competitions.map((competition) => competition.kind),
+      ariaLabel: 'Competition',
+      toView: ({ group, options }) =>
+        h.div(
+          [...group, ...getStyleXAttributes(h, styles.scopeGroup)],
+          options.map((option) => {
+            const checked = option.value === model.competitionTab;
+            const label =
+              competitions.find((competition) => competition.kind === option.value)?.label ?? '';
+            return h.div(
+              [
+                ...option.option,
+                ...getStyleXAttributes(
+                  h,
+                  styles.scopeOption,
+                  checked ? styles.scopeChecked : styles.scopeRest,
+                ),
+              ],
+              [label],
+            );
+          }),
         ),
+    },
+  });
+
+// COMPETITIONS — one section for every competition the club is in, a chip row selecting which is shown, so three stacked tables no longer cost three screens. Its one control is the link under the body to the competition's own page — the whole competition is unbounded on a profile, so it links out rather than opening in place. A club in nothing but its league gets no chip row.
+const clubCompetitionsSection = (
+  target: Club,
+  competitions: ReadonlyArray<ActiveCompetition>,
+  model: Model,
+  h: HtmlBuilder<Message>,
+): Html => {
+  const selected =
+    competitions.find((competition) => competition.kind === model.competitionTab) ??
+    competitions[0];
+  if (selected === undefined) return h.empty;
+  return clubSection(
+    'Competitions',
+    [
+      ...(competitions.length > 1 ? [competitionRadioGroup(competitions, model, h)] : []),
+      ...selected.render(h),
+      h.div(
+        [...getStyleXAttributes(h, styles.sectionFoot)],
+        [
+          clubSectionLink(
+            selected.kind === 'Cup' ? 'Full draw' : 'Full table',
+            competitionRouter({ slug: selected.slug }),
+            h,
+          ),
+        ],
       ),
     ],
-    'domestic-cup',
+    'competitions',
     h,
   );
+};
 
 // The top-scorers scope selector. These are mutually-exclusive choices (all
 // competitions, the club’s league, or the cup), so a real radiogroup — not the
@@ -229,57 +345,141 @@ const scorerRow = (scorer: Scorer, index: number, h: HtmlBuilder<Message>): Html
     ],
   );
 
+// How many scorers the folded section shows — a podium.
+const SCORERS_SHOWN = 3;
+
+// The scorers drawn: the podium when folded, the whole list when open.
+const scorersShown = (
+  scorers: ReadonlyArray<Scorer>,
+  isExpanded: boolean,
+): ReadonlyArray<Scorer> => (isExpanded ? scorers : scorers.slice(0, SCORERS_SHOWN));
+
 // One named list view per scope. Each list carries a LITERAL key — the
 // identity of that scope’s board — so switching scopes swaps subtrees
 // (replaying the `.screen` slide-in) without a data-derived key.
-const allScorersList = (target: Club, h: HtmlBuilder<Message>): Html =>
+const allScorersList = (target: Club, isExpanded: boolean, h: HtmlBuilder<Message>): Html =>
   h.ol(
     [h.Key('club-scorers-all'), ...getStyleXAttributesWith(h, 'screen', styles.scorersList)],
-    scorersFor(target, 'All').map((entry, index) => scorerRow(entry, index, h)),
+    scorersShown(scorersFor(target, 'All'), isExpanded).map((entry, index) =>
+      scorerRow(entry, index, h),
+    ),
   );
-const leagueScorersList = (target: Club, h: HtmlBuilder<Message>): Html =>
+const leagueScorersList = (target: Club, isExpanded: boolean, h: HtmlBuilder<Message>): Html =>
   h.ol(
     [h.Key('club-scorers-league'), ...getStyleXAttributesWith(h, 'screen', styles.scorersList)],
-    scorersFor(target, 'League').map((entry, index) => scorerRow(entry, index, h)),
+    scorersShown(scorersFor(target, 'League'), isExpanded).map((entry, index) =>
+      scorerRow(entry, index, h),
+    ),
   );
-const cupScorersList = (target: Club, h: HtmlBuilder<Message>): Html =>
+const cupScorersList = (target: Club, isExpanded: boolean, h: HtmlBuilder<Message>): Html =>
   h.ol(
     [h.Key('club-scorers-cup'), ...getStyleXAttributesWith(h, 'screen', styles.scorersList)],
-    scorersFor(target, 'Cup').map((entry, index) => scorerRow(entry, index, h)),
+    scorersShown(scorersFor(target, 'Cup'), isExpanded).map((entry, index) =>
+      scorerRow(entry, index, h),
+    ),
   );
 
-const scorersListFor = (target: Club, scope: ScorerScope, h: HtmlBuilder<Message>): Html =>
+const scorersListFor = (
+  target: Club,
+  scope: ScorerScope,
+  isExpanded: boolean,
+  h: HtmlBuilder<Message>,
+): Html =>
   M.value(scope).pipe(
     M.withReturnType<Html>(),
-    M.when('All', () => allScorersList(target, h)),
-    M.when('League', () => leagueScorersList(target, h)),
-    M.when('Cup', () => cupScorersList(target, h)),
+    M.when('All', () => allScorersList(target, isExpanded, h)),
+    M.when('League', () => leagueScorersList(target, isExpanded, h)),
+    M.when('Cup', () => cupScorersList(target, isExpanded, h)),
     M.exhaustive,
   );
 
 // ONE top-scorers component, scoped by chips: all competitions, the
-// club’s league, or the cup (user call).
+// club’s league, or the cup (user call). It opens folded to the podium; the
+// heading control opens the club's whole list, which is short enough to
+// open in place. One open state serves all three scopes — the reader opened
+// the section, not a scope.
 const clubScorersSection = (target: Club, model: Model, h: HtmlBuilder<Message>): Html => {
+  const anchor = 'top-scorers';
+  const isExpanded = model.expandedClubSections.includes(anchor);
+  const total = scorersFor(target, model.scorerScope).length;
   return clubSection(
     'Top scorers',
     [
       scopeRadioGroup(target, model, h),
-      scorersListFor(target, model.scorerScope, h),
+      scorersListFor(target, model.scorerScope, isExpanded, h),
       h.p([...getStyleXAttributes(h, styles.scorersFootnote)], ['Goals — season 2025/26']),
     ],
-    'top-scorers',
+    anchor,
     h,
+    total > SCORERS_SHOWN
+      ? clubSectionToggle(anchor, isExpanded, `Show all ${total} scorers`, h)
+      : undefined,
   );
 };
 
-const clubHistorySection = (target: Club, h: HtmlBuilder<Message>): Html => {
+// A finishing position as English says it.
+const ordinal = (position: number): string => {
+  const tens = position % 100;
+  const ones = position % 10;
+  const suffix =
+    tens >= 11 && tens <= 13
+      ? 'th'
+      : ones === 1
+        ? 'st'
+        : ones === 2
+          ? 'nd'
+          : ones === 3
+            ? 'rd'
+            : 'th';
+  return `${position}${suffix}`;
+};
+
+// The season-by-season archive — the whole that HISTORY opens into. A title
+// season is set in pink, so the honors above can be found in the list.
+const archiveList = (archive: ReadonlyArray<ArchiveSeason>, h: HtmlBuilder<Message>): Html =>
+  h.ol(
+    [...getStyleXAttributes(h, styles.archiveList)],
+    archive.map((entry) =>
+      h.li(
+        [...getStyleXAttributes(h, styles.archiveRow)],
+        [
+          h.span([...getStyleXAttributes(h, shared.display, styles.archiveSeason)], [entry.season]),
+          h.span([...getStyleXAttributes(h, styles.archiveLeague)], [entry.league]),
+          h.span(
+            [
+              ...getStyleXAttributes(
+                h,
+                shared.display,
+                styles.archivePosition,
+                entry.position === 1 && styles.archivePositionTitle,
+              ),
+            ],
+            [ordinal(entry.position)],
+          ),
+        ],
+      ),
+    ),
+  );
+
+// How many archive seasons the folded HISTORY shows under its counts.
+const ARCHIVE_SHOWN = 3;
+
+// HISTORY opens folded to its headline counts and the latest seasons; the heading control opens the whole archive. The seasons-in-the-data count and its reach are read off the archive itself, so the tile can never promise more seasons than the list opens into.
+const clubHistorySection = (target: Club, model: Model, h: HtmlBuilder<Message>): Html => {
+  const anchor = 'history';
+  const isExpanded = model.expandedClubSections.includes(anchor);
+  const archive = clubArchive(target);
+  const oldest = Option.getOrUndefined(Array.last(archive));
+  // "Most recently" is read off the archive, so the tile and the list under it can never name different seasons.
+  const latestTitle = archive.find((season) => season.position === 1);
+  const latestCup = archive.find((season) => season.isCupWinner);
   const entries = [
     ...(target.leagueTitles > 0
       ? [
           {
             value: timesCount(target.leagueTitles, h),
-            label: 'League champions',
-            detail: 'Most recently 2024/25',
+            label: 'League titles',
+            detail: latestTitle === undefined ? '' : `Last ${latestTitle.season}`,
           },
         ]
       : []),
@@ -287,12 +487,16 @@ const clubHistorySection = (target: Club, h: HtmlBuilder<Message>): Html => {
       ? [
           {
             value: timesCount(target.cupTitles, h),
-            label: 'Cup winners',
-            detail: 'Most recently 2024/25',
+            label: 'Cup wins',
+            detail: latestCup === undefined ? '' : `Last ${latestCup.season}`,
           },
         ]
       : []),
-    { value: ['30'], label: 'Seasons in the data', detail: 'Back to 1995/96' },
+    {
+      value: [`${archive.length}`],
+      label: 'Seasons',
+      detail: oldest === undefined ? '' : `Since ${oldest.season}`,
+    },
   ];
   return clubSection(
     'History',
@@ -303,7 +507,7 @@ const clubHistorySection = (target: Club, h: HtmlBuilder<Message>): Html => {
           h.div(
             [],
             [
-              h.div([...getStyleXAttributes(h, styles.historyTick)], []),
+              h.div([...getStyleXAttributes(h, styles.pinkRule)], []),
               h.p([...getStyleXAttributes(h, shared.display, styles.historyValue)], entry.value),
               h.p([...getStyleXAttributes(h, shared.display, styles.historyLabel)], [entry.label]),
               h.p([...getStyleXAttributes(h, styles.historyDetail)], [entry.detail]),
@@ -311,28 +515,34 @@ const clubHistorySection = (target: Club, h: HtmlBuilder<Message>): Html => {
           ),
         ),
       ),
-      h.p(
-        [...getStyleXAttributes(h, styles.historyNote)],
-        ['The season-by-season archive arrives with the real data.'],
-      ),
+      archiveList(isExpanded ? archive : archive.slice(0, ARCHIVE_SHOWN), h),
     ],
-    'history',
+    anchor,
     h,
+    archive.length > ARCHIVE_SHOWN
+      ? clubSectionToggle(anchor, isExpanded, `Show all ${archive.length} seasons`, h)
+      : undefined,
   );
 };
 
-const clubAllTimeStatsSection = (h: HtmlBuilder<Message>): Html =>
-  clubSection(
+// ALL-TIME STATS draws only for a club the data answers for (see clubAllTimeStats): a frame of placeholders was the most expensive block on a phone for no content.
+const clubAllTimeStatsSection = (stats: AllTimeStats, h: HtmlBuilder<Message>): Html => {
+  const tiles: ReadonlyArray<readonly [string, string]> = [
+    ['Matches played', `${stats.matchesPlayed}`],
+    ['Goals scored', `${stats.goalsScored}`],
+    ['Clean sheets', `${stats.cleanSheets}`],
+    ['Biggest win', stats.biggestWin],
+  ];
+  return clubSection(
     'All-time stats',
     [
-      h.p([...getStyleXAttributes(h, styles.wipBadge)], ['Work in progress']),
       h.div(
         [...getStyleXAttributes(h, styles.statsGrid)],
-        ['Matches played', 'Goals scored', 'Clean sheets', 'Biggest win'].map((label) =>
+        tiles.map(([label, value]) =>
           h.div(
             [],
             [
-              h.div([...getStyleXAttributes(h, styles.statsPlaceholder)], []),
+              h.p([...getStyleXAttributes(h, shared.display, styles.statsValue)], [value]),
               h.p([...getStyleXAttributes(h, styles.statsLabel)], [label]),
             ],
           ),
@@ -342,6 +552,7 @@ const clubAllTimeStatsSection = (h: HtmlBuilder<Message>): Html =>
     'all-time-stats',
     h,
   );
+};
 
 const clubFollowSection = (target: Club, model: Model, h: HtmlBuilder<Message>): Html => {
   const following = model.followed.includes(target.slug);
@@ -387,12 +598,15 @@ const clubFollowSection = (target: Club, model: Model, h: HtmlBuilder<Message>):
 export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html => {
   const heroArt = clubHeroPhotos[target.slug];
   const honors = clubHonors[target.slug] ?? [];
-  const europe = clubEurope[target.slug];
-  const cupRun = clubCupRun[target.slug];
+  const allTime = clubAllTimeStats(target);
   const highlight = clubHighlights[target.slug] ?? {
     kicker: 'This season',
-    statement: `${target.won} wins in ${target.won + target.drawn + target.lost} games — the numbers tell it straight.`,
+    // Sized for two or three lines of the quote box at 390px.
+    statement: `${target.won} wins, ${target.drawn} draws and ${target.lost} defeats in ${target.won + target.drawn + target.lost} games this season — the numbers tell it straight.`,
   };
+  // The statement sits in a four-line box unless opened; the control to open it shows only once the mount has measured that the box clips something, and stays while open so it can be folded again.
+  const isQuoteOpen = model.expandedClubSections.includes(QUOTE_ANCHOR);
+  const hasQuoteControl = isQuoteOpen || model.isQuoteOverflowing;
   // TWO BANDS, the landing page’s rhythm (user call): the profile opens on
   // a full-bleed DARK act — artwork, crest, name, honors, commentary — and
   // the black ENDS there. Everything from the calendar down is the data
@@ -408,58 +622,40 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
     [
       // The Universe-style header ARTWORK (user-supplied photo, per club):
       // full-bleed, fading into the ink so the crest + name ride the fade.
-      ...(heroArt
-        ? [
-            h.div(
-              [...getStyleXAttributesWith(h, 'club-hero-art', styles.heroArt)],
-              [
-                // Phones ZOOM the artwork in (user call — the wide frame
-                // shrank the players to specks); md+ shows the full crop.
-                h.img([
-                  h.Src(heroArt.photo),
-                  h.Alt(''),
-                  ...getStyleXAttributes(h, styles.heroArtImage),
-                  h.Style({ 'object-position': heroArt.focus, 'transform-origin': heroArt.focus }),
-                ]),
-                h.div([...getStyleXAttributes(h, styles.heroArtFade)], []),
-                h.a(
-                  [h.Href(clubsRouter()), ...getStyleXAttributes(h, styles.backLinkOnArt)],
-                  ['← All clubs'],
-                ),
-              ],
-            ),
-          ]
-        : []),
+      // THE ART BAND — one band at one height for every club, the template the content adapts to. A club with a photo shows it; a club without gets the CREST WASH: its own crest blown up, blurred and faint over the lifted ink, so the band is still about the club. Both fades and the back link ride on either.
+      h.div(
+        [
+          ...getStyleXAttributesWith(
+            h,
+            'club-hero-art',
+            styles.heroArt,
+            heroArt === undefined && styles.heroArtWashed,
+          ),
+        ],
+        [
+          heroArt === undefined
+            ? h.img([
+                h.Src(target.logo),
+                h.Alt(''),
+                h.AriaHidden(true),
+                ...getStyleXAttributes(h, styles.heroWashImage),
+              ])
+            : h.img([
+                h.Src(heroArt.photo),
+                h.Alt(''),
+                ...getStyleXAttributes(h, styles.heroArtImage),
+                h.Style({ 'object-position': heroArt.focus, 'transform-origin': heroArt.focus }),
+              ]),
+          h.div([...getStyleXAttributes(h, styles.heroArtFade)], []),
+          h.div([...getStyleXAttributes(h, styles.heroArtTopFade)], []),
+          backLink({ label: 'All clubs', href: clubsRouter() }, h, styles.backLinkOnArt),
+        ],
+      ),
       h.div(
         [...getStyleXAttributes(h, styles.bandColumn)],
         [
-          ...(heroArt
-            ? []
-            : [
-                h.div(
-                  [...getStyleXAttributes(h, styles.backRow)],
-                  [
-                    h.a(
-                      [h.Href(clubsRouter()), ...getStyleXAttributes(h, styles.backLink)],
-                      ['← All clubs'],
-                    ),
-                  ],
-                ),
-              ]),
-          // HERO — crest and name are THE BANG (user call): both huge,
-          // riding the artwork’s fade. ONE parallax only (user call): the
-          // artwork itself drifts (.club-hero-art) and everything over it
-          // sits still — the layered stack of counter-drifting blocks was
-          // removed, along with the ink fills that only existed so those
-          // layers could cover one another.
           h.div(
-            [
-              ...getStyleXAttributes(
-                h,
-                styles.hero,
-                heroArt ? styles.heroOverArt : styles.heroPlain,
-              ),
-            ],
+            [...getStyleXAttributes(h, styles.hero)],
             [
               h.img([
                 h.Src(target.logo),
@@ -473,143 +669,135 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
               // exact grammar: a push, not a crossfade. All the lines stack
               // in a single grid cell, so the chip’s width is the WIDEST of
               // them and never jumps as the text changes.
-              ...(Array.isReadonlyArrayEmpty(honors)
-                ? []
-                : [
-                    h.ul(
-                      [
-                        ...getStyleXAttributesWith(
-                          h,
-                          'honor-roll',
-                          shared.display,
-                          styles.honorRoll,
-                        ),
-                      ],
-                      honors.map((honor, index) =>
-                        h.li(
-                          [
-                            ...getStyleXAttributes(h, styles.honorLine),
-                            h.Style({ '--honor-index': `${index}` }),
-                          ],
-                          honor.count === undefined
-                            ? [honor.label]
-                            : [...timesCount(honor.count, h), honor.label],
-                        ),
-                      ),
-                    ),
-                    // Reduced motion gets them all at once instead — a
-                    // rotator that cannot rotate would hide two thirds of
-                    // the honors.
-                    h.ul(
-                      [...getStyleXAttributesWith(h, 'honor-static', styles.honorStatic)],
-                      honors.map((honor) =>
-                        h.li(
-                          [...getStyleXAttributes(h, shared.display, styles.honorChip)],
-                          honor.count === undefined
-                            ? [honor.label]
-                            : [...timesCount(honor.count, h), honor.label],
+              // THE HONOURS SLOT — one fixed height for every club, empty for a club without honours, so the quote below sits at the same y on every profile.
+              h.div(
+                [...getStyleXAttributes(h, styles.honorSlot)],
+                Array.isReadonlyArrayEmpty(honors)
+                  ? []
+                  : [
+                      h.ul(
+                        [
+                          ...getStyleXAttributesWith(
+                            h,
+                            'honor-roll',
+                            shared.display,
+                            styles.honorRoll,
+                          ),
+                        ],
+                        honors.map((honor, index) =>
+                          h.li(
+                            [
+                              ...getStyleXAttributes(h, styles.honorLine),
+                              h.Style({ '--honor-index': `${index}` }),
+                            ],
+                            honor.count === undefined
+                              ? [honor.label]
+                              : [...timesCount(honor.count, h), honor.label],
+                          ),
                         ),
                       ),
-                    ),
-                  ]),
-            ],
-          ),
-          // SKÓREOVÁ COMMENTARY — an editorial PULL-QUOTE: a giant Anton
-          // quotation mark anchors the block, the text hangs off a pink
-          // rule, and the sign-off closes the row on a hairline that runs
-          // from the quote to the reporter’s portrait. The portrait is a
-          // placeholder glyph until her photo lands — swap it for an
-          // <img> in the circle then.
-          h.figure(
-            [
-              ...getStyleXAttributes(
-                h,
-                styles.commentary,
-                heroArt ? styles.commentaryUnderArt : styles.commentaryPlain,
+                      // Reduced motion: one non-wrapping row of chips that scrolls sideways, so the slot keeps its height whatever the count.
+                      h.ul(
+                        [
+                          ...getStyleXAttributesWith(
+                            h,
+                            'honor-static no-scrollbar',
+                            styles.honorStatic,
+                          ),
+                        ],
+                        honors.map((honor) =>
+                          h.li(
+                            [...getStyleXAttributes(h, shared.display, styles.honorChip)],
+                            honor.count === undefined
+                              ? [honor.label]
+                              : [...timesCount(honor.count, h), honor.label],
+                          ),
+                        ),
+                      ),
+                    ],
               ),
             ],
+          ),
+          // SKÓREOVÁ COMMENTARY — the editorial block under the honours slot, one fixed template for every club: the opener rule, the byline row, the statement in its four-line box, and the reserved row for the fold control. The portrait is a placeholder until her photo lands.
+          h.figure(
+            [...getStyleXAttributes(h, styles.commentary)],
             [
-              // The TEXT is the anchor of this block (user call): it gets a
-              // measure of its own and is centered inside the figure, and
-              // every decoration — the quote mark, the pink rule, the
-              // hairline, the portrait — hangs off that column rather than
-              // shifting it. Without this the mark and rule sat left of the
-              // text and pushed its optical center to the right.
-              h.div(
-                [...getStyleXAttributes(h, styles.commentaryColumn)],
+              h.div([...getStyleXAttributes(h, styles.pinkRule)], []),
+              // The byline: the portrait, then the masthead over its label, one fixed row.
+              h.figcaption(
+                [...getStyleXAttributes(h, styles.byline)],
                 [
-                  // Body voice, not Anton (user call) — a long quotation in
-                  // the display face was unreadable. Text rags left;
-                  // text-pretty keeps the last line from stranding a widow.
-                  // The quotation MARK sits inside the ruled block, indented
-                  // to the same left edge as the text: the pink rule then
-                  // runs as one unbroken line past both, instead of the mark
-                  // hanging off the side and interrupting it.
-                  // pt clears the MARK’S INK, not its box: the 0.3 leading
-                  // collapses the line box to ~29px while the glyph still
-                  // paints ~25px above it, so without this the quote mark
-                  // bleeds up into the honor chips.
-                  h.blockquote(
-                    [...getStyleXAttributes(h, styles.quote)],
+                  h.span(
+                    [...getStyleXAttributes(h, styles.portrait)],
+                    [
+                      h.img([
+                        h.Src(commentaryAvatar),
+                        h.Alt('Skóreová reporter'),
+                        h.Loading('lazy'),
+                        ...getStyleXAttributes(h, styles.portraitImage),
+                      ]),
+                    ],
+                  ),
+                  h.span(
+                    [...getStyleXAttributes(h, styles.bylineText)],
+                    [
+                      h.span(
+                        [...getStyleXAttributes(h, shared.display, styles.bylineName)],
+                        ['Skóreová'],
+                      ),
+                      h.span([...getStyleXAttributes(h, styles.bylineLabel)], ['Commentary']),
+                    ],
+                  ),
+                ],
+              ),
+              // The statement in its four-line box on the band's padding, the opening mark inline before its first word as part of the first line, a thin space between them.
+              h.blockquote(
+                [...getStyleXAttributes(h, styles.statement)],
+                [
+                  h.span(
+                    [
+                      h.OnMount(ObserveQuoteOverflow()),
+                      ...getStyleXAttributes(
+                        h,
+                        styles.statementText,
+                        !isQuoteOpen && styles.quoteFolded,
+                      ),
+                    ],
                     [
                       h.span(
                         [
-                          // -ml compensates the glyph’s own side bearing:
-                          // aligning the BOXES leaves the ink looking
-                          // indented, so nudge it back to sit optically
-                          // flush with the first letter of the quote.
-                          ...getStyleXAttributesWith(
-                            h,
-                            'quote-float',
-                            shared.display,
-                            styles.quoteMark,
-                          ),
+                          ...getStyleXAttributes(h, shared.display, styles.statementMark),
                           h.AriaHidden(true),
                         ],
                         ['“'],
                       ),
-                      highlight.statement,
+                      `\u2009${highlight.statement}`,
                     ],
                   ),
-                  // Sign-off: a hairline runs out of the quote into the
-                  // byline + portrait closing the right edge. It TUCKS UP into
-                  // the quote’s last line (negative margin) so the portrait
-                  // sits right against the text rather than floating away
-                  // below it.
-                  h.figcaption(
-                    [...getStyleXAttributes(h, styles.signoff)],
-                    [
-                      h.div(
-                        [...getStyleXAttributes(h, styles.signoffRule), h.AriaHidden(true)],
-                        [],
-                      ),
-                      // A signature LOCKUP: the masthead in the display face
-                      // over a small tracked label. Setting both as one
-                      // letterspaced body-font block read cheap — wide
-                      // tracking on a light weight at small size has no
-                      // weight to carry it.
-                      h.span(
-                        [...getStyleXAttributes(h, styles.signoffLockup)],
-                        [
-                          h.span(
-                            [...getStyleXAttributes(h, shared.display, styles.signoffMasthead)],
-                            ['Skóreová'],
-                          ),
-                          h.span([...getStyleXAttributes(h, styles.signoffLabel)], ['Commentary']),
-                        ],
-                      ),
-                      h.span(
-                        [...getStyleXAttributes(h, styles.portrait)],
-                        [
-                          h.img([
-                            h.Src(commentaryAvatar),
-                            h.Alt('Skóreová reporter'),
-                            h.Loading('lazy'),
-                            ...getStyleXAttributes(h, styles.portraitImage),
-                          ]),
-                        ],
-                      ),
-                    ],
+                ],
+              ),
+              // The fold control's row is always reserved, so the block ends at the same y whether or not anything is clipped.
+              h.div(
+                [...getStyleXAttributes(h, styles.moreRow)],
+                [
+                  Button.view(
+                    {
+                      onClick: Message.ToggledClubSection({ anchor: QUOTE_ANCHOR }),
+                      toView: ({ button }) =>
+                        h.button(
+                          [
+                            ...button,
+                            h.AriaExpanded(isQuoteOpen),
+                            ...getStyleXAttributes(
+                              h,
+                              styles.quoteMore,
+                              !hasQuoteControl && styles.quoteMoreHidden,
+                            ),
+                          ],
+                          [isQuoteOpen ? 'Less' : 'More'],
+                        ),
+                    },
+                    h,
                   ),
                 ],
               ),
@@ -617,8 +805,6 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
           ),
         ],
       ),
-      // Film grain over the dark world only — `overlay` against paper just
-      // dirties it, and the grain is the dark act’s texture anyway.
       h.div([...getStyleXAttributesWith(h, 'grain', styles.grainOverlay), h.AriaHidden(true)], []),
     ],
   );
@@ -627,19 +813,26 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
   // background of its own: the document is already paper, so this is
   // simply the dark band ending. Column width matches the band above it so
   // the section headings line up straight through the seam.
+  // The jump row lists the data sections in page order, under the presence gates the sections themselves use. Follow is an action, not a section to read, so it is not offered as a destination.
+  const index: ReadonlyArray<ClubSectionEntry> = [
+    ...clubMatchesIndex(target),
+    { anchor: 'competitions', label: 'Competitions' },
+    { anchor: 'top-scorers', label: 'Top scorers' },
+    { anchor: 'history', label: 'History' },
+    ...(Option.isSome(allTime) ? [{ anchor: 'all-time-stats', label: 'All-time stats' }] : []),
+  ];
   const dataBand = h.div(
     [...getStyleXAttributes(h, styles.dataBand)],
     [
-      clubMatchesSections(target, h),
-      clubStandingsSection(target, h),
-      // Europe sits between the league and the cup — only for the clubs
-      // actually in a continental campaign.
-      ...(europe ? [clubEuropeSection(target, europe, h)] : []),
-      // Same gate as Europe above: only the clubs actually still in the cup.
-      ...(cupRun ? [clubCupSection(cupRun, h)] : []),
+      clubSectionIndex(index, model.activeClubSection, h),
+      ...clubMatchStrip(target, h),
+      clubCompetitionsSection(target, clubActiveCompetitions(target), model, h),
       clubScorersSection(target, model, h),
-      clubHistorySection(target, h),
-      clubAllTimeStatsSection(h),
+      clubHistorySection(target, model, h),
+      ...Option.match(allTime, {
+        onNone: () => [],
+        onSome: (stats) => [clubAllTimeStatsSection(stats, h)],
+      }),
       clubFollowSection(target, model, h),
     ],
   );

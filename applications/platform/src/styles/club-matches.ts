@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { tokens } from '../tokens.stylex';
+import { spacing, tokens } from '../tokens.stylex';
 
 // Styles for the club profile's LAST/UPCOMING match cards (club-matches.ts).
 
@@ -93,11 +93,21 @@ export const styles = stylex.create({
     lineHeight: 1,
     color: tokens.ink,
   },
+  // A link: ink text, no underline, and the frame answers the hover.
   card: {
     display: 'flex',
     flexDirection: 'column',
+    width: '100%',
+    color: tokens.ink,
+    textDecoration: 'none',
     borderWidth: 1,
-    borderColor: 'color-mix(in srgb, var(--color-ink) 15%, transparent)',
+    borderColor: {
+      default: 'color-mix(in srgb, var(--color-ink) 15%, transparent)',
+      ':hover': tokens.pink,
+    },
+    transitionProperty: 'border-color',
+    transitionDuration: '0.15s',
+    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
   // THE FIXTURE — crests at hero scale with the scoreline between them.
   // Capped and centered: on a full-width card the two crests would
@@ -155,50 +165,79 @@ export const styles = stylex.create({
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
     textTransform: 'uppercase',
   },
-  matchInfoLink: {
-    marginTop: '1.25rem',
+  // The strip. On a phone a native snap scroller: each card is the column less one `lg` and the gap, so the next card shows its first 24px and says there is more — the trending track's arithmetic. From md the cards sit side by side and nothing scrolls.
+  strip: {
+    marginTop: '1.5rem',
     display: 'flex',
-    width: 'fit-content',
-    alignItems: 'center',
-    gap: '0.5rem',
-    borderWidth: 1,
-    borderColor: tokens.ink,
-    paddingInline: '1.25rem',
-    paddingBlock: '0.625rem',
-    fontSize: {
-      default: '0.875rem',
-      [MD]: '1rem',
+    alignItems: 'stretch',
+    gap: spacing.sm,
+    overflowX: {
+      default: 'auto',
+      [MD]: 'visible',
     },
-    lineHeight: {
+    scrollSnapType: {
+      default: 'x mandatory',
+      [MD]: 'none',
+    },
+    overscrollBehaviorX: 'contain',
+    paddingBottom: '3px',
+  },
+  stripCard: {
+    display: 'flex',
+    flexGrow: {
+      default: 0,
+      [MD]: 1,
+    },
+    flexShrink: 0,
+    flexBasis: {
+      default: `calc(100% - ${spacing.sm} - ${spacing.lg})`,
+      [MD]: '0%',
+    },
+    minWidth: 0,
+    scrollSnapAlign: 'start',
+  },
+  // The card's status word, in the meta voice at the card's top left.
+  cardTag: {
+    paddingInline: {
       default: '1.25rem',
       [MD]: '1.5rem',
     },
-    letterSpacing: '0.12em',
-    color: {
-      default: tokens.ink,
-      ':hover': tokens.paper,
-    },
+    paddingTop: '1rem',
+    fontSize: '10px',
+    letterSpacing: '0.2em',
     textTransform: 'uppercase',
-    transitionProperty: 'color, background-color, border-color',
-    transitionDuration: '0.15s',
-    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-    backgroundColor: {
-      default: null,
-      ':hover': tokens.ink,
-    },
+    color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
   },
-  sections: {
-    display: 'grid',
-    columnGap: {
-      default: '1rem',
-      [MD]: '1.25rem',
-    },
-    gridTemplateColumns: {
-      default: null,
-      [MD]: 'repeat(2, minmax(0, 1fr))',
-    },
+  // The form guide: five 12px squares and a meta caption.
+  form: {
+    marginTop: spacing.md,
   },
-  sectionBody: {
-    marginTop: '1.5rem',
+  formSquares: {
+    display: 'flex',
+    gap: '0.375rem',
+  },
+  formSquare: {
+    height: '0.75rem',
+    width: '0.75rem',
+    borderWidth: 1,
+  },
+  formWin: {
+    borderColor: tokens.ink,
+    backgroundColor: tokens.ink,
+  },
+  formDraw: {
+    borderColor: 'color-mix(in srgb, var(--color-ink) 25%, transparent)',
+    backgroundColor: 'color-mix(in srgb, var(--color-ink) 25%, transparent)',
+  },
+  formLoss: {
+    borderColor: tokens.pink,
+    backgroundColor: 'transparent',
+  },
+  formCaption: {
+    marginTop: '0.5rem',
+    fontSize: '10px',
+    letterSpacing: '0.2em',
+    textTransform: 'uppercase',
+    color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
   },
 });

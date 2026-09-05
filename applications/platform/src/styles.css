@@ -9,6 +9,8 @@
    Component styling lives in src/styles/ via stylex.create. */
 
 :root {
+  /* The fixed header's height, as the shell measures it: the spacer under it, the club band's start, the pinned jump row and the scroll-spy all read this one value, so a header that wraps a label or renders taller on another font engine moves everything under it by the same amount. The served value is the phone design height; the header subscription corrects it as the runtime subscribes. */
+  --header-height: 55px;
   --color-ink: #0d0c0c;
   --color-panel: #151313;
   --color-paper: #f3efe8;
@@ -402,9 +404,33 @@ body {
   animation-delay: var(--bar-delay, 0s);
 }
 
+/* The trending countdown fills left to right over one advance cycle. Linear,
+   because the line IS the timer — an eased line would report a moment the
+   timer does not keep. The duration arrives inline as --trending-advance from
+   the same constant the subscription ticks on, and the element is keyed in the
+   view so every new cycle replaces it and the animation starts at zero. */
+@keyframes trending-countdown {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.trending-countdown-fill {
+  animation: trending-countdown var(--trending-advance, 6s) linear both;
+}
+
+/* Held (reader in the board): the fresh cycle waits at zero until they leave. */
+.trending-countdown-fill.is-held {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .screen,
-  .bar {
+  .bar,
+  .trending-countdown-fill {
     animation: none;
   }
 }
@@ -499,32 +525,6 @@ body {
 @keyframes club-hero-art-drift {
   to {
     transform: translateY(10rem);
-  }
-}
-
-/* The commentary's opening quote LEVITATES — the landing page's "alive
-   emblem" treatment (its knight mascot and champion's crest), ported with
-   the same curve and period so the two sites bob at one rhythm. A slow
-   drift UP only: the mark sits above a fixed block of text, and dipping
-   down would close the gap to the first line and read as a wobble rather
-   than a float. */
-@keyframes quote-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-0.2rem);
-  }
-}
-
-.quote-float {
-  animation: quote-float 4.5s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .quote-float {
-    animation: none;
   }
 }
 

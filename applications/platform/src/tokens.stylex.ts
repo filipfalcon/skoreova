@@ -70,6 +70,8 @@ export const spacing = stylex.defineVars({
   sm: '0.75rem',
   md: '1.25rem',
   lg: '1.5rem',
+  // The gap between a profile's sections on a phone: 40px, one value where the sections had drifted between 48 and 120.
+  section: '2.5rem',
 });
 
 // The two rungs of quiet type. `meta` is the app's label scale — breadcrumb,

@@ -2,7 +2,7 @@ import { RadioGroup } from '@foldkit/ui';
 import { Option, Schema as S } from 'effect';
 
 import { AppRoute } from './route';
-import { FEED_FEATURED_MATCHES, FEED_LABEL } from './widgets';
+import { FEED_ATTENDANCE, FEED_FEATURED_MATCHES, FEED_TOP_SCORERS, FEED_LABEL } from './widgets';
 
 // A MOCK of the platform: the shell, the navigation, and every screen are
 // real Foldkit views, but all data is hardcoded placeholder. There is NO
@@ -30,6 +30,13 @@ export type Metric = typeof Metric.Type;
 // component, scoped by chips (user call).
 export const ScorerScope = S.Literals(['All', 'League', 'Cup']);
 export type ScorerScope = typeof ScorerScope.Type;
+
+/**
+ * The kinds of competition a club can be in at once, and so the tabs of a profile's COMPETITIONS
+ * section: its league, the domestic cup, and one European campaign.
+ */
+export const CompetitionKind = S.Literals(['League', 'Cup', 'Europe']);
+export type CompetitionKind = typeof CompetitionKind.Type;
 
 // ONE BLOCK in a feed. The kind stays an open string rather than a union of
 // the widgets that exist, so a widget joining the catalog does not move the
@@ -70,6 +77,20 @@ export const Model = S.Struct({
   clubQuery: S.String,
   // Which of the featured EUROPEAN CONTENDERS the clubs carousel shows.
   featuredClub: S.Number,
+  // Which trending tile leads the track. The countdown advances it (see
+  // subscription.ts) and the track's own scroll observer corrects it, so a
+  // reader who swipes ahead is never yanked back to where the timer stood.
+  trendingIndex: S.Number,
+  // Whether the reader is IN the trending board — pointer over it or focus
+  // inside it. The countdown holds while they are; leaving starts a fresh
+  // cycle rather than resuming a part-spent one, so the drawn line and the
+  // timer behind it can never disagree.
+  isTrendingHeld: S.Boolean,
+  // The OS-level reduced-motion preference. The served Model says false —
+  // one document answers every visitor, so it cannot carry a personal
+  // setting — and the reducedMotion subscription corrects it as the runtime
+  // subscribes, before any frame the reader could act on.
+  prefersReducedMotion: S.Boolean,
   // Slugs of the clubs the visitor follows (mock — session only; feeds
   // HER GAME once the real accounts land).
   followed: S.Array(S.String),
@@ -79,6 +100,16 @@ export const Model = S.Struct({
   // command fired in `init`.
   pinned: S.Array(S.String),
   scorerScope: ScorerScope,
+  // The club-profile sections the reader has opened past their first bite, by section anchor. Session-only, and cleared when the route changes to another page, so every profile opens folded; a hash jump within one profile re-applies the same route and leaves them as the reader had them.
+  expandedClubSections: S.Array(S.String),
+  // The club-profile section under the reader's eye, by anchor, kept by the scroll-spy subscription so the jump row can mark it. None while the hero is in view. Reset like the open sections: cleared on leaving the page, kept across a hash jump within it.
+  activeClubSection: S.Option(S.String),
+  // Whether the folded commentary hides lines, as its own mount measures it. False until measured, and from md up, where nothing folds; the More control is drawn only while this is true.
+  isQuoteOverflowing: S.Boolean,
+  // Which competition the profile's COMPETITIONS section shows. The league is every club's default and what a fresh profile opens on; kept across a hash jump within the profile.
+  competitionTab: CompetitionKind,
+  // The competition picker's own state, on the scope picker's terms: the committed tab stays in `competitionTab` above.
+  competitionGroup: RadioGroup.Model,
   // The scope picker's own state. It owns keyboard focus; the committed
   // scope stays in `scorerScope` above and is handed back to the group as a
   // view input, so the selection has exactly one owner.
@@ -128,9 +159,11 @@ export const feedKey = (sequence: number): string => `feed-block-${sequence}`;
 // up without one.
 export const DEFAULT_FEED_BLOCKS: ReadonlyArray<FeedBlock> = [
   { kind: FEED_FEATURED_MATCHES, key: feedKey(1), label: Option.some('Featured matches') },
+  { kind: FEED_TOP_SCORERS, key: feedKey(2), label: Option.some('Top scorers') },
+  { kind: FEED_ATTENDANCE, key: feedKey(3), label: Option.some('Attendance') },
 ];
 
-export const DEFAULT_NEXT_FEED_KEY = 2;
+export const DEFAULT_NEXT_FEED_KEY = 4;
 
 // What a feed carries before an account pays for more. The two are counted
 // apart because every widget arrives with a heading of its own: counted

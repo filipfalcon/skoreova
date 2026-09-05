@@ -5,7 +5,7 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 import domesticCupHeroPhoto from '../assets/competitions-hero/domestic-cup.jpg';
 import firstLeagueHeroPhoto from '../assets/competitions-hero/first-league.jpg';
 import secondLeagueHeroPhoto from '../assets/competitions-hero/second-league.jpg';
-import { chevron, clubChip, pinkTick, sectionLabel } from '../components';
+import { backLink, chevron, clubChip, pinkTick, sectionLabel } from '../components';
 import { POINTS_DRAW, POINTS_WIN, clubRowFace, leagueTeams, standingsFor } from '../data';
 import type { Competition, Edition } from '../data';
 import { Message } from '../message';
@@ -70,23 +70,11 @@ const HEADLINE_L_SLUGS: ReadonlyArray<string> = ['second-league', 'domestic-cup'
 const headlineTier = (competition: Competition): StyleXStyle =>
   HEADLINE_L_SLUGS.includes(competition.slug) ? styles.heroNameL : styles.heroNameXL;
 
-const backLink = (href: string, label: string, h: HtmlBuilder<Message>): Html =>
-  h.a(
-    [h.Href(href), ...getStyleXAttributes(h, shared.metaText, styles.backLink)],
-    [chevron(h, 'left', styles.backChevron), label],
-  );
-
-const profileHeader = (
-  backHref: string,
-  backLabel: string,
-  title: string,
-  chips: ReadonlyArray<Html>,
-  h: HtmlBuilder<Message>,
-): Html =>
+const profileHeader = (title: string, chips: ReadonlyArray<Html>, h: HtmlBuilder<Message>): Html =>
   h.div(
     [],
     [
-      backLink(backHref, backLabel, h),
+      backLink({ label: 'All leagues', href: competitionsRouter() }, h),
       h.div(
         [...getStyleXAttributes(h, styles.headerBlock)],
         [
@@ -428,13 +416,7 @@ const competitionHero = (
       h.div(
         [...getStyleXAttributes(h, styles.heroTopRow)],
         [
-          h.a(
-            [
-              h.Href(competitionsRouter()),
-              ...getStyleXAttributes(h, shared.metaText, styles.heroBackLink),
-            ],
-            [chevron(h, 'left', styles.backChevron), 'All competitions'],
-          ),
+          backLink({ label: 'All leagues', href: competitionsRouter() }, h, styles.heroBack),
           seasonSelect(competition, model, h),
         ],
       ),
@@ -924,8 +906,6 @@ export const view = (competition: Competition, model: Model, h: HtmlBuilder<Mess
       heroArt
         ? competitionHero(competition, heroArt, model, h)
         : profileHeader(
-            competitionsRouter(),
-            'All competitions',
             competition.name,
             [honorChip(competition.tagline, h), mutedChip(competition.stage, h)],
             h,

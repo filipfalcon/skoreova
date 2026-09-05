@@ -27,6 +27,8 @@ export interface WidgetKind {
 }
 
 export const FEED_FEATURED_MATCHES = 'feed:featured-matches';
+export const FEED_TOP_SCORERS = 'feed:top-scorers';
+export const FEED_ATTENDANCE = 'feed:attendance';
 export const FEED_LABEL = 'feed:label';
 
 /**
@@ -38,6 +40,18 @@ export const widgetCatalog: ReadonlyArray<WidgetKind> = [
     name: 'Featured matches',
     summary: "The week's fixtures, the pick of them first.",
     defaultLabel: 'Featured matches',
+  },
+  {
+    id: FEED_TOP_SCORERS,
+    name: 'Top scorers',
+    summary: 'The goal leaders, first and second league apart.',
+    defaultLabel: 'Top scorers',
+  },
+  {
+    id: FEED_ATTENDANCE,
+    name: 'Attendance',
+    summary: 'Who draws the crowds, league by league.',
+    defaultLabel: 'Attendance',
   },
   {
     id: FEED_LABEL,

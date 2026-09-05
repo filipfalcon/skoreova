@@ -1,12 +1,11 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { tokens } from '../tokens.stylex';
+import { spacing, tokens } from '../tokens.stylex';
 
 // Styles for the club profile (page/club-profile.ts): the full-bleed dark
 // editorial band — hero artwork, crest and name, honors, commentary — and
 // the paper data act's cup run, scorer boards, history grid and follow call.
 
-const SM = '@media (min-width: 640px)';
 const MD = '@media (min-width: 768px)';
 const LG = '@media (min-width: 1024px)';
 
@@ -27,10 +26,8 @@ export const styles = stylex.create({
       [MD]: '2.5rem',
     },
     paddingTop: '2rem',
-    paddingBottom: {
-      default: '4rem',
-      [MD]: '5rem',
-    },
+    // The band closes one `lg` under the sign-off at every width.
+    paddingBottom: spacing.lg,
   },
   // The hero artwork wrapper — cancels the band's padding so the photo
   // runs edge to edge; the parallax drift is the club-hero-art contract.
@@ -41,52 +38,68 @@ export const styles = stylex.create({
       [MD]: '-2.5rem',
     },
     marginTop: '-2rem',
+    // Phones size the band by the viewport: well under half a screen, so the name is on the first paint, never under 18rem and never past 24rem. The photo is the reward for having one; clubs without art take the plain crest-on-ink hero instead and do not imitate this height.
     height: {
-      default: '22rem',
+      default: 'clamp(18rem, 40vh, 24rem)',
       [MD]: '34rem',
     },
     overflow: 'hidden',
     willChange: 'transform',
   },
-  // Phones ZOOM the artwork in (user call — the wide frame shrank the
-  // players to specks); md+ shows the full crop.
+  // Phones zoom the artwork a little. The band is taller than it is wide on a phone, so cover already crops a 16:9 photo to under half its width around the focus point; the zoom that a wide 22rem band needed to keep the players from shrinking to specks (1.45) is now mostly redundant, and a touch remains for the squarer photos.
+  // The crest wash for a club without a photo: the lifted ink behind, the crest itself blown up, blurred and faint over it.
+  heroArtWashed: {
+    backgroundColor: tokens.inkLift,
+  },
+  heroWashImage: {
+    position: 'absolute',
+    inset: 0,
+    height: '100%',
+    width: '100%',
+    objectFit: 'contain',
+    transform: 'scale(2.4)',
+    filter: 'blur(28px) saturate(1.2)',
+    opacity: 0.22,
+  },
   heroArtImage: {
     position: 'absolute',
     inset: 0,
     height: '100%',
     width: '100%',
     transform: {
-      default: 'scale(1.45)',
+      default: 'scale(1.2)',
       [MD]: 'scale(1)',
     },
     objectFit: 'cover',
+  },
+  // A short ink fade at the band's top keeps the back link legible over any photo.
+  heroArtTopFade: {
+    position: 'absolute',
+    insetInline: 0,
+    top: 0,
+    height: '4rem',
+    backgroundImage: 'linear-gradient(to bottom, var(--color-ink), transparent)',
   },
   heroArtFade: {
     position: 'absolute',
     insetInline: 0,
     bottom: 0,
-    height: '12rem',
+    height: {
+      default: '8rem',
+      [MD]: '12rem',
+    },
     backgroundImage:
       'linear-gradient(to top, var(--color-ink), color-mix(in srgb, var(--color-ink) 60%, transparent), transparent)',
   },
+  // Just under the header, not in the photo. The band's top IS the header's bottom edge — the band's negative top margin only cancels the shell's padding, it never rides under the header — so the link starts 1rem into the band, on the band's own padding.
   backLinkOnArt: {
     position: 'absolute',
-    top: '1.25rem',
+    top: '1rem',
     left: {
       default: '1.25rem',
       [MD]: '2.5rem',
     },
     zIndex: 10,
-    fontSize: '10px',
-    letterSpacing: '0.2em',
-    color: {
-      default: 'color-mix(in srgb, var(--color-paper) 70%, transparent)',
-      ':hover': tokens.pink,
-    },
-    textTransform: 'uppercase',
-    transitionProperty: 'color, background-color, border-color',
-    transitionDuration: '0.15s',
-    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
   bandColumn: {
     position: 'relative',
@@ -95,69 +108,56 @@ export const styles = stylex.create({
     width: '100%',
     maxWidth: '64rem',
   },
-  backRow: {
-    display: 'flex',
-  },
-  backLink: {
-    fontSize: '10px',
-    letterSpacing: '0.2em',
-    color: {
-      default: 'color-mix(in srgb, var(--color-paper) 50%, transparent)',
-      ':hover': tokens.pink,
-    },
-    textTransform: 'uppercase',
-    transitionProperty: 'color, background-color, border-color',
-    transitionDuration: '0.15s',
-    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  },
+  // The crest rides up into the band's fade — three quarters of it on the art on a phone — for every club alike.
   hero: {
-    textAlign: 'center',
-  },
-  // Over the artwork the hero pulls UP into the photo's fade; without one
-  // it simply opens the band.
-  heroOverArt: {
     position: 'relative',
     marginTop: {
-      default: '-8rem',
+      default: '-7.5rem',
       [MD]: '-11rem',
     },
+    textAlign: 'center',
   },
-  heroPlain: {
-    marginTop: {
-      default: '2.5rem',
-      [MD]: '3.5rem',
-    },
-  },
+  // Phones get a crest closer to the md size than to a list-row badge: the hero is the bang, and at 8rem it read as a thumbnail.
   crest: {
     marginInline: 'auto',
     height: {
-      default: '8rem',
+      default: '10rem',
       [MD]: '13rem',
     },
     width: {
-      default: '8rem',
+      default: '10rem',
       [MD]: '13rem',
     },
     objectFit: 'contain',
     filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
   },
   heroName: {
+    // Crest and name are one block: a fixed `sm` from the crest's bottom to the name's top, and the block as a whole is placed against the band's bottom edge by the crest's overlap. The box is two lines at the 1.02 leading whatever the clamp resolves to, so a one-word name leaves its spare line below and nothing under it moves.
+    height: '2.04em',
     marginTop: {
-      default: '1.5rem',
+      default: spacing.sm,
       [MD]: '2rem',
     },
-    fontSize: 'clamp(3.75rem, 17vw, 9rem)',
-    lineHeight: 0.95,
+    // The phone size tracks the width the band leaves after its padding, sized so the widest club word (LOKOMOTIVA, 4.53em in Anton at this tracking) still fits on one line at every width down to 320px. Capped at 9rem from md up, where every name fits.
+    fontSize: 'clamp(3.75rem, 21vw - 0.5rem, 9rem)',
+    lineHeight: 1.02,
     color: tokens.paper,
+  },
+  // The honours slot: one chip's height plus its margin, reserved for every club, empty for one without honours.
+  honorSlot: {
+    marginTop: {
+      default: '1.5rem',
+      [MD]: '1.75rem',
+    },
+    height: {
+      default: '2.5rem',
+      [MD]: '2.75rem',
+    },
   },
   // The rolling honors chip — all the lines stack in one grid cell, so the
   // chip's width is the WIDEST of them and never jumps as the text changes.
   honorRoll: {
     marginInline: 'auto',
-    marginTop: {
-      default: '1.5rem',
-      [MD]: '1.75rem',
-    },
     display: 'grid',
     width: 'fit-content',
     overflow: 'hidden',
@@ -188,19 +188,20 @@ export const styles = stylex.create({
   // contract in styles.css owns it (none at rest, flex under reduced
   // motion), and a compiled display would fight that swap.
   honorStatic: {
-    marginTop: {
-      default: '1.5rem',
-      [MD]: '1.75rem',
-    },
-    flexWrap: 'wrap',
+    marginInline: 'auto',
+    width: 'fit-content',
+    maxWidth: '100%',
+    flexWrap: 'nowrap',
+    overflowX: 'auto',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: {
       default: '0.5rem',
       [MD]: '0.75rem',
     },
   },
   honorChip: {
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
     backgroundColor: tokens.paper,
     paddingInline: {
       default: '0.75rem',
@@ -218,134 +219,29 @@ export const styles = stylex.create({
     letterSpacing: '0.12em',
     color: tokens.ink,
   },
+  // THE COMMENTARY BLOCK — one template for every club, top to bottom: the opener rule one `lg` under the honours slot, the byline row `sm` under it, the statement `md` under that in a four-line box, then the reserved fold-control row. Every height here is fixed, so the band ends at the same y on every profile.
   commentary: {
-    marginInline: 'auto',
-    maxWidth: '42rem',
+    marginTop: spacing.lg,
+    marginInline: 0,
+    maxWidth: '40rem',
   },
-  commentaryUnderArt: {
-    marginTop: '2.5rem',
+  // The opener rule — the History tiles' tick, one element shared by both.
+  pinkRule: {
+    height: '3px',
+    width: '2.5rem',
+    backgroundColor: tokens.pink,
   },
-  commentaryPlain: {
-    marginTop: {
-      default: '4rem',
-      [MD]: '6rem',
-    },
-  },
-  // The text's own measure, centered inside the figure — every decoration
-  // hangs off this column rather than shifting it.
-  commentaryColumn: {
-    marginInline: 'auto',
-    width: '100%',
-    maxWidth: {
-      default: '30rem',
-      [MD]: '34rem',
-    },
-  },
-  // pt clears the MARK'S INK, not its box: the 0.3 leading collapses the
-  // line box to ~29px while the glyph still paints ~25px above it, so
-  // without it the quote mark bleeds up into the honor chips.
-  quote: {
-    marginTop: 0,
-    borderLeftWidth: 2,
-    borderColor: tokens.pink,
-    paddingTop: {
-      default: '1.5rem',
-      [MD]: '2rem',
-    },
-    paddingLeft: {
-      default: '1.25rem',
-      [MD]: '1.75rem',
-    },
-    textAlign: 'left',
-    fontSize: {
-      default: '1.25rem',
-      [MD]: '1.5rem',
-    },
-    lineHeight: 1.625,
-    fontWeight: 500,
-    textWrap: 'pretty',
-    color: 'color-mix(in srgb, var(--color-paper) 90%, transparent)',
-  },
-  // -ml compensates the glyph's own side bearing: aligning the BOXES
-  // leaves the ink looking indented, so nudge it back to sit optically
-  // flush with the first letter of the quote.
-  quoteMark: {
-    marginBottom: {
-      default: '-0.75rem',
-      [MD]: '-1rem',
-    },
-    marginLeft: {
-      default: '-0.25rem',
-      [MD]: '-0.375rem',
-    },
-    display: 'block',
-    fontSize: {
-      default: '6rem',
-      [MD]: '8rem',
-    },
-    lineHeight: 0.3,
-    color: tokens.pink,
-    userSelect: 'none',
-  },
-  // The sign-off TUCKS UP into the quote's last line (negative margin) so
-  // the portrait sits right against the text rather than floating below it.
-  signoff: {
-    marginTop: {
-      default: '-0.5rem',
-      [MD]: '-0.75rem',
-    },
+  byline: {
+    marginTop: spacing.sm,
     display: 'flex',
     alignItems: 'center',
-    gap: {
-      default: '1rem',
-      [MD]: '1.25rem',
-    },
-  },
-  signoffRule: {
-    height: '1px',
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: '0%',
-    backgroundColor: tokens.paper,
-  },
-  signoffLockup: {
-    textAlign: 'right',
-  },
-  signoffMasthead: {
-    display: 'block',
-    fontSize: {
-      default: '1.25rem',
-      [MD]: '1.5rem',
-    },
-    lineHeight: 1,
-    letterSpacing: '0.12em',
-    color: tokens.pink,
-  },
-  signoffLabel: {
-    marginTop: '0.375rem',
-    display: 'block',
-    fontSize: {
-      default: '0.875rem',
-      [MD]: '1rem',
-    },
-    lineHeight: {
-      default: '1.25rem',
-      [MD]: '1.5rem',
-    },
-    letterSpacing: '0.25em',
-    color: tokens.paper,
-    textTransform: 'uppercase',
+    gap: spacing.sm,
+    height: '4rem',
   },
   portrait: {
     display: 'flex',
-    height: {
-      default: '7rem',
-      [MD]: '9rem',
-    },
-    width: {
-      default: '7rem',
-      [MD]: '9rem',
-    },
+    height: '4rem',
+    width: '4rem',
     flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
@@ -360,6 +256,76 @@ export const styles = stylex.create({
     width: '100%',
     objectFit: 'cover',
   },
+  bylineText: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+  },
+  bylineName: {
+    fontSize: '1.625rem',
+    lineHeight: 1,
+    letterSpacing: '0.12em',
+    color: tokens.pink,
+  },
+  bylineLabel: {
+    marginTop: '0.25rem',
+    fontSize: '12px',
+    lineHeight: '1.125rem',
+    letterSpacing: '0.2em',
+    textTransform: 'uppercase',
+    color: tokens.paper,
+  },
+  // The statement on the band's padding, the same left edge as the portrait.
+  statement: {
+    marginTop: spacing.md,
+    marginBottom: 0,
+    fontSize: '1.25rem',
+    lineHeight: 1.625,
+    fontWeight: 500,
+    textWrap: 'pretty',
+    color: tokens.paper,
+  },
+  // The opening mark, inline before the first word at twice the text size. Zero leading so the glyph does not push the first line open, and lowered by 0.4em of its own size: a quotation mark's ink sits at cap height, which at this size is above the first line's top edge, where the four-line box clips it.
+  statementMark: {
+    position: 'relative',
+    top: '0.4em',
+    fontSize: '2.5rem',
+    lineHeight: 0,
+    color: tokens.pink,
+    userSelect: 'none',
+  },
+  statementText: {
+    display: 'block',
+  },
+  // A four-line box at every width: the statement is clipped to it and a short one leaves its lines empty, so the band ends at the same y for every club. Whether the box clips anything is measured off the element (see ObserveQuoteOverflow).
+  quoteFolded: {
+    display: '-webkit-box',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 4,
+    height: 'calc(4 * 1.625em)',
+    overflow: 'hidden',
+  },
+  // The reserved row under the statement box, always 24px, with the fold control at its left when anything is clipped; hidden rather than removed otherwise.
+  moreRow: {
+    marginTop: spacing.xs,
+    height: '1.5rem',
+  },
+  quoteMore: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    height: '1.5rem',
+    cursor: 'pointer',
+    fontSize: '10px',
+    letterSpacing: '0.2em',
+    textTransform: 'uppercase',
+    color: {
+      default: 'color-mix(in srgb, var(--color-paper) 70%, transparent)',
+      ':hover': tokens.paper,
+    },
+  },
+  quoteMoreHidden: {
+    visibility: 'hidden',
+  },
   grainOverlay: {
     pointerEvents: 'none',
     position: 'absolute',
@@ -369,6 +335,12 @@ export const styles = stylex.create({
     marginInline: 'auto',
     width: '100%',
     maxWidth: '64rem',
+  },
+  // The link out under a competition body, at the row's end like the heading control it echoes.
+  sectionFoot: {
+    marginTop: '1.25rem',
+    display: 'flex',
+    justifyContent: 'flex-end',
   },
   cupList: {
     marginTop: '1.5rem',
@@ -429,10 +401,11 @@ export const styles = stylex.create({
     transitionDuration: '0.15s',
     transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
+  // Selected is ink on paper, not pink: on this page the pink block belongs to the section heading and the Follow CTA alone, and a pink chip under a pink heading competed with it.
   scopeChecked: {
-    borderColor: tokens.pink,
-    backgroundColor: tokens.pink,
-    color: tokens.ink,
+    borderColor: tokens.ink,
+    backgroundColor: tokens.ink,
+    color: tokens.paper,
   },
   scopeRest: {
     borderColor: {
@@ -459,11 +432,22 @@ export const styles = stylex.create({
     },
     borderColor: 'color-mix(in srgb, var(--color-ink) 10%, transparent)',
     paddingInline: '0.5rem',
-    paddingBlock: '1rem',
+    // A 56px row on phones — the card-name and score rungs, which is what a scorer row is; md keeps the board scale.
+    paddingBlock: {
+      default: '0.75rem',
+      [MD]: '1rem',
+    },
   },
   scorerRank: {
     width: '2rem',
-    fontSize: '1.125rem',
+    fontSize: {
+      default: '0.625rem',
+      [MD]: '1.125rem',
+    },
+    letterSpacing: {
+      default: '0.2em',
+      [MD]: 0,
+    },
     lineHeight: '1.75rem',
     color: 'color-mix(in srgb, var(--color-ink) 35%, transparent)',
   },
@@ -474,13 +458,25 @@ export const styles = stylex.create({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    fontSize: '1.5rem',
-    lineHeight: '2rem',
+    fontSize: {
+      default: '1.125rem',
+      [MD]: '1.5rem',
+    },
+    lineHeight: {
+      default: '2rem',
+      [MD]: '2rem',
+    },
     color: tokens.ink,
   },
   scorerGoals: {
-    fontSize: '2.25rem',
-    lineHeight: '2.5rem',
+    fontSize: {
+      default: '1.5rem',
+      [MD]: '2.25rem',
+    },
+    lineHeight: {
+      default: '2rem',
+      [MD]: '2.5rem',
+    },
     color: tokens.pink,
   },
   scorersFootnote: {
@@ -491,26 +487,21 @@ export const styles = stylex.create({
     color: 'color-mix(in srgb, var(--color-ink) 45%, transparent)',
     textTransform: 'uppercase',
   },
+  // Three tiles in one row at every width: the numbers are two or three characters, so a 320px phone holds them side by side and the row costs one tile's height instead of three.
   historyGrid: {
     marginTop: '2rem',
     display: 'grid',
-    columnGap: '2rem',
-    rowGap: '2.5rem',
-    gridTemplateColumns: {
-      default: null,
-      [SM]: 'repeat(2, minmax(0, 1fr))',
-      [LG]: 'repeat(3, minmax(0, 1fr))',
+    columnGap: {
+      default: '0.75rem',
+      [MD]: '2rem',
     },
-  },
-  historyTick: {
-    height: '0.25rem',
-    width: '2.5rem',
-    backgroundColor: tokens.pink,
+    rowGap: '2.5rem',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
   },
   historyValue: {
     marginTop: '0.75rem',
     fontSize: {
-      default: '2.25rem',
+      default: 'clamp(2rem, 9vw, 3rem)',
       [MD]: '3rem',
     },
     lineHeight: {
@@ -522,11 +513,11 @@ export const styles = stylex.create({
   historyLabel: {
     marginTop: '0.5rem',
     fontSize: {
-      default: '1.25rem',
+      default: '1.125rem',
       [MD]: '1.5rem',
     },
     lineHeight: {
-      default: '1.75rem',
+      default: '1.5rem',
       [MD]: '2rem',
     },
     color: tokens.pink,
@@ -538,23 +529,42 @@ export const styles = stylex.create({
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
     textTransform: 'uppercase',
   },
-  historyNote: {
-    marginTop: '2rem',
-    fontSize: '0.75rem',
-    lineHeight: 1.625,
-    color: 'color-mix(in srgb, var(--color-ink) 45%, transparent)',
+  // The archive rows: season in the display face, league in the meta voice, the finish at the end.
+  archiveList: {
+    marginTop: '2.5rem',
+    display: 'flex',
+    flexDirection: 'column',
   },
-  wipBadge: {
-    marginTop: '1rem',
-    display: 'inline-block',
-    borderWidth: 1,
-    borderColor: 'color-mix(in srgb, var(--color-ink) 25%, transparent)',
-    paddingInline: '0.75rem',
-    paddingBlock: '0.375rem',
+  archiveRow: {
+    display: 'flex',
+    alignItems: 'baseline',
+    gap: '1rem',
+    borderTopWidth: {
+      default: 1,
+      ':first-child': 0,
+    },
+    borderColor: 'color-mix(in srgb, var(--color-ink) 10%, transparent)',
+    paddingInline: '0.5rem',
+    paddingBlock: '0.875rem',
+    color: tokens.ink,
+  },
+  archiveSeason: {
+    fontSize: '1.25rem',
+    lineHeight: '1.75rem',
+  },
+  archiveLeague: {
+    flexGrow: 1,
     fontSize: '10px',
-    letterSpacing: '0.25em',
-    color: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
+    letterSpacing: '0.2em',
     textTransform: 'uppercase',
+    color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
+  },
+  archivePosition: {
+    fontSize: '1.25rem',
+    lineHeight: '1.75rem',
+  },
+  archivePositionTitle: {
+    color: tokens.pink,
   },
   statsGrid: {
     marginTop: '2rem',
@@ -566,10 +576,10 @@ export const styles = stylex.create({
       [LG]: 'repeat(4, minmax(0, 1fr))',
     },
   },
-  statsPlaceholder: {
-    height: '2.25rem',
-    width: '6rem',
-    backgroundColor: 'color-mix(in srgb, var(--color-ink) 10%, transparent)',
+  statsValue: {
+    fontSize: '2.25rem',
+    lineHeight: '2.5rem',
+    color: tokens.ink,
   },
   statsLabel: {
     marginTop: '0.75rem',

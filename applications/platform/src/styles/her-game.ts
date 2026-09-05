@@ -353,6 +353,20 @@ export const styles = stylex.create({
   // phone before anything else on the page gets a look in; swiped, the same
   // eight cost one tile's height. Same arithmetic as the weekend board's
   // carousel, so the two scroll alike and show the same 24px of the next card.
+  // The countdown rail and its fill. Layout only — the fill's animation
+  // lives in styles.css (the keyframed-animation home, next to the phase
+  // bars'), and its duration arrives inline as `--trending-advance`.
+  trendingCountdown: {
+    marginTop: '0.75rem',
+    height: '2px',
+    overflow: 'hidden',
+    backgroundColor: tokens.hairline,
+  },
+  trendingCountdownFill: {
+    height: '100%',
+    transformOrigin: 'left',
+    backgroundColor: tokens.pink,
+  },
   trendingTrack: {
     marginTop: '1rem',
     display: 'flex',

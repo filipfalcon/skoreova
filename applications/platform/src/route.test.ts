@@ -20,7 +20,8 @@ test('the route printers emit the paths the views link to', () => {
   expect(herGameRouter()).toBe('/her-game');
   expect(clubsRouter()).toBe('/clubs');
   expect(playersRouter()).toBe('/players');
-  expect(matchesRouter()).toBe('/matches');
+  expect(matchesRouter({})).toBe('/matches');
+  expect(matchesRouter({ club: 'sparta-praha' })).toBe('/matches?club=sparta-praha');
   expect(competitionsRouter()).toBe('/competitions');
   expect(officialsRouter()).toBe('/officials');
   expect(clubRouter({ slug: 'sparta-praha' })).toBe('/clubs/sparta-praha');

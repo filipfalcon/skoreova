@@ -27,8 +27,28 @@ export const Message = defineMessageUnion({
   // group reads its selection from.
   GotScopeGroupMessage: { message: RadioGroup.Message },
   GotEditionGroupMessage: { message: RadioGroup.Message },
+  GotCompetitionGroupMessage: { message: RadioGroup.Message },
   SelectedFeaturedClub: { index: S.Number },
+  // The trending countdown ran out — the track moves one tile right.
+  AdvancedTrending: {},
+  // The reader entered or left the trending board; the countdown holds
+  // while they are in it.
+  HeldTrending: { isHeld: S.Boolean },
+  // The track was scrolled — by hand or by ScrollTrending — and this is the
+  // tile now leading it. Keeps the timer advancing from what the reader
+  // actually sees rather than from where it last left the track.
+  ScrolledTrending: { index: S.Number },
+  ChangedReducedMotion: { reduce: S.Boolean },
+  CompletedScrollTrending: {},
   ToggledFollow: { slug: S.String },
+  // A club-profile section opened past its first bite, or folded back; the anchor names the section.
+  ToggledClubSection: { anchor: S.String },
+  // The scroll-spy's report of the club section under the reader's eye; '' while the hero is in view. Carries a string because a Message field holds no Option — the handler folds it.
+  ScrolledClubPage: { anchor: S.String },
+  // The commentary's own measurement: whether the folded statement hides any of its lines. Measured, not guessed from length, so the More control never appears over a statement that is already whole.
+  MeasuredQuoteOverflow: { isOverflowing: S.Boolean },
+  CompletedRevealJumpChip: {},
+  CompletedMatchStripScroll: {},
   // Pins: ReadPins hands the stored ids back through LoadedPins; a pin toggle
   // updates the model and mirrors it out through WritePins, whose completion
   // is CompletedWritePins (nothing to fold back in — the write is fire-and-forget).

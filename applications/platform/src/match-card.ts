@@ -319,7 +319,7 @@ export const matchCard = (
       // section rather than at a dead href — the same stand-in the club
       // calendar's "Match info" control uses. It becomes a real match link the
       // day MatchRoute lands.
-      h.Href(matchesRouter()),
+      h.Href(matchesRouter({})),
       h.AriaLabel(spokenLabel(match)),
       ...getStyleXAttributes(
         h,

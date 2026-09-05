@@ -81,7 +81,7 @@ export const navEntries: ReadonlyArray<NavEntry> = [
     href: welcomeRouter(),
     isBrand: true,
   },
-  { screen: 'Matches', label: 'Matches', href: matchesRouter() },
+  { screen: 'Matches', label: 'Matches', href: matchesRouter({}) },
   {
     screen: 'Competitions',
     label: 'Competitions',
@@ -1008,15 +1008,19 @@ export const scorerPool: ReadonlyArray<string> = [
 export const hashSlug = (slug: string): number =>
   Math.abs(Array.reduce([...slug], 0, (hash, char) => (hash * 31 + char.charCodeAt(0)) | 0));
 
-// Top three per scope, goals strictly descending; Sparta’s all-comps
-// leader is the canonical Rancová.
+/**
+ * The club's scorers in one scope, goals descending and one entry per name in the pool — the stride
+ * through the pool is coprime with its length, so a club never lists a player twice. Sparta’s
+ * all-competitions leader is the canonical Rancová.
+ *
+ * @param target The club.
+ * @param scope Which competitions the goals count from.
+ */
 export const scorersFor = (target: Club, scope: ScorerScope): ReadonlyArray<Scorer> => {
   const seed = hashSlug(`${scope}:${target.slug}`);
-  // A league tally can’t exceed what the club scored in the league (the
-  // table’s own number); the cup and all-comps ceilings sit above it because
-  // those goals aren’t in the table.
+  // A league tally can’t exceed what the club scored in the league (the table’s own number); the cup and all-comps ceilings sit above it because those goals aren’t in the table.
   const ceiling = scope === 'Cup' ? 6 : scope === 'League' ? Math.min(13, target.scored) : 17;
-  const generated = [0, 1, 2].map((rank) => ({
+  const generated = scorerPool.map((_, rank) => ({
     name: scorerPool[(seed + rank * 5) % scorerPool.length] ?? '—',
     goals: Math.max(1, ceiling - (seed % 3) - rank * (2 + (seed % 2))),
   }));
@@ -1025,6 +1029,68 @@ export const scorersFor = (target: Club, scope: ScorerScope): ReadonlyArray<Scor
   }
   return generated;
 };
+
+/**
+ * One season of a club's archive: where it finished, in which league, and whether it lifted the
+ * cup.
+ */
+export interface ArchiveSeason {
+  readonly season: string;
+  readonly league: string;
+  readonly position: number;
+  readonly isCupWinner: boolean;
+}
+
+/**
+ * How many seasons a club's archive holds, newest first.
+ */
+export const ARCHIVE_SEASONS = 10;
+
+/**
+ * The club's season-by-season archive, newest first — a seeded placeholder like the rest of the
+ * mock. It agrees with the club's honors: a champion's latest season is a title, and a club with
+ * none never finishes first, and only a cup winner has cup seasons, its latest among them.
+ *
+ * @param target The club.
+ */
+export const clubArchive = (target: Club): ReadonlyArray<ArchiveSeason> => {
+  const seed = hashSlug(`archive:${target.slug}`);
+  const size = clubs.filter((club) => club.league === target.league).length;
+  return Array.makeBy(ARCHIVE_SEASONS, (index) => {
+    const endYear = 2025 - index;
+    const drawn = 1 + ((seed + index * 7) % size);
+    const position =
+      target.leagueTitles > 0 && index === 0
+        ? 1
+        : target.leagueTitles === 0 && drawn === 1
+          ? 2
+          : drawn;
+    return {
+      season: `${endYear - 1}/${String(endYear).slice(2)}`,
+      league: target.league,
+      position,
+      isCupWinner: target.cupTitles > 0 && (index === 0 || (seed + index * 11) % 4 === 0),
+    };
+  });
+};
+
+/**
+ * A club's record over every season in the data.
+ */
+export interface AllTimeStats {
+  readonly matchesPlayed: number;
+  readonly goalsScored: number;
+  readonly cleanSheets: number;
+  readonly biggestWin: string;
+}
+
+/**
+ * The club's all-time record, or none: no source holds one yet, and the profile draws the section
+ * only for a club this answers for. The real archive is what will make it answer.
+ *
+ * @param _target The club, unread until a source exists.
+ */
+export const clubAllTimeStats = (_target: Club): Option.Option<AllTimeStats> => Option.none();
 
 export const savedCharts: ReadonlyArray<SavedChart> = [
   {

@@ -9,8 +9,10 @@ import viktoriaPlzenLogo from '../assets/clubs/ViktoriaPlzen.png';
 import domesticCupBadge from '../assets/competitions/domestic-cup.png';
 import firstLeagueBadge from '../assets/competitions/first-league.png';
 import uwclBadge from '../assets/competitions/uwcl.png';
+import { ObserveTrendingScroll, TRENDING_TRACK_ID } from '../command';
 import { chipHeading, tapeArrow, tickerSpark } from '../components';
 import { clubs, competitions, officials, savedCharts, trending } from '../data';
+import { TRENDING_ADVANCE_MS } from '../subscription';
 import type { Club } from '../data';
 import { matchCard, returnsCard } from '../match-card';
 import { Message } from '../message';
@@ -41,7 +43,13 @@ import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttribute
 import { shared } from '../styles/shared';
 import { styles } from '../styles/her-game';
 import { tickerQuotes } from '../ticker';
-import { widgetCatalog, widgetKind } from '../widgets';
+import {
+  FEED_ATTENDANCE,
+  FEED_FEATURED_MATCHES,
+  FEED_TOP_SCORERS,
+  widgetCatalog,
+  widgetKind,
+} from '../widgets';
 import type { WidgetKind } from '../widgets';
 
 // HER GAME — the platform's ONE front page, at `/her-game`: the ticker, the
@@ -102,6 +110,40 @@ const newContentPanel = (h: HtmlBuilder<Message>): Html =>
 // The TRENDING board — the pink chip stamps its top edge like the section
 // kickers. Every tile is a LINK into the data, and carries one line saying why
 // it is here: a name and a kind alone did not earn the space the board took.
+// THE COUNTDOWN LINE — the visible half of the trending timer. It fills over
+// one cycle and the track advances as it completes; the animation duration
+// reads the same TRENDING_ADVANCE_MS the subscription times the advance from,
+// so the line can never promise a different moment than the timer delivers.
+// Keyed on the index AND the held flag: any change replaces the element, which
+// is what restarts the CSS animation from zero. Both are dependencies of the
+// tick subscription too, so a swipe restarts line and timer together. Hidden from
+// assistive tech (it announces nothing the advance itself does not do) and
+// absent entirely for a reduced-motion reader, whose track never auto-moves.
+const trendingCountdownLine = (model: Model, h: HtmlBuilder<Message>): Html =>
+  model.prefersReducedMotion
+    ? h.empty
+    : h.div(
+        [h.AriaHidden(true), ...getStyleXAttributes(h, styles.trendingCountdown)],
+        [
+          h.div(
+            [
+              h.Key(
+                `trending-countdown-${model.trendingIndex}-${model.isTrendingHeld ? 'held' : 'running'}`,
+              ),
+              ...getStyleXAttributesWith(
+                h,
+                model.isTrendingHeld
+                  ? 'trending-countdown-fill is-held'
+                  : 'trending-countdown-fill',
+                styles.trendingCountdownFill,
+              ),
+              h.Style({ '--trending-advance': `${TRENDING_ADVANCE_MS}ms` }),
+            ],
+            [],
+          ),
+        ],
+      );
+
 const trendingTiles = (
   model: Model,
   h: HtmlBuilder<Message>,
@@ -109,13 +151,27 @@ const trendingTiles = (
   isFirst = false,
 ): Html =>
   h.section(
-    [...getStyleXAttributes(h, styles.section, isFirst ? styles.sectionUnderTicker : null)],
+    [
+      // The reader's presence holds the countdown — pointer over the board or
+      // focus anywhere inside it. Enter/Leave rather than the bubbling pair,
+      // so moving between tiles never counts as leaving.
+      h.OnMouseEnter(Message.HeldTrending({ isHeld: true })),
+      h.OnMouseLeave(Message.HeldTrending({ isHeld: false })),
+      h.OnFocusEnter(Message.HeldTrending({ isHeld: true })),
+      h.OnFocusLeave(Message.HeldTrending({ isHeld: false })),
+      ...getStyleXAttributes(h, styles.section, isFirst ? styles.sectionUnderTicker : null),
+    ],
     [
       chipHeading('Trending', h),
+      trendingCountdownLine(model, h),
       // A real list — each tile is an item assistive tech can count and step
       // through, whichever way the track is scrolled.
       h.ul(
-        [...getStyleXAttributesWith(h, 'no-scrollbar', styles.trendingTrack)],
+        [
+          h.Id(TRENDING_TRACK_ID),
+          h.OnMount(ObserveTrendingScroll()),
+          ...getStyleXAttributesWith(h, 'no-scrollbar', styles.trendingTrack),
+        ],
         trending.map((entry, index) =>
           h.li(
             [...getStyleXAttributes(h, styles.trendingCard)],
@@ -131,6 +187,32 @@ const trendingTiles = (
 // board has no single pin of its own. `noun` builds each card’s pin id and
 // its accessible label (`attendance:first-league`, "First League
 // attendance").
+// The league cards of one stat, as a grid — the shared body of a stat BOARD
+// (which heads it with a chip) and a feed BLOCK (whose frame heads it with
+// the reader's own heading). Pin ids stay the same either way, so a tile
+// pinned from the feed resolves exactly like one pinned from the board.
+const statGrid = (
+  noun: string,
+  entries: ReadonlyArray<StatEntry>,
+  model: Model,
+  withPin: boolean,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.div(
+    [...getStyleXAttributes(h, styles.statGrid)],
+    entries.map((entry, index) =>
+      statCard(
+        model,
+        entry,
+        index,
+        `${noun}:${leagueSlug(entry.league)}`,
+        `${entry.league} ${noun}`,
+        withPin,
+        h,
+      ),
+    ),
+  );
+
 const statBoard = (
   title: string,
   noun: string,
@@ -140,22 +222,7 @@ const statBoard = (
 ): Html =>
   h.section(
     [...getStyleXAttributes(h, styles.section)],
-    [
-      chipHeading(title, h),
-      h.div(
-        [...getStyleXAttributes(h, styles.statGrid)],
-        entries.map((entry, index) =>
-          statCard(
-            model,
-            entry,
-            index,
-            `${noun}:${leagueSlug(entry.league)}`,
-            `${entry.league} ${noun}`,
-            h,
-          ),
-        ),
-      ),
-    ],
+    [chipHeading(title, h), statGrid(noun, entries, model, true, h)],
   );
 
 const goalsTiles = (model: Model, h: HtmlBuilder<Message>): Html =>
@@ -460,9 +527,10 @@ const feedEmpty = (h: HtmlBuilder<Message>): Html =>
   h.p([...getStyleXAttributes(h, styles.feedEmpty)], ['Nothing pinned.']);
 
 // ADD A WIDGET — the feed's own invitation, and part of the frame rather than
-// a block in it, so no feed can end up without one. It leads: for a reader
-// with no account it is the page's case for making one, and an argument put
-// at the bottom of a feed is an argument nobody reaches.
+// a block in it, so no feed can end up without one. It closes the feed: adding
+// extends the list, so the control sits where the list ends and the catalog it
+// opens unfolds without pushing the blocks around (user call — it led the
+// frame before).
 const addWidgetInvitation = (model: Model, h: HtmlBuilder<Message>): Html =>
   Button.view(
     {
@@ -645,6 +713,28 @@ const feedBlockFrame = (
     ],
   );
 
+// What each widget kind draws under its heading. `kind` is an open string,
+// so this dispatches on the known ids and draws nothing for the rest — a
+// standalone label, whose heading is the whole of it, and any kind a future
+// catalog stops offering. Pins stand down here: the feed is drawn by the
+// signed-out landing, the same surface that hides them on the trending tiles.
+const widgetBody = (
+  model: Model,
+  block: FeedBlock,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Html> => {
+  switch (block.kind) {
+    case FEED_FEATURED_MATCHES:
+      return [matchTrack(invitationSlots(thisWeek(), h), h, true)];
+    case FEED_TOP_SCORERS:
+      return [statGrid('goals', goals, model, false, h)];
+    case FEED_ATTENDANCE:
+      return [statGrid('attendance', attendance, model, false, h)];
+    default:
+      return [];
+  }
+};
+
 // The feed draws what it carries, in the order it carries it, so a block that
 // leaves takes its slot with it. A kind the catalog no longer offers draws
 // nothing rather than an error: the feed outlives the catalog it was built
@@ -659,8 +749,7 @@ const feedBody = (model: Model, block: FeedBlock, h: HtmlBuilder<Message>): Html
     block,
     kind,
     feedBlockName(block, kind),
-    // A standalone label has no body — its heading is the whole of it.
-    isLabelBlock(block) ? [] : [matchTrack(invitationSlots(thisWeek(), h), h, true)],
+    widgetBody(model, block, h),
     h,
   );
 };
@@ -679,10 +768,10 @@ const feedSection = (model: Model, h: HtmlBuilder<Message>): Html => {
       h.div(
         [...getStyleXAttributes(h, styles.feedFrame)],
         [
+          ...(blocks.length === 0 ? [feedEmpty(h)] : blocks),
           addWidgetInvitation(model, h),
           ...(model.isWidgetAddRefused ? [feedRefusal(h)] : []),
           ...(model.isWidgetCatalogOpen ? [widgetCatalogList(h)] : []),
-          ...(blocks.length === 0 ? [feedEmpty(h)] : blocks),
         ],
       ),
     ],
@@ -731,7 +820,7 @@ const sectionTiles: ReadonlyArray<SectionTile> = [
     art: [],
   },
   {
-    href: matchesRouter(),
+    href: matchesRouter({}),
     label: 'Matches',
     count: '1,284',
     caption: 'Round by round, both leagues',

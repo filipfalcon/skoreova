@@ -2,7 +2,7 @@ import '@fontsource/anton/400.css';
 import '@fontsource-variable/archivo/index.css';
 import { Runtime } from 'foldkit';
 
-import { Message, Model, init, routing, update, view } from './main';
+import { Message, Model, init, routing, subscriptions, update, view } from './main';
 
 const application = Runtime.makeApplication({
   Model,
@@ -11,6 +11,7 @@ const application = Runtime.makeApplication({
   view,
   container: document.getElementById('root'),
   routing,
+  subscriptions,
   devTools: { Message },
 });
 

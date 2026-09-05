@@ -246,6 +246,7 @@ export const statCard = (
   index: number,
   pinId: string,
   label: string,
+  withPin = true,
   h: HtmlBuilder<Message>,
 ): Html => {
   const current = Option.getOrElse(Array.last(entry.rounds), () => 0);
@@ -259,7 +260,9 @@ export const statCard = (
   return h.div(
     [...getStyleXAttributes(h, styles.tileWrapper)],
     [
-      pinOverlay(model, pinId, label, h),
+      // The pin stands down on the signed-out landing, where the feed draws
+      // these cards — the same rule the trending tiles follow there.
+      ...(withPin ? [pinOverlay(model, pinId, label, h)] : []),
       h.a(
         [
           h.Href(entry.href),

@@ -4,10 +4,28 @@ import { UrlRequest } from 'foldkit/navigation';
 import { fromString } from 'foldkit/url';
 import { expect, test } from 'vite-plus/test';
 
-import { clubsModel, feedCappedModel, feedLabelledModel, welcomeModel } from './main.fixtures';
+import {
+  clubProfileModel,
+  clubsModel,
+  feedCappedModel,
+  feedEmptyModel,
+  feedLabelledModel,
+  welcomeModel,
+} from './main.fixtures';
 import { feedKey } from './model';
-import { FEED_FEATURED_MATCHES, FEED_LABEL } from './widgets';
-import { Load, Message, Navigate, WritePins, init, update } from './main';
+import { AppRoute } from './route';
+import { FEED_ATTENDANCE, FEED_FEATURED_MATCHES, FEED_LABEL, FEED_TOP_SCORERS } from './widgets';
+import {
+  Load,
+  Message,
+  Navigate,
+  RevealJumpChip,
+  ScrollTrending,
+  WritePins,
+  init,
+  update,
+} from './main';
+import { trending } from './data';
 
 // Builds a parsed Url from a path, the way the runtime hands one to
 // ClickedLink/ChangedUrl. An absolute URL guarantees a well-formed pathname.
@@ -88,6 +106,8 @@ test('a route change clears the per-screen pickers and keeps the durable lists',
       competitionRounds: { 'first-league': 5 },
       competitionEdition: Option.some('2023/24'),
       scorerScope: 'Cup',
+      competitionTab: 'Europe',
+      expandedClubSections: ['standings'],
       followed: ['sparta-praha'],
       pinned: ['trending:sparta-praha'],
     }),
@@ -96,6 +116,8 @@ test('a route change clears the per-screen pickers and keeps the durable lists',
       // Transient — these belong to the screen you just left.
       expect(model.clubQuery).toBe('');
       expect(model.featuredClub).toBe(0);
+      expect(model.expandedClubSections).toEqual([]);
+      expect(model.competitionTab).toBe('League');
       expect(model.competitionRounds).toEqual({});
       expect(model.competitionEdition).toEqual(Option.none());
       // The scorers scope survives anything but opening a club profile.
@@ -238,7 +260,7 @@ test('unpinning a block takes it out of the feed and writes nothing', () => {
     Story.given({ ...welcomeModel, isFeedEditing: true }),
     Story.message(Message.UnpinnedFeedBlock({ key: feedKey(1) })),
     Story.model((model) => {
-      expect(model.feedBlocks).toEqual([]);
+      expect(model.feedBlocks.map((block) => block.key)).toEqual([feedKey(2), feedKey(3)]);
       // The feed is session-only, so unpinning must NOT reach the pins port —
       // that storage belongs to the boards pinned to Her Game.
       expect(model.pinned).toEqual([]);
@@ -252,11 +274,18 @@ test('unpinning one block leaves its twin where it is', () => {
     Story.given({ ...feedLabelledModel, isFeedEditing: true }),
     Story.message(Message.UnpinnedFeedBlock({ key: feedKey(1) })),
     Story.model((model) => {
-      expect(model.feedBlocks.map((block) => block.key)).toEqual([feedKey(7), feedKey(8)]);
+      expect(model.feedBlocks.map((block) => block.key)).toEqual([
+        feedKey(7),
+        feedKey(2),
+        feedKey(3),
+        feedKey(8),
+      ]);
       // The survivor is the OTHER featured-matches block — a feed keyed by
       // kind would have taken both.
       expect(model.feedBlocks.map((block) => block.kind)).toEqual([
         FEED_LABEL,
+        FEED_TOP_SCORERS,
+        FEED_ATTENDANCE,
         FEED_FEATURED_MATCHES,
       ]);
     }),
@@ -272,6 +301,8 @@ test('a heading is rewritten on its own block and on no other', () => {
       expect(model.feedBlocks.map((block) => Option.getOrNull(block.label))).toEqual([
         'My clubs',
         'Featured matches',
+        'Top scorers',
+        'Attendance',
         'To watch',
       ]);
     }),
@@ -284,13 +315,13 @@ test('a heading removed is gone, and one put back is the kind default', () => {
     Story.given({ ...feedLabelledModel, isFeedEditing: true }),
     Story.message(Message.RemovedFeedLabel({ key: feedKey(8) })),
     Story.model((model) => {
-      expect(Option.isNone(model.feedBlocks[2]!.label)).toBe(true);
+      expect(Option.isNone(model.feedBlocks[4]!.label)).toBe(true);
     }),
     Story.message(Message.RestoredFeedLabel({ key: feedKey(8) })),
     Story.model((model) => {
       // 'Cup week' does not come back — what the reader wrote left with the
       // removal, so the kind's own default is what returns.
-      expect(Option.getOrNull(model.feedBlocks[2]!.label)).toBe('Featured matches');
+      expect(Option.getOrNull(model.feedBlocks[4]!.label)).toBe('Featured matches');
     }),
   );
 });
@@ -309,20 +340,18 @@ test('a standalone heading refuses to give up the heading that IS its block', ()
 test('a widget added arrives carrying its kind default as a heading', () => {
   Story.story(
     update,
-    Story.given(welcomeModel),
+    Story.given(feedEmptyModel),
     Story.message(Message.AddedFeedBlock({ kind: FEED_FEATURED_MATCHES })),
     Story.message(Message.AddedFeedBlock({ kind: FEED_LABEL })),
     Story.model((model) => {
-      expect(model.feedBlocks.map((block) => block.key)).toEqual([
-        feedKey(1),
-        feedKey(2),
-        feedKey(3),
-      ]);
-      expect(Option.getOrNull(model.feedBlocks[1]!.label)).toBe('Featured matches');
+      // Keys keep minting from where the default feed left the counter, so an
+      // emptied feed can never re-issue a key an unpinned block once held.
+      expect(model.feedBlocks.map((block) => block.key)).toEqual([feedKey(4), feedKey(5)]);
+      expect(Option.getOrNull(model.feedBlocks[0]!.label)).toBe('Featured matches');
       // A standalone heading is the reader's own words from the start, so it
       // arrives blank rather than carrying the word "Label".
-      expect(Option.getOrNull(model.feedBlocks[2]!.label)).toBe('');
-      expect(model.nextFeedKey).toBe(4);
+      expect(Option.getOrNull(model.feedBlocks[1]!.label)).toBe('');
+      expect(model.nextFeedKey).toBe(6);
     }),
   );
 });
@@ -330,10 +359,14 @@ test('a widget added arrives carrying its kind default as a heading', () => {
 test('the same widget goes into a feed twice', () => {
   Story.story(
     update,
-    Story.given(welcomeModel),
+    Story.given(feedEmptyModel),
+    Story.message(Message.AddedFeedBlock({ kind: FEED_FEATURED_MATCHES })),
     Story.message(Message.AddedFeedBlock({ kind: FEED_FEATURED_MATCHES })),
     Story.model((model) => {
-      expect(model.feedBlocks).toHaveLength(2);
+      expect(model.feedBlocks.map((block) => block.kind)).toEqual([
+        FEED_FEATURED_MATCHES,
+        FEED_FEATURED_MATCHES,
+      ]);
       expect(model.isWidgetAddRefused).toBe(false);
     }),
   );
@@ -380,6 +413,151 @@ test('an account is what lifts the cap', () => {
     Story.model((model) => {
       expect(model.feedBlocks).toHaveLength(4);
       expect(model.isWidgetAddRefused).toBe(false);
+    }),
+  );
+});
+
+// THE TRENDING COUNTDOWN. The Model advances first and the scroll follows as
+// a Command, so the whole move asserts without a DOM.
+test('the countdown advances the trending track and scrolls it after', () => {
+  Story.story(
+    update,
+    Story.given(welcomeModel),
+    Story.message(Message.AdvancedTrending()),
+    Story.model((model) => {
+      expect(model.trendingIndex).toBe(1);
+    }),
+    Story.Command.expectExact(ScrollTrending),
+    Story.Command.resolve(ScrollTrending, Message.CompletedScrollTrending()),
+    Story.Command.expectNone(),
+  );
+});
+
+test('the countdown wraps from the last tile back to the first', () => {
+  Story.story(
+    update,
+    Story.given({ ...welcomeModel, trendingIndex: trending.length - 1 }),
+    Story.message(Message.AdvancedTrending()),
+    Story.model((model) => {
+      expect(model.trendingIndex).toBe(0);
+    }),
+    Story.Command.resolve(ScrollTrending, Message.CompletedScrollTrending()),
+  );
+});
+
+// A swipe answers with the tile it landed on and nothing else — no scroll
+// command, or the reader's own gesture would be answered with a second one.
+test('a hand scroll syncs the index without scrolling back', () => {
+  Story.story(
+    update,
+    Story.given(welcomeModel),
+    Story.message(Message.ScrolledTrending({ index: 4 })),
+    Story.model((model) => {
+      expect(model.trendingIndex).toBe(4);
+    }),
+    Story.Command.expectNone(),
+  );
+});
+
+test('presence and the motion preference are plain field writes', () => {
+  Story.story(
+    update,
+    Story.given(welcomeModel),
+    Story.message(Message.HeldTrending({ isHeld: true })),
+    Story.model((model) => {
+      expect(model.isTrendingHeld).toBe(true);
+    }),
+    Story.Command.expectNone(),
+  );
+  Story.story(
+    update,
+    Story.given(welcomeModel),
+    Story.message(Message.ChangedReducedMotion({ reduce: true })),
+    Story.model((model) => {
+      expect(model.prefersReducedMotion).toBe(true);
+    }),
+    Story.Command.expectNone(),
+  );
+});
+
+// THE FOLDED CLUB SECTIONS. Opening is a toggle on the anchor; a hash jump
+// within the profile re-applies the same route and must not fold anything.
+test('a club section opens, folds back, and survives a jump within the profile', () => {
+  Story.story(
+    update,
+    Story.given(clubProfileModel),
+    Story.message(Message.ToggledClubSection({ anchor: 'standings' })),
+    Story.model((model) => {
+      expect(model.expandedClubSections).toEqual(['standings']);
+    }),
+    Story.message(Message.ChangedUrl({ url: url('/clubs/sparta-praha#standings') })),
+    Story.model((model) => {
+      expect(model.expandedClubSections).toEqual(['standings']);
+    }),
+    Story.message(Message.ToggledClubSection({ anchor: 'standings' })),
+    Story.model((model) => {
+      expect(model.expandedClubSections).toEqual([]);
+    }),
+    Story.Command.expectNone(),
+  );
+});
+
+// THE SCROLL-SPY. A report names the section in view and brings its chip into the jump row; the hero's report ('') clears the mark and moves nothing. A hash jump within the profile keeps the mark, and leaving the page clears it.
+test('the jump row marks the section in view and follows it', () => {
+  Story.story(
+    update,
+    Story.given(clubProfileModel),
+    Story.message(Message.ScrolledClubPage({ anchor: 'standings' })),
+    Story.model((model) => {
+      expect(model.activeClubSection).toEqual(Option.some('standings'));
+    }),
+    Story.Command.expectExact(RevealJumpChip),
+    Story.Command.resolve(RevealJumpChip, Message.CompletedRevealJumpChip()),
+    Story.message(Message.ChangedUrl({ url: url('/clubs/sparta-praha#standings') })),
+    Story.model((model) => {
+      expect(model.activeClubSection).toEqual(Option.some('standings'));
+    }),
+    Story.message(Message.ScrolledClubPage({ anchor: '' })),
+    Story.model((model) => {
+      expect(model.activeClubSection).toEqual(Option.none());
+    }),
+    Story.Command.expectNone(),
+  );
+  Story.story(
+    update,
+    Story.given({ ...clubProfileModel, activeClubSection: Option.some('history') }),
+    Story.message(Message.ChangedUrl({ url: url('/clubs') })),
+    Story.model((model) => {
+      expect(model.activeClubSection).toEqual(Option.none());
+    }),
+  );
+});
+
+test('the commentary measurement is a plain field write', () => {
+  Story.story(
+    update,
+    Story.given(clubProfileModel),
+    Story.message(Message.MeasuredQuoteOverflow({ isOverflowing: true })),
+    Story.model((model) => {
+      expect(model.isQuoteOverflowing).toBe(true);
+    }),
+    Story.Command.expectNone(),
+  );
+});
+
+// THE CLUB FILTER on /matches is a query on the one matches route, so the plain screen and the narrowed one are the same route with and without a club.
+test('the matches route carries an optional club', () => {
+  Story.story(
+    update,
+    Story.given(welcomeModel),
+    Story.message(Message.ChangedUrl({ url: url('/matches?club=sparta-praha') })),
+    Story.model((model) => {
+      expect(model.route).toEqual(AppRoute.Matches({ club: 'sparta-praha' }));
+    }),
+    Story.message(Message.ChangedUrl({ url: url('/matches') })),
+    Story.model((model) => {
+      expect(model.route._tag).toBe('Matches');
+      expect(model.route._tag === 'Matches' ? model.route.club : 'set').toBeUndefined();
     }),
   );
 });

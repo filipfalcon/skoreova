@@ -195,10 +195,40 @@ export const seasonProgress = (played: number, total: number, h: HtmlBuilder<Mes
 // A table can render a WINDOW of its rows rather than all of them, so the
 // entries carry their true position — a compact view still has to say the
 // club sits 12th — and a gap entry stands in for what is hidden.
-interface StandingsEntry {
+export interface StandingsEntry {
   readonly row: StandingsRow;
   readonly position: number;
 }
+
+/**
+ * How many rows sit either side of the club's own row in a folded standings section.
+ */
+export const STANDINGS_WINDOW_RADIUS = 2;
+
+/**
+ * The rows a FOLDED standings section shows: the club's own row with `radius` rows either side,
+ * slid back inside the table at its ends so the window keeps its size. The positions stay the
+ * competition's own, so a window opening at 3rd reads as the middle of a table, not the top of one.
+ * A club the table does not hold shows its head.
+ *
+ * @param rows The whole table.
+ * @param team The club to center on, by the name its row carries.
+ * @param radius Rows either side of the club.
+ */
+export const standingsWindow = (
+  rows: ReadonlyArray<StandingsRow>,
+  team: string,
+  radius = STANDINGS_WINDOW_RADIUS,
+): ReadonlyArray<StandingsEntry> => {
+  const entries = allEntries(rows);
+  const size = Math.min(entries.length, radius * 2 + 1);
+  const at = Math.max(
+    0,
+    entries.findIndex((entry) => entry.row.team === team),
+  );
+  const start = Math.max(0, Math.min(at - radius, entries.length - size));
+  return entries.slice(start, start + size);
+};
 
 const allEntries = (rows: ReadonlyArray<StandingsRow>): ReadonlyArray<StandingsEntry> =>
   rows.map((row, index) => ({ row, position: index + 1 }));
@@ -353,16 +383,18 @@ const standingsLegend = (zones: ReadonlyArray<StandingsZone>, h: HtmlBuilder<Mes
   );
 
 // The full table in one piece — the domestic league’s shape.
+// `entries` is the rows actually drawn — a window of the table when its section is folded, the whole of it otherwise. The legend reads the whole table either way, so it does not change as the window opens.
 export const standingsTable = (
   rows: ReadonlyArray<StandingsRow>,
   highlightName: string,
   zoneAt: (position: number) => Option.Option<StandingsZone>,
   h: HtmlBuilder<Message>,
+  entries: ReadonlyArray<StandingsEntry> = allEntries(rows),
 ): ReadonlyArray<Html> => [
   standingsColumnKey(h),
   h.div(
     [...getStyleXAttributes(h, styles.rowsWrapper)],
-    [standingsRows(allEntries(rows), highlightName, zoneAt, true, h)],
+    [standingsRows(entries, highlightName, zoneAt, true, h)],
   ),
   standingsLegend(zonesFor(zoneAt, rows.length), h),
 ];

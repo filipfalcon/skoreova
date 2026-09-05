@@ -140,34 +140,14 @@ export const styles = stylex.create({
     zIndex: 20,
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     gap: '1rem',
   },
-  // Positioning only — size, stroke and color come from the shared chevron.
-  // The negative margin is SIDE BEARING, not spacing: a left-pointing
-  // chevron fills only the middle third of its box horizontally, so sitting
-  // the box on the row's inset would leave its ink further from the screen
-  // edge than the caret's is from the other one.
-  backChevron: {
-    marginLeft: '-0.25rem',
-    // And the mirror of it on the other side, so the flex `gap` IS the gap
-    // you see. Without this the chevron's right-hand bearing is added to
-    // the token instead of absorbed by it, and the pair reads nearly twice
-    // as loose as the select's — which is exactly how they diverged.
-    marginRight: '-0.35rem',
-  },
-  // Size, tracking, case and weight arrive from shared.metaText; the colour
-  // is the one property overridden, and it is a TOKEN SWAP — muted → paper
-  // (user call), never a literal. That puts the whole top row on paper and
-  // leaves `fontWeight` as the only thing separating this label from the
-  // season value beside it. The subtitle below keeps metaText's muted, so
-  // the bottom zone's hierarchy is untouched. Still no hover colour: the
-  // accent belongs to the glyph, not the label.
-  heroBackLink: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: spacing.xs,
-    color: tokens.paper,
+  // The back link holds the row's left end and starts 1rem under the header's bottom edge, which is this band's top: the row sits 0.25rem down and the link three quarters of a rem further, leaving the season select where it is.
+  heroBack: {
+    marginRight: 'auto',
+    alignSelf: 'flex-start',
+    marginTop: '0.75rem',
   },
   // The select and its drawn caret share one box: the caret is positioned
   // against this, and the control reserves room for it on the right.
@@ -447,24 +427,6 @@ export const styles = stylex.create({
   },
   timelineLabelRest: {
     color: 'color-mix(in srgb, var(--color-paper) 50%, transparent)',
-  },
-  // The paper-act twin of heroBackLink, on the competitions that have no
-  // artwork. It was still declaring its own size, tracking and case on top
-  // of shared.metaText — the same values, said twice, with the tracking
-  // quietly disagreeing at 0.25em. Only what genuinely differs stays: this
-  // one sits on the light page, so metaText's muted (tuned for dark) has to
-  // be re-inked. Outside the hero, so it keeps its hover.
-  backLink: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: spacing.xs,
-    color: {
-      default: 'color-mix(in srgb, var(--color-ink) 45%, transparent)',
-      ':hover': tokens.pink,
-    },
-    transitionProperty: 'color, background-color, border-color',
-    transitionDuration: '0.15s',
-    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
   // Was a flex row pairing the badge with the title block; with the badge
   // gone the title simply stacks, so all this owes the page is its air.

@@ -28,4 +28,19 @@ export const styles = stylex.create({
   panelSpacing: {
     marginTop: '1rem',
   },
+  // The way back out of a club filter, at the row's end under the header.
+  filterRow: {
+    marginTop: '1.5rem',
+    display: 'flex',
+    justifyContent: 'flex-end',
+  },
+  // The round and date leading a season row, in the meta voice, wide enough for "R12 · Oct 4".
+  roundCell: {
+    flexShrink: 0,
+    width: '5.5rem',
+    fontSize: '10px',
+    letterSpacing: '0.2em',
+    textTransform: 'uppercase',
+    color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
+  },
 });
