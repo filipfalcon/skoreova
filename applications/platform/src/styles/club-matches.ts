@@ -128,8 +128,8 @@ export const styles = stylex.create({
       [MD]: '1.5rem',
     },
     paddingBlock: {
-      default: '2rem',
-      [MD]: '2.5rem',
+      default: '1.333rem',
+      [MD]: '1.667rem',
     },
   },
   caption: {
@@ -158,8 +158,16 @@ export const styles = stylex.create({
     letterSpacing: '0.05em',
     color: tokens.ink,
   },
-  dateLine: {
+  // The date line shares its row with the drawn arrow at the right end — the card is the link, and the arrow says so where the eye ends.
+  dateRow: {
     marginTop: '0.5rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '0.75rem',
+    color: tokens.ink,
+  },
+  dateLine: {
     fontSize: '10px',
     letterSpacing: '0.2em',
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
@@ -209,32 +217,46 @@ export const styles = stylex.create({
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
   },
   // The form guide: five 12px squares and a meta caption.
+  // The form guide: one row across the strip's width, the caption at the left and five lettered 24px squares at the right, oldest to newest.
   form: {
     marginTop: spacing.md,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
   formSquares: {
     display: 'flex',
     gap: '0.375rem',
   },
   formSquare: {
-    height: '0.75rem',
-    width: '0.75rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '1.5rem',
+    width: '1.5rem',
     borderWidth: 1,
+    fontSize: '10px',
+    letterSpacing: '0.2em',
+    textIndent: '0.2em',
+    textTransform: 'uppercase',
   },
   formWin: {
-    borderColor: tokens.ink,
-    backgroundColor: tokens.ink,
+    borderColor: tokens.pink,
+    backgroundColor: tokens.pink,
+    color: tokens.ink,
   },
   formDraw: {
-    borderColor: 'color-mix(in srgb, var(--color-ink) 25%, transparent)',
-    backgroundColor: 'color-mix(in srgb, var(--color-ink) 25%, transparent)',
+    borderColor: tokens.hairline,
+    backgroundColor: tokens.paper,
+    color: tokens.ink,
   },
   formLoss: {
-    borderColor: tokens.pink,
-    backgroundColor: 'transparent',
+    borderColor: tokens.ink,
+    backgroundColor: tokens.ink,
+    color: tokens.paper,
   },
   formCaption: {
-    marginTop: '0.5rem',
     fontSize: '10px',
     letterSpacing: '0.2em',
     textTransform: 'uppercase',

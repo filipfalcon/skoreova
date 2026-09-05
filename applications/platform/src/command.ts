@@ -178,7 +178,7 @@ export const RevealJumpChip = Command.define('RevealJumpChip', {
     }),
 });
 
-// Reports whether the commentary's folded statement hides any lines: the element's full height against the height the clamp lets it show, now and again whenever its box changes size — the clamp coming on or off, a rotation, a font arriving. Measured off the element because no character count can know how many lines a statement takes at a given width.
+// Reports whether the commentary's statement needs more than its four-line box: the text's full height against the box's height (its parent's), now and again whenever the text's size changes — the clamp coming on or off, a rotation, a font arriving. Against the box rather than the text's own clipped height, so the answer does not change when the text yields a line to the fold control. Measured off the element because no character count can know how many lines a statement takes at a given width.
 export const ObserveQuoteOverflow = Mount.defineStream('ObserveQuoteOverflow', {
   messages: [Message.MeasuredQuoteOverflow],
   execute: ({ element }) =>
@@ -191,7 +191,9 @@ export const ObserveQuoteOverflow = Mount.defineStream('ObserveQuoteOverflow', {
                   Queue.offerUnsafe(
                     queue,
                     Message.MeasuredQuoteOverflow({
-                      isOverflowing: element.scrollHeight > element.clientHeight + 1,
+                      isOverflowing:
+                        element.scrollHeight >
+                        (element.parentElement?.clientHeight ?? element.clientHeight) + 1,
                     }),
                   );
                 };

@@ -251,6 +251,12 @@ export const clubs: ReadonlyArray<Club> = [
     conceded: 9,
     leagueTitles: 22,
     cupTitles: 11,
+    links: {
+      website: 'https://www.sparta.cz',
+      instagram: 'https://www.instagram.com/spartawomen/',
+      facebook: 'https://www.facebook.com/ACSpartaWomen',
+      x: 'https://x.com/SpartaWomen',
+    },
   },
   {
     slug: 'slavia-praha',
@@ -268,6 +274,12 @@ export const clubs: ReadonlyArray<Club> = [
     conceded: 12,
     leagueTitles: 9,
     cupTitles: 9,
+    links: {
+      website: 'https://www.slavia.cz',
+      instagram: 'https://www.instagram.com/slaviazeny/',
+      facebook: 'https://www.facebook.com/slaviazeny',
+      x: 'https://x.com/slaviazeny',
+    },
   },
   {
     slug: 'slovacko',

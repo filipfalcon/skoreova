@@ -366,7 +366,7 @@ export const styles = stylex.create({
       [MD]: 'auto',
     },
     zIndex: 40,
-    marginTop: '2.5rem',
+    marginTop: spacing.lg,
     marginInline: {
       default: '-1.25rem',
       [MD]: 0,

@@ -1,7 +1,7 @@
 import { Array, Option } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
-import { clubSection, clubSectionLink } from './components';
+import { clubSection, clubSectionLink, drawnArrowInline, drawnRightArrow } from './components';
 import { MATCH_STRIP_ID, ScrollMatchStripToNext } from './command';
 import type { ClubSectionEntry } from './components';
 import { clubs } from './data';
@@ -189,12 +189,18 @@ const clubMatchCard = (
           ),
           // Date rides the quiet line below — SECONDARY (user call), plus
           // the kickoff on a game still to come.
-          h.p(
-            [...getStyleXAttributes(h, styles.dateLine)],
+          h.div(
+            [...getStyleXAttributes(h, styles.dateRow)],
             [
-              entry.isPlayed
-                ? roundDate(entry.match.round)
-                : `${roundDate(entry.match.round)} · ${kickoff}`,
+              h.p(
+                [...getStyleXAttributes(h, styles.dateLine)],
+                [
+                  entry.isPlayed
+                    ? roundDate(entry.match.round)
+                    : `${roundDate(entry.match.round)} · ${kickoff}`,
+                ],
+              ),
+              drawnRightArrow(h, drawnArrowInline),
             ],
           ),
         ],
@@ -238,7 +244,7 @@ const stripCards = (target: Club): ReadonlyArray<StripCard> => {
 export const clubMatchesIndex = (target: Club): ReadonlyArray<ClubSectionEntry> =>
   stripCards(target).length === 0 ? [] : [{ anchor: 'matches', label: 'Matches' }];
 
-// The form guide: the last five results as squares, a win solid, a draw faint, a loss an empty pink frame. The squares are the picture and the list's label is the words, so a screen reader hears the run once.
+// The form guide: the last five results as lettered squares, oldest to newest — a win ink on pink, a draw ink on a hairline-framed paper square, a loss paper on ink. The list's label carries the run in words, so a screen reader hears it once.
 const formGuide = (target: Club, h: HtmlBuilder<Message>): ReadonlyArray<Html> => {
   const results = formWindow(target.league, target.name, FORM_LENGTH, 0);
   const words: Record<FormResult, string> = { W: 'win', D: 'draw', L: 'loss', U: 'unplayed' };
@@ -248,6 +254,7 @@ const formGuide = (target: Club, h: HtmlBuilder<Message>): ReadonlyArray<Html> =
         h.div(
           [...getStyleXAttributes(h, styles.form)],
           [
+            h.p([...getStyleXAttributes(h, styles.formCaption)], [`Form · last ${results.length}`]),
             h.ol(
               [
                 h.AriaLabel(
@@ -269,11 +276,10 @@ const formGuide = (target: Club, h: HtmlBuilder<Message>): ReadonlyArray<Html> =
                           : styles.formLoss,
                     ),
                   ],
-                  [],
+                  [result],
                 ),
               ),
             ),
-            h.p([...getStyleXAttributes(h, styles.formCaption)], [`Form · last ${results.length}`]),
           ],
         ),
       ];

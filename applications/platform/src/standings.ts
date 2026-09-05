@@ -390,13 +390,23 @@ export const standingsTable = (
   zoneAt: (position: number) => Option.Option<StandingsZone>,
   h: HtmlBuilder<Message>,
   entries: ReadonlyArray<StandingsEntry> = allEntries(rows),
+  control?: Html,
 ): ReadonlyArray<Html> => [
   standingsColumnKey(h),
   h.div(
     [...getStyleXAttributes(h, styles.rowsWrapper)],
     [standingsRows(entries, highlightName, zoneAt, true, h)],
   ),
-  standingsLegend(zonesFor(zoneAt, rows.length), h),
+  // The legend's row carries the table's way out at its right end, so the two close the table on one line; a legend that wraps keeps the control on its first line.
+  h.div(
+    [...getStyleXAttributes(h, styles.legendRow)],
+    [
+      standingsLegend(zonesFor(zoneAt, rows.length), h),
+      ...(control === undefined
+        ? []
+        : [h.div([...getStyleXAttributes(h, styles.legendControl)], [control])]),
+    ],
+  ),
 ];
 
 // The section heading a table sits under: the competition is the SUBJECT,

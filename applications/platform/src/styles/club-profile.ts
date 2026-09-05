@@ -6,6 +6,7 @@ import { spacing, tokens } from '../tokens.stylex';
 // editorial band — hero artwork, crest and name, honors, commentary — and
 // the paper data act's cup run, scorer boards, history grid and follow call.
 
+const SM = '@media (min-width: 640px)';
 const MD = '@media (min-width: 768px)';
 const LG = '@media (min-width: 1024px)';
 
@@ -275,10 +276,12 @@ export const styles = stylex.create({
     textTransform: 'uppercase',
     color: tokens.paper,
   },
-  // The statement on the band's padding, the same left edge as the portrait.
+  // The statement on the band's padding, the same left edge as the portrait: a box of exactly four lines, which holds either four lines of text, or three lines and the fold control in the fourth line's space. The two never coexist, so the control needs no row of its own.
   statement: {
+    position: 'relative',
     marginTop: spacing.md,
     marginBottom: 0,
+    height: 'calc(4 * 1.625em)',
     fontSize: '1.25rem',
     lineHeight: 1.625,
     fontWeight: 500,
@@ -302,13 +305,25 @@ export const styles = stylex.create({
     display: '-webkit-box',
     WebkitBoxOrient: 'vertical',
     WebkitLineClamp: 4,
-    height: 'calc(4 * 1.625em)',
     overflow: 'hidden',
   },
-  // The reserved row under the statement box, always 24px, with the fold control at its left when anything is clipped; hidden rather than removed otherwise.
+  // When the box clips, the text yields its fourth line to the control.
+  quoteFoldedShort: {
+    WebkitLineClamp: 3,
+  },
+  // Open, the box grows to the statement and keeps one line under it for the control to fold it back.
+  statementOpen: {
+    height: 'auto',
+    paddingBottom: '1.625em',
+  },
+  // The fold control's line: the box's fourth line, at its left; hidden rather than removed when nothing is clipped.
   moreRow: {
-    marginTop: spacing.xs,
-    height: '1.5rem',
+    position: 'absolute',
+    insetInline: 0,
+    bottom: 0,
+    display: 'flex',
+    alignItems: 'center',
+    height: '1.625em',
   },
   quoteMore: {
     display: 'inline-flex',
@@ -422,16 +437,22 @@ export const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
   },
+  // A scorer row takes the standings row's geometry — the zone gutter and its hairline as left padding, the same column gap, the same right padding — so rank, name and goals sit on the table's rank, club and points columns.
   scorerRow: {
     display: 'flex',
     alignItems: 'baseline',
-    gap: '1.25rem',
+    gap: {
+      default: '0.5rem',
+      [SM]: '0.75rem',
+      [MD]: '1rem',
+    },
     borderTopWidth: {
       default: 1,
       ':first-child': 0,
     },
     borderColor: 'color-mix(in srgb, var(--color-ink) 10%, transparent)',
-    paddingInline: '0.5rem',
+    paddingLeft: 'calc(1.125rem + 1px)',
+    paddingRight: '0.5rem',
     // A 56px row on phones — the card-name and score rungs, which is what a scorer row is; md keeps the board scale.
     paddingBlock: {
       default: '0.75rem',
@@ -439,15 +460,11 @@ export const styles = stylex.create({
     },
   },
   scorerRank: {
-    width: '2rem',
-    fontSize: {
-      default: '0.625rem',
-      [MD]: '1.125rem',
+    width: {
+      default: '1.5rem',
+      [MD]: '2rem',
     },
-    letterSpacing: {
-      default: '0.2em',
-      [MD]: 0,
-    },
+    fontSize: '1.125rem',
     lineHeight: '1.75rem',
     color: 'color-mix(in srgb, var(--color-ink) 35%, transparent)',
   },
@@ -469,6 +486,12 @@ export const styles = stylex.create({
     color: tokens.ink,
   },
   scorerGoals: {
+    width: {
+      default: '2.5rem',
+      [MD]: '3rem',
+    },
+    textAlign: 'right',
+    fontVariantNumeric: 'tabular-nums',
     fontSize: {
       default: '1.5rem',
       [MD]: '2.25rem',
@@ -559,6 +582,15 @@ export const styles = stylex.create({
     textTransform: 'uppercase',
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
   },
+  // The cup tag beside a season's league: the same meta voice in ink, underlined in the brand's pink.
+  archiveCup: {
+    marginLeft: spacing.xs,
+    color: tokens.ink,
+    textDecorationLine: 'underline',
+    textDecorationColor: tokens.pink,
+    textDecorationThickness: '2px',
+    textUnderlineOffset: '0.2em',
+  },
   archivePosition: {
     fontSize: '1.25rem',
     lineHeight: '1.75rem',
@@ -633,6 +665,48 @@ export const styles = stylex.create({
     transitionProperty: 'color, background-color, border-color',
     transitionDuration: '0.15s',
     transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  // The club's links under the Follow button: the domain, then the glyph squares `md` after it, `xs` apart.
+  linksRow: {
+    marginTop: spacing.lg,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+  },
+  linksSite: {
+    fontSize: '10px',
+    letterSpacing: '0.2em',
+    textTransform: 'uppercase',
+    color: tokens.ink,
+    textDecorationLine: 'underline',
+    textDecorationColor: tokens.pink,
+    textDecorationThickness: '2px',
+    textUnderlineOffset: '0.25em',
+  },
+  linksGlyphs: {
+    display: 'flex',
+    gap: spacing.xs,
+  },
+  linksGlyph: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '2.75rem',
+    width: '2.75rem',
+    borderWidth: 1,
+    borderColor: {
+      default: tokens.hairline,
+      ':hover': tokens.pink,
+    },
+    color: tokens.ink,
+    transitionProperty: 'border-color',
+    transitionDuration: '0.15s',
+    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  linksGlyphMark: {
+    height: '1.25rem',
+    width: '1.25rem',
   },
   followOn: {
     backgroundColor: tokens.ink,

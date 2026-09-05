@@ -259,6 +259,27 @@ describe('view', () => {
     );
   });
 
+  // The Follow block ends in the club's own links when the record has them, and at the button when it does not.
+  test('the follow block carries the club links only where the record has them', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(clubProfileModel),
+      ...acknowledgeQuote,
+      Scene.expect(Scene.role('link', { name: 'sparta.cz' })).toHaveAttr('target', '_blank'),
+      Scene.expect(Scene.role('link', { name: 'Instagram — Sparta Praha' })).toHaveAttr(
+        'rel',
+        'noopener',
+      ),
+      Scene.expect(Scene.role('link', { name: 'YouTube — Sparta Praha' })).not.toExist(),
+    );
+    Scene.scene(
+      { update, view },
+      Scene.given({ ...clubProfileModel, route: AppRoute.Club({ slug: 'teplice' }) }),
+      ...acknowledgeQuote,
+      Scene.expect(Scene.role('link', { name: /Instagram/ })).not.toExist(),
+    );
+  });
+
   // Scorers and history fold like the standings: a podium and the headline
   // counts first, the whole list on the heading control.
   test('top scorers and history open on their heading controls', () => {

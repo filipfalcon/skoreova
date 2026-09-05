@@ -7,11 +7,15 @@ import commentaryAvatar from '../assets/commentary-avatar.png';
 import { clubMatchStrip, clubMatchesIndex } from '../club-matches';
 import { ObserveQuoteOverflow } from '../command';
 import {
+  SOCIAL_LABELS,
+  SOCIAL_NETWORKS,
   backLink,
+  bareDomain,
   clubSection,
   clubSectionIndex,
   clubSectionLink,
   clubSectionToggle,
+  socialGlyph,
   timesCount,
 } from '../components';
 import type { ClubSectionEntry } from '../components';
@@ -119,7 +123,7 @@ interface ActiveCompetition {
   readonly kind: CompetitionKind;
   readonly label: string;
   readonly slug: string;
-  readonly render: (h: HtmlBuilder<Message>) => ReadonlyArray<Html>;
+  readonly render: (h: HtmlBuilder<Message>, control: Html) => ReadonlyArray<Html>;
 }
 
 // A standings body is a window around the club's own row, positions intact — the club's place in the table at a glance. The whole table is one tap away on the competition page (the link under the body), so nothing opens in place here: one control per section, and a link out is the right one for a competition.
@@ -128,10 +132,11 @@ const standingsBody = (
   rows: ReadonlyArray<StandingsRow>,
   zoneAt: (position: number) => Option.Option<StandingsZone>,
   target: Club,
+  control: Html,
   h: HtmlBuilder<Message>,
 ): ReadonlyArray<Html> => [
   ...lead,
-  ...standingsTable(rows, target.name, zoneAt, h, standingsWindow(rows, target.name)),
+  ...standingsTable(rows, target.name, zoneAt, h, standingsWindow(rows, target.name), control),
 ];
 
 const cupRunList = (run: ReadonlyArray<CupTie>, h: HtmlBuilder<Message>): Html =>
@@ -174,7 +179,7 @@ const clubActiveCompetitions = (target: Club): ReadonlyArray<ActiveCompetition> 
     kind: 'League',
     label: 'League',
     slug: leagueSlug(target.league),
-    render: (h) =>
+    render: (h, control) =>
       standingsBody(
         [
           ...(isAlone ? [standingsHeadline(target.league, h)] : []),
@@ -183,6 +188,7 @@ const clubActiveCompetitions = (target: Club): ReadonlyArray<ActiveCompetition> 
         rows,
         (position) => zoneFor(target.league, position, rows.length),
         target,
+        control,
         h,
       ),
   };
@@ -194,7 +200,11 @@ const clubActiveCompetitions = (target: Club): ReadonlyArray<ActiveCompetition> 
             kind: 'Cup',
             label: 'Cup',
             slug: 'domestic-cup',
-            render: (h) => [cupRunList(cupRun, h)],
+            // The cup run has no legend, so its way out closes the list in a row of its own.
+            render: (h, control) => [
+              cupRunList(cupRun, h),
+              h.div([...getStyleXAttributes(h, styles.sectionFoot)], [control]),
+            ],
           },
         ];
   const continental: ReadonlyArray<ActiveCompetition> =
@@ -206,7 +216,7 @@ const clubActiveCompetitions = (target: Club): ReadonlyArray<ActiveCompetition> 
             // The competition's initials — its slug in capitals — so the three chips hold one line on a 320px phone. The stage headline stays: it says something the chip does not.
             label: europe.slug.toUpperCase(),
             slug: europe.slug,
-            render: (h) =>
+            render: (h, control) =>
               standingsBody(
                 [
                   standingsHeadline(europe.stage, h),
@@ -215,6 +225,7 @@ const clubActiveCompetitions = (target: Club): ReadonlyArray<ActiveCompetition> 
                 europe.rows,
                 europe.zoneAt,
                 target,
+                control,
                 h,
               ),
           },
@@ -223,6 +234,33 @@ const clubActiveCompetitions = (target: Club): ReadonlyArray<ActiveCompetition> 
 };
 
 // The competition picker — the scope picker's grammar, over the competitions this club is actually in. A single-select group, so a real radiogroup.
+// The one chip row both single-select groups on the profile draw: the group's attributes on the row, each option's on its chip, the selected one in ink. Checked derives from the Model because StyleX has no attribute selectors (the component still stamps data-checked).
+type ViewAttribute = Parameters<HtmlBuilder<Message>['div']>[0][number];
+
+const chipRow = <Value extends string>(
+  group: ReadonlyArray<ViewAttribute>,
+  options: ReadonlyArray<{ readonly value: Value; readonly option: ReadonlyArray<ViewAttribute> }>,
+  selected: Value,
+  labelOf: (value: Value) => string,
+  h: HtmlBuilder<Message>,
+): Html =>
+  h.div(
+    [...group, ...getStyleXAttributes(h, styles.scopeGroup)],
+    options.map((option) =>
+      h.div(
+        [
+          ...option.option,
+          ...getStyleXAttributes(
+            h,
+            styles.scopeOption,
+            option.value === selected ? styles.scopeChecked : styles.scopeRest,
+          ),
+        ],
+        [labelOf(option.value)],
+      ),
+    ),
+  );
+
 const competitionRadioGroup = (
   competitions: ReadonlyArray<ActiveCompetition>,
   model: Model,
@@ -238,24 +276,12 @@ const competitionRadioGroup = (
       options: competitions.map((competition) => competition.kind),
       ariaLabel: 'Competition',
       toView: ({ group, options }) =>
-        h.div(
-          [...group, ...getStyleXAttributes(h, styles.scopeGroup)],
-          options.map((option) => {
-            const checked = option.value === model.competitionTab;
-            const label =
-              competitions.find((competition) => competition.kind === option.value)?.label ?? '';
-            return h.div(
-              [
-                ...option.option,
-                ...getStyleXAttributes(
-                  h,
-                  styles.scopeOption,
-                  checked ? styles.scopeChecked : styles.scopeRest,
-                ),
-              ],
-              [label],
-            );
-          }),
+        chipRow(
+          group,
+          options,
+          model.competitionTab,
+          (kind) => competitions.find((competition) => competition.kind === kind)?.label ?? '',
+          h,
         ),
     },
   });
@@ -275,16 +301,13 @@ const clubCompetitionsSection = (
     'Competitions',
     [
       ...(competitions.length > 1 ? [competitionRadioGroup(competitions, model, h)] : []),
-      ...selected.render(h),
-      h.div(
-        [...getStyleXAttributes(h, styles.sectionFoot)],
-        [
-          clubSectionLink(
-            selected.kind === 'Cup' ? 'Full draw' : 'Full table',
-            competitionRouter({ slug: selected.slug }),
-            h,
-          ),
-        ],
+      ...selected.render(
+        h,
+        clubSectionLink(
+          selected.kind === 'Cup' ? 'Full draw' : 'Full table',
+          competitionRouter({ slug: selected.slug }),
+          h,
+        ),
       ),
     ],
     'competitions',
@@ -297,13 +320,11 @@ const clubCompetitionsSection = (
 // per-button AriaPressed toggle semantics this wore before, which read to a
 // screen reader as N independent toggles rather than one single-select group.
 // The 'league' label is the club’s own league name, so labels come from target.
-const scopeRadioGroup = (target: Club, model: Model, h: HtmlBuilder<Message>): Html => {
-  const labels: Record<ScorerScope, string> = {
-    All: 'All',
-    League: target.league,
-    Cup: 'Domestic Cup',
-  };
-  return h.submodel({
+// The scope chips read the same words as the Competitions chips, so the two rows on one profile speak one language.
+const SCOPE_LABELS: Record<ScorerScope, string> = { All: 'All', League: 'League', Cup: 'Cup' };
+
+const scopeRadioGroup = (model: Model, h: HtmlBuilder<Message>): Html =>
+  h.submodel({
     slotId: 'club-top-scorers-scope',
     model: model.scopeGroup,
     view: ScopeRadioGroup.view,
@@ -313,27 +334,9 @@ const scopeRadioGroup = (target: Club, model: Model, h: HtmlBuilder<Message>): H
       options: ['All', 'League', 'Cup'],
       ariaLabel: 'Top-scorers competition',
       toView: ({ group, options }) =>
-        h.div(
-          [...group, ...getStyleXAttributes(h, styles.scopeGroup)],
-          options.map((option) => {
-            // Checked derives from the model because StyleX has no attribute selectors (the component still stamps data-checked).
-            const checked = option.value === model.scorerScope;
-            return h.div(
-              [
-                ...option.option,
-                ...getStyleXAttributes(
-                  h,
-                  styles.scopeOption,
-                  checked ? styles.scopeChecked : styles.scopeRest,
-                ),
-              ],
-              [labels[option.value]],
-            );
-          }),
-        ),
+        chipRow(group, options, model.scorerScope, (scope) => SCOPE_LABELS[scope], h),
     },
   });
-};
 
 const scorerRow = (scorer: Scorer, index: number, h: HtmlBuilder<Message>): Html =>
   h.li(
@@ -405,7 +408,7 @@ const clubScorersSection = (target: Club, model: Model, h: HtmlBuilder<Message>)
   return clubSection(
     'Top scorers',
     [
-      scopeRadioGroup(target, model, h),
+      scopeRadioGroup(model, h),
       scorersListFor(target, model.scorerScope, isExpanded, h),
       h.p([...getStyleXAttributes(h, styles.scorersFootnote)], ['Goals — season 2025/26']),
     ],
@@ -444,7 +447,16 @@ const archiveList = (archive: ReadonlyArray<ArchiveSeason>, h: HtmlBuilder<Messa
         [...getStyleXAttributes(h, styles.archiveRow)],
         [
           h.span([...getStyleXAttributes(h, shared.display, styles.archiveSeason)], [entry.season]),
-          h.span([...getStyleXAttributes(h, styles.archiveLeague)], [entry.league]),
+          h.span(
+            [...getStyleXAttributes(h, styles.archiveLeague)],
+            [
+              entry.league,
+              // A cup-winning season carries the cup beside its league, in the same voice with the brand's underline.
+              ...(entry.isCupWinner
+                ? [h.span([...getStyleXAttributes(h, styles.archiveCup)], ['Cup'])]
+                : []),
+            ],
+          ),
           h.span(
             [
               ...getStyleXAttributes(
@@ -591,8 +603,64 @@ const clubFollowSection = (target: Club, model: Model, h: HtmlBuilder<Message>):
         },
         h,
       ),
+      ...clubLinksRow(target, h),
     ],
   );
+};
+
+// The club's own places on the web, one centred row under the Follow button: the site as its bare domain, then a glyph per network the club is on. Every link opens in a new tab — these leave the platform — and each glyph is named for assistive tech. A club with no links ends at the button.
+const clubLinksRow = (target: Club, h: HtmlBuilder<Message>): ReadonlyArray<Html> => {
+  const links = target.links;
+  if (links === undefined) return [];
+  const networks = SOCIAL_NETWORKS.flatMap((network) => {
+    const href = links[network];
+    return href === undefined ? [] : [{ network, href }];
+  });
+  if (links.website === undefined && networks.length === 0) return [];
+  return [
+    h.div(
+      [...getStyleXAttributes(h, styles.linksRow)],
+      [
+        ...(links.website === undefined
+          ? []
+          : [
+              h.a(
+                [
+                  h.Href(links.website),
+                  h.Target('_blank'),
+                  h.Rel('noopener'),
+                  ...getStyleXAttributes(h, styles.linksSite),
+                ],
+                [bareDomain(links.website)],
+              ),
+            ]),
+        ...(networks.length === 0
+          ? []
+          : [
+              h.ul(
+                [...getStyleXAttributes(h, styles.linksGlyphs)],
+                networks.map(({ network, href }) =>
+                  h.li(
+                    [],
+                    [
+                      h.a(
+                        [
+                          h.Href(href),
+                          h.Target('_blank'),
+                          h.Rel('noopener'),
+                          h.AriaLabel(`${SOCIAL_LABELS[network]} — ${target.name}`),
+                          ...getStyleXAttributes(h, styles.linksGlyph),
+                        ],
+                        [socialGlyph(network, h, styles.linksGlyphMark)],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ]),
+      ],
+    ),
+  ];
 };
 
 export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html => {
@@ -752,7 +820,7 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
               ),
               // The statement in its four-line box on the band's padding, the opening mark inline before its first word as part of the first line, a thin space between them.
               h.blockquote(
-                [...getStyleXAttributes(h, styles.statement)],
+                [...getStyleXAttributes(h, styles.statement, isQuoteOpen && styles.statementOpen)],
                 [
                   h.span(
                     [
@@ -761,6 +829,7 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
                         h,
                         styles.statementText,
                         !isQuoteOpen && styles.quoteFolded,
+                        !isQuoteOpen && model.isQuoteOverflowing && styles.quoteFoldedShort,
                       ),
                     ],
                     [
@@ -774,30 +843,30 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
                       `\u2009${highlight.statement}`,
                     ],
                   ),
-                ],
-              ),
-              // The fold control's row is always reserved, so the block ends at the same y whether or not anything is clipped.
-              h.div(
-                [...getStyleXAttributes(h, styles.moreRow)],
-                [
-                  Button.view(
-                    {
-                      onClick: Message.ToggledClubSection({ anchor: QUOTE_ANCHOR }),
-                      toView: ({ button }) =>
-                        h.button(
-                          [
-                            ...button,
-                            h.AriaExpanded(isQuoteOpen),
-                            ...getStyleXAttributes(
-                              h,
-                              styles.quoteMore,
-                              !hasQuoteControl && styles.quoteMoreHidden,
+                  // The fold control lives in the box's fourth line, so the block ends at the same y whether or not anything is clipped.
+                  h.div(
+                    [...getStyleXAttributes(h, styles.moreRow)],
+                    [
+                      Button.view(
+                        {
+                          onClick: Message.ToggledClubSection({ anchor: QUOTE_ANCHOR }),
+                          toView: ({ button }) =>
+                            h.button(
+                              [
+                                ...button,
+                                h.AriaExpanded(isQuoteOpen),
+                                ...getStyleXAttributes(
+                                  h,
+                                  styles.quoteMore,
+                                  !hasQuoteControl && styles.quoteMoreHidden,
+                                ),
+                              ],
+                              [isQuoteOpen ? 'Less' : 'More'],
                             ),
-                          ],
-                          [isQuoteOpen ? 'Less' : 'More'],
-                        ),
-                    },
-                    h,
+                        },
+                        h,
+                      ),
+                    ],
                   ),
                 ],
               ),

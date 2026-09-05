@@ -274,12 +274,26 @@ export const styles = stylex.create({
   // Legend — carries the zone colors below md, where the named column is
   // hidden. Swatches are BARS of the same width as the ribbon, not
   // squares, so the mapping back to the table is immediate.
-  legend: {
+  legendRow: {
     marginTop: '1.25rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '1rem',
+  },
+  legend: {
     display: 'flex',
     flexWrap: 'wrap',
     columnGap: '1.5rem',
     rowGap: '0.5rem',
+  },
+  // Pinned to the row's first line when the legend wraps.
+  legendControl: {
+    flexShrink: 0,
+    alignSelf: 'flex-start',
+    display: 'flex',
+    alignItems: 'center',
+    minHeight: '1.25rem',
   },
   legendEntry: {
     display: 'flex',

@@ -577,3 +577,73 @@ export const tapeArrow = (up: boolean, h: HtmlBuilder<Message>): Html =>
     ],
     [h.path([h.D('M6 0 L12 10 H0 Z')], [])],
   );
+
+/**
+ * The social networks a club can be on, in the order their glyphs are drawn.
+ */
+export const SOCIAL_NETWORKS = ['instagram', 'facebook', 'x', 'tiktok', 'youtube'] as const;
+export type SocialNetwork = (typeof SOCIAL_NETWORKS)[number];
+
+/**
+ * A network's name as a label says it.
+ */
+export const SOCIAL_LABELS: Record<SocialNetwork, string> = {
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  x: 'X',
+  tiktok: 'TikTok',
+  youtube: 'YouTube',
+};
+
+// Monoline glyphs on the header tabs' grid: one stroke, no fills, no brand colours — the mark's shape carries the network.
+const SOCIAL_PATHS: Record<SocialNetwork, string> = {
+  instagram:
+    'M7 3.5 H17 A3.5 3.5 0 0 1 20.5 7 V17 A3.5 3.5 0 0 1 17 20.5 H7 A3.5 3.5 0 0 1 3.5 17 V7 A3.5 3.5 0 0 1 7 3.5 Z M12 8 A4 4 0 1 1 11.99 8 M17 7 L17.01 7',
+  facebook:
+    'M14 21 V13 H17 L17.5 9.5 H14 V7.5 C14 6.5 14.5 6 15.5 6 H17.5 V3 H15 C12.5 3 10.5 4.5 10.5 7.5 V9.5 H7.5 V13 H10.5 V21',
+  x: 'M4 3 L20 21 M20 3 L4 21',
+  tiktok: 'M13 3 V15.5 A3.5 3.5 0 1 1 9.5 12 M13 3 C13 6 15.5 8.5 18.5 8.5',
+  youtube:
+    'M3.5 8 C3.5 6 4.5 5 6.5 5 H17.5 C19.5 5 20.5 6 20.5 8 V16 C20.5 18 19.5 19 17.5 19 H6.5 C4.5 19 3.5 18 3.5 16 Z M10 9 L15.5 12 L10 15 Z',
+};
+
+/**
+ * A network's glyph, drawn like a header tab icon: one monoline stroke on a 24-unit grid, at
+ * whatever size the caller's style gives it.
+ *
+ * @param network The network.
+ * @param h The builder the glyph is drawn with.
+ * @param glyphStyles The caller's size and colour.
+ */
+export const socialGlyph = (
+  network: SocialNetwork,
+  h: HtmlBuilder<Message>,
+  ...glyphStyles: ReadonlyArray<StyleXStyle>
+): Html =>
+  h.svg(
+    [
+      h.Xmlns('http://www.w3.org/2000/svg'),
+      h.ViewBox('0 0 24 24'),
+      ...getStyleXAttributes(h, ...glyphStyles),
+      h.AriaHidden(true),
+      h.Fill('none'),
+      h.Stroke('currentColor'),
+      h.StrokeWidth('1.6'),
+      h.StrokeLinecap('round'),
+      h.StrokeLinejoin('round'),
+    ],
+    [h.path([h.D(SOCIAL_PATHS[network])], [])],
+  );
+
+/**
+ * A URL as a link shows it: the host without its protocol or a leading www.
+ *
+ * @param url The full URL.
+ */
+export const bareDomain = (url: string): string => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+};

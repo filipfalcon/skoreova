@@ -13,6 +13,20 @@ export const StandingsRow = S.Struct({
 });
 export type StandingsRow = typeof StandingsRow.Type;
 
+/**
+ * Where a club lives on the web: its site and its accounts, each present only where the club has
+ * one. Every value is a full URL.
+ */
+export const ClubLinks = S.Struct({
+  website: S.optionalKey(S.String),
+  instagram: S.optionalKey(S.String),
+  facebook: S.optionalKey(S.String),
+  x: S.optionalKey(S.String),
+  tiktok: S.optionalKey(S.String),
+  youtube: S.optionalKey(S.String),
+});
+export type ClubLinks = typeof ClubLinks.Type;
+
 export const Club = S.Struct({
   slug: S.String,
   name: S.String,
@@ -49,6 +63,8 @@ export const Club = S.Struct({
   // placeholder until the real data lands.
   leagueTitles: S.Number,
   cupTitles: S.Number,
+  // The club's web presence, where known. Mock for now: the accounts the marquee clubs run in public, absent for the rest until real data lands.
+  links: S.optionalKey(ClubLinks),
 });
 export type Club = typeof Club.Type;
 
