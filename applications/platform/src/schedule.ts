@@ -1,4 +1,4 @@
-import { Array, Match as M, Option } from 'effect';
+import { Array, Match, Option } from 'effect';
 import { Calendar } from 'foldkit';
 
 import type { Competition } from './data';
@@ -174,9 +174,9 @@ const COMPETITION_SHAPES: { readonly [slug: string]: SeasonShape } = {
 export const competitionShape = (competition: Competition): Option.Option<SeasonShape> =>
   Option.fromUndefinedOr(COMPETITION_SHAPES[competition.slug]).pipe(
     Option.orElse(() =>
-      M.value(competition.standings).pipe(
-        M.withReturnType<Option.Option<SeasonShape>>(),
-        M.tagsExhaustive({
+      Match.value(competition.standings).pipe(
+        Match.withReturnType<Option.Option<SeasonShape>>(),
+        Match.tagsExhaustive({
           TableStandings: ({ league }) =>
             Option.some({
               played: MATCHDAYS_PLAYED,
@@ -340,9 +340,9 @@ export const CUP_TIES: ReadonlyArray<CupTieFixture> = [
 // (which render no picker). SelectedCompetitionRound clamps against this in
 // `update`, so the Model never holds an out-of-range round.
 export const competitionRoundCount = (competition: Competition): number =>
-  M.value(competition.standings).pipe(
-    M.withReturnType<number>(),
-    M.tagsExhaustive({
+  Match.value(competition.standings).pipe(
+    Match.withReturnType<number>(),
+    Match.tagsExhaustive({
       TableStandings: ({ league }) => leagueRoundCount(league),
       TiesStandings: () => 1,
     }),

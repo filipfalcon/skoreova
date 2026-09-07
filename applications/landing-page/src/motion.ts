@@ -1,4 +1,4 @@
-import { Effect, Queue, Schema as S, Stream } from 'effect';
+import { Effect, Queue, Schema, Stream } from 'effect';
 import { Mount } from 'foldkit';
 
 import { Message } from './message';
@@ -1271,7 +1271,7 @@ export const MountMotion = Mount.define('MountMotion', {
 // root while <main> carries MountMotion; the root is keyed on the flag, so
 // a flip re-runs this factory with the fresh value).
 export const ObserveReveals = Mount.defineStream('ObserveReveals', {
-  args: { reduceMotion: S.Boolean },
+  args: { reduceMotion: Schema.Boolean },
   messages: [Message.ChangedReveals],
   execute: ({ element, reduceMotion }) =>
     Stream.callback<typeof Message.ChangedReveals.Type>((queue) =>

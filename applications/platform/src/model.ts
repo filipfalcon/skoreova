@@ -1,5 +1,5 @@
 import { RadioGroup } from '@foldkit/ui';
-import { Option, Schema as S } from 'effect';
+import { Option, Schema } from 'effect';
 
 import { AppRoute } from './route';
 import { FEED_ATTENDANCE, FEED_FEATURED_MATCHES, FEED_TOP_SCORERS, FEED_LABEL } from './widgets';
@@ -12,7 +12,7 @@ import { FEED_ATTENDANCE, FEED_FEATURED_MATCHES, FEED_TOP_SCORERS, FEED_LABEL } 
 // per-screen pickers, the clubs search, and the two lists a visitor builds
 // by tapping (followed clubs, pinned boards).
 
-export const Screen = S.Literals([
+export const Screen = Schema.Literals([
   'Welcome',
   'HerGame',
   'Clubs',
@@ -23,19 +23,19 @@ export const Screen = S.Literals([
 ]);
 export type Screen = typeof Screen.Type;
 
-export const Metric = S.Literals(['Goals', 'Attendance', 'Conversion']);
+export const Metric = Schema.Literals(['Goals', 'Attendance', 'Conversion']);
 export type Metric = typeof Metric.Type;
 
 // Which competition the club profile’s TOP SCORERS board shows — one
 // component, scoped by chips (user call).
-export const ScorerScope = S.Literals(['All', 'League', 'Cup']);
+export const ScorerScope = Schema.Literals(['All', 'League', 'Cup']);
 export type ScorerScope = typeof ScorerScope.Type;
 
 /**
  * The kinds of competition a club can be in at once, and so the tabs of a profile's COMPETITIONS
  * section: its league, the domestic cup, and one European campaign.
  */
-export const CompetitionKind = S.Literals(['League', 'Cup', 'Europe']);
+export const CompetitionKind = Schema.Literals(['League', 'Cup', 'Europe']);
 export type CompetitionKind = typeof CompetitionKind.Type;
 
 // ONE BLOCK in a feed. The kind stays an open string rather than a union of
@@ -43,18 +43,18 @@ export type CompetitionKind = typeof CompetitionKind.Type;
 // model's type. The key is what makes a block an instance rather than a
 // singleton: a feed can carry the same widget twice, and taking one out has to
 // leave the other where it is.
-export const FeedBlock = S.Struct({
-  kind: S.String,
-  key: S.String,
+export const FeedBlock = Schema.Struct({
+  kind: Schema.String,
+  key: Schema.String,
   // The block's own heading, which every block arrives carrying and the reader
   // can then rewrite or take away. None is a heading DELETED rather than one
   // left blank — a blank one still holds its line, a deleted one does not, so
   // the two cannot share a representation.
-  label: S.Option(S.String),
+  label: Schema.Option(Schema.String),
 });
 export type FeedBlock = typeof FeedBlock.Type;
 
-export const Model = S.Struct({
+export const Model = Schema.Struct({
   // The current route is THE source of truth for what’s on screen — the
   // visible screen and any open club/competition slug are derived from it in
   // the view (see screenOf / routeClubSlug / routeCompetitionSlug), so the
@@ -65,45 +65,45 @@ export const Model = S.Struct({
   // one). Every competition is a series of editions — one per season — and
   // the profile carries a picker; the backend exposes them via
   // /editions?competitionId= once real data lands.
-  competitionEdition: S.Option(S.String),
+  competitionEdition: Schema.Option(Schema.String),
   // Which matchday each competition’s matches panel shows, keyed by the
   // competition slug (a missing key = that competition’s current matchday).
   // Keyed rather than one shared field because /matches renders BOTH league
   // panels at once: a single round made them page in lockstep, and it could
   // only ever be clamped against whatever competition the route had open —
   // which on /matches is none, so every pick collapsed to round 1.
-  competitionRounds: S.Record(S.String, S.Number),
+  competitionRounds: Schema.Record(Schema.String, Schema.Number),
   // The clubs directory’s search box ('' = show everything).
-  clubQuery: S.String,
+  clubQuery: Schema.String,
   // Which of the featured EUROPEAN CONTENDERS the clubs carousel shows.
-  featuredClub: S.Number,
+  featuredClub: Schema.Number,
   // Which trending tile leads the track. The countdown advances it (see
   // subscription.ts) and the track's own scroll observer corrects it, so a
   // reader who swipes ahead is never yanked back to where the timer stood.
-  trendingIndex: S.Number,
+  trendingIndex: Schema.Number,
   // Whether the reader is IN the trending board — pointer over it or focus
   // inside it. The countdown holds while they are; leaving starts a fresh
   // cycle rather than resuming a part-spent one, so the drawn line and the
   // timer behind it can never disagree.
-  isTrendingHeld: S.Boolean,
+  isTrendingHeld: Schema.Boolean,
   // The OS-level reduced-motion preference. The served Model says false —
   // one document answers every visitor, so it cannot carry a personal
   // setting — and the reducedMotion subscription corrects it as the runtime
   // subscribes, before any frame the reader could act on.
-  prefersReducedMotion: S.Boolean,
+  prefersReducedMotion: Schema.Boolean,
   // Slugs of the clubs the visitor follows (mock — session only; feeds
   // HER GAME once the real accounts land).
-  followed: S.Array(S.String),
+  followed: Schema.Array(Schema.String),
   // Ids of the boards and charts pinned to HER GAME. Unlike `followed`
   // this DOES survive a reload — it is mirrored to storage through the
   // pins port (see `pinsStore`). Seeded from storage by the ReadPins
   // command fired in `init`.
-  pinned: S.Array(S.String),
+  pinned: Schema.Array(Schema.String),
   scorerScope: ScorerScope,
   // The club-profile sections the reader has opened past their first bite, by section anchor. Session-only, and cleared when the route changes to another page, so every profile opens folded; a hash jump within one profile re-applies the same route and leaves them as the reader had them.
-  expandedClubSections: S.Array(S.String),
+  expandedClubSections: Schema.Array(Schema.String),
   // The club-profile section under the reader's eye, by anchor, kept by the scroll-spy subscription so the jump row can mark it. None while the hero is in view. Reset like the open sections: cleared on leaving the page, kept across a hash jump within it.
-  activeClubSection: S.Option(S.String),
+  activeClubSection: Schema.Option(Schema.String),
   // Whether the folded commentary hides lines, as its own mount measures it. False until measured, and from md up, where nothing folds; the More control is drawn only while this is true.
   // Which competition the profile's COMPETITIONS section shows. The league is every club's default and what a fresh profile opens on; kept across a hash jump within the profile.
   competitionTab: CompetitionKind,
@@ -121,28 +121,28 @@ export const Model = S.Struct({
   // two pages: signed out it is the landing, signed in it is Her Game. No
   // message sets this yet, so it holds its initial value until accounts land
   // and the signed-in half is reachable from the fixtures.
-  isSignedIn: S.Boolean,
+  isSignedIn: Schema.Boolean,
   // The blocks the feed is carrying. Mock — session only, and deliberately
   // NOT the `pinned` array above: that one is replaced wholesale by whatever
   // storage returns, which on a first visit is nothing, and a feed that opens
   // empty for every new reader is not a feed.
-  feedBlocks: S.Array(FeedBlock),
+  feedBlocks: Schema.Array(FeedBlock),
   // Whether the feed is in its MANAGE state, where every block it carries
   // offers to leave and every label it carries offers its text. Transient: a
   // route change drops it, so nobody returns to the page still holding a
   // screwdriver.
-  isFeedEditing: S.Boolean,
+  isFeedEditing: Schema.Boolean,
   // Whether the catalog is open under the invitation, showing every widget
   // that exists rather than only the ones this feed already carries.
-  isWidgetCatalogOpen: S.Boolean,
+  isWidgetCatalogOpen: Schema.Boolean,
   // Set when a pick is refused for filling a signed-out feed to its cap.
   // Cleared whenever the catalog is thrown shut, so a refusal never outlives
   // the state that produced it.
-  isWidgetAddRefused: S.Boolean,
+  isWidgetAddRefused: Schema.Boolean,
   // The number the next key is minted from. A counter rather than a random or
   // time-derived id keeps the reducer pure, which is what lets a story assert
   // the key a block was added under.
-  nextFeedKey: S.Number,
+  nextFeedKey: Schema.Number,
 });
 export type Model = typeof Model.Type;
 

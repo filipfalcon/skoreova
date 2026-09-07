@@ -1,11 +1,11 @@
-import { Effect, Option, Schema as S, Stream } from 'effect';
+import { Effect, Option, Schema, Stream } from 'effect';
 import { Command, Mount } from 'foldkit';
 import { load, pushUrl } from 'foldkit/navigation';
 
 import { Message } from './message';
 
 export const Navigate = Command.define('Navigate', {
-  args: { url: S.String },
+  args: { url: Schema.String },
   messages: [Message.CompletedNavigate],
   execute: ({ url }) =>
     pushUrl(url).pipe(
@@ -15,7 +15,7 @@ export const Navigate = Command.define('Navigate', {
 });
 
 export const Load = Command.define('Load', {
-  args: { href: S.String },
+  args: { href: Schema.String },
   messages: [Message.CompletedLoad],
   execute: ({ href }) => load(href).pipe(Effect.as(Message.CompletedLoad())),
 });
@@ -38,7 +38,7 @@ const PINS_KEY = 'skoreova-pins';
 // Trust nothing off the disk: the stored value must decode as an array of
 // strings, or it counts as no pins at all — a hand-edited or half-written
 // value can never crash the feed that renders them.
-const decodeStoredPins = S.decodeUnknownOption(S.Array(S.String));
+const decodeStoredPins = Schema.decodeUnknownOption(Schema.Array(Schema.String));
 
 const noPins: ReadonlyArray<string> = [];
 
@@ -65,7 +65,7 @@ export const ReadPins = Command.define('ReadPins', {
 });
 
 export const WritePins = Command.define('WritePins', {
-  args: { ids: S.Array(S.String) },
+  args: { ids: Schema.Array(Schema.String) },
   messages: [Message.CompletedWritePins],
   execute: ({ ids }) => pinsStore.save(ids).pipe(Effect.as(Message.CompletedWritePins())),
 });
@@ -107,7 +107,7 @@ const nearestTrendingIndex = (track: HTMLElement): number => {
 // so there is no motion to soften. A missing track (the reader navigated away
 // between the tick and the scroll) is a completed no-op, not an error.
 export const ScrollTrending = Command.define('ScrollTrending', {
-  args: { index: S.Number },
+  args: { index: Schema.Number },
   messages: [Message.CompletedScrollTrending],
   execute: ({ index }) =>
     Effect.sync(() => {
@@ -155,7 +155,7 @@ export const jumpChipId = (anchor: string): string => `jump-${anchor}`;
 
 // Scrolls the jump row horizontally until the given section's chip is inside it, and only then: a chip already in view is left where it is, so the row does not twitch on every section change. Horizontal only — the row itself is pinned, so nothing here can move the page. A missing row (the reader left the profile between the report and the scroll) is a completed no-op.
 export const RevealJumpChip = Command.define('RevealJumpChip', {
-  args: { anchor: S.String, reduce: S.Boolean },
+  args: { anchor: Schema.String, reduce: Schema.Boolean },
   messages: [Message.CompletedRevealJumpChip],
   execute: ({ anchor, reduce }) =>
     Effect.sync(() => {
@@ -185,7 +185,7 @@ export const MATCH_STRIP_ID = 'club-match-strip';
 
 // Opens the match strip on the card at `index` — the upcoming match, with the last result one swipe back. Set once, on mount, instantly: the strip is a native scroller, so this is a scroll position and not a transform, and from md the strip does not scroll at all, where the call is a no-op.
 export const ScrollMatchStripToNext = Mount.define('ScrollMatchStripToNext', {
-  args: { index: S.Number },
+  args: { index: Schema.Number },
   messages: [Message.CompletedMatchStripScroll],
   execute: ({ element, index }) =>
     Effect.sync(() => {

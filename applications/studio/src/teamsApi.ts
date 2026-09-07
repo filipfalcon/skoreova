@@ -1,24 +1,24 @@
-import { Schema as S } from 'effect';
+import { Schema } from 'effect';
 
 import { GATEWAY_BASE_URL } from './api';
 import type { Column } from './api';
 
 // Mirrors GET /teams from the backend’s OpenAPI spec (fetched 2026-07-04).
-export const TeamKind = S.Literals(['CLUB', 'NATIONAL']);
+export const TeamKind = Schema.Literals(['CLUB', 'NATIONAL']);
 export type TeamKind = typeof TeamKind.Type;
 
-export const Country = S.Literals(['AUT', 'CZE', 'GER', 'POL', 'SVK']);
+export const Country = Schema.Literals(['AUT', 'CZE', 'GER', 'POL', 'SVK']);
 
-export const TeamResponse = S.Struct({
-  id: S.String,
-  name: S.String,
+export const TeamResponse = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
   kind: TeamKind,
   country: Country,
-  establishedOn: S.String,
+  establishedOn: Schema.String,
 });
 export type TeamResponse = typeof TeamResponse.Type;
 
-export const TeamsResponse = S.Array(TeamResponse);
+export const TeamsResponse = Schema.Array(TeamResponse);
 
 export const teamsUrl = (kind: TeamKind): string => `${GATEWAY_BASE_URL}/teams?kind=${kind}`;
 

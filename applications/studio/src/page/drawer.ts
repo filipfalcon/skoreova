@@ -1,5 +1,5 @@
 import { Button, Dialog } from '@foldkit/ui';
-import { Array, Match as M, Option } from 'effect';
+import { Array, Match, Option } from 'effect';
 import { AsyncData } from 'foldkit';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
@@ -499,11 +499,11 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
   };
 
   const tabContent = (): Html =>
-    M.value(tab).pipe(
-      M.when('Overview', overviewTab),
-      M.when('Persistency', persistencyTab),
-      M.when('History', historyTab),
-      M.exhaustive,
+    Match.value(tab).pipe(
+      Match.when('Overview', overviewTab),
+      Match.when('Persistency', persistencyTab),
+      Match.when('History', historyTab),
+      Match.exhaustive,
     );
 
   // The tab bar and the active panel, through the Ui.Tabs submodel (roving

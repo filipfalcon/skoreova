@@ -141,8 +141,24 @@ export default defineConfig({
       'foldkit/prefer-callable-message-constructor': 'error',
       'foldkit/command-binding-matches-name': 'error',
       'foldkit/no-module-level-mutable-state': 'error',
+      // Added with the 0.12 plugin: full Effect module names instead of aliases, and no clock or randomness read at decision time — both at zero violations once the aliases were expanded.
+      'foldkit/prefer-effect-module-names': 'error',
+      'foldkit/no-impure-call-at-decision-time': 'error',
     },
     overrides: [
+      {
+        // The decision-time rule guards update and view code. These files are the other side of the line: the landing page's motion engine and its scroll rides read the clock inside frames and timers the rule cannot see as deferred, the browser tests poll it in their wait helpers, and the platform Worker jitters a mock ticker per request. None of them decides a Model.
+        files: [
+          'applications/landing-page/src/motion.ts',
+          'applications/landing-page/src/command.ts',
+          'applications/landing-page/src/entry.ts',
+          'applications/platform/src/worker.ts',
+          'applications/**/*.browser.test.ts',
+        ],
+        rules: {
+          'foldkit/no-impure-call-at-decision-time': 'off',
+        },
+      },
       {
         files: ['applications/landing-page/src/analytics/**'],
         rules: {

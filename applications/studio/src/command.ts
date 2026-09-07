@@ -2,7 +2,7 @@
 // API fetches.
 
 import * as echarts from 'echarts/core';
-import { Clock, Effect, Option, Schema as S } from 'effect';
+import { Clock, Effect, Option, Schema } from 'effect';
 import { Calendar, Command, Mount } from 'foldkit';
 import { load as loadUrl, pushUrl } from 'foldkit/navigation';
 
@@ -25,7 +25,7 @@ export const POINTS_CHART_HOST_ID = 'studio-record-points-chart';
 // Mounts an ECharts instance into the host element and tears it down when the
 // element is removed (e.g. switching drawer tabs or closing the drawer).
 export const MountChart = Mount.define('MountChart', {
-  args: { hostId: S.String },
+  args: { hostId: Schema.String },
   messages: [Message.SucceededMountChart, Message.FailedMountChart],
   execute: ({ element, hostId }) =>
     Effect.gen(function* () {
@@ -65,10 +65,10 @@ export const MountChart = Mount.define('MountChart', {
 // Pushes the given stats into an already-mounted chart instance.
 export const SyncChart = Command.define('SyncChart', {
   args: {
-    hostId: S.String,
-    title: S.String,
-    categories: S.Array(S.String),
-    values: S.Array(S.Number),
+    hostId: Schema.String,
+    title: Schema.String,
+    categories: Schema.Array(Schema.String),
+    values: Schema.Array(Schema.Number),
   },
   messages: [Message.SucceededSyncChart, Message.FailedSyncChart],
   execute: (args) =>
@@ -92,10 +92,10 @@ export const SyncChart = Command.define('SyncChart', {
 // only for team records (Clubs/Nationals) — see POINTS_CHART_HOST_ID.
 export const SyncPointsChart = Command.define('SyncPointsChart', {
   args: {
-    hostId: S.String,
-    title: S.String,
-    weeks: S.Array(S.String),
-    points: S.Array(S.Number),
+    hostId: Schema.String,
+    title: Schema.String,
+    weeks: Schema.Array(Schema.String),
+    points: Schema.Array(Schema.Number),
   },
   messages: [Message.SucceededSyncChart, Message.FailedSyncChart],
   execute: (args) =>
@@ -119,7 +119,7 @@ export const SyncPointsChart = Command.define('SyncPointsChart', {
 // Every other section (see below) fetches everything at once — theirs
 // aren’t paginated.
 export const FetchPlayers = Command.define('FetchPlayers', {
-  args: { page: S.Number },
+  args: { page: Schema.Number },
   messages: [Message.SucceededFetchPlayers, Message.FailedFetchPlayers],
   execute: (args) =>
     getDecoded(playersUrl(args.page), PlayersPage).pipe(
@@ -301,13 +301,13 @@ export const StampDelete = Command.define('StampDelete', {
 // section switched), Load is a real page navigation for external links.
 
 export const Navigate = Command.define('Navigate', {
-  args: { url: S.String },
+  args: { url: Schema.String },
   messages: [Message.CompletedNavigate],
   execute: ({ url }) => pushUrl(url).pipe(Effect.as(Message.CompletedNavigate())),
 });
 
 export const Load = Command.define('Load', {
-  args: { href: S.String },
+  args: { href: Schema.String },
   messages: [Message.CompletedLoad],
   execute: ({ href }) => loadUrl(href).pipe(Effect.as(Message.CompletedLoad())),
 });
@@ -315,10 +315,10 @@ export const Load = Command.define('Load', {
 // Resolves a single team by id (GET /teams/{id}) when a shared record link
 // points at a team that isn’t already in the loaded list.
 export const FetchTeamById = Command.define('FetchTeamById', {
-  args: { section: S.Literals(['clubs', 'nationals']), id: S.String },
+  args: { section: Schema.Literals(['clubs', 'nationals']), id: Schema.String },
   messages: [Message.SucceededFetchTeamById, Message.FailedFetchTeamById],
   execute: (args) =>
-    getDecoded(teamByIdUrl(args.id), S.NullOr(TeamResponse)).pipe(
+    getDecoded(teamByIdUrl(args.id), Schema.NullOr(TeamResponse)).pipe(
       Effect.map((team) =>
         team === null
           ? Message.FailedFetchTeamById({ reason: 'This team no longer exists.' })

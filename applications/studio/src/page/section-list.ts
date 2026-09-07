@@ -1,6 +1,6 @@
 import { Button, DatePicker, Input } from '@foldkit/ui';
 import type { Calendar as UiCalendar } from '@foldkit/ui';
-import { Array, Match as M, Option } from 'effect';
+import { Array, Match, Option } from 'effect';
 import { AsyncData, Calendar } from 'foldkit';
 import clsx from 'clsx';
 import type { Document, Html, HtmlBuilder } from 'foldkit/html';
@@ -790,8 +790,8 @@ const calendarView = (attributes: UiCalendar.CalendarAttributes, h: HtmlBuilder<
       isSelected ? 'bg-neutral-900 text-white' : 'text-neutral-700 hover:bg-neutral-100',
     );
 
-  return M.value(attributes).pipe(
-    M.tagsExhaustive({
+  return Match.value(attributes).pipe(
+    Match.tagsExhaustive({
       Days: (mode) =>
         h.div(
           [...mode.root, h.Class('w-64 p-3')],

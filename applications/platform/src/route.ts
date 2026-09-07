@@ -1,4 +1,4 @@
-import { Schema as S, pipe } from 'effect';
+import { Schema, pipe } from 'effect';
 import {
   defineRouteUnion,
   literal,
@@ -27,14 +27,14 @@ export const AppRoute = defineRouteUnion({
   Welcome: {},
   HerGame: {},
   Clubs: {},
-  Club: { slug: S.String },
+  Club: { slug: Schema.String },
   Players: {},
   // `club` narrows the schedule to one club's season; absent, every league shows. A query rather than a path segment because it is a filter on the one matches screen, not a second screen — `/matches?club=sparta-praha` is the same page, narrowed.
-  Matches: { club: S.optionalKey(S.String) },
+  Matches: { club: Schema.optionalKey(Schema.String) },
   Competitions: {},
-  Competition: { slug: S.String },
+  Competition: { slug: Schema.String },
   Officials: {},
-  NotFound: { path: S.String },
+  NotFound: { path: Schema.String },
 });
 export type AppRoute = typeof AppRoute.Type;
 
@@ -45,7 +45,7 @@ export const clubRouter = pipe(literal('clubs'), slash(string('slug')), mapTo(Ap
 export const playersRouter = pipe(literal('players'), mapTo(AppRoute.Players));
 export const matchesRouter = pipe(
   literal('matches'),
-  query(S.Struct({ club: S.optionalKey(S.String) })),
+  query(Schema.Struct({ club: Schema.optionalKey(Schema.String) })),
   mapTo(AppRoute.Matches),
 );
 export const competitionsRouter = pipe(literal('competitions'), mapTo(AppRoute.Competitions));

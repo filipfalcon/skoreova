@@ -1,4 +1,4 @@
-import { Option, Schema as S, pipe } from 'effect';
+import { Option, Schema, pipe } from 'effect';
 import {
   defineRouteUnion,
   mapTo,
@@ -20,8 +20,8 @@ import { Section } from './section';
 export const AppRoute = defineRouteUnion({
   Home: {},
   Section: { section: Section },
-  Record: { section: Section, id: S.String },
-  NotFound: { path: S.String },
+  Record: { section: Section, id: Schema.String },
+  NotFound: { path: Schema.String },
 });
 export type AppRoute = typeof AppRoute.Type;
 

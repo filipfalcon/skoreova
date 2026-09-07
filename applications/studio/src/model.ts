@@ -1,6 +1,6 @@
 // The studio’s Model, the record Entry, and the drawer state union.
 
-import { Schema as S } from 'effect';
+import { Schema } from 'effect';
 import { DatePicker, Dialog, Listbox, Tabs } from '@foldkit/ui';
 import { AsyncData, Calendar } from 'foldkit';
 import { Field } from 'foldkit/fieldValidation';
@@ -19,27 +19,27 @@ export const DRAWER_DIALOG_ID = 'record-drawer';
 // and the plaintext password can’t linger in state (or DevTools snapshots).
 export const Session = defineTaggedUnion({
   Anonymous: {
-    emailInput: S.String,
-    passwordInput: S.String,
+    emailInput: Schema.String,
+    passwordInput: Schema.String,
   },
-  SignedIn: { email: S.String },
+  SignedIn: { email: Schema.String },
 });
 export type Session = typeof Session.Type;
 
 // One record. `values` line up with the section’s columns (see `sectionData`).
-export const Entry = S.Struct({
+export const Entry = Schema.Struct({
   section: Section,
-  values: S.Array(S.String),
+  values: Schema.Array(Schema.String),
   // Soft-deleted rather than removed, so its index stays stable for `editLog`.
-  isDeleted: S.Boolean,
+  isDeleted: Schema.Boolean,
   // Server-assigned UUID for a record backed by the API; a record created in
   // the studio gets a local `local-<n>` id from `nextLocalId` until a save
   // endpoint exists to hand out a real one. Either way it is never blank —
   // the drawer and the keyed lists address a record by it.
-  id: S.String,
+  id: Schema.String,
   // Generic "belongs to" reference, e.g. an edition’s owning competition.
   // '' when not applicable.
-  parentId: S.String,
+  parentId: Schema.String,
 });
 export type Entry = typeof Entry.Type;
 
@@ -48,7 +48,7 @@ export type Entry = typeof Entry.Type;
 // came from the wire" from "this row only exists here" (see mergeLocalEdits).
 export const LOCAL_ID_PREFIX = 'local-';
 
-export const DrawerTab = S.Literals(['Overview', 'Persistency', 'History']);
+export const DrawerTab = Schema.Literals(['Overview', 'Persistency', 'History']);
 export type DrawerTab = typeof DrawerTab.Type;
 
 // The drawer’s Tabs instance, Value-typed so its Selected OutMessage carries a
@@ -72,17 +72,17 @@ export const FilterListbox: ReturnType<typeof Listbox.Multi.create<string>> =
 // multiplexed both encodings comma-joined (a value containing a comma
 // corrupted the excluded set).
 export const ColumnFilter = defineTaggedUnion({
-  Exact: { value: S.String },
-  Excluded: { excluded: S.Array(S.String) },
+  Exact: { value: Schema.String },
+  Excluded: { excluded: Schema.Array(Schema.String) },
 });
 export type ColumnFilter = typeof ColumnFilter.Type;
 
 // A date column’s from/to range filter as typed CalendarDates — replaces the
 // old comma-joined "from,to" string that rode in the `filters` slot. Either
 // side may be unset.
-export const DateRangeFilter = S.Struct({
-  from: S.Option(Calendar.CalendarDate),
-  to: S.Option(Calendar.CalendarDate),
+export const DateRangeFilter = Schema.Struct({
+  from: Schema.Option(Calendar.CalendarDate),
+  to: Schema.Option(Calendar.CalendarDate),
 });
 export type DateRangeFilter = typeof DateRangeFilter.Type;
 
@@ -101,14 +101,14 @@ export const DrawerState = defineTaggedUnion({
   Closed: {},
   Creating: {
     section: Section,
-    draft: S.Array(Field(S.String)),
+    draft: Schema.Array(Field(Schema.String)),
   },
   Editing: {
     section: Section,
-    id: S.String,
+    id: Schema.String,
     tab: DrawerTab,
-    draft: S.Array(Field(S.String)),
-    isConfirmingDelete: S.Boolean,
+    draft: Schema.Array(Field(Schema.String)),
+    isConfirmingDelete: Schema.Boolean,
   },
 });
 export type DrawerState = typeof DrawerState.Type;
@@ -124,14 +124,14 @@ export type DrawerState = typeof DrawerState.Type;
 // of them has to invent a timestamp inside `update`.
 export const LogEntry = defineTaggedUnion({
   FieldChanged: {
-    recordId: S.String,
-    field: S.String,
-    from: S.String,
-    to: S.String,
-    at: S.String,
+    recordId: Schema.String,
+    field: Schema.String,
+    from: Schema.String,
+    to: Schema.String,
+    at: Schema.String,
   },
-  RecordCreated: { recordId: S.String, at: S.String },
-  RecordDeleted: { recordId: S.String, at: S.String },
+  RecordCreated: { recordId: Schema.String, at: Schema.String },
+  RecordDeleted: { recordId: Schema.String, at: Schema.String },
 });
 export type LogEntry = typeof LogEntry.Type;
 
@@ -141,15 +141,18 @@ export type LogEntry = typeof LogEntry.Type;
 // `xRequest`/`xError` pair per section, so a "loaded" state can’t carry a stale
 // error, and the rows live inside Success (there’s no separate flat array to
 // drift out of sync).
-export const SectionData = AsyncData.Schema(S.Array(Entry), S.String);
+export const SectionData = AsyncData.Schema(Schema.Array(Entry), Schema.String);
 export type SectionData = typeof SectionData.schema.Type;
 
 // Participations are a pure join (no list UI), so they carry their own decoded
 // rows rather than Entry rows.
-export const ParticipationsData = AsyncData.Schema(S.Array(ParticipationResponse), S.String);
+export const ParticipationsData = AsyncData.Schema(
+  Schema.Array(ParticipationResponse),
+  Schema.String,
+);
 export type ParticipationsData = typeof ParticipationsData.schema.Type;
 
-export const Model = S.Struct({
+export const Model = Schema.Struct({
   session: Session,
   // The current route is the source of truth for what’s on screen — the
   // section list (or the dashboard landing page) is derived from it via
@@ -158,11 +161,11 @@ export const Model = S.Struct({
   route: AppRoute,
   // Whether the nav is open. Only affects small screens; from `md:` up the
   // sidebar is always visible.
-  isMenuOpen: S.Boolean,
-  search: S.String,
+  isMenuOpen: Schema.Boolean,
+  search: Schema.String,
   // The active list filter per column of the current section, keyed by the
   // column’s name (see ColumnFilter). Absent key = "All".
-  filters: S.Record(S.String, ColumnFilter),
+  filters: Schema.Record(Schema.String, ColumnFilter),
   // The profile drawer: closed, creating a new record, or editing one by id.
   drawer: DrawerState,
   // The Dialog submodel presenting the drawer: the native <dialog> element,
@@ -176,11 +179,11 @@ export const Model = S.Struct({
   // Client-side id source for records created in the mock (the backend would
   // assign one). Monotonic so a created row gets a stable, unique id the
   // drawer and keyed lists can address.
-  nextLocalId: S.Number,
+  nextLocalId: Schema.Number,
   // History of committed field edits, across all records.
-  editLog: S.Array(LogEntry),
+  editLog: Schema.Array(LogEntry),
   // Why the last chart mount/sync failed; None when there is nothing wrong.
-  chartError: S.Option(S.String),
+  chartError: Schema.Option(Schema.String),
   // Each section’s fetch state, holding its own rows in Success. Field names
   // match the Section literals, so `model[section]` selects a section’s state.
   players: SectionData.schema,
@@ -194,42 +197,45 @@ export const Model = S.Struct({
   participations: ParticipationsData.schema,
   // Only /players is paginated server-side right now; Clubs/Nationals fetch
   // everything in one request.
-  playersPage: S.Number,
-  playersTotal: S.Number,
+  playersPage: Schema.Number,
+  playersTotal: Schema.Number,
   // Whether the backend is reachable at all, via GET /health — shown as the
   // diode on every API-backed section’s Refresh button. Separate from each
   // section’s own request status, since a health check is cheaper/faster
   // than waiting on a full list fetch to fail.
-  serverHealth: S.Literals(['Unknown', 'Ok', 'Down']),
+  serverHealth: Schema.Literals(['Unknown', 'Ok', 'Down']),
   // Page within the current section’s *filtered* list, for every section
   // other than Players (which pages server-side instead). Resets to 1 on
   // section switch, search, or filter change.
-  clientPage: S.Number,
+  clientPage: Schema.Number,
   // THE DELETE LEDGER: `section:id` for every record soft-deleted this
   // session. The row’s own `isDeleted` flag is what the list renders from, but
   // it cannot be the source of truth — a fetch response replaces the rows, and
   // on Players it replaces them with a DIFFERENT PAGE, where the deleted id
   // isn’t present to be preserved. Deleting on page 1 and paging to page 2 lost
   // the marker outright. This ledger outlives any page (see mergeLocalEdits).
-  deletedRecordIds: S.Array(S.String),
+  deletedRecordIds: Schema.Array(Schema.String),
   // The record a clock read is in flight for: a create or a delete has already
   // committed, and its History event is waiting on StampSave/StampDelete to
   // answer with a timestamp. '' when nothing is pending.
-  pendingLogRecordId: S.String,
+  pendingLogRecordId: Schema.String,
   // Set when a shared record link couldn’t be resolved (e.g. a deleted team,
   // or a player not on the currently loaded page — see FetchTeamById).
-  linkError: S.String,
+  linkError: Schema.String,
   // One multi-select Listbox submodel per checkbox filter column (see
   // checkboxColumnLabels in data.ts), keyed by the column’s name. Only interaction state
   // lives here — the selection stays in `filters` as the excluded set.
-  filterListboxes: S.Record(S.String, Listbox.Multi.Model),
+  filterListboxes: Schema.Record(Schema.String, Listbox.Multi.Model),
   // The active from/to range per date filter column (see dateColumnLabels in
   // data.ts), keyed by the column’s name. Absent key = no range set.
-  dateFilters: S.Record(S.String, DateRangeFilter),
+  dateFilters: Schema.Record(Schema.String, DateRangeFilter),
   // One from/to pair of DatePicker submodels per date filter column. Only
   // interaction state (popover, visible month) lives here — the selection is
   // parent-owned in `dateFilters`. Empty until FetchToday resolves at boot,
   // which is invisible: the pickers only render after sign-in.
-  dateFilterPickers: S.Record(S.String, S.Struct({ from: DatePicker.Model, to: DatePicker.Model })),
+  dateFilterPickers: Schema.Record(
+    Schema.String,
+    Schema.Struct({ from: DatePicker.Model, to: DatePicker.Model }),
+  ),
 });
 export type Model = typeof Model.Type;

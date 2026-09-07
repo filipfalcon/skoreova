@@ -1,4 +1,4 @@
-import { Array, Match as M, Option } from 'effect';
+import { Array, Match, Option } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import banikHeroPhoto from '../assets/clubs-hero/banik-ostrava.jpg';
@@ -391,12 +391,12 @@ const scorersListFor = (
   isExpanded: boolean,
   h: HtmlBuilder<Message>,
 ): Html =>
-  M.value(scope).pipe(
-    M.withReturnType<Html>(),
-    M.when('All', () => allScorersList(target, isExpanded, h)),
-    M.when('League', () => leagueScorersList(target, isExpanded, h)),
-    M.when('Cup', () => cupScorersList(target, isExpanded, h)),
-    M.exhaustive,
+  Match.value(scope).pipe(
+    Match.withReturnType<Html>(),
+    Match.when('All', () => allScorersList(target, isExpanded, h)),
+    Match.when('League', () => leagueScorersList(target, isExpanded, h)),
+    Match.when('Cup', () => cupScorersList(target, isExpanded, h)),
+    Match.exhaustive,
   );
 
 // ONE top-scorers component, scoped by chips: all competitions, the

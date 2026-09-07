@@ -1,4 +1,4 @@
-import { Schema as S, pipe } from 'effect';
+import { Schema, pipe } from 'effect';
 import { defineRouteUnion, literal, mapTo, oneOf, parseUrlWithFallback, root } from 'foldkit/route';
 
 // The web app is the landing page and nothing else — club and competition
@@ -9,7 +9,7 @@ import { defineRouteUnion, literal, mapTo, oneOf, parseUrlWithFallback, root } f
 export const AppRoute = defineRouteUnion({
   Home: {},
   Policy: {},
-  NotFound: { path: S.String },
+  NotFound: { path: Schema.String },
 });
 export type AppRoute = typeof AppRoute.Type;
 

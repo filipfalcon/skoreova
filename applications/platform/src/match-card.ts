@@ -1,4 +1,4 @@
-import { Match as M } from 'effect';
+import { Match as EffectMatch } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { clubRowFace, clubStanding } from './data';
@@ -90,9 +90,9 @@ const contextLine = (match: Match): string => {
 
 // The goals each side shows. Only a finished tie has any.
 const goalsOf = (state: MatchState): readonly [string, string] =>
-  M.value(state).pipe(
-    M.withReturnType<readonly [string, string]>(),
-    M.tagsExhaustive({
+  EffectMatch.value(state).pipe(
+    EffectMatch.withReturnType<readonly [string, string]>(),
+    EffectMatch.tagsExhaustive({
       FinishedMatch: ({ homeGoals, awayGoals }) => [`${homeGoals}`, `${awayGoals}`],
       UpcomingMatch: () => ['', ''],
       PostponedMatch: () => ['', ''],
@@ -107,9 +107,9 @@ const goalsOf = (state: MatchState): readonly [string, string] =>
 const spokenLabel = (match: Match): string => {
   const head = `${match.competition}, ${match.stage}`;
   const tail = match.storyLine === '' ? '' : ` ${match.storyLine}`;
-  return M.value(match.state).pipe(
-    M.withReturnType<string>(),
-    M.tagsExhaustive({
+  return EffectMatch.value(match.state).pipe(
+    EffectMatch.withReturnType<string>(),
+    EffectMatch.tagsExhaustive({
       FinishedMatch: ({ homeGoals, awayGoals }) =>
         `${match.home} ${homeGoals}, ${match.away} ${awayGoals}. ${head}.${tail}`,
       UpcomingMatch: ({ kickoff, venue }) =>
@@ -199,9 +199,9 @@ export const matchCard = (
   // time nobody should turn up at; a result gets nothing, because its numbers
   // are already in the rows above and a caption repeating them would be the
   // third place the same score is written.
-  const stateRows: ReadonlyArray<Html> = M.value(match.state).pipe(
-    M.withReturnType<ReadonlyArray<Html>>(),
-    M.tagsExhaustive({
+  const stateRows: ReadonlyArray<Html> = EffectMatch.value(match.state).pipe(
+    EffectMatch.withReturnType<ReadonlyArray<Html>>(),
+    EffectMatch.tagsExhaustive({
       UpcomingMatch: ({ kickoff, venue }) => [
         h.p(
           [

@@ -1,5 +1,5 @@
 import { RadioGroup } from '@foldkit/ui';
-import { Schema as S } from 'effect';
+import { Schema } from 'effect';
 import { defineMessageUnion } from 'foldkit/message';
 import { UrlRequest } from 'foldkit/navigation';
 import { Url } from 'foldkit/url';
@@ -18,7 +18,7 @@ export const Message = defineMessageUnion({
   CompletedFocusMenuToggle: {},
   // Reports which landing section the viewport is in (None at the hero) — see
   // DetectActiveSection.
-  DetectedActiveSection: { section: S.Option(S.String) },
+  DetectedActiveSection: { section: Schema.Option(Schema.String) },
   ClickedLink: { request: UrlRequest },
   ChangedUrl: { url: Url },
   CompletedNavigate: {},
@@ -31,28 +31,28 @@ export const Message = defineMessageUnion({
   GotMapLeagueGroupMessage: {
     message: RadioGroup.Message,
   },
-  OpenedMapClub: { slug: S.String },
+  OpenedMapClub: { slug: Schema.String },
   // Closes the open club card.
   ClosedMapClub: {},
   ToggledAreaUnit: {},
   // The OS-level `prefers-reduced-motion` setting flipped mid-session — see
   // the reducedMotion subscription.
-  ChangedReducedMotion: { reduce: S.Boolean },
+  ChangedReducedMotion: { reduce: Schema.Boolean },
   CompletedMountMotion: {},
-  FailedMountMotion: { reason: S.String },
+  FailedMountMotion: { reason: Schema.String },
   // Reports whether the hero has scrolled up under the fixed header — `past`
   // drives the header’s persistent CTA in the Model. See ObserveHeroPastHeader
   // in motion.ts.
-  DetectedHeroPastHeader: { past: S.Boolean },
+  DetectedHeroPastHeader: { past: Schema.Boolean },
   // One reveal-observer notification, already resolved to reveal keys: which
   // targets entered the viewport (render `.is-in`), which left (back to
   // rest), and which must stand fully DRAWN — a pen that finished its lap
   // (transitionend) or a downward-only pen re-entered from below. See
   // ObserveReveals in motion.ts.
   ChangedReveals: {
-    revealed: S.Array(S.String),
-    concealed: S.Array(S.String),
-    drawn: S.Array(S.String),
+    revealed: Schema.Array(Schema.String),
+    concealed: Schema.Array(Schema.String),
+    drawn: Schema.Array(Schema.String),
   },
 });
 export type Message = typeof Message.Type;

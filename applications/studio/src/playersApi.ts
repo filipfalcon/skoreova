@@ -1,4 +1,4 @@
-import { Schema as S } from 'effect';
+import { Schema } from 'effect';
 
 import { Page, paginatedUrl, titleCase } from './api';
 import type { Column } from './api';
@@ -7,22 +7,22 @@ export const playersUrl = (page: number): string => paginatedUrl('/players', pag
 
 // Mirrors GET /players from the backend’s OpenAPI spec (fetched 2026-07-04,
 // now paginated: `items` + `total`/`page`/`pageSize`).
-export const PrimaryPosition = S.Literals(['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD']);
-export const Sex = S.Literals(['FEMALE', 'MALE']);
-export const Nationality = S.Literals(['AUT', 'CZE', 'GER', 'POL', 'SVK']);
+export const PrimaryPosition = Schema.Literals(['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD']);
+export const Sex = Schema.Literals(['FEMALE', 'MALE']);
+export const Nationality = Schema.Literals(['AUT', 'CZE', 'GER', 'POL', 'SVK']);
 
-export const PlayerResponse = S.Struct({
-  id: S.String,
+export const PlayerResponse = Schema.Struct({
+  id: Schema.String,
   primaryPosition: PrimaryPosition,
-  person: S.Struct({
-    id: S.String,
-    givenName: S.String,
-    familyName: S.String,
+  person: Schema.Struct({
+    id: Schema.String,
+    givenName: Schema.String,
+    familyName: Schema.String,
     sex: Sex,
     nationality: Nationality,
-    dateOfBirth: S.String,
+    dateOfBirth: Schema.String,
   }),
-  currentClub: S.NullOr(S.Struct({ id: S.String, name: S.String })),
+  currentClub: Schema.NullOr(Schema.Struct({ id: Schema.String, name: Schema.String })),
 });
 export type PlayerResponse = typeof PlayerResponse.Type;
 

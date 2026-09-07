@@ -26,8 +26,8 @@ import { defineConfig } from 'vite-plus';
 export default defineConfig({
   plugins: [...tailwindcss(), ...foldkit()],
   optimizeDeps: {
-    // The optimizer's initial crawl can only find imports that appear in source, and every entry here arrives injected instead: foldkit/brand through the plugin's per-module transform, the other two as the static imports of the devtools overlay virtual module the plugin serves whenever @foldkit/devtools is installed. Left undeclared, a cold cache (fresh install, changed lockfile) discovers them mid-run and the re-optimization's full-page reload tears down the running suite — finished results are lost, and the runner waits forever on a browser session the reload destroyed.
-    include: ['foldkit/brand', '@foldkit/devtools/vite', 'foldkit/devtools-host'],
+    // The optimizer's initial crawl can only find imports that appear in source, and foldkit/brand arrives injected by the plugin's per-module transform instead. Left undeclared, a cold cache (fresh install, changed lockfile) discovers it mid-run and the re-optimization's full-page reload tears down the running suite. The devtools overlay's own imports are declared by the plugin itself since @foldkit/vite-plugin 0.20.1.
+    include: ['foldkit/brand'],
   },
   test: {
     name: 'landing-page-browser',

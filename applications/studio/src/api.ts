@@ -1,4 +1,4 @@
-import { Effect, Schema as S, String as Str, pipe } from 'effect';
+import { Effect, Schema, String, pipe } from 'effect';
 import { HttpClient } from 'effect/unstable/http';
 import { Http } from 'foldkit';
 
@@ -40,15 +40,16 @@ export type Column = Readonly<{
 
 // The backend’s ALLCAPS enum values ('FORWARD', 'CLUB', …) as display labels
 // ('Forward', 'Club') — shared by every *Api row mapper.
-export const titleCase = (value: string): string => pipe(value, Str.toLowerCase, Str.capitalize);
+export const titleCase = (value: string): string =>
+  pipe(value, String.toLowerCase, String.capitalize);
 
 // Every list endpoint returns this envelope around its items.
-export const Page = <Item extends S.Top>(item: Item) =>
-  S.Struct({
-    items: S.Array(item),
-    total: S.Number,
-    page: S.Number,
-    pageSize: S.Number,
+export const Page = <Item extends Schema.Top>(item: Item) =>
+  Schema.Struct({
+    items: Schema.Array(item),
+    total: Schema.Number,
+    page: Schema.Number,
+    pageSize: Schema.Number,
   });
 
 export const paginatedUrl = (path: string, page: number): string =>
@@ -62,7 +63,7 @@ export const paginatedUrl = (path: string, page: number): string =>
 // Failed* messages carry as their reason.
 export const getDecoded = <Decoded>(
   url: string,
-  schema: S.ConstraintDecoder<Decoded>,
+  schema: Schema.ConstraintDecoder<Decoded>,
 ): Effect.Effect<Decoded, Error> =>
   Effect.gen(function* () {
     const client = yield* HttpClient.HttpClient;
@@ -71,8 +72,10 @@ export const getDecoded = <Decoded>(
       return yield* Effect.fail(new Error(`Request failed with status ${response.status}.`));
     }
     const json = yield* response.json;
-    return yield* S.decodeUnknownEffect(schema)(json);
+    return yield* Schema.decodeUnknownEffect(schema)(json);
   }).pipe(
-    Effect.mapError((error) => (error instanceof Error ? error : new Error(String(error)))),
+    Effect.mapError((error) =>
+      error instanceof Error ? error : new Error(globalThis.String(error)),
+    ),
     Effect.provide(Http.layer),
   );

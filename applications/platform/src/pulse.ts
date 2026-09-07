@@ -1,4 +1,4 @@
-import { Array, Match as M, Option, Order, pipe } from 'effect';
+import { Array, Match as EffectMatch, Option, Order, pipe } from 'effect';
 
 import { clubStanding, clubVenue, competitionBySlug, leagueCompetitions } from './data';
 import type { Competition, Match } from './data';
@@ -116,9 +116,9 @@ const leagueMatch = (
 // and deriving it twice would be two chances to disagree.
 const leagueRound = (round: number, isPlayed: boolean): ReadonlyArray<Scheduled> =>
   leagueCompetitions.flatMap((competition) =>
-    M.value(competition.standings).pipe(
-      M.withReturnType<ReadonlyArray<Scheduled>>(),
-      M.tagsExhaustive({
+    EffectMatch.value(competition.standings).pipe(
+      EffectMatch.withReturnType<ReadonlyArray<Scheduled>>(),
+      EffectMatch.tagsExhaustive({
         TiesStandings: () => [],
         TableStandings: ({ league }) =>
           (leagueRounds(league)[round - 1] ?? []).map(([home, away]) =>

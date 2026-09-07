@@ -3,7 +3,7 @@
 // through that directory’s barrel); the shared engines (standings,
 // schedule, stat tiles, …) live alongside.
 
-import { Array, Match as M, Option } from 'effect';
+import { Array, Match, Option } from 'effect';
 import type { Document, Html, HtmlBuilder } from 'foldkit/html';
 
 import { headerView } from './components';
@@ -60,18 +60,18 @@ const screenView = (model: Model, h: HtmlBuilder<Message>): Html => {
   if (Option.isSome(club)) return ClubProfile.view(club.value, model, h);
   const competition = openCompetition(model);
   if (Option.isSome(competition)) return CompetitionProfile.view(competition.value, model, h);
-  return M.value(screenOf(model.route)).pipe(
-    M.withReturnType<Html>(),
+  return Match.value(screenOf(model.route)).pipe(
+    Match.withReturnType<Html>(),
     // `/` and `/her-game` are the same page. What it draws is the visitor's
     // sign-in state's to decide, not the route's.
-    M.when('Welcome', () => HerGame.view(model, h)),
-    M.when('HerGame', () => HerGame.view(model, h)),
-    M.when('Clubs', () => Clubs.view(model, h)),
-    M.when('Players', () => Players.view(model, h)),
-    M.when('Matches', () => Matches.view(model, h)),
-    M.when('Competitions', () => Competitions.view(model, h)),
-    M.when('Officials', () => Officials.view(model, h)),
-    M.exhaustive,
+    Match.when('Welcome', () => HerGame.view(model, h)),
+    Match.when('HerGame', () => HerGame.view(model, h)),
+    Match.when('Clubs', () => Clubs.view(model, h)),
+    Match.when('Players', () => Players.view(model, h)),
+    Match.when('Matches', () => Matches.view(model, h)),
+    Match.when('Competitions', () => Competitions.view(model, h)),
+    Match.when('Officials', () => Officials.view(model, h)),
+    Match.exhaustive,
   );
 };
 

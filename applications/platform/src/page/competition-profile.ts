@@ -1,5 +1,5 @@
 import { Button, Select } from '@foldkit/ui';
-import { Match as M, Option, Record } from 'effect';
+import { Match, Option, Record } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import domesticCupHeroPhoto from '../assets/competitions-hero/domestic-cup.jpg';
@@ -250,9 +250,9 @@ const heroSubtitleParts = (competition: Competition): ReadonlyArray<string> =>
     // have. Unreachable while every competition with hero art has a shape.
     onNone: () => [competition.stage],
     onSome: (shape) =>
-      M.value(competition.standings).pipe(
-        M.withReturnType<ReadonlyArray<string>>(),
-        M.tagsExhaustive({
+      Match.value(competition.standings).pipe(
+        Match.withReturnType<ReadonlyArray<string>>(),
+        Match.tagsExhaustive({
           TableStandings: ({ league }) => [
             `${leagueTeams(league).length} teams`,
             `${shape.phases.length} ${shape.phases.length === 1 ? 'phase' : 'phases'}`,
@@ -641,9 +641,9 @@ const standingsPanel = (
 };
 
 const competitionStandingsPanel = (competition: Competition, h: HtmlBuilder<Message>): Html =>
-  M.value(competition.standings).pipe(
-    M.withReturnType<Html>(),
-    M.tagsExhaustive({
+  Match.value(competition.standings).pipe(
+    Match.withReturnType<Html>(),
+    Match.tagsExhaustive({
       TableStandings: ({ league }) => standingsPanel(league, Option.none(), h),
       TiesStandings: ({ rows }) =>
         h.section(
@@ -725,9 +725,9 @@ export const matchesPanel = (
   model: Model,
   h: HtmlBuilder<Message>,
 ): Html =>
-  M.value(competition.standings).pipe(
-    M.withReturnType<Html>(),
-    M.tagsExhaustive({
+  Match.value(competition.standings).pipe(
+    Match.withReturnType<Html>(),
+    Match.tagsExhaustive({
       // Knockout competitions have no round-robin to page — nothing renders.
       TiesStandings: () => h.empty,
       TableStandings: ({ league }) => leagueMatchesPanel(competition, league, model, h),

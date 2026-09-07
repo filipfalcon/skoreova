@@ -1,4 +1,4 @@
-import { Schema as S } from 'effect';
+import { Schema } from 'effect';
 
 import { GATEWAY_BASE_URL } from './api';
 import type { Column } from './api';
@@ -6,15 +6,15 @@ import type { Column } from './api';
 // Mirrors GET /editions from the backend’s OpenAPI spec (fetched 2026-07-05).
 // An edition is one running (one season) of a competition — no name of its
 // own, just the date range and the competition it belongs to.
-export const EditionResponse = S.Struct({
-  id: S.String,
-  competitionId: S.String,
-  startsOn: S.String,
-  endsOn: S.String,
+export const EditionResponse = Schema.Struct({
+  id: Schema.String,
+  competitionId: Schema.String,
+  startsOn: Schema.String,
+  endsOn: Schema.String,
 });
 export type EditionResponse = typeof EditionResponse.Type;
 
-export const EditionsResponse = S.Array(EditionResponse);
+export const EditionsResponse = Schema.Array(EditionResponse);
 
 // Every edition across all competitions — the drawer resolves a competition’s
 // own editions from the loaded list, so nothing asks the endpoint to filter.

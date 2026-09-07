@@ -1,7 +1,7 @@
 // The studio data layer: section config + the pure helpers that read the
 // model’s rows, plus the chart data derivations.
 
-import { Array, Option, String as Str } from 'effect';
+import { Array, Option, String } from 'effect';
 import { DatePicker, Listbox } from '@foldkit/ui';
 import { AsyncData, Calendar } from 'foldkit';
 import * as FieldValidation from 'foldkit/fieldValidation';
@@ -19,7 +19,7 @@ import { type Entry, type Model, DrawerState } from './model';
 
 // The signed-in editor’s display name ('editor' when the email was blank).
 export const accountName = (model: Model): string =>
-  model.session._tag === 'SignedIn' && Str.isNonEmpty(model.session.email)
+  model.session._tag === 'SignedIn' && String.isNonEmpty(model.session.email)
     ? model.session.email
     : 'editor';
 

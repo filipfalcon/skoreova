@@ -1,7 +1,7 @@
 // Landing page subscriptions: smooth wheel scrolling (a model-gated,
 // no-emission DOM effect) and Escape-to-close for the menu overlay.
 
-import { Effect, Option, Schema as S, Stream } from 'effect';
+import { Effect, Option, Schema, Stream } from 'effect';
 import { Subscription } from 'foldkit';
 
 import type { Model } from './model';
@@ -83,7 +83,7 @@ const smoothWheelScroll: Stream.Stream<never> = Stream.callback<never>((_queue) 
 // only exists while something is dismissible; closing tears it down.
 export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
   escapeDismiss: entry(
-    { isMenuOpen: S.Boolean, hasMapClub: S.Boolean },
+    { isMenuOpen: Schema.Boolean, hasMapClub: Schema.Boolean },
     {
       modelToDependencies: (model) => ({
         isMenuOpen: model.isMenuOpen,
@@ -108,7 +108,7 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
   // stands down. Reduced motion comes from the Model (established and kept
   // fresh by the subscription below) — not from a private matchMedia read.
   smoothWheel: entry(
-    { isMenuOpen: S.Boolean, prefersReducedMotion: S.Boolean },
+    { isMenuOpen: Schema.Boolean, prefersReducedMotion: Schema.Boolean },
     {
       modelToDependencies: (model) => ({
         isMenuOpen: model.isMenuOpen,

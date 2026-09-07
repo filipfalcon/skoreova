@@ -1,7 +1,7 @@
 // The landing page commands: navigation, the scroll lock, and the
 // active-section probe.
 
-import { Array, Effect, Option, Schema as S, pipe } from 'effect';
+import { Array, Effect, Option, Schema, pipe } from 'effect';
 import { Command, Dom } from 'foldkit';
 import { load as loadUrl, pushUrl } from 'foldkit/navigation';
 
@@ -95,7 +95,7 @@ const animateScrollTo = (target: HTMLElement, reduceMotion: boolean): void => {
 // give-up keeps `#cookie-settings` — markup the banner owns, no element —
 // a scroll no-op, as it always was).
 export const Navigate = Command.define('Navigate', {
-  args: { url: S.String, reduceMotion: S.Boolean },
+  args: { url: Schema.String, reduceMotion: Schema.Boolean },
   messages: [Message.CompletedNavigate],
   execute: ({ url, reduceMotion }) =>
     pushUrl(url).pipe(
@@ -124,7 +124,7 @@ export const Navigate = Command.define('Navigate', {
 });
 
 export const Load = Command.define('Load', {
-  args: { href: S.String },
+  args: { href: Schema.String },
   messages: [Message.CompletedLoad],
   execute: ({ href }) => loadUrl(href).pipe(Effect.as(Message.CompletedLoad())),
 });
@@ -137,7 +137,7 @@ export const Load = Command.define('Load', {
 // position:fixed offset zeroing window.scrollY — so measurements taken while
 // the lock is up (Navigate’s fragment scroll, DetectActiveSection) read true.
 export const SetScrollLock = Command.define('SetScrollLock', {
-  args: { locked: S.Boolean },
+  args: { locked: Schema.Boolean },
   messages: [Message.CompletedSetScrollLock],
   execute: ({ locked }) =>
     (locked ? Dom.lockScroll : Dom.unlockScroll).pipe(Effect.as(Message.CompletedSetScrollLock())),

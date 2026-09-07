@@ -1,7 +1,7 @@
 // Platform subscriptions: the trending countdown and the OS reduced-motion
 // preference it defers to.
 
-import { Duration, Effect, Schedule, Schema as S, Stream } from 'effect';
+import { Duration, Effect, Schedule, Schema, Stream } from 'effect';
 import { Subscription } from 'foldkit';
 
 import type { Model } from './model';
@@ -39,10 +39,10 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
   // The countdown itself: one tick per cycle, only while the trending board is on screen and the reader is neither in it nor asking for reduced motion. Every dependency change tears the stream down and builds it fresh, so a cycle always starts at zero. The leading tile is a dependency for that reason alone: a swipe moves it, and the tick restarts from the swipe rather than firing part-way through a cycle the reader never saw begin.
   trendingCountdown: entry(
     {
-      isOnHome: S.Boolean,
-      isTrendingHeld: S.Boolean,
-      prefersReducedMotion: S.Boolean,
-      trendingIndex: S.Number,
+      isOnHome: Schema.Boolean,
+      isTrendingHeld: Schema.Boolean,
+      prefersReducedMotion: Schema.Boolean,
+      trendingIndex: Schema.Number,
     },
     {
       modelToDependencies: (model) => {
@@ -64,7 +64,7 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
   ),
   // The club profile's scroll-spy, alive only on a profile. Scroll events arrive per frame, so the stream is rate-limited two ways at once: a throttle passes at most ten reports a second while the reader scrolls, and a debounce passes the settled position once they stop, which the throttle alone could have dropped. Only changes reach the Model, so a long scroll inside one section costs nothing.
   clubScrollSpy: entry(
-    { isOnClub: S.Boolean },
+    { isOnClub: Schema.Boolean },
     {
       modelToDependencies: (model) => ({ isOnClub: routeClubSlug(model.route) !== '' }),
       dependenciesToStream: ({ isOnClub }) => {
