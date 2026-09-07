@@ -17,7 +17,7 @@ import {
   widgetCatalogModel,
 } from './main.fixtures';
 import { update, view } from './main';
-import { ObserveQuoteOverflow, ObserveTrendingScroll, ScrollMatchStripToNext } from './command';
+import { ObserveTrendingScroll, ScrollMatchStripToNext } from './command';
 import { Message } from './message';
 import { clubArchive, clubs, scorersFor, standingsFor } from './data';
 import { AppRoute, urlToAppRoute } from './route';
@@ -37,12 +37,8 @@ const acknowledgeMounts = [
   Scene.Mount.resolve(ObserveTrendingScroll, Message.ScrolledTrending({ index: 0 })),
 ];
 
-// Every club profile scene renders the commentary, whose overflow measurement is a Mount, and the match strip, whose opening scroll is another; Scene requires both acknowledged. "Not overflowing" mirrors the boot Model — the real measuring needs a browser.
+// Every club profile scene renders the match strip, whose opening scroll is a Mount; Scene requires it acknowledged.
 const acknowledgeQuote = [
-  Scene.Mount.resolve(
-    ObserveQuoteOverflow,
-    Message.MeasuredQuoteOverflow({ isOverflowing: false }),
-  ),
   Scene.Mount.resolve(ScrollMatchStripToNext, Message.CompletedMatchStripScroll()),
 ];
 

@@ -5,7 +5,6 @@ import banikHeroPhoto from '../assets/clubs-hero/banik-ostrava.jpg';
 import spartaHeroPhoto from '../assets/clubs-hero/sparta-praha.webp';
 import commentaryAvatar from '../assets/commentary-avatar.png';
 import { clubMatchStrip, clubMatchesIndex } from '../club-matches';
-import { ObserveQuoteOverflow } from '../command';
 import {
   SOCIAL_LABELS,
   SOCIAL_NETWORKS,
@@ -19,7 +18,14 @@ import {
   timesCount,
 } from '../components';
 import type { ClubSectionEntry } from '../components';
-import { clubAllTimeStats, clubArchive, clubCupRun, standingsFor, scorersFor } from '../data';
+import {
+  clubAllTimeStats,
+  clubArchive,
+  clubCupRun,
+  competitions,
+  standingsFor,
+  scorersFor,
+} from '../data';
 import { MATCHDAYS_PLAYED, leagueRoundCount } from '../schedule';
 import { Button } from '@foldkit/ui';
 import type { AllTimeStats, ArchiveSeason, Club, CupTie, Scorer, StandingsRow } from '../data';
@@ -41,16 +47,13 @@ import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttribute
 import { styles } from '../styles/club-profile';
 import { shared } from '../styles/shared';
 
-// The commentary's key in `expandedClubSections`.
-const QUOTE_ANCHOR = 'commentary';
-
 // The per-club statement block — hand-written for the marquee clubs, a
 // season-record fallback for everyone else (see this module’s `view`).
 const clubHighlights: Record<string, { readonly kicker: string; readonly statement: string }> = {
   'sparta-praha': {
     kicker: 'Reigning champions',
     statement:
-      'Our most successful club: a Europa Cup semifinal first, then the domestic double to close the season.',
+      'Our most successful club and reigning champion stormed into the Europa Cup semifinals first, then closed out the season with the domestic double in hand.',
   },
   'slavia-praha': {
     kicker: 'The eternal rivals',
@@ -666,15 +669,16 @@ const clubLinksRow = (target: Club, h: HtmlBuilder<Message>): ReadonlyArray<Html
 export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html => {
   const heroArt = clubHeroPhotos[target.slug];
   const honors = clubHonors[target.slug] ?? [];
+  // The badge is never empty: honours when the club has them, otherwise its competition and the current season.
+  const currentSeason =
+    competitions
+      .find((competition) => competition.name === target.league)
+      ?.editions.find((edition) => edition.isCurrent)?.label ?? '';
   const allTime = clubAllTimeStats(target);
   const highlight = clubHighlights[target.slug] ?? {
     kicker: 'This season',
-    // Sized for two or three lines of the quote box at 390px.
     statement: `${target.won} wins, ${target.drawn} draws and ${target.lost} defeats in ${target.won + target.drawn + target.lost} games this season — the numbers tell it straight.`,
   };
-  // The statement sits in a four-line box unless opened; the control to open it shows only once the mount has measured that the box clips something, and stays while open so it can be folded again.
-  const isQuoteOpen = model.expandedClubSections.includes(QUOTE_ANCHOR);
-  const hasQuoteControl = isQuoteOpen || model.isQuoteOverflowing;
   // TWO BANDS, the landing page’s rhythm (user call): the profile opens on
   // a full-bleed DARK act — artwork, crest, name, honors, commentary — and
   // the black ENDS there. Everything from the calendar down is the data
@@ -714,6 +718,17 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
                 ...getStyleXAttributes(h, styles.heroArtImage),
                 h.Style({ 'object-position': heroArt.focus, 'transform-origin': heroArt.focus }),
               ]),
+          ...(heroArt === undefined
+            ? [
+                h.div(
+                  [
+                    ...getStyleXAttributes(h, styles.heroWashBand),
+                    h.Style({ '--club-color': target.color ?? 'var(--color-pink)' }),
+                  ],
+                  [],
+                ),
+              ]
+            : []),
           h.div([...getStyleXAttributes(h, styles.heroArtFade)], []),
           h.div([...getStyleXAttributes(h, styles.heroArtTopFade)], []),
           backLink({ label: 'All clubs', href: clubsRouter() }, h, styles.backLinkOnArt),
@@ -737,11 +752,22 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
               // exact grammar: a push, not a crossfade. All the lines stack
               // in a single grid cell, so the chip’s width is the WIDEST of
               // them and never jumps as the text changes.
-              // THE HONOURS SLOT — one fixed height for every club, empty for a club without honours, so the quote below sits at the same y on every profile.
+              // THE HONOURS SLOT — one fixed height for every club, never empty: the ticker, or the competition-and-season chip.
               h.div(
                 [...getStyleXAttributes(h, styles.honorSlot)],
                 Array.isReadonlyArrayEmpty(honors)
-                  ? []
+                  ? [
+                      // The static chip: the same box as the ticker, one line, no roll.
+                      h.ul(
+                        [...getStyleXAttributes(h, shared.display, styles.honorRoll)],
+                        [
+                          h.li(
+                            [...getStyleXAttributes(h, styles.honorLine)],
+                            [`${target.league} · ${currentSeason}`],
+                          ),
+                        ],
+                      ),
+                    ]
                   : [
                       h.ul(
                         [
@@ -764,107 +790,62 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
                           ),
                         ),
                       ),
-                      // Reduced motion: one non-wrapping row of chips that scrolls sideways, so the slot keeps its height whatever the count.
-                      h.ul(
-                        [
-                          ...getStyleXAttributesWith(
-                            h,
-                            'honor-static no-scrollbar',
-                            styles.honorStatic,
-                          ),
-                        ],
-                        honors.map((honor) =>
-                          h.li(
-                            [...getStyleXAttributes(h, shared.display, styles.honorChip)],
-                            honor.count === undefined
-                              ? [honor.label]
-                              : [...timesCount(honor.count, h), honor.label],
-                          ),
-                        ),
-                      ),
                     ],
               ),
             ],
           ),
-          // SKÓREOVÁ COMMENTARY — the editorial block under the honours slot, one fixed template for every club: the opener rule, the byline row, the statement in its four-line box, and the reserved row for the fold control. The portrait is a placeholder until her photo lands.
+          // SKÓREOVÁ COMMENTARY — the editorial pull-quote under the honours slot: the pink rule beside a big opening mark and the whole statement, then the signature row on the rule's edge. The portrait is a placeholder until her photo lands.
           h.figure(
             [...getStyleXAttributes(h, styles.commentary)],
             [
-              h.div([...getStyleXAttributes(h, styles.pinkRule)], []),
-              // The byline: the portrait, then the masthead over its label, one fixed row.
-              h.figcaption(
-                [...getStyleXAttributes(h, styles.byline)],
+              h.div(
+                [...getStyleXAttributes(h, styles.commentaryColumn)],
                 [
-                  h.span(
-                    [...getStyleXAttributes(h, styles.portrait)],
+                  h.blockquote(
+                    [...getStyleXAttributes(h, styles.statement)],
                     [
-                      h.img([
-                        h.Src(commentaryAvatar),
-                        h.Alt('Skóreová reporter'),
-                        h.Loading('lazy'),
-                        ...getStyleXAttributes(h, styles.portraitImage),
-                      ]),
-                    ],
-                  ),
-                  h.span(
-                    [...getStyleXAttributes(h, styles.bylineText)],
-                    [
-                      h.span(
-                        [...getStyleXAttributes(h, shared.display, styles.bylineName)],
-                        ['Skóreová'],
-                      ),
-                      h.span([...getStyleXAttributes(h, styles.bylineLabel)], ['Commentary']),
-                    ],
-                  ),
-                ],
-              ),
-              // The statement in its four-line box on the band's padding, the opening mark inline before its first word as part of the first line, a thin space between them.
-              h.blockquote(
-                [...getStyleXAttributes(h, styles.statement, isQuoteOpen && styles.statementOpen)],
-                [
-                  h.span(
-                    [
-                      h.OnMount(ObserveQuoteOverflow()),
-                      ...getStyleXAttributes(
-                        h,
-                        styles.statementText,
-                        !isQuoteOpen && styles.quoteFolded,
-                        !isQuoteOpen && model.isQuoteOverflowing && styles.quoteFoldedShort,
-                      ),
-                    ],
-                    [
-                      h.span(
+                      h.div(
+                        [...getStyleXAttributes(h, styles.quoteInner)],
                         [
-                          ...getStyleXAttributes(h, shared.display, styles.statementMark),
-                          h.AriaHidden(true),
+                          h.span(
+                            [
+                              ...getStyleXAttributes(h, shared.display, styles.quoteMark),
+                              h.AriaHidden(true),
+                            ],
+                            ['“'],
+                          ),
+                          h.span(
+                            [...getStyleXAttributes(h, styles.statementText)],
+                            [highlight.statement],
+                          ),
                         ],
-                        ['“'],
                       ),
-                      `\u2009${highlight.statement}`,
                     ],
                   ),
-                  // The fold control lives in the box's fourth line, so the block ends at the same y whether or not anything is clipped.
-                  h.div(
-                    [...getStyleXAttributes(h, styles.moreRow)],
+                  // The signature: the portrait on the rule's left edge and the lockup beside it — Skóreová signing the piece.
+                  h.figcaption(
+                    [...getStyleXAttributes(h, styles.byline)],
                     [
-                      Button.view(
-                        {
-                          onClick: Message.ToggledClubSection({ anchor: QUOTE_ANCHOR }),
-                          toView: ({ button }) =>
-                            h.button(
-                              [
-                                ...button,
-                                h.AriaExpanded(isQuoteOpen),
-                                ...getStyleXAttributes(
-                                  h,
-                                  styles.quoteMore,
-                                  !hasQuoteControl && styles.quoteMoreHidden,
-                                ),
-                              ],
-                              [isQuoteOpen ? 'Less' : 'More'],
-                            ),
-                        },
-                        h,
+                      h.span(
+                        [...getStyleXAttributes(h, styles.portrait)],
+                        [
+                          h.img([
+                            h.Src(commentaryAvatar),
+                            h.Alt('Skóreová reporter'),
+                            h.Loading('lazy'),
+                            ...getStyleXAttributes(h, styles.portraitImage),
+                          ]),
+                        ],
+                      ),
+                      h.span(
+                        [...getStyleXAttributes(h, styles.bylineLockup)],
+                        [
+                          h.span(
+                            [...getStyleXAttributes(h, shared.display, styles.bylineMasthead)],
+                            ['Skóreová'],
+                          ),
+                          h.span([...getStyleXAttributes(h, styles.bylineLabel)], ['Commentary']),
+                        ],
                       ),
                     ],
                   ),

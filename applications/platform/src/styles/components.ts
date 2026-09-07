@@ -198,9 +198,9 @@ export const styles = stylex.create({
       [XS]: '10px',
       [MD]: null,
     },
+    // Tracked at 0.08em so the five labels clear the rail's right padding at 390px.
     letterSpacing: {
-      default: '0.12em',
-      [XS]: '0.2em',
+      default: '0.08em',
       [MD]: null,
     },
     lineHeight: {
@@ -261,6 +261,9 @@ export const styles = stylex.create({
     paddingInline: '0.6rem',
     paddingBlock: '0.6rem',
     backgroundColor: 'color-mix(in srgb, var(--color-ink) 85%, transparent)',
+    // The hairline keeps the box a box over the top fade too — on a dark photo the 85% ink fill alone vanishes into it and the link read as bare text.
+    borderWidth: 1,
+    borderColor: 'color-mix(in srgb, var(--color-paper) 20%, transparent)',
     whiteSpace: 'nowrap',
     fontSize: '10px',
     lineHeight: '1rem',

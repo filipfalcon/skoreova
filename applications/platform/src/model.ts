@@ -105,7 +105,6 @@ export const Model = S.Struct({
   // The club-profile section under the reader's eye, by anchor, kept by the scroll-spy subscription so the jump row can mark it. None while the hero is in view. Reset like the open sections: cleared on leaving the page, kept across a hash jump within it.
   activeClubSection: S.Option(S.String),
   // Whether the folded commentary hides lines, as its own mount measures it. False until measured, and from md up, where nothing folds; the More control is drawn only while this is true.
-  isQuoteOverflowing: S.Boolean,
   // Which competition the profile's COMPETITIONS section shows. The league is every club's default and what a fresh profile opens on; kept across a hash jump within the profile.
   competitionTab: CompetitionKind,
   // The competition picker's own state, on the scope picker's terms: the committed tab stays in `competitionTab` above.

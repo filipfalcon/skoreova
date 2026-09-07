@@ -27,8 +27,8 @@ export const styles = stylex.create({
       [MD]: '2.5rem',
     },
     paddingTop: '2rem',
-    // The band closes one `lg` under the sign-off at every width.
-    paddingBottom: spacing.lg,
+    // The band closes 16px under the byline, so with the jump row's own `lg` the next section starts 40px after it.
+    paddingBottom: '1rem',
   },
   // The hero artwork wrapper — cancels the band's padding so the photo
   // runs edge to edge; the parallax drift is the club-hero-art contract.
@@ -61,6 +61,14 @@ export const styles = stylex.create({
     transform: 'scale(2.4)',
     filter: 'blur(28px) saturate(1.2)',
     opacity: 0.22,
+  },
+  // The surface under the crest on a club without a photo: a faint band of the club's colour along the art's bottom edge — the y where a photo ends on the other clubs.
+  heroWashBand: {
+    position: 'absolute',
+    insetInline: 0,
+    bottom: 0,
+    height: '3rem',
+    backgroundColor: 'color-mix(in srgb, var(--club-color) 18%, transparent)',
   },
   heroArtImage: {
     position: 'absolute',
@@ -139,12 +147,20 @@ export const styles = stylex.create({
       default: spacing.sm,
       [MD]: '2rem',
     },
-    // The phone size tracks the width the band leaves after its padding, sized so the widest club word (LOKOMOTIVA, 4.53em in Anton at this tracking) still fits on one line at every width down to 320px. Capped at 9rem from md up, where every name fits.
-    fontSize: 'clamp(3.75rem, 21vw - 0.5rem, 9rem)',
+    // One constant per breakpoint, no fit-to-length and no viewport clamp: the 390px value (4.625rem) on phones, 9rem from md up. The box is the commentary column's measure, centred. LOKOMOTIVA (334.8px at this size) overflows the column below 355px — reported, not scaled.
+    fontSize: {
+      default: '4.625rem',
+      [MD]: '9rem',
+    },
     lineHeight: 1.02,
+    marginInline: 'auto',
+    maxWidth: {
+      default: '30rem',
+      [MD]: '34rem',
+    },
     color: tokens.paper,
   },
-  // The honours slot: one chip's height plus its margin, reserved for every club, empty for one without honours.
+  // The honours slot: one chip's height plus its margin, the same for every club; a club without honours shows its competition and season in the same chip.
   honorSlot: {
     marginTop: {
       default: '1.5rem',
@@ -185,64 +201,92 @@ export const styles = stylex.create({
     textAlign: 'center',
     whiteSpace: 'nowrap',
   },
-  // The reduced-motion row of chips. NO display here: the honor-static
-  // contract in styles.css owns it (none at rest, flex under reduced
-  // motion), and a compiled display would fight that swap.
-  honorStatic: {
-    marginInline: 'auto',
-    width: 'fit-content',
-    maxWidth: '100%',
-    flexWrap: 'nowrap',
-    overflowX: 'auto',
-    alignItems: 'center',
-    gap: {
-      default: '0.5rem',
-      [MD]: '0.75rem',
-    },
-  },
-  honorChip: {
-    flexShrink: 0,
-    whiteSpace: 'nowrap',
-    backgroundColor: tokens.paper,
-    paddingInline: {
-      default: '0.75rem',
-      [MD]: '0.875rem',
-    },
-    paddingBlock: {
-      default: '0.375rem',
-      [MD]: '0.5rem',
-    },
-    fontSize: {
-      default: '1.125rem',
-      [MD]: '1.25rem',
-    },
-    lineHeight: '1.75rem',
-    letterSpacing: '0.12em',
-    color: tokens.ink,
-  },
-  // THE COMMENTARY BLOCK — one template for every club, top to bottom: the opener rule one `lg` under the honours slot, the byline row `sm` under it, the statement `md` under that in a four-line box, then the reserved fold-control row. Every height here is fixed, so the band ends at the same y on every profile.
+  // THE COMMENTARY BLOCK — the quote `lg` under the honours slot, the whole statement always shown, then the signature row under its last line.
   commentary: {
+    marginInline: 'auto',
     marginTop: spacing.lg,
-    marginInline: 0,
-    maxWidth: '40rem',
+    maxWidth: '42rem',
   },
-  // The opener rule — the History tiles' tick, one element shared by both.
+  // The text's own measure, centered inside the figure.
+  commentaryColumn: {
+    marginInline: 'auto',
+    width: '100%',
+    maxWidth: {
+      default: '30rem',
+      [MD]: '34rem',
+    },
+  },
+  // The opener rule the History tiles use.
   pinkRule: {
     height: '3px',
     width: '2.5rem',
     backgroundColor: tokens.pink,
   },
+  statement: {
+    marginTop: 0,
+    marginBottom: 0,
+    fontSize: '1.25rem',
+    lineHeight: 1.625,
+    fontWeight: 500,
+    textWrap: 'pretty',
+    color: 'color-mix(in srgb, var(--color-paper) 90%, transparent)',
+  },
+  // The pink rule and the padding ride the inner element, so the rule runs from the mark to the last line — and 8px past it, so it ends 12px above the avatar that continues the same vertical gesture.
+  quoteInner: {
+    borderLeftWidth: 2,
+    borderColor: tokens.pink,
+    paddingLeft: '1.25rem',
+    paddingBottom: '8px',
+    textAlign: 'left',
+  },
+  // The mark on its own line: the 0.3 leading collapses its box to 1.8rem while the glyph paints above the baseline; the negative margin pulls the text up under its ink, leaving the line 1.05rem tall. The top padding keeps the glyph's ink 12px clear of the honours chip above (measured: the ink starts 4px into the padding).
+  quoteMark: {
+    paddingTop: '16px',
+    marginBottom: '-0.75rem',
+    marginLeft: '-0.25rem',
+    display: 'block',
+    fontSize: '6rem',
+    lineHeight: 0.3,
+    color: tokens.pink,
+    userSelect: 'none',
+  },
+  statementText: {
+    display: 'block',
+  },
+  // The signature row, 20px under the quote's last line (12px under the rule's end) and on the rule's own left edge: the 56px portrait, then the lockup centred to it.
   byline: {
-    marginTop: spacing.sm,
+    marginTop: '12px',
     display: 'flex',
     alignItems: 'center',
-    gap: spacing.sm,
-    height: '4rem',
+    gap: '14px',
   },
+  bylineLockup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+  },
+  bylineMasthead: {
+    display: 'block',
+    fontSize: '24px',
+    lineHeight: 1,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    whiteSpace: 'nowrap',
+    color: tokens.pink,
+  },
+  bylineLabel: {
+    display: 'block',
+    fontSize: '12px',
+    lineHeight: 1,
+    letterSpacing: '0.2em',
+    color: 'color-mix(in srgb, var(--color-paper) 60%, transparent)',
+    textTransform: 'uppercase',
+  },
+  // The photo fills the 56px circle edge to edge, with the 2px pink ring directly on it.
   portrait: {
     display: 'flex',
-    height: '4rem',
-    width: '4rem',
+    height: '56px',
+    width: '56px',
     flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
@@ -250,96 +294,13 @@ export const styles = stylex.create({
     borderRadius: '9999px',
     borderWidth: 2,
     borderColor: tokens.pink,
-    backgroundColor: tokens.panel,
+    backgroundColor: tokens.ink,
   },
   portraitImage: {
     height: '100%',
     width: '100%',
+    borderRadius: '9999px',
     objectFit: 'cover',
-  },
-  bylineText: {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
-  bylineName: {
-    fontSize: '1.625rem',
-    lineHeight: 1,
-    letterSpacing: '0.12em',
-    color: tokens.pink,
-  },
-  bylineLabel: {
-    marginTop: '0.25rem',
-    fontSize: '12px',
-    lineHeight: '1.125rem',
-    letterSpacing: '0.2em',
-    textTransform: 'uppercase',
-    color: tokens.paper,
-  },
-  // The statement on the band's padding, the same left edge as the portrait: a box of exactly four lines, which holds either four lines of text, or three lines and the fold control in the fourth line's space. The two never coexist, so the control needs no row of its own.
-  statement: {
-    position: 'relative',
-    marginTop: spacing.md,
-    marginBottom: 0,
-    height: 'calc(4 * 1.625em)',
-    fontSize: '1.25rem',
-    lineHeight: 1.625,
-    fontWeight: 500,
-    textWrap: 'pretty',
-    color: tokens.paper,
-  },
-  // The opening mark, inline before the first word at twice the text size. Zero leading so the glyph does not push the first line open, and lowered by 0.4em of its own size: a quotation mark's ink sits at cap height, which at this size is above the first line's top edge, where the four-line box clips it.
-  statementMark: {
-    position: 'relative',
-    top: '0.4em',
-    fontSize: '2.5rem',
-    lineHeight: 0,
-    color: tokens.pink,
-    userSelect: 'none',
-  },
-  statementText: {
-    display: 'block',
-  },
-  // A four-line box at every width: the statement is clipped to it and a short one leaves its lines empty, so the band ends at the same y for every club. Whether the box clips anything is measured off the element (see ObserveQuoteOverflow).
-  quoteFolded: {
-    display: '-webkit-box',
-    WebkitBoxOrient: 'vertical',
-    WebkitLineClamp: 4,
-    overflow: 'hidden',
-  },
-  // When the box clips, the text yields its fourth line to the control.
-  quoteFoldedShort: {
-    WebkitLineClamp: 3,
-  },
-  // Open, the box grows to the statement and keeps one line under it for the control to fold it back.
-  statementOpen: {
-    height: 'auto',
-    paddingBottom: '1.625em',
-  },
-  // The fold control's line: the box's fourth line, at its left; hidden rather than removed when nothing is clipped.
-  moreRow: {
-    position: 'absolute',
-    insetInline: 0,
-    bottom: 0,
-    display: 'flex',
-    alignItems: 'center',
-    height: '1.625em',
-  },
-  quoteMore: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    height: '1.5rem',
-    cursor: 'pointer',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
-    textTransform: 'uppercase',
-    color: {
-      default: 'color-mix(in srgb, var(--color-paper) 70%, transparent)',
-      ':hover': tokens.paper,
-    },
-  },
-  quoteMoreHidden: {
-    visibility: 'hidden',
   },
   grainOverlay: {
     pointerEvents: 'none',

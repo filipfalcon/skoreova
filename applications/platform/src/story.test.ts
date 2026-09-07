@@ -533,18 +533,6 @@ test('the jump row marks the section in view and follows it', () => {
   );
 });
 
-test('the commentary measurement is a plain field write', () => {
-  Story.story(
-    update,
-    Story.given(clubProfileModel),
-    Story.message(Message.MeasuredQuoteOverflow({ isOverflowing: true })),
-    Story.model((model) => {
-      expect(model.isQuoteOverflowing).toBe(true);
-    }),
-    Story.Command.expectNone(),
-  );
-});
-
 // THE CLUB FILTER on /matches is a query on the one matches route, so the plain screen and the narrowed one are the same route with and without a club.
 test('the matches route carries an optional club', () => {
   Story.story(

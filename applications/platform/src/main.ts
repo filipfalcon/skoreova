@@ -75,7 +75,6 @@ const initialModel: Model = {
   pinned: [],
   expandedClubSections: [],
   activeClubSection: Option.none(),
-  isQuoteOverflowing: false,
   competitionTab: 'League',
   competitionGroup: RadioGroup.init({ id: COMPETITION_GROUP_ID }),
   scorerScope: 'All',
@@ -249,9 +248,6 @@ export const update = (model: Model, message: Message) =>
     }),
     CompletedRevealJumpChip: () => ({ model }),
     CompletedMatchStripScroll: () => ({ model }),
-    MeasuredQuoteOverflow: ({ isOverflowing }) => ({
-      model: evo(model, { isQuoteOverflowing: () => isOverflowing }),
-    }),
     LoadedPins: ({ ids }) => ({ model: evo(model, { pinned: () => ids }) }),
     ToggledPin: ({ id }) => {
       const pinned = toggleEntry(model.pinned, id);

@@ -25,7 +25,6 @@ export const welcomeModel = Model.make({
   scorerScope: 'All',
   expandedClubSections: [],
   activeClubSection: Option.none(),
-  isQuoteOverflowing: false,
   competitionTab: 'League',
   competitionGroup: RadioGroup.init({ id: COMPETITION_GROUP_ID }),
   scopeGroup: RadioGroup.init({ id: SCOPE_GROUP_ID }),

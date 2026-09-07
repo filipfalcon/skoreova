@@ -1,4 +1,4 @@
-import { Effect, Option, Queue, Schema as S, Stream } from 'effect';
+import { Effect, Option, Schema as S, Stream } from 'effect';
 import { Command, Mount } from 'foldkit';
 import { load, pushUrl } from 'foldkit/navigation';
 
@@ -176,38 +176,6 @@ export const RevealJumpChip = Command.define('RevealJumpChip', {
       }
       return Message.CompletedRevealJumpChip();
     }),
-});
-
-// Reports whether the commentary's statement needs more than its four-line box: the text's full height against the box's height (its parent's), now and again whenever the text's size changes — the clamp coming on or off, a rotation, a font arriving. Against the box rather than the text's own clipped height, so the answer does not change when the text yields a line to the fold control. Measured off the element because no character count can know how many lines a statement takes at a given width.
-export const ObserveQuoteOverflow = Mount.defineStream('ObserveQuoteOverflow', {
-  messages: [Message.MeasuredQuoteOverflow],
-  execute: ({ element }) =>
-    element instanceof HTMLElement
-      ? Stream.callback<typeof Message.MeasuredQuoteOverflow.Type>((queue) =>
-          Effect.gen(function* () {
-            yield* Effect.acquireRelease(
-              Effect.sync(() => {
-                const measure = (): void => {
-                  Queue.offerUnsafe(
-                    queue,
-                    Message.MeasuredQuoteOverflow({
-                      isOverflowing:
-                        element.scrollHeight >
-                        (element.parentElement?.clientHeight ?? element.clientHeight) + 1,
-                    }),
-                  );
-                };
-                const observer = new ResizeObserver(measure);
-                observer.observe(element);
-                measure();
-                return observer;
-              }),
-              (observer) => Effect.sync(() => observer.disconnect()),
-            );
-            return yield* Effect.never;
-          }),
-        )
-      : Stream.empty,
 });
 
 /**

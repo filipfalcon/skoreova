@@ -63,6 +63,8 @@ export const Club = S.Struct({
   // placeholder until the real data lands.
   leagueTitles: S.Number,
   cupTitles: S.Number,
+  // The club's primary colour as a CSS colour, where known — the hero's fallback surface tints with it. Absent until real data lands; the UI falls back to pink.
+  color: S.optionalKey(S.String),
   // The club's web presence, where known. Mock for now: the accounts the marquee clubs run in public, absent for the rest until real data lands.
   links: S.optionalKey(ClubLinks),
 });
