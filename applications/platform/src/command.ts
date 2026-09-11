@@ -1,4 +1,4 @@
-import { Effect, Option, Schema, Stream } from 'effect';
+import { Effect, Option, Queue, Schema, Stream } from 'effect';
 import { Command, Mount } from 'foldkit';
 import { load, pushUrl } from 'foldkit/navigation';
 
@@ -176,6 +176,31 @@ export const RevealJumpChip = Command.define('RevealJumpChip', {
       }
       return Message.CompletedRevealJumpChip();
     }),
+});
+
+// Reports whether the folded commentary hides any of its lines, now and on every resize of the statement — a font arriving late, a rotation. Measured against the fold's own height (the line count times the computed leading) rather than the element's, so the answer is the same whether the statement is folded or open: open, the element is as tall as its text and a box comparison would say nothing is hidden, and the Read less control would vanish under the reader.
+export const ObserveCommentaryOverflow = Mount.defineStream('ObserveCommentaryOverflow', {
+  args: { lines: Schema.Number },
+  messages: [Message.MeasuredCommentary],
+  execute: ({ element, lines }) =>
+    Stream.callback<typeof Message.MeasuredCommentary.Type>((queue) =>
+      Effect.gen(function* () {
+        yield* Effect.acquireRelease(
+          Effect.sync(() => {
+            const measure = (): void => {
+              const leading = parseFloat(getComputedStyle(element).lineHeight);
+              const isClipped = element.scrollHeight > lines * leading + 1;
+              Queue.offerUnsafe(queue, Message.MeasuredCommentary({ isClipped }));
+            };
+            const observer = new ResizeObserver(measure);
+            observer.observe(element);
+            return observer;
+          }),
+          (observer) => Effect.sync(() => observer.disconnect()),
+        );
+        return yield* Effect.never;
+      }),
+    ),
 });
 
 /**

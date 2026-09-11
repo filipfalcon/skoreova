@@ -1,18 +1,29 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { spacing, tokens } from '../tokens.stylex';
+import { spacing, tokens, type } from '../tokens.stylex';
 
 // Styles for the club profile (page/club-profile.ts): the full-bleed dark
-// editorial band — hero artwork, crest and name, honors, commentary — and
-// the paper data act's cup run, scorer boards, history grid and follow call.
+// editorial band — the hero's fixed template of photo slot, crest disc, name
+// box, honors badge and commentary — and the paper data act's cup run,
+// scorer boards, history grid and follow call.
 
 const SM = '@media (min-width: 640px)';
 const MD = '@media (min-width: 768px)';
 const LG = '@media (min-width: 1024px)';
+const REDUCE = '@media (prefers-reduced-motion: reduce)';
+// The width from which a history card holds its full detail line (see historyDetail).
+const CARD_FITS_DETAIL = '@media (min-width: 375px)';
+
+// The honors badge's crossfade: the incoming honor fades in over the paper.
+const honorFade = stylex.keyframes({
+  from: { opacity: 0 },
+  to: { opacity: 1 },
+});
 
 export const styles = stylex.create({
   // The dark act — flows straight out of the header chrome, full-bleed via
-  // the 50%-50vw margin trick.
+  // the 50%-50vw margin trick. Closes `lg` under the commentary's byline —
+  // the last fixed gap of the template before the paper act.
   darkBand: {
     position: 'relative',
     marginTop: {
@@ -27,11 +38,13 @@ export const styles = stylex.create({
       [MD]: '2.5rem',
     },
     paddingTop: '2rem',
-    // The band closes 16px under the byline, so with the jump row's own `lg` the next section starts 40px after it.
-    paddingBottom: '1rem',
+    paddingBottom: spacing.lg,
   },
-  // The hero artwork wrapper — cancels the band's padding so the photo
-  // runs edge to edge; the parallax drift is the club-hero-art contract.
+  // THE PHOTO SLOT — square on a phone, whatever the photo: 390px tall at
+  // 390 wide, 360 at 360. One height for every club on a given device, so
+  // the crest, the name and the paper act land on the same y for all of
+  // them. The wrapper cancels the band's padding so the photo runs edge to
+  // edge; the parallax drift is the club-hero-art contract.
   heroArt: {
     position: 'relative',
     marginInline: {
@@ -39,68 +52,66 @@ export const styles = stylex.create({
       [MD]: '-2.5rem',
     },
     marginTop: '-2rem',
-    // Phones size the band by the viewport: well under half a screen, so the name is on the first paint, never under 18rem and never past 24rem. The photo is the reward for having one; clubs without art take the plain crest-on-ink hero instead and do not imitate this height.
+    aspectRatio: {
+      default: '1 / 1',
+      [MD]: 'auto',
+    },
     height: {
-      default: 'clamp(18rem, 40vh, 24rem)',
+      default: 'auto',
       [MD]: '34rem',
     },
     overflow: 'hidden',
+    // Its own stacking context: the wash's blur composites against this
+    // slot alone and can never sample the page under it.
+    isolation: 'isolate',
     willChange: 'transform',
   },
-  // Phones zoom the artwork a little. The band is taller than it is wide on a phone, so cover already crops a 16:9 photo to under half its width around the focus point; the zoom that a wide 22rem band needed to keep the players from shrinking to specks (1.45) is now mostly redundant, and a touch remains for the squarer photos.
-  // The crest wash for a club without a photo: the lifted ink behind, the crest itself blown up, blurred and faint over it.
+  // A club without a photo keeps the slot at its full height on the panel
+  // tone, with its own crest blown up, blurred and faint behind the real one.
   heroArtWashed: {
-    backgroundColor: tokens.inkLift,
+    backgroundColor: tokens.panel,
   },
+  // The crest asset itself, blown up past the slot on every side and blurred
+  // wide, so its colour reaches all four edges of the square rather than
+  // pooling in its middle; the same fade to ink as a photo runs over it.
+  // A plain img with a filter, never a backdrop-filter: a backdrop would
+  // blur whatever the page put behind the slot. Kept to 150% of the slot
+  // and on its own layer, since a much larger blurred layer is where a
+  // phone's compositor starts tiling in pieces of other layers.
   heroWashImage: {
     position: 'absolute',
-    inset: 0,
-    height: '100%',
-    width: '100%',
+    top: '-25%',
+    left: '-25%',
+    height: '150%',
+    width: '150%',
+    // The reset caps every img at its container; this one has to run past it.
+    maxWidth: 'none',
     objectFit: 'contain',
-    transform: 'scale(2.4)',
-    filter: 'blur(28px) saturate(1.2)',
-    opacity: 0.22,
+    // Saturated before the opacity thins it: at 40% over ink an unsaturated
+    // blur read as brown or olive for the crests that lean red or green.
+    filter: 'blur(120px) saturate(1.6)',
+    opacity: 0.4,
+    transform: 'translateZ(0)',
   },
-  // The surface under the crest on a club without a photo: a faint band of the club's colour along the art's bottom edge — the y where a photo ends on the other clubs.
-  heroWashBand: {
-    position: 'absolute',
-    insetInline: 0,
-    bottom: 0,
-    height: '3rem',
-    backgroundColor: 'color-mix(in srgb, var(--club-color) 18%, transparent)',
-  },
+  // The photo fills the square; where its faces are is the club's own
+  // focal point, written inline as object-position.
   heroArtImage: {
     position: 'absolute',
     inset: 0,
     height: '100%',
     width: '100%',
-    transform: {
-      default: 'scale(1.2)',
-      [MD]: 'scale(1)',
-    },
     objectFit: 'cover',
   },
-  // A short ink fade at the band's top keeps the back link legible over any photo.
-  heroArtTopFade: {
-    position: 'absolute',
-    insetInline: 0,
-    top: 0,
-    height: '4rem',
-    backgroundImage: 'linear-gradient(to bottom, var(--color-ink), transparent)',
-  },
+  // The fade into the band: clear for the top 55% of the slot, then ink by
+  // the bottom edge, so the crest disc sits on ink whatever the photo.
   heroArtFade: {
     position: 'absolute',
-    insetInline: 0,
-    bottom: 0,
-    height: {
-      default: '8rem',
-      [MD]: '12rem',
-    },
-    backgroundImage:
-      'linear-gradient(to top, var(--color-ink), color-mix(in srgb, var(--color-ink) 60%, transparent), transparent)',
+    inset: 0,
+    backgroundImage: 'linear-gradient(to bottom, transparent 55%, var(--color-ink) 100%)',
   },
-  // Just under the header, not in the photo. The band's top IS the header's bottom edge — the band's negative top margin only cancels the shell's padding, it never rides under the header — so the link starts 1rem into the band, on the band's own padding.
+  // Over the art at every width, 1rem under the header (the band's top IS
+  // the header's bottom edge — the negative top margin only cancels the
+  // shell's padding).
   backLinkOnArt: {
     position: 'absolute',
     top: '1rem',
@@ -117,18 +128,32 @@ export const styles = stylex.create({
     width: '100%',
     maxWidth: '64rem',
   },
-  // The crest rides up into the band's fade — three quarters of it on the art on a phone — for every club alike.
+  // The crest slot is centred on the photo's bottom edge — half over the
+  // art, half over the band — so the pull-up is exactly half the slot.
   hero: {
     position: 'relative',
     marginTop: {
-      default: '-7.5rem',
-      [MD]: '-11rem',
+      default: '-5rem',
+      [MD]: '-6.5rem',
     },
     textAlign: 'center',
   },
-  // Phones get a crest closer to the md size than to a list-row badge: the hero is the bang, and at 8rem it read as a thumbnail.
-  crest: {
+  // THE CREST SLOT — 160px tall on a phone, the crest bare inside it at the
+  // slot's full size. No disc and no ground: every crest asset is
+  // transparent (crest-assets.test.ts holds that line), so it sits on the
+  // photo's fade or on the wash directly, and the slot's height is what
+  // keeps the name and everything under it on one y for every club.
+  crestSlot: {
     marginInline: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: {
+      default: '10rem',
+      [MD]: '13rem',
+    },
+  },
+  crest: {
     height: {
       default: '10rem',
       [MD]: '13rem',
@@ -138,47 +163,48 @@ export const styles = stylex.create({
       [MD]: '13rem',
     },
     objectFit: 'contain',
-    filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
   },
+  // THE NAME BOX — the headline rung, centred, at one size per viewport
+  // width and never fitted to the name. Three lines on a phone at the 1.02
+  // leading, two from md: a shorter name leaves its spare lines and nothing
+  // under it moves. A name that would need a fourth line never reaches the
+  // box — heroTitle hands the club's headline form in its place.
   heroName: {
-    // Crest and name are one block: a fixed `sm` from the crest's bottom to the name's top, and the block as a whole is placed against the band's bottom edge by the crest's overlap. The box is two lines at the 1.02 leading whatever the clamp resolves to, so a one-word name leaves its spare line below and nothing under it moves.
-    height: '2.04em',
-    marginTop: {
-      default: spacing.sm,
-      [MD]: '2rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: {
+      default: '3.06em',
+      [MD]: '2.04em',
     },
-    // One constant per breakpoint, no fit-to-length and no viewport clamp: the 390px value (4.625rem) on phones, 9rem from md up. The box is the commentary column's measure, centred. LOKOMOTIVA (334.8px at this size) overflows the column below 355px — reported, not scaled.
-    fontSize: {
-      default: '4.625rem',
-      [MD]: '9rem',
-    },
+    marginTop: spacing.md,
+    fontSize: type.headlineXL,
     lineHeight: 1.02,
     marginInline: 'auto',
     maxWidth: {
       default: '30rem',
       [MD]: '34rem',
     },
+    overflowWrap: 'normal',
+    wordBreak: 'normal',
     color: tokens.paper,
   },
-  // The honours slot: one chip's height plus its margin, the same for every club; a club without honours shows its competition and season in the same chip.
+  // THE HONORS SLOT — one badge's height for every club, `md` under the name.
   honorSlot: {
-    marginTop: {
-      default: '1.5rem',
-      [MD]: '1.75rem',
-    },
+    marginTop: spacing.md,
+    display: 'flex',
+    justifyContent: 'center',
     height: {
       default: '2.5rem',
       [MD]: '2.75rem',
     },
   },
-  // The rolling honors chip — all the lines stack in one grid cell, so the
-  // chip's width is the WIDEST of them and never jumps as the text changes.
-  honorRoll: {
-    marginInline: 'auto',
+  // The badge: a paper block on the ink, the display face at the subtitle
+  // rung. Every honor it cycles stacks in the same grid cell, so the block
+  // is as wide as the WIDEST of them and its width never moves between
+  // ticks — no measuring, no reflow. Pressed, the paper dims a step.
+  honorBadge: {
     display: 'grid',
-    width: 'fit-content',
-    overflow: 'hidden',
-    backgroundColor: tokens.paper,
     paddingInline: {
       default: '0.75rem',
       [MD]: '0.875rem',
@@ -188,12 +214,22 @@ export const styles = stylex.create({
       [MD]: '0.5rem',
     },
     fontSize: {
-      default: '1.125rem',
+      default: type.subtitleSize,
       [MD]: '1.25rem',
     },
     lineHeight: '1.75rem',
-    letterSpacing: '0.12em',
+    letterSpacing: type.subtitleTracking,
     color: tokens.ink,
+    backgroundColor: {
+      default: tokens.paper,
+      ':active': 'color-mix(in srgb, var(--color-paper) 85%, transparent)',
+    },
+    transitionProperty: 'background-color',
+    transitionDuration: '0.15s',
+    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  honorBadgeButton: {
+    cursor: 'pointer',
   },
   honorLine: {
     gridColumnStart: 1,
@@ -201,7 +237,25 @@ export const styles = stylex.create({
     textAlign: 'center',
     whiteSpace: 'nowrap',
   },
-  // THE COMMENTARY BLOCK — the quote `lg` under the honours slot, the whole statement always shown, then the signature row under its last line.
+  // The honor showing fades in over the paper as it takes the cell; the rest
+  // hold the cell's width invisibly. With motion reduced the badge never
+  // cycles, so the fade has nothing to do and is dropped.
+  honorLineShown: {
+    animationName: {
+      default: honorFade,
+      [REDUCE]: 'none',
+    },
+    animationDuration: '200ms',
+    animationTimingFunction: 'ease-out',
+    animationFillMode: 'both',
+  },
+  honorLineHidden: {
+    visibility: 'hidden',
+  },
+  // THE COMMENTARY — `lg` under the honors slot, the quote framed by its
+  // pink rule, folded to its first lines, then Skóreová's byline `sm` under
+  // it. The one slot of the template that collapses: a club without a
+  // statement shows no block at all.
   commentary: {
     marginInline: 'auto',
     marginTop: spacing.lg,
@@ -222,40 +276,78 @@ export const styles = stylex.create({
     width: '2.5rem',
     backgroundColor: tokens.pink,
   },
+  // The 2px pink rule runs the statement's whole height, folded or open.
   statement: {
     marginTop: 0,
     marginBottom: 0,
-    fontSize: '1.25rem',
-    lineHeight: 1.625,
-    fontWeight: 500,
-    textWrap: 'pretty',
-    color: 'color-mix(in srgb, var(--color-paper) 90%, transparent)',
-  },
-  // The pink rule and the padding ride the inner element, so the rule runs from the mark to the last line — and 8px past it, so it ends 12px above the avatar that continues the same vertical gesture.
-  quoteInner: {
     borderLeftWidth: 2,
     borderColor: tokens.pink,
     paddingLeft: '1.25rem',
-    paddingBottom: '8px',
     textAlign: 'left',
   },
-  // The mark on its own line: the 0.3 leading collapses its box to 1.8rem while the glyph paints above the baseline; the negative margin pulls the text up under its ink, leaving the line 1.05rem tall. The top padding keeps the glyph's ink 12px clear of the honours chip above (measured: the ink starts 4px into the padding).
+  // The statement folds to its first lines by line clamp; open, it is its
+  // whole self. The clamp box is what the overflow mount measures against.
+  // The statement in the body face at 1.25rem, medium weight, on 1.45 leading, paper at 90%; folded to its first lines by line clamp, open it is its whole self. The clamp box is what the overflow mount measures against.
+  statementText: {
+    display: '-webkit-box',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 5,
+    overflow: 'hidden',
+    fontFamily: tokens.fontBody,
+    fontSize: '1.25rem',
+    fontWeight: 500,
+    lineHeight: 1.45,
+    textWrap: 'pretty',
+    color: 'color-mix(in srgb, var(--color-paper) 90%, transparent)',
+  },
+  statementTextOpen: {
+    display: 'block',
+    WebkitLineClamp: 'none',
+    overflow: 'visible',
+  },
+  // THE OPENING MARK at its original size — 6rem of the display face in
+  // pink, hanging over the start of the first line. It sits BEFORE the
+  // clamp box rather than inside it: a block or a float inside the box
+  // broke the line clamp (Slavia's fold showed two lines of five), and ink
+  // above the first line would be clipped there anyway. The 0.3 leading
+  // collapses its own line to 1.8rem while the glyph paints above the
+  // baseline; the negative margin pulls the first line up under its ink, and
+  // the quarter-rem hang puts the ink, not the side bearing, on the text edge.
   quoteMark: {
+    display: 'block',
     paddingTop: '16px',
     marginBottom: '-0.75rem',
     marginLeft: '-0.25rem',
-    display: 'block',
     fontSize: '6rem',
     lineHeight: 0.3,
     color: tokens.pink,
     userSelect: 'none',
   },
-  statementText: {
-    display: 'block',
+  // The fold control, on the statement's text edge, in the meta voice; a 44px
+  // hit area from its own height, with `xs` inset on every side. The margin
+  // gives that inset back so the label still starts on the text edge.
+  readMore: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    minHeight: '2.75rem',
+    paddingInline: spacing.xs,
+    paddingBlock: spacing.xs,
+    marginLeft: `calc(1.25rem + 2px - ${spacing.xs})`,
+    cursor: 'pointer',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
+    textTransform: 'uppercase',
+    color: {
+      default: tokens.muted,
+      ':hover': tokens.paper,
+    },
+    transitionProperty: 'color',
+    transitionDuration: '0.15s',
+    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
-  // The signature row, 20px under the quote's last line (12px under the rule's end) and on the rule's own left edge: the 56px portrait, then the lockup centred to it.
+  // The byline, `sm` under the statement: the 56px portrait, then the lockup.
   byline: {
-    marginTop: '12px',
+    marginTop: spacing.sm,
     display: 'flex',
     alignItems: 'center',
     gap: '14px',
@@ -276,10 +368,10 @@ export const styles = stylex.create({
   },
   bylineLabel: {
     display: 'block',
-    fontSize: '12px',
+    fontSize: type.metaSize,
     lineHeight: 1,
-    letterSpacing: '0.2em',
-    color: 'color-mix(in srgb, var(--color-paper) 60%, transparent)',
+    letterSpacing: type.metaTracking,
+    color: tokens.muted,
     textTransform: 'uppercase',
   },
   // The photo fills the 56px circle edge to edge, with the 2px pink ring directly on it.
@@ -398,8 +490,15 @@ export const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
   },
-  // A scorer row takes the standings row's geometry — the zone gutter and its hairline as left padding, the same column gap, the same right padding — so rank, name and goals sit on the table's rank, club and points columns.
+  // A scorer row takes the standings row's geometry — the zone gutter and its hairline as left padding, the same column gap, the same right padding — so rank, name and goals sit on the table's rank, club and points columns. The row is one link; the press is its affordance, so it carries no arrow.
   scorerRow: {
+    borderTopWidth: {
+      default: 1,
+      ':first-child': 0,
+    },
+    borderColor: 'color-mix(in srgb, var(--color-ink) 10%, transparent)',
+  },
+  scorerLink: {
     display: 'flex',
     alignItems: 'baseline',
     gap: {
@@ -407,11 +506,6 @@ export const styles = stylex.create({
       [SM]: '0.75rem',
       [MD]: '1rem',
     },
-    borderTopWidth: {
-      default: 1,
-      ':first-child': 0,
-    },
-    borderColor: 'color-mix(in srgb, var(--color-ink) 10%, transparent)',
     paddingLeft: 'calc(1.125rem + 1px)',
     paddingRight: '0.5rem',
     // A 56px row on phones — the card-name and score rungs, which is what a scorer row is; md keeps the board scale.
@@ -419,6 +513,16 @@ export const styles = stylex.create({
       default: '0.75rem',
       [MD]: '1rem',
     },
+    textDecorationLine: 'none',
+    color: tokens.ink,
+    backgroundColor: {
+      default: 'transparent',
+      ':hover': 'color-mix(in srgb, var(--color-surface) 60%, transparent)',
+      ':active': tokens.surface,
+    },
+    transitionProperty: 'background-color',
+    transitionDuration: '0.15s',
+    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
   scorerRank: {
     width: {
@@ -494,8 +598,10 @@ export const styles = stylex.create({
     },
     color: tokens.ink,
   },
+  // The card's pink label, one line on every card so the three meta lines under them align; the labels are authored short for it (club-history.ts).
   historyLabel: {
     marginTop: '0.5rem',
+    whiteSpace: 'nowrap',
     fontSize: {
       default: '1.125rem',
       [MD]: '1.5rem',
@@ -506,12 +612,28 @@ export const styles = stylex.create({
     },
     color: tokens.pink,
   },
+  // The card's detail line in the meta rung, never wrapped. The longest full
+  // line, "SINCE 2015/16", measures 102px at this tracking; a card is 109px
+  // at 390 and 99px at 360, so under 375 the line is the season alone.
   historyDetail: {
     marginTop: '0.375rem',
     fontSize: '10px',
     letterSpacing: '0.25em',
+    whiteSpace: 'nowrap',
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
     textTransform: 'uppercase',
+  },
+  historyDetailFull: {
+    display: {
+      default: 'none',
+      [CARD_FITS_DETAIL]: 'inline',
+    },
+  },
+  historyDetailShort: {
+    display: {
+      default: 'inline',
+      [CARD_FITS_DETAIL]: 'none',
+    },
   },
   // The archive rows: season in the display face, league in the meta voice, the finish at the end.
   archiveList: {
@@ -543,14 +665,17 @@ export const styles = stylex.create({
     textTransform: 'uppercase',
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
   },
-  // The cup tag beside a season's league: the same meta voice in ink, underlined in the brand's pink.
-  archiveCup: {
+  // A mark beside a season's league — CUP today, UWCL or DOUBLE tomorrow: a
+  // small ink block with paper type in the meta rung, `xs` sides, square.
+  // Never underlined: on this platform an underline is a link and nothing else.
+  archiveMark: {
+    display: 'inline-block',
     marginLeft: spacing.xs,
-    color: tokens.ink,
-    textDecorationLine: 'underline',
-    textDecorationColor: tokens.pink,
-    textDecorationThickness: '2px',
-    textUnderlineOffset: '0.2em',
+    paddingInline: spacing.xs,
+    paddingBlock: '2px',
+    lineHeight: 1.4,
+    backgroundColor: tokens.ink,
+    color: tokens.paper,
   },
   archivePosition: {
     fontSize: '1.25rem',
@@ -581,14 +706,14 @@ export const styles = stylex.create({
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
     textTransform: 'uppercase',
   },
+  // The follow call: `section` from the last row to its hairline, `section`
+  // again from the hairline to its headline — one rule for every club, however
+  // many rows the archive drew above it.
   follow: {
-    marginTop: {
-      default: '5rem',
-      [MD]: '6rem',
-    },
+    marginTop: spacing.section,
     borderTopWidth: 1,
     borderColor: 'color-mix(in srgb, var(--color-ink) 10%, transparent)',
-    paddingTop: '3.5rem',
+    paddingTop: spacing.section,
     paddingBottom: '1rem',
     textAlign: 'center',
   },
@@ -612,6 +737,7 @@ export const styles = stylex.create({
     marginTop: '2rem',
     display: 'inline-block',
     cursor: 'pointer',
+    whiteSpace: 'nowrap',
     paddingInline: '2.5rem',
     paddingBlock: '1rem',
     fontSize: {
@@ -660,8 +786,12 @@ export const styles = stylex.create({
       default: tokens.hairline,
       ':hover': tokens.pink,
     },
+    backgroundColor: {
+      default: 'transparent',
+      ':active': tokens.surface,
+    },
     color: tokens.ink,
-    transitionProperty: 'border-color',
+    transitionProperty: 'border-color, background-color',
     transitionDuration: '0.15s',
     transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
@@ -669,18 +799,23 @@ export const styles = stylex.create({
     height: '1.25rem',
     width: '1.25rem',
   },
+  // Following: the ink block with paper type and the 2px live-pink stroke
+  // along its bottom edge — the same "you are here" cue as the jump row's
+  // current chip. Tapping again unfollows; nothing asks.
   followOn: {
     backgroundColor: tokens.ink,
     color: tokens.paper,
+    borderBottomWidth: 2,
+    borderBottomColor: tokens.pinkLive,
   },
+  // The call: the pink block with ink type; pressed, the pink dims to 85%.
+  // Focus is the global ring.
   followOff: {
     backgroundColor: {
       default: tokens.pink,
-      ':hover': tokens.ink,
+      ':hover': 'color-mix(in srgb, var(--color-pink) 85%, transparent)',
+      ':active': 'color-mix(in srgb, var(--color-pink) 85%, transparent)',
     },
-    color: {
-      default: tokens.ink,
-      ':hover': tokens.paper,
-    },
+    color: tokens.ink,
   },
 });

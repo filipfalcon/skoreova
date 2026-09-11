@@ -5,6 +5,7 @@ import { Model } from './main';
 import { DEFAULT_FEED_BLOCKS, DEFAULT_NEXT_FEED_KEY, feedKey } from './model';
 import { AppRoute } from './route';
 import { COMPETITION_GROUP_ID, EDITION_GROUP_ID, SCOPE_GROUP_ID } from './radio-groups';
+import { AppToast, TOAST_DURATION, TOAST_ID } from './toast';
 import { FEED_FEATURED_MATCHES, FEED_LABEL } from './widgets';
 
 // The boot model — mirrors `initialModel` in main.ts (kept here so a fixture
@@ -25,6 +26,9 @@ export const welcomeModel = Model.make({
   scorerScope: 'All',
   expandedClubSections: [],
   activeClubSection: Option.none(),
+  honorIndex: 0,
+  isCommentaryOpen: false,
+  isCommentaryClipped: false,
   competitionTab: 'League',
   competitionGroup: RadioGroup.init({ id: COMPETITION_GROUP_ID }),
   scopeGroup: RadioGroup.init({ id: SCOPE_GROUP_ID }),
@@ -36,6 +40,8 @@ export const welcomeModel = Model.make({
   isWidgetCatalogOpen: false,
   isWidgetAddRefused: false,
   nextFeedKey: DEFAULT_NEXT_FEED_KEY,
+  followNotice: Option.none(),
+  toasts: AppToast.init({ id: TOAST_ID, defaultDuration: TOAST_DURATION }),
 });
 
 // The feed mid-manage, where every block it carries is offering to leave.

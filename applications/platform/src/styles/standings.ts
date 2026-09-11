@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { tokens } from '../tokens.stylex';
+import { spacing, tokens } from '../tokens.stylex';
 
 // Styles for the standings engine (standings.ts): the zone ribbon colors,
 // the table rows, the legend, and the season progress bar.
@@ -10,9 +10,8 @@ const MD = '@media (min-width: 768px)';
 
 export const styles = stylex.create({
   // Zone colors — bars and their label inks. NOT brand pink (user call):
-  // pink is the highlight row, the points and every chip, so it reads as
-  // brand rather than as a prize — and it disappears completely against
-  // the club's own pink row. The -ink variants are what the picked hues
+  // pink is the points column and every chip, so it reads as brand rather
+  // than as a prize. The -ink variants are what the picked hues
   // become as 10px uppercase type on PAPER — see the tokens in styles.css.
   uclBar: {
     backgroundColor: tokens.ucl,
@@ -155,6 +154,9 @@ export const styles = stylex.create({
     width: '0.375rem',
     flexShrink: 0,
   },
+  // A row is one link to the club; the press is its affordance — the surface
+  // tone across the whole row, and 60% of it under a pointer — so it carries
+  // no arrow.
   row: {
     display: 'flex',
     flexGrow: 1,
@@ -169,6 +171,7 @@ export const styles = stylex.create({
     paddingBlock: '0.875rem',
     paddingRight: '0.5rem',
     paddingLeft: '0.75rem',
+    textDecorationLine: 'none',
     transitionProperty: 'color, background-color, border-color',
     transitionDuration: '0.15s',
     transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
@@ -176,17 +179,25 @@ export const styles = stylex.create({
   rowBordered: {
     borderTopWidth: 1,
   },
+  // The club's own row: the ink block, which is the selected idiom the
+  // competition tabs already use — the pink block is a chip heading. Paper
+  // name, muted rank and goals, and the points in the live pink; the zone
+  // stripe in the gutter is untouched. Pressed, it lifts a step.
   rowHighlighted: {
-    borderColor: tokens.pink,
-    backgroundColor: tokens.pink,
-    color: tokens.ink,
+    borderColor: tokens.ink,
+    backgroundColor: {
+      default: tokens.ink,
+      ':active': tokens.inkLift,
+    },
+    color: tokens.paper,
   },
   rowRest: {
     borderColor: 'color-mix(in srgb, var(--color-ink) 10%, transparent)',
     color: tokens.ink,
     backgroundColor: {
       default: null,
-      ':hover': 'color-mix(in srgb, var(--color-ink) 5%, transparent)',
+      ':hover': 'color-mix(in srgb, var(--color-surface) 60%, transparent)',
+      ':active': tokens.surface,
     },
   },
   rowPosition: {
@@ -198,7 +209,7 @@ export const styles = stylex.create({
     lineHeight: '1.75rem',
   },
   rowPositionHighlighted: {
-    color: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
+    color: tokens.muted,
   },
   rowPositionRest: {
     color: 'color-mix(in srgb, var(--color-ink) 35%, transparent)',
@@ -232,7 +243,7 @@ export const styles = stylex.create({
     textTransform: 'uppercase',
   },
   rowZoneHighlighted: {
-    color: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
+    color: tokens.muted,
   },
   // Goal record — "skóre" in the Czech sense: scored:conceded,
   // tabular-nums so the colons line up down the column.
@@ -253,7 +264,7 @@ export const styles = stylex.create({
     fontVariantNumeric: 'tabular-nums',
   },
   rowScoreHighlighted: {
-    color: 'color-mix(in srgb, var(--color-ink) 70%, transparent)',
+    color: tokens.muted,
   },
   rowScoreRest: {
     color: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
@@ -271,20 +282,27 @@ export const styles = stylex.create({
   rowPointsRest: {
     color: tokens.pink,
   },
+  rowPointsHighlighted: {
+    color: tokens.pinkLive,
+  },
   // Legend — carries the zone colors below md, where the named column is
   // hidden. Swatches are BARS of the same width as the ribbon, not
   // squares, so the mapping back to the table is immediate.
+  // The legend and the table's way out share one line at 360: three keys
+  // at `sm` apart, the key's own gap at 6px, and the meta tracking eased to
+  // 0.1em, since a key is a dense row of short words rather than a label
+  // (measured at 360: 194px of the 209px beside FULL TABLE).
   legendRow: {
     marginTop: '1.25rem',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '1rem',
+    gap: spacing.xs,
   },
   legend: {
     display: 'flex',
     flexWrap: 'wrap',
-    columnGap: '1.5rem',
+    columnGap: spacing.sm,
     rowGap: '0.5rem',
   },
   // Pinned to the row's first line when the legend wraps.
@@ -298,7 +316,7 @@ export const styles = stylex.create({
   legendEntry: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem',
+    gap: '6px',
   },
   legendSwatch: {
     height: '1rem',
@@ -307,7 +325,8 @@ export const styles = stylex.create({
   },
   legendLabel: {
     fontSize: '10px',
-    letterSpacing: '0.2em',
+    letterSpacing: '0.1em',
+    whiteSpace: 'nowrap',
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
     textTransform: 'uppercase',
   },

@@ -244,7 +244,10 @@ const stripCards = (target: Club): ReadonlyArray<StripCard> => {
 export const clubMatchesIndex = (target: Club): ReadonlyArray<ClubSectionEntry> =>
   stripCards(target).length === 0 ? [] : [{ anchor: 'matches', label: 'Matches' }];
 
-// The form guide: the last five results as lettered squares, oldest to newest — a win ink on pink, a draw ink on a hairline-framed paper square, a loss paper on ink. The list's label carries the run in words, so a screen reader hears it once.
+// The count of a form run in words, for the row's spoken label.
+const COUNT_WORDS = ['none', 'one', 'two', 'three', 'four', 'five'] as const;
+
+// The form guide: the last five results as lettered squares, oldest to newest, left to right, each on its own form hue — never the accent, which is not a data colour. The row's label carries the run in words and says which end is newest, so a screen reader hears it once and reads it the right way round.
 const formGuide = (target: Club, h: HtmlBuilder<Message>): ReadonlyArray<Html> => {
   const results = formWindow(target.league, target.name, FORM_LENGTH, 0);
   const words: Record<FormResult, string> = { W: 'win', D: 'draw', L: 'loss', U: 'unplayed' };
@@ -258,7 +261,7 @@ const formGuide = (target: Club, h: HtmlBuilder<Message>): ReadonlyArray<Html> =
             h.ol(
               [
                 h.AriaLabel(
-                  `Form, last ${results.length}: ${results.map((result) => words[result]).join(', ')}`,
+                  `Last ${COUNT_WORDS[results.length] ?? results.length}: ${results.map((result) => words[result]).join(', ')}, newest last`,
                 ),
                 ...getStyleXAttributes(h, styles.formSquares),
               ],
@@ -316,6 +319,13 @@ export const clubMatchStrip = (target: Club, h: HtmlBuilder<Message>): ReadonlyA
               [clubMatchCard(target, card.entry, card.tag, h)],
             ),
           ),
+        ),
+        // The served document opens on the upcoming card BEFORE its first paint: this runs as the parser reaches it, with the strip already laid out, so no frame ever shows the result card at the gutter. The mount above is the same move for a strip the client renders on its own. Instant, not smooth — the reader has not scrolled anything yet.
+        h.script(
+          [],
+          [
+            `var t=document.currentScript;var s=t&&t.previousElementSibling;var c=s&&s.children[${nextIndex}];if(c){s.scrollTo({left:c.offsetLeft-s.children[0].offsetLeft,behavior:'instant'})}`,
+          ],
         ),
         ...formGuide(target, h),
       ],

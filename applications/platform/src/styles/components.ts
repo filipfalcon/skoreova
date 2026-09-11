@@ -1,15 +1,14 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { spacing, tokens } from '../tokens.stylex';
+import { spacing, tokens, type } from '../tokens.stylex';
 
 // Styles for the shared view helpers and the app shell (components.ts).
 // Follows the translation discipline stated in shared.ts: every fontSize
 // carries its Tailwind pair's lineHeight, alpha tints are color-mix fades.
 
-// One size for every mark in the tab row — the four drawn glyphs and the brand
-// illustration alike. They share it so the five tabs keep one height, and it is
-// what the illustration needs to read as a mark rather than as a dot.
-const ICON_SIZE = '26px';
+// One box for every mark in the tab row, so the five tabs keep one height and
+// one optical weight.
+const ICON_SIZE = '24px';
 
 // How far the tape's rise/fall mark drops to sit on the numerals' own centre
 // rather than their line box's. Measured against the rendered tape, in em so
@@ -93,33 +92,6 @@ export const styles = stylex.create({
     height: '2.5rem',
     width: '100%',
   },
-  // The stage stamp — the landing header's pink chip device, always two
-  // lines here (see the note at the view).
-  // The circle and the label react to the button's hover through the
-  // hover-card contract classes in styles.css (StyleX has no descendant
-  // selectors) — only their resting looks live here.
-  // The mark occupies the drawn glyphs' box exactly, so all five tabs share one
-  // geometry and one baseline. The paper disc is the white the artwork was
-  // drawn on; the mark's own ink ring covers its edge, so the two read as one
-  // badge rather than as a logo sitting on a circle.
-  brandMark: {
-    display: {
-      default: 'block',
-      [MD]: 'none',
-    },
-    height: ICON_SIZE,
-    width: ICON_SIZE,
-    backgroundColor: tokens.paper,
-    borderRadius: '9999px',
-  },
-  // Open, the mark takes a RING and nothing else. Filling the disc instead put
-  // accent through every transparent part of the artwork, the face included,
-  // so the illustration read as a pink silhouette. The ring is a shadow rather
-  // than a border so it costs no layout: a border would take its width out of
-  // the image's own box and the mark would shrink as the tab opened.
-  brandMarkActive: {
-    boxShadow: `0 0 0 2px ${tokens.pink}`,
-  },
   navIcon: {
     height: ICON_SIZE,
     width: ICON_SIZE,
@@ -184,11 +156,14 @@ export const styles = stylex.create({
     borderColor: tokens.pink,
     color: tokens.pink,
   },
+  // At rest a tab is the muted grey (8.5:1 on the black bar); pressed it
+  // brightens toward paper, and hovered it takes the accent.
   navLinkRest: {
     borderColor: 'transparent',
     color: {
-      default: tokens.paper,
+      default: tokens.muted,
       ':hover': tokens.pink,
+      ':active': 'color-mix(in srgb, var(--color-paper) 70%, transparent)',
     },
   },
   navLabel: {
@@ -242,34 +217,9 @@ export const styles = stylex.create({
       [MD]: '1.5rem',
     },
   },
-  // The back link's hit area: the anchor is a 44px-tall box with the visible block at its top edge, so the target is generous while the block stays the size of its text.
-  backHit: {
-    display: 'inline-flex',
-    alignItems: 'flex-start',
-    minHeight: '2.75rem',
-    color: {
-      default: tokens.paper,
-      ':hover': tokens.pink,
-    },
-    transitionProperty: 'color',
-    transitionDuration: '0.15s',
-    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  },
-  // The visible block: paper meta type on ink at 85%, square-cornered like every chip on the platform, padded to its text so it reads as a small label rather than a button.
-  backPill: {
-    display: 'inline-block',
-    paddingInline: '0.6rem',
-    paddingBlock: '0.6rem',
-    backgroundColor: 'color-mix(in srgb, var(--color-ink) 85%, transparent)',
-    // The hairline keeps the box a box over the top fade too — on a dark photo the 85% ink fill alone vanishes into it and the link read as bare text.
-    borderWidth: 1,
-    borderColor: 'color-mix(in srgb, var(--color-paper) 20%, transparent)',
-    whiteSpace: 'nowrap',
-    fontSize: '10px',
-    lineHeight: '1rem',
-    letterSpacing: '0.2em',
-    textTransform: 'uppercase',
-  },
+  // The back link: the ink scrim at 60% is the anchor's own box, 44px each
+  // way at the least with the text inset by `xs`, square-cornered like every
+  // chip on the platform. Paper meta type on it reads on any photo.
   sectionRailGrid: {
     marginInline: 'auto',
     display: 'grid',
@@ -327,38 +277,43 @@ export const styles = stylex.create({
       [MD]: 'calc(var(--header-height) + 4.9375rem)',
     },
   },
-  // The heading row: the chip's h2 at one end, the section's control at the other.
+  // The heading row: the chip's h2 at one end, the section's control at the other. The chip never wraps or shrinks; the control yields — first onto two lines beside the chip, then, when even its longest word cannot sit there, onto its own line under the chip, `xs` below and still on the right edge.
   clubSectionHeading: {
     display: 'flex',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '1rem',
+    columnGap: '1rem',
+    rowGap: spacing.xs,
   },
   clubSectionTitle: {
     display: 'flex',
+    flexShrink: 0,
   },
-  // The heading-row control — a toggle or a link out — as plain meta text, right-aligned. The 44px hit area comes from padding alone: a drawn box was one more rectangle per section and wrapped the heading row on phones. The side padding is cancelled by a negative margin so the text stays flush with the column's edge.
+  // The heading-row control — a toggle or a link out — as plain meta text in the muted ink, right-aligned and free to wrap. The 44px hit area comes from padding alone: a drawn box was one more rectangle per section and wrapped the heading row on phones. The side padding is cancelled by a negative margin so the text stays flush with the column's edge.
   clubSectionControl: {
     display: 'inline-flex',
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: '0.5rem',
+    marginLeft: 'auto',
     minHeight: '2.75rem',
     paddingInline: '0.5rem',
     marginRight: '-0.5rem',
     cursor: 'pointer',
-    whiteSpace: 'nowrap',
+    textAlign: 'right',
     fontSize: '10px',
     letterSpacing: '0.2em',
     textTransform: 'uppercase',
     color: {
-      default: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
+      default: tokens.mutedInk,
       ':hover': tokens.ink,
     },
     transitionProperty: 'color',
     transitionDuration: '0.15s',
     transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
-  // The jump row. On a phone it is a bar pinned flush under the fixed header — at the header's measured height — on opaque paper, bleeding to the column's edges, its chips scrolling as one line so one peeks in from the right. From md it is a static, wrapped block.
+  // The jump row. On a phone it is a bar pinned flush under the fixed header — at the header's measured height — on opaque paper, bleeding to the screen's edges, its chips scrolling as one line so one peeks in from the right. From md it is a static, wrapped block.
   sectionIndex: {
     position: {
       default: 'sticky',
@@ -374,10 +329,6 @@ export const styles = stylex.create({
       default: '-1.25rem',
       [MD]: 0,
     },
-    paddingInline: {
-      default: '1.25rem',
-      [MD]: 0,
-    },
     paddingBlock: {
       default: '0.5rem',
       [MD]: 0,
@@ -387,6 +338,15 @@ export const styles = stylex.create({
       [MD]: 'transparent',
     },
   },
+  // Pinned, the row draws the one hairline under itself. No shadow: the platform casts none.
+  sectionIndexStuck: {
+    borderBottomWidth: {
+      default: 1,
+      [MD]: 0,
+    },
+    borderColor: tokens.hairline,
+  },
+  // The scroller clips at the screen's edge and carries the column's padding inside itself. Its END is a 24px fade from clear to paper that STICKS to the scroller's right edge: while chips are cut off there it lies over the cut, saying there is more; scrolled to the end it is back in its own place after the last chip, over nothing, and the row simply ends. No script, no measuring. Gone from md, where the row wraps instead of scrolling.
   sectionIndexList: {
     display: 'flex',
     gap: '0.5rem',
@@ -398,30 +358,59 @@ export const styles = stylex.create({
       default: 'auto',
       [MD]: 'visible',
     },
+    paddingInline: {
+      default: '1.25rem',
+      [MD]: 0,
+    },
     scrollPaddingInline: '1.25rem',
+    '::after': {
+      content: '""',
+      display: {
+        default: 'block',
+        [MD]: 'none',
+      },
+      position: 'sticky',
+      right: 0,
+      flexShrink: 0,
+      width: '1.5rem',
+      marginLeft: '-0.5rem',
+      pointerEvents: 'none',
+      backgroundImage: 'linear-gradient(to right, transparent, var(--color-paper))',
+    },
   },
+  // The chip of the section in view: ink type, the hairline kept on its
+  // top and sides, and only the bottom stroke replaced by 2px of the live
+  // pink. The chip keeps its 44px box, since the border sits inside it.
   sectionIndexLinkActive: {
-    borderColor: tokens.pink,
+    borderBottomWidth: 2,
+    borderBottomColor: tokens.pinkLive,
     color: tokens.ink,
   },
+  // A chip: the hairline outline, meta type in the muted ink, 44px tall for
+  // the thumb; pressed it takes the surface tone.
   sectionIndexLink: {
-    display: 'inline-block',
+    display: 'inline-flex',
+    alignItems: 'center',
+    minHeight: '2.75rem',
     whiteSpace: 'nowrap',
     borderWidth: 1,
     paddingInline: '0.875rem',
-    paddingBlock: '0.5rem',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     borderColor: {
-      default: 'color-mix(in srgb, var(--color-ink) 20%, transparent)',
+      default: tokens.hairline,
       ':hover': tokens.pink,
     },
     color: {
-      default: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
+      default: tokens.mutedInk,
       ':hover': tokens.ink,
     },
-    transitionProperty: 'color, border-color',
+    backgroundColor: {
+      default: 'transparent',
+      ':active': tokens.surface,
+    },
+    transitionProperty: 'color, border-color, background-color',
     transitionDuration: '0.15s',
     transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },

@@ -61,9 +61,41 @@ export const shared = stylex.create({
     borderColor: tokens.ink,
     backgroundColor: tokens.paper,
   },
-  // The section chip — the shared heading grammar (filled pink block).
+  // THE SECONDARY BUTTON — the landing page's header call to action ported
+  // one for one: the display face at 18/28 with 0.08em tracking, 16px sides,
+  // the pink block with ink type, paper under the pointer and the thumb, and
+  // the 300ms colour ease. The one addition is the platform's 44px floor,
+  // which the landing page's 36px block does not carry: the block padding
+  // grows from 4px to 8px to reach it. Registered here so the two apps show
+  // one Button; the club profile's back link is its first use.
+  buttonSecondary: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    minHeight: '2.75rem',
+    paddingInline: '1rem',
+    paddingBlock: '0.5rem',
+    fontFamily: tokens.fontDisplay,
+    fontSize: '1.125rem',
+    lineHeight: '1.75rem',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    textDecorationLine: 'none',
+    whiteSpace: 'nowrap',
+    color: tokens.ink,
+    backgroundColor: {
+      default: tokens.pink,
+      ':hover': tokens.paper,
+      ':active': tokens.paper,
+    },
+    transitionProperty: 'color, background-color',
+    transitionDuration: '0.3s',
+    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  // The section chip — the shared heading grammar (filled pink block). It
+  // never wraps: a heading is one line, and the row beside it yields instead.
   chip: {
     display: 'inline-block',
+    whiteSpace: 'nowrap',
     backgroundColor: tokens.pink,
     paddingBlock: '0.5rem',
     paddingInline: {
@@ -87,6 +119,7 @@ export const shared = stylex.create({
     display: 'inline-flex',
     alignItems: 'center',
     gap: '0.625rem',
+    whiteSpace: 'nowrap',
     backgroundColor: tokens.pink,
     paddingBlock: '0.5rem',
     paddingInline: {

@@ -9,7 +9,6 @@ import { Option } from 'effect';
 import { inertHtml as ih } from 'foldkit/html';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
-import brandLogo from './assets/brand/logo.svg';
 import type { Model, Screen } from './model';
 import { Message } from './message';
 import { JUMP_ROW_ID, jumpChipId } from './command';
@@ -164,21 +163,11 @@ export const sparkline = (values: ReadonlyArray<number>, h: HtmlBuilder<Message>
 
 // SHELL
 
-// The brand mark, standing in for a glyph on the HER GAME tab. The artwork is
-// ink drawn ON white — the white is the page it was drawn on, not part of the
-// file — so the mark supplies that ground itself. That is also why it cannot
-// take the tab's accent when the section is open: recoloring it would mean
-// painting it as a mask, which is what drops the ground.
-export const brandMark = (active: boolean, h: HtmlBuilder<Message>): Html =>
-  h.img([
-    h.Src(brandLogo),
-    h.Alt(''),
-    ...getStyleXAttributes(h, styles.brandMark, active ? styles.brandMarkActive : null),
-  ]);
-
 // A tab's glyph, drawn over its label below `md` and dropped from `md` up.
-// PLACEHOLDER line art: the final icon set replaces these paths. Stroke is
-// currentColor, so the tab's own accent and hover colors reach it.
+// PLACEHOLDER line art: the final icon set replaces these paths. One weight
+// for all five — a 1.5 stroke on a 24-unit grid — so no tab's mark is
+// heavier than its neighbours'. Stroke is currentColor, so the tab's own
+// accent and hover colors reach it.
 export const navIcon = (screen: Screen, h: HtmlBuilder<Message>): Html => {
   const paths: Partial<Record<Screen, string>> = {
     // Crest/shield — clubs.
@@ -186,6 +175,9 @@ export const navIcon = (screen: Screen, h: HtmlBuilder<Message>): Html => {
     // Person — players.
     Players:
       'M12 4 A3.5 3.5 0 1 1 11.99 4 M4.5 20 C5.5 15.5 8.5 13.5 12 13.5 C15.5 13.5 18.5 15.5 19.5 20',
+    // Heart — Her Game, the reader's own page.
+    HerGame:
+      'M12 20.5 C7 16.5 3.5 13.5 3.5 9.25 C3.5 6.6 5.5 4.5 8 4.5 C9.7 4.5 11.2 5.4 12 6.8 C12.8 5.4 14.3 4.5 16 4.5 C18.5 4.5 20.5 6.6 20.5 9.25 C20.5 13.5 17 16.5 12 20.5 Z',
     // Ball — matches.
     Matches:
       'M12 3 A9 9 0 1 1 11.99 3 M12 8 L15.8 10.8 L14.4 15.2 H9.6 L8.2 10.8 Z M12 3 V8 M15.8 10.8 L20.5 9.5 M14.4 15.2 L17.5 19 M9.6 15.2 L6.5 19 M8.2 10.8 L3.5 9.5',
@@ -201,7 +193,7 @@ export const navIcon = (screen: Screen, h: HtmlBuilder<Message>): Html => {
       h.AriaHidden(true),
       h.Fill('none'),
       h.Stroke('currentColor'),
-      h.StrokeWidth('1.6'),
+      h.StrokeWidth('1.5'),
       h.StrokeLinecap('round'),
       h.StrokeLinejoin('round'),
     ],
@@ -219,8 +211,8 @@ export const desktopNavLink = (model: Model, entry: NavEntry, h: HtmlBuilder<Mes
       ...getStyleXAttributes(h, styles.navLink, active ? styles.navLinkActive : styles.navLinkRest),
     ],
     [
-      // Every tab is the same shape; the brand section differs only in which mark is drawn over its label.
-      entry.isBrand ? brandMark(active, h) : navIcon(entry.screen, h),
+      // Every tab is the same shape and the same weight of mark, the brand section included.
+      navIcon(entry.screen, h),
       // Two spans rather than one, because the swap is a change of words and CSS can only choose between elements.
       h.span(
         [...getStyleXAttributes(h, styles.navLabel, styles.navLabelPhone)],
@@ -244,10 +236,10 @@ export interface Back {
 }
 
 /**
- * The back link — the one component every profile's way back is: meta type on paper in a small ink
- * block, so it reads on any photo, inside a 44px hit area that the anchor's own box provides rather
- * than the visible block. Where it sits is the caller's: `placement` is the position it takes in
- * its band.
+ * The back link — the one component every profile's way back is: meta type on paper inside an ink
+ * scrim, so it reads on any photo. The scrim IS the hit area, 44px each way at the least, with the
+ * text inset by `xs`. Where it sits is the caller's: `placement` is the position it takes in its
+ * band.
  *
  * @param back Where it leads and what it says.
  * @param h The builder the link is drawn with.
@@ -258,9 +250,10 @@ export const backLink = (
   h: HtmlBuilder<Message>,
   ...placement: ReadonlyArray<StyleXStyle>
 ): Html =>
+  // The platform's secondary Button on a plain anchor: focus is the global ring, pressed is the Button's own paper. The library's Button attributes are not spread here — they type a control as a button, and this is a link.
   h.a(
-    [h.Href(back.href), ...getStyleXAttributes(h, styles.backHit, ...placement)],
-    [h.span([...getStyleXAttributes(h, styles.backPill)], [`← ${back.label}`])],
+    [h.Href(back.href), ...getStyleXAttributes(h, shared.buttonSecondary, ...placement)],
+    [`← ${back.label}`],
   );
 
 export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
@@ -478,6 +471,13 @@ export interface ClubSectionEntry {
  * mark follows the reader; from md it is a static row that wraps in place. Fed the sections
  * actually rendered, so a club without a Europe campaign never offers a jump to one.
  *
+ * The links are plain anchors: the platform's UI library ships no link component (its `Anchor` is
+ * the floating-panel positioning runtime), and an in-page link needs nothing a bare `a` lacks.
+ *
+ * A section in view means the row has reached the header and is pinned, so that is when it draws
+ * its hairline under itself: the stroke marks the row as a bar over the page rather than a line in
+ * it.
+ *
  * @param entries The sections, in page order.
  * @param active The anchor of the section in view, from the scroll-spy.
  * @param h The builder the row is drawn with.
@@ -488,7 +488,14 @@ export const clubSectionIndex = (
   h: HtmlBuilder<Message>,
 ): Html =>
   h.nav(
-    [h.AriaLabel('On this page'), ...getStyleXAttributes(h, styles.sectionIndex)],
+    [
+      h.AriaLabel('On this page'),
+      ...getStyleXAttributes(
+        h,
+        styles.sectionIndex,
+        Option.isSome(active) && styles.sectionIndexStuck,
+      ),
+    ],
     [
       h.ul(
         [h.Id(JUMP_ROW_ID), ...getStyleXAttributesWith(h, 'no-scrollbar', styles.sectionIndexList)],

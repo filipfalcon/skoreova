@@ -251,6 +251,8 @@ export const clubs: ReadonlyArray<Club> = [
     conceded: 9,
     leagueTitles: 22,
     cupTitles: 11,
+    // The nine seasons the league and the cup went to Letná together.
+    doubles: 9,
     links: {
       website: 'https://www.sparta.cz',
       instagram: 'https://www.instagram.com/spartawomen/',
@@ -571,6 +573,14 @@ export const clubs: ReadonlyArray<Club> = [
     cupTitles: 0,
   },
 ];
+
+/**
+ * The club a profile route names, if the slug is one of ours.
+ *
+ * @param slug The route's slug.
+ */
+export const clubBySlug = (slug: string): Option.Option<Club> =>
+  Option.fromUndefinedOr(clubs.find((club) => club.slug === slug));
 
 export const players: ReadonlyArray<Player> = [
   {

@@ -1,8 +1,10 @@
 import { Array, Option } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
+import { clubs } from './data';
 import type { StandingsRow } from './data';
 import type { Message } from './message';
+import { clubRouter } from './route';
 import { getStyleXAttributes } from './stylexAttributes';
 import type { StyleXStyle } from './stylexAttributes';
 import { shared } from './styles/shared';
@@ -251,7 +253,7 @@ const standingsColumnKey = (h: HtmlBuilder<Message>): Html =>
       h.span([...getStyleXAttributes(h, styles.columnPosition)], []),
       h.span([...getStyleXAttributes(h, styles.columnClub)], ['Club']),
       h.span([...getStyleXAttributes(h, styles.columnQualification)], ['Qualification']),
-      h.span([...getStyleXAttributes(h, styles.columnScore)], ['Score']),
+      h.span([...getStyleXAttributes(h, styles.columnScore)], ['Goals']),
       h.span([...getStyleXAttributes(h, styles.columnPoints)], ['Pts']),
     ],
   );
@@ -280,22 +282,26 @@ const standingsRows = (
         onSome: (z) => z.text,
       });
       const zoneLabel = Option.match(zone, { onNone: () => '', onSome: (z) => z.label });
+      // The row is one link to the club's profile. A team without a record of its own (a B side) keeps the row as a plain block.
+      const profile = clubs.find((club) => club.name === row.team);
+      const rowElement = profile === undefined ? h.div : h.a;
+      const rowLink = profile === undefined ? [] : [h.Href(clubRouter({ slug: profile.slug }))];
       return h.li(
         // The band lives in a GUTTER outside the row’s own background:
-        // inside it, the club’s pink highlight row would swallow a pink
-        // UWCL band and the indicator would read as broken (rows 1 and 2
+        // inside it, the club’s own filled row would swallow a band of a
+        // near tone and the indicator would read as broken (rows 1 and 2
         // sit in the same zone and must look it). Out here it keeps its
         // color on every row, and because no border crosses the gutter,
         // consecutive rows in one zone form a single unbroken ribbon.
-        // gap-px leaves a paper hairline between band and row: against the
-        // club’s own pink fill the blue band matches almost exactly in
-        // LUMINANCE (1.02:1) and differs only in hue, so without it the
-        // edge vanishes in grayscale or for total color blindness.
+        // gap-px leaves a paper hairline between band and row, so the edge
+        // holds in grayscale and for total color blindness whatever the
+        // row's fill.
         [...getStyleXAttributes(h, styles.rowShell)],
         [
           h.span([...getStyleXAttributes(h, styles.rowGutter, zoneBar), h.AriaHidden(true)], []),
-          h.div(
+          rowElement(
             [
+              ...rowLink,
               ...getStyleXAttributes(
                 h,
                 styles.row,
@@ -347,7 +353,7 @@ const standingsRows = (
                     h,
                     shared.display,
                     styles.rowPoints,
-                    !highlighted && styles.rowPointsRest,
+                    highlighted ? styles.rowPointsHighlighted : styles.rowPointsRest,
                   ),
                 ],
                 [`${row.points}`],
@@ -373,10 +379,7 @@ const standingsLegend = (zones: ReadonlyArray<StandingsZone>, h: HtmlBuilder<Mes
             [...getStyleXAttributes(h, styles.legendSwatch, zone.bar), h.AriaHidden(true)],
             [],
           ),
-          h.span(
-            [...getStyleXAttributes(h, styles.legendLabel)],
-            [zone.label === 'Relegation' ? 'Relegation — Second League' : zone.label],
-          ),
+          h.span([...getStyleXAttributes(h, styles.legendLabel)], [zone.label]),
         ],
       ),
     ),

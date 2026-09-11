@@ -1,9 +1,16 @@
-import { Array, Match, Option } from 'effect';
+import { Match, Option } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
-import banikHeroPhoto from '../assets/clubs-hero/banik-ostrava.jpg';
-import spartaHeroPhoto from '../assets/clubs-hero/sparta-praha.webp';
 import commentaryAvatar from '../assets/commentary-avatar.png';
+import {
+  COMMENTARY_LINES,
+  clubCommentary,
+  focalPosition,
+  heroHonors,
+  heroPhoto,
+  heroTitle,
+} from '../club-hero';
+import { historyStats, isTitleFinish, ordinal } from '../club-history';
 import { clubMatchStrip, clubMatchesIndex } from '../club-matches';
 import {
   SOCIAL_LABELS,
@@ -27,11 +34,12 @@ import {
   scorersFor,
 } from '../data';
 import { MATCHDAYS_PLAYED, leagueRoundCount } from '../schedule';
-import { Button } from '@foldkit/ui';
+import { Button, Disclosure } from '@foldkit/ui';
+import { ObserveCommentaryOverflow } from '../command';
 import type { AllTimeStats, ArchiveSeason, Club, CupTie, Scorer, StandingsRow } from '../data';
 import { Message } from '../message';
 import type { CompetitionKind, Model, ScorerScope } from '../model';
-import { clubsRouter, competitionRouter } from '../route';
+import { clubsRouter, competitionRouter, playersRouter } from '../route';
 import { leagueSlug } from '../stat-tiles';
 import {
   clubEurope,
@@ -46,57 +54,6 @@ import { COMPETITION_GROUP_ID, CompetitionRadioGroup, ScopeRadioGroup } from '..
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
 import { styles } from '../styles/club-profile';
 import { shared } from '../styles/shared';
-
-// The per-club statement block — hand-written for the marquee clubs, a
-// season-record fallback for everyone else (see this module’s `view`).
-const clubHighlights: Record<string, { readonly kicker: string; readonly statement: string }> = {
-  'sparta-praha': {
-    kicker: 'Reigning champions',
-    statement:
-      'Our most successful club and reigning champion stormed into the Europa Cup semifinals first, then closed out the season with the domestic double in hand.',
-  },
-  'slavia-praha': {
-    kicker: 'The eternal rivals',
-    statement: 'Every derby is a final — and finals are ours to take.',
-  },
-  'slovan-liberec': {
-    kicker: 'The pride of the north',
-    statement: 'Europe looks different from under Ještěd.',
-  },
-};
-
-// The one line of honors that sits under the club’s name — hand-picked
-// per club, NOT derived. A club’s case for itself is editorial: the
-// numbers that matter to Sparta are not the ones that matter to a side
-// that has never won the league. Clubs without an entry show nothing
-// rather than a padded-out list.
-interface ClubHonor {
-  readonly count?: number;
-  readonly label: string;
-}
-
-const clubHonors: Record<string, ReadonlyArray<ClubHonor>> = {
-  'sparta-praha': [
-    { count: 22, label: 'League champions' },
-    { count: 9, label: 'Domestic double' },
-    { label: 'Europa Cup semis' },
-  ],
-};
-
-// Per-club hero artwork (the Universe-style full-bleed header photo).
-// EVERY club gets one (user call) — the plain crest-on-ink hero is only
-// the interim state for clubs whose photo has not been supplied yet, so a
-// new photo is one import and one line here. `focus` marks where the
-// faces live: the crop's object-position and the phone zoom's origin.
-const clubHeroPhotos: Record<string, { readonly photo: string; readonly focus: string }> = {
-  'sparta-praha': { photo: spartaHeroPhoto, focus: '50% 42%' },
-  // The pre-match huddle — the heads start ~8% from the square's top, and
-  // the wide desktop crop only shows ~a quarter of the image's height, so
-  // the focus sits high: at 25% the window opened below the hairlines and
-  // cropped every head at the nav. Settled by eye over three reviews
-  // (user calls): 10% cleared the heads, 6% overshot, 8% is the frame.
-  'banik-ostrava': { photo: banikHeroPhoto, focus: '50% 8%' },
-};
 
 // Section headings are a PINK RULE beside display type, not a filled chip
 // (user call). The rule is the brand mark here; the pink block is now
@@ -341,13 +298,22 @@ const scopeRadioGroup = (model: Model, h: HtmlBuilder<Message>): Html =>
     },
   });
 
+// A scorer row is one link. No player has a profile of her own yet, so it leads to the players screen; the press state is the row's affordance.
 const scorerRow = (scorer: Scorer, index: number, h: HtmlBuilder<Message>): Html =>
   h.li(
     [...getStyleXAttributes(h, styles.scorerRow)],
     [
-      h.span([...getStyleXAttributes(h, shared.display, styles.scorerRank)], [`${index + 1}`]),
-      h.span([...getStyleXAttributes(h, shared.display, styles.scorerName)], [scorer.name]),
-      h.span([...getStyleXAttributes(h, shared.display, styles.scorerGoals)], [`${scorer.goals}`]),
+      h.a(
+        [h.Href(playersRouter()), ...getStyleXAttributes(h, styles.scorerLink)],
+        [
+          h.span([...getStyleXAttributes(h, shared.display, styles.scorerRank)], [`${index + 1}`]),
+          h.span([...getStyleXAttributes(h, shared.display, styles.scorerName)], [scorer.name]),
+          h.span(
+            [...getStyleXAttributes(h, shared.display, styles.scorerGoals)],
+            [`${scorer.goals}`],
+          ),
+        ],
+      ),
     ],
   );
 
@@ -423,25 +389,9 @@ const clubScorersSection = (target: Club, model: Model, h: HtmlBuilder<Message>)
   );
 };
 
-// A finishing position as English says it.
-const ordinal = (position: number): string => {
-  const tens = position % 100;
-  const ones = position % 10;
-  const suffix =
-    tens >= 11 && tens <= 13
-      ? 'th'
-      : ones === 1
-        ? 'st'
-        : ones === 2
-          ? 'nd'
-          : ones === 3
-            ? 'rd'
-            : 'th';
-  return `${position}${suffix}`;
-};
-
 // The season-by-season archive — the whole that HISTORY opens into. A title
-// season is set in pink, so the honors above can be found in the list.
+// season is set in pink, so the honors above can be found in the list; every
+// other finish stays ink.
 const archiveList = (archive: ReadonlyArray<ArchiveSeason>, h: HtmlBuilder<Message>): Html =>
   h.ol(
     [...getStyleXAttributes(h, styles.archiveList)],
@@ -454,9 +404,9 @@ const archiveList = (archive: ReadonlyArray<ArchiveSeason>, h: HtmlBuilder<Messa
             [...getStyleXAttributes(h, styles.archiveLeague)],
             [
               entry.league,
-              // A cup-winning season carries the cup beside its league, in the same voice with the brand's underline.
+              // A cup-winning season carries the cup beside its league as an ink mark — a block, never an underline, so it cannot be read as a link.
               ...(entry.isCupWinner
-                ? [h.span([...getStyleXAttributes(h, styles.archiveCup)], ['Cup'])]
+                ? [h.span([...getStyleXAttributes(h, styles.archiveMark)], ['Cup'])]
                 : []),
             ],
           ),
@@ -466,7 +416,7 @@ const archiveList = (archive: ReadonlyArray<ArchiveSeason>, h: HtmlBuilder<Messa
                 h,
                 shared.display,
                 styles.archivePosition,
-                entry.position === 1 && styles.archivePositionTitle,
+                isTitleFinish(entry.position) && styles.archivePositionTitle,
               ),
             ],
             [ordinal(entry.position)],
@@ -479,53 +429,39 @@ const archiveList = (archive: ReadonlyArray<ArchiveSeason>, h: HtmlBuilder<Messa
 // How many archive seasons the folded HISTORY shows under its counts.
 const ARCHIVE_SHOWN = 3;
 
-// HISTORY opens folded to its headline counts and the latest seasons; the heading control opens the whole archive. The seasons-in-the-data count and its reach are read off the archive itself, so the tile can never promise more seasons than the list opens into.
+// HISTORY opens folded to its three stat cards and the latest seasons; the heading control opens the whole archive. The cards come off the record in a fixed priority (club-history.ts), so every club fills three and none shows a zero; their details are read off the archive itself, so a card can never name a season the list under it does not hold.
 const clubHistorySection = (target: Club, model: Model, h: HtmlBuilder<Message>): Html => {
   const anchor = 'history';
   const isExpanded = model.expandedClubSections.includes(anchor);
   const archive = clubArchive(target);
-  const oldest = Option.getOrUndefined(Array.last(archive));
-  // "Most recently" is read off the archive, so the tile and the list under it can never name different seasons.
-  const latestTitle = archive.find((season) => season.position === 1);
-  const latestCup = archive.find((season) => season.isCupWinner);
-  const entries = [
-    ...(target.leagueTitles > 0
-      ? [
-          {
-            value: timesCount(target.leagueTitles, h),
-            label: 'League titles',
-            detail: latestTitle === undefined ? '' : `Last ${latestTitle.season}`,
-          },
-        ]
-      : []),
-    ...(target.cupTitles > 0
-      ? [
-          {
-            value: timesCount(target.cupTitles, h),
-            label: 'Cup wins',
-            detail: latestCup === undefined ? '' : `Last ${latestCup.season}`,
-          },
-        ]
-      : []),
-    {
-      value: [`${archive.length}`],
-      label: 'Seasons',
-      detail: oldest === undefined ? '' : `Since ${oldest.season}`,
-    },
-  ];
   return clubSection(
     'History',
     [
       h.div(
         [...getStyleXAttributes(h, styles.historyGrid)],
-        entries.map((entry) =>
+        historyStats(target).map((entry) =>
           h.div(
             [],
             [
               h.div([...getStyleXAttributes(h, styles.pinkRule)], []),
-              h.p([...getStyleXAttributes(h, shared.display, styles.historyValue)], entry.value),
+              h.p(
+                [...getStyleXAttributes(h, shared.display, styles.historyValue)],
+                entry.isCount ? timesCount(Number(entry.value), h) : [entry.value],
+              ),
               h.p([...getStyleXAttributes(h, shared.display, styles.historyLabel)], [entry.label]),
-              h.p([...getStyleXAttributes(h, styles.historyDetail)], [entry.detail]),
+              // The detail never wraps: a phone card is narrower than the full line, so it shows the season alone there and the whole line from md.
+              h.p(
+                [...getStyleXAttributes(h, styles.historyDetail)],
+                entry.detail === entry.shortDetail
+                  ? [entry.detail]
+                  : [
+                      h.span([...getStyleXAttributes(h, styles.historyDetailFull)], [entry.detail]),
+                      h.span(
+                        [...getStyleXAttributes(h, styles.historyDetailShort)],
+                        [entry.shortDetail],
+                      ),
+                    ],
+              ),
             ],
           ),
         ),
@@ -569,14 +505,20 @@ const clubAllTimeStatsSection = (stats: AllTimeStats, h: HtmlBuilder<Message>): 
   );
 };
 
+// The most characters of a club's headline form the Follow label carries at 360 before it falls back to the bare verb: the block's 80px of padding and the display face's width at 1.25rem leave room for "FOLLOW " and about twelve more (measured: the longest in the data, "Viktoria B", fits with room).
+const FOLLOW_NAME_CHARS = 12;
+
 const clubFollowSection = (target: Club, model: Model, h: HtmlBuilder<Message>): Html => {
   const following = model.followed.includes(target.slug);
+  const followLabel =
+    target.displayName.length > FOLLOW_NAME_CHARS ? 'Follow' : `Follow ${target.displayName}`;
   return h.section(
     [...getStyleXAttributes(h, styles.follow)],
     [
+      // The headline names the club the way the button does, and "with you." is one unbreakable phrase so the last word never sits alone on a line.
       h.p(
         [...getStyleXAttributes(h, shared.display, styles.followTitle)],
-        [`Take ${target.name} with you.`],
+        [`Take ${target.displayName} with\u00a0you.`],
       ),
       h.p(
         [...getStyleXAttributes(h, styles.followSubtitle)],
@@ -590,10 +532,9 @@ const clubFollowSection = (target: Club, model: Model, h: HtmlBuilder<Message>):
               [
                 ...button,
                 h.AriaPressed(following ? 'true' : 'false'),
-                // On PAPER the states invert from the dark build: the call to
-                // action is the pink fill, and the settled "following" state
-                // goes solid ink — on a light surface a paper fill would have
-                // been the button disappearing, not receding.
+                // The call to action is the pink block; the settled "following"
+                // state is the ink block with the live-pink stroke under it.
+                // Tapping again unfollows, and a toast says so either way.
                 ...getStyleXAttributes(
                   h,
                   shared.display,
@@ -601,10 +542,15 @@ const clubFollowSection = (target: Club, model: Model, h: HtmlBuilder<Message>):
                   following ? styles.followOn : styles.followOff,
                 ),
               ],
-              [following ? 'Following ✓' : `Follow ${target.name}`],
+              [following ? 'Following' : followLabel],
             ),
         },
         h,
+      ),
+      // The toggle's outcome in a sentence, for assistive tech alone: the button's state is the visible confirmation. Rendered from the first paint so the live region exists before it changes; empty until a toggle.
+      h.p(
+        [h.AriaLive('polite'), h.AriaAtomic(true), ...getStyleXAttributes(h, shared.srOnly)],
+        [Option.getOrElse(model.followNotice, () => '')],
       ),
       ...clubLinksRow(target, h),
     ],
@@ -667,18 +613,15 @@ const clubLinksRow = (target: Club, h: HtmlBuilder<Message>): ReadonlyArray<Html
 };
 
 export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html => {
-  const heroArt = clubHeroPhotos[target.slug];
-  const honors = clubHonors[target.slug] ?? [];
-  // The badge is never empty: honours when the club has them, otherwise its competition and the current season.
-  const currentSeason =
-    competitions
-      .find((competition) => competition.name === target.league)
-      ?.editions.find((edition) => edition.isCurrent)?.label ?? '';
+  const art = heroPhoto(target);
+  const honors = heroHonors(target);
+  // The badge is never empty: honors when the club has any, otherwise its competition and the current season — the competition under the name the Leagues screen and its own page give it.
+  const competition = competitions.find((entry) => entry.name === target.league);
+  const competitionLine = `${competition?.name ?? target.league} · ${
+    competition?.editions.find((edition) => edition.isCurrent)?.label ?? ''
+  }`;
+  const honorIndex = honors.length === 0 ? 0 : model.honorIndex % honors.length;
   const allTime = clubAllTimeStats(target);
-  const highlight = clubHighlights[target.slug] ?? {
-    kicker: 'This season',
-    statement: `${target.won} wins, ${target.drawn} draws and ${target.lost} defeats in ${target.won + target.drawn + target.lost} games this season — the numbers tell it straight.`,
-  };
   // TWO BANDS, the landing page’s rhythm (user call): the profile opens on
   // a full-bleed DARK act — artwork, crest, name, honors, commentary — and
   // the black ENDS there. Everything from the calendar down is the data
@@ -687,50 +630,182 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
   // half is a reference table you read, and the surface change tells you
   // which mode you are in before you read a word. It also stops the club
   // profile being the one dark island in an otherwise light platform.
+  //
+  // THE DARK ACT IS ONE FIXED TEMPLATE. Every slot — the square photo, the
+  // bare crest on its bottom edge, the three-line name box, the honors
+  // badge, the commentary — has one height for every club on a given
+  // device, and the content adapts to it: a long name yields to the club's
+  // headline form, a long statement folds, a missing photo becomes the crest
+  // wash at the same height. Only the commentary may collapse, and only
+  // when there is none.
+  const honorLines = honors.map((honor, index) =>
+    h.span(
+      [
+        ...getStyleXAttributes(
+          h,
+          styles.honorLine,
+          index === honorIndex ? styles.honorLineShown : styles.honorLineHidden,
+        ),
+        ...(index === honorIndex ? [] : [h.AriaHidden(true)]),
+      ],
+      honor.count === undefined ? [honor.label] : [...timesCount(honor.count, h), honor.label],
+    ),
+  );
+  // The badge cycles on its own clock and a tap moves it on by hand, so with
+  // more than one honor it is a button; with one, or with the season chip,
+  // there is nothing to advance and it is a plain block.
+  const honorBadge =
+    honors.length > 1
+      ? Button.view(
+          {
+            onClick: Message.AdvancedHonor(),
+            toView: ({ button }) =>
+              h.button(
+                [
+                  ...button,
+                  h.AriaLive('polite'),
+                  h.AriaAtomic(true),
+                  ...getStyleXAttributes(
+                    h,
+                    shared.display,
+                    styles.honorBadge,
+                    styles.honorBadgeButton,
+                  ),
+                ],
+                honorLines,
+              ),
+          },
+          h,
+        )
+      : h.span(
+          [...getStyleXAttributes(h, shared.display, styles.honorBadge)],
+          honors.length === 1
+            ? honorLines
+            : [h.span([...getStyleXAttributes(h, styles.honorLine)], [competitionLine])],
+        );
+  const commentary = Option.match(clubCommentary(target), {
+    onNone: () => [],
+    onSome: (statement) => [
+      // SKÓREOVÁ COMMENTARY — the pull-quote under the honors badge, folded to its first lines with the Read more control between it and the byline, which is Skóreová signing the piece. The portrait is a placeholder until her photo lands.
+      h.figure(
+        [...getStyleXAttributes(h, styles.commentary)],
+        [
+          h.div(
+            [...getStyleXAttributes(h, styles.commentaryColumn)],
+            [
+              Disclosure.view(
+                {
+                  id: 'club-commentary',
+                  isOpen: model.isCommentaryOpen,
+                  onToggle: (isOpen) => Message.ToggledCommentary({ isOpen }),
+                  toView: ({ button, panel }) =>
+                    h.div(
+                      [],
+                      [
+                        h.blockquote(
+                          [...panel, ...getStyleXAttributes(h, styles.statement)],
+                          [
+                            // The mark hangs over the first line from outside the clamp box, which counts only the statement's own lines.
+                            h.span(
+                              [
+                                ...getStyleXAttributes(h, shared.display, styles.quoteMark),
+                                h.AriaHidden(true),
+                              ],
+                              ['“'],
+                            ),
+                            h.span(
+                              [
+                                // The fold's own measurement: the control is drawn only once the mount has seen lines hidden.
+                                h.OnMount(ObserveCommentaryOverflow({ lines: COMMENTARY_LINES })),
+                                ...getStyleXAttributes(
+                                  h,
+                                  styles.statementText,
+                                  model.isCommentaryOpen && styles.statementTextOpen,
+                                ),
+                              ],
+                              [statement],
+                            ),
+                          ],
+                        ),
+                        ...(model.isCommentaryClipped
+                          ? [
+                              h.button(
+                                [...button, ...getStyleXAttributes(h, styles.readMore)],
+                                [model.isCommentaryOpen ? 'Read less' : 'Read more'],
+                              ),
+                            ]
+                          : []),
+                      ],
+                    ),
+                },
+                h,
+              ),
+              h.figcaption(
+                [...getStyleXAttributes(h, styles.byline)],
+                [
+                  h.span(
+                    [...getStyleXAttributes(h, styles.portrait)],
+                    [
+                      h.img([
+                        h.Src(commentaryAvatar),
+                        h.Alt('Skóreová reporter'),
+                        h.Loading('lazy'),
+                        ...getStyleXAttributes(h, styles.portraitImage),
+                      ]),
+                    ],
+                  ),
+                  h.span(
+                    [...getStyleXAttributes(h, styles.bylineLockup)],
+                    [
+                      h.span(
+                        [...getStyleXAttributes(h, shared.display, styles.bylineMasthead)],
+                        ['Skóreová'],
+                      ),
+                      h.span([...getStyleXAttributes(h, styles.bylineLabel)], ['Commentary']),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    ],
+  });
   const darkBand = h.div(
     // Flows straight out of the header chrome — the same full-bleed
     // swallow as the contenders hero.
     [...getStyleXAttributes(h, styles.darkBand)],
     [
-      // The Universe-style header ARTWORK (user-supplied photo, per club):
-      // full-bleed, fading into the ink so the crest + name ride the fade.
-      // THE ART BAND — one band at one height for every club, the template the content adapts to. A club with a photo shows it; a club without gets the CREST WASH: its own crest blown up, blurred and faint over the lifted ink, so the band is still about the club. Both fades and the back link ride on either.
+      // THE PHOTO SLOT — square on a phone for every club. A club with a photo shows it, cropped to its focal point; a club without gets the CREST WASH: its own crest blown up, blurred and faint on the panel tone, so the slot is still about the club and still the same height. The fade into ink and the back link ride on either.
       h.div(
         [
           ...getStyleXAttributesWith(
             h,
             'club-hero-art',
             styles.heroArt,
-            heroArt === undefined && styles.heroArtWashed,
+            Option.isNone(art) && styles.heroArtWashed,
           ),
         ],
         [
-          heroArt === undefined
-            ? h.img([
+          Option.match(art, {
+            onNone: () =>
+              h.img([
                 h.Src(target.logo),
                 h.Alt(''),
                 h.AriaHidden(true),
                 ...getStyleXAttributes(h, styles.heroWashImage),
-              ])
-            : h.img([
-                h.Src(heroArt.photo),
+              ]),
+            onSome: ({ photo, focalPoint }) =>
+              h.img([
+                h.Src(photo),
                 h.Alt(''),
                 ...getStyleXAttributes(h, styles.heroArtImage),
-                h.Style({ 'object-position': heroArt.focus, 'transform-origin': heroArt.focus }),
+                h.Style({ 'object-position': focalPosition(focalPoint) }),
               ]),
-          ...(heroArt === undefined
-            ? [
-                h.div(
-                  [
-                    ...getStyleXAttributes(h, styles.heroWashBand),
-                    h.Style({ '--club-color': target.color ?? 'var(--color-pink)' }),
-                  ],
-                  [],
-                ),
-              ]
-            : []),
+          }),
           h.div([...getStyleXAttributes(h, styles.heroArtFade)], []),
-          h.div([...getStyleXAttributes(h, styles.heroArtTopFade)], []),
+          // The secondary Button over the art: its own pink block, so it needs no scrim on a photo and none on the wash.
           backLink({ label: 'All clubs', href: clubsRouter() }, h, styles.backLinkOnArt),
         ],
       ),
@@ -740,119 +815,27 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
           h.div(
             [...getStyleXAttributes(h, styles.hero)],
             [
-              h.img([
-                h.Src(target.logo),
-                h.Alt(`${target.name} crest`),
-                ...getStyleXAttributes(h, styles.crest),
-              ]),
-              h.h1([...getStyleXAttributes(h, shared.display, styles.heroName)], [target.name]),
-              // Honors ride UNDER the name and above the commentary. ONE
-              // chip whose line ROLLS over to the next honor (user call —
-              // like the landing page’s pitchside ad board), borrowing that
-              // exact grammar: a push, not a crossfade. All the lines stack
-              // in a single grid cell, so the chip’s width is the WIDEST of
-              // them and never jumps as the text changes.
-              // THE HONOURS SLOT — one fixed height for every club, never empty: the ticker, or the competition-and-season chip.
+              // THE CREST SLOT — centred on the photo's bottom edge, the crest bare inside it at the slot's full size.
               h.div(
-                [...getStyleXAttributes(h, styles.honorSlot)],
-                Array.isReadonlyArrayEmpty(honors)
-                  ? [
-                      // The static chip: the same box as the ticker, one line, no roll.
-                      h.ul(
-                        [...getStyleXAttributes(h, shared.display, styles.honorRoll)],
-                        [
-                          h.li(
-                            [...getStyleXAttributes(h, styles.honorLine)],
-                            [`${target.league} · ${currentSeason}`],
-                          ),
-                        ],
-                      ),
-                    ]
-                  : [
-                      h.ul(
-                        [
-                          ...getStyleXAttributesWith(
-                            h,
-                            'honor-roll',
-                            shared.display,
-                            styles.honorRoll,
-                          ),
-                        ],
-                        honors.map((honor, index) =>
-                          h.li(
-                            [
-                              ...getStyleXAttributes(h, styles.honorLine),
-                              h.Style({ '--honor-index': `${index}` }),
-                            ],
-                            honor.count === undefined
-                              ? [honor.label]
-                              : [...timesCount(honor.count, h), honor.label],
-                          ),
-                        ),
-                      ),
-                    ],
-              ),
-            ],
-          ),
-          // SKÓREOVÁ COMMENTARY — the editorial pull-quote under the honours slot: the pink rule beside a big opening mark and the whole statement, then the signature row on the rule's edge. The portrait is a placeholder until her photo lands.
-          h.figure(
-            [...getStyleXAttributes(h, styles.commentary)],
-            [
-              h.div(
-                [...getStyleXAttributes(h, styles.commentaryColumn)],
+                [...getStyleXAttributes(h, styles.crestSlot)],
                 [
-                  h.blockquote(
-                    [...getStyleXAttributes(h, styles.statement)],
-                    [
-                      h.div(
-                        [...getStyleXAttributes(h, styles.quoteInner)],
-                        [
-                          h.span(
-                            [
-                              ...getStyleXAttributes(h, shared.display, styles.quoteMark),
-                              h.AriaHidden(true),
-                            ],
-                            ['“'],
-                          ),
-                          h.span(
-                            [...getStyleXAttributes(h, styles.statementText)],
-                            [highlight.statement],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  // The signature: the portrait on the rule's left edge and the lockup beside it — Skóreová signing the piece.
-                  h.figcaption(
-                    [...getStyleXAttributes(h, styles.byline)],
-                    [
-                      h.span(
-                        [...getStyleXAttributes(h, styles.portrait)],
-                        [
-                          h.img([
-                            h.Src(commentaryAvatar),
-                            h.Alt('Skóreová reporter'),
-                            h.Loading('lazy'),
-                            ...getStyleXAttributes(h, styles.portraitImage),
-                          ]),
-                        ],
-                      ),
-                      h.span(
-                        [...getStyleXAttributes(h, styles.bylineLockup)],
-                        [
-                          h.span(
-                            [...getStyleXAttributes(h, shared.display, styles.bylineMasthead)],
-                            ['Skóreová'],
-                          ),
-                          h.span([...getStyleXAttributes(h, styles.bylineLabel)], ['Commentary']),
-                        ],
-                      ),
-                    ],
-                  ),
+                  h.img([
+                    h.Src(target.logo),
+                    h.Alt(`${target.name} crest`),
+                    ...getStyleXAttributes(h, styles.crest),
+                  ]),
                 ],
               ),
+              // THE NAME BOX — three lines on a phone; the name that goes in it is the one that fits.
+              h.h1(
+                [...getStyleXAttributes(h, shared.display, styles.heroName)],
+                [heroTitle(target)],
+              ),
+              // THE HONORS SLOT — one badge's height for every club, never empty.
+              h.div([...getStyleXAttributes(h, styles.honorSlot)], [honorBadge]),
             ],
           ),
+          ...commentary,
         ],
       ),
       h.div([...getStyleXAttributesWith(h, 'grain', styles.grainOverlay), h.AriaHidden(true)], []),

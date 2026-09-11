@@ -63,6 +63,14 @@ export const Club = Schema.Struct({
   // placeholder until the real data lands.
   leagueTitles: Schema.Number,
   cupTitles: Schema.Number,
+  // Seasons the club won league and cup together, where known — the third
+  // line the hero's honors badge cycles. Absent until real data lands.
+  doubles: Schema.optionalKey(Schema.Number),
+  // The year the club was founded and the season it joined the top flight,
+  // where known. The honors badge falls back to them for a club short of
+  // silverware, so a badge never reads "0×" and never renders empty.
+  founded: Schema.optionalKey(Schema.Number),
+  topFlightSince: Schema.optionalKey(Schema.Number),
   // The club's primary colour as a CSS colour, where known — the hero's fallback surface tints with it. Absent until real data lands; the UI falls back to pink.
   color: Schema.optionalKey(Schema.String),
   // The club's web presence, where known. Mock for now: the accounts the marquee clubs run in public, absent for the rest until real data lands.

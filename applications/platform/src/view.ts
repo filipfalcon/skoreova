@@ -3,6 +3,7 @@
 // through that directory’s barrel); the shared engines (standings,
 // schedule, stat tiles, …) live alongside.
 
+import * as stylex from '@stylexjs/stylex';
 import { Array, Match, Option } from 'effect';
 import type { Document, Html, HtmlBuilder } from 'foldkit/html';
 
@@ -19,8 +20,9 @@ import {
 import { documentTitle } from './document-title';
 import { routePath } from './route';
 import { SITE_ORIGIN } from './site';
-import type { Message } from './message';
+import { Message } from './message';
 import type { Model } from './model';
+import { AppToast, TOAST_ID } from './toast';
 import {
   ClubProfile,
   Clubs,
@@ -34,6 +36,9 @@ import {
 } from './page';
 import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
 import { styles } from './styles/view';
+
+// The toast stack's list is drawn by the library, which takes a class name rather than attributes; this is the compiled class of the stack's styles.
+const toastStackClass = stylex.props(styles.toastStack).className ?? '';
 
 // PROFILES — migrated from the landing page, restyled into the platform’s
 // panel idiom. Same anatomy as the drafts: a club shows its hero, league
@@ -116,6 +121,20 @@ const shellView = (model: Model, h: HtmlBuilder<Message>): Html =>
           ),
         ],
       ),
+      // THE TOAST STACK — the passing confirmations, at the bottom of the viewport above the safe area, on the lifted ink with paper text: no shadow, no radius, the platform's own idiom. The stack's list is the library's; the entry inside it is ours.
+      h.submodel({
+        slotId: TOAST_ID,
+        model: model.toasts,
+        view: AppToast.view,
+        toParentMessage: (message) => Message.GotToastMessage({ message }),
+        viewInputs: {
+          position: 'BottomCenter',
+          ariaLabel: 'Notifications',
+          containerClassName: toastStackClass,
+          entryToView: (entry) =>
+            h.div([...getStyleXAttributes(h, styles.toast)], [entry.payload.text]),
+        },
+      }),
     ],
   );
 

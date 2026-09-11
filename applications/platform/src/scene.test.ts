@@ -17,7 +17,11 @@ import {
   widgetCatalogModel,
 } from './main.fixtures';
 import { update, view } from './main';
-import { ObserveTrendingScroll, ScrollMatchStripToNext } from './command';
+import {
+  ObserveCommentaryOverflow,
+  ObserveTrendingScroll,
+  ScrollMatchStripToNext,
+} from './command';
 import { Message } from './message';
 import { clubArchive, clubs, scorersFor, standingsFor } from './data';
 import { AppRoute, urlToAppRoute } from './route';
@@ -38,8 +42,14 @@ const acknowledgeMounts = [
 ];
 
 // Every club profile scene renders the match strip, whose opening scroll is a Mount; Scene requires it acknowledged.
-const acknowledgeQuote = [
+const acknowledgeStrip = [
   Scene.Mount.resolve(ScrollMatchStripToNext, Message.CompletedMatchStripScroll()),
+];
+
+// A profile with a commentary also mounts the fold's measurement. Unclipped mirrors the boot Model — the real measuring needs a browser and never runs here.
+const acknowledgeQuote = [
+  ...acknowledgeStrip,
+  Scene.Mount.resolve(ObserveCommentaryOverflow, Message.MeasuredCommentary({ isClipped: false })),
 ];
 
 describe('view', () => {
@@ -219,7 +229,7 @@ describe('view', () => {
       Scene.given(clubProfileModel),
       ...acknowledgeQuote,
       Scene.expect(Scene.role('heading', { name: 'Sparta Praha' })).toExist(),
-      Scene.expect(Scene.role('button', { name: 'Follow Sparta Praha' })).toExist(),
+      Scene.expect(Scene.role('button', { name: 'Follow Sparta' })).toExist(),
       Scene.expect(Scene.text('Top scorers')).toExist(),
       // The jump row and the fixtures list — the two blocks the profile grew
       // when its sections learned to fold.
@@ -230,6 +240,54 @@ describe('view', () => {
       Scene.expect(Scene.text('Result')).toExist(),
       Scene.expect(Scene.text('Next')).toExist(),
       Scene.expect(Scene.text('Form · last 5')).toExist(),
+    );
+  });
+
+  // The hero's honors badge is a button that moves to the next honor on a tap;
+  // only the honor showing is in its name, the rest hold the width unheard.
+  test('the honors badge advances on a tap', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(clubProfileModel),
+      ...acknowledgeQuote,
+      Scene.expect(Scene.role('button', { name: /League champions/ })).toExist(),
+      Scene.expect(Scene.role('button', { name: /Cup winners/ })).not.toExist(),
+      Scene.click(Scene.role('button', { name: /League champions/ })),
+      Scene.expect(Scene.role('button', { name: /Cup winners/ })).toExist(),
+      Scene.expect(Scene.role('button', { name: /League champions/ })).not.toExist(),
+    );
+  });
+
+  // The commentary's fold control exists only once the mount has measured
+  // hidden lines, and then reads what pressing it does.
+  test('the commentary offers Read more only when its fold hides lines', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(clubProfileModel),
+      ...acknowledgeQuote,
+      Scene.expect(Scene.role('button', { name: 'Read more' })).not.toExist(),
+    );
+    Scene.scene(
+      { update, view },
+      Scene.given({ ...clubProfileModel, isCommentaryClipped: true }),
+      ...acknowledgeStrip,
+      Scene.Mount.resolve(
+        ObserveCommentaryOverflow,
+        Message.MeasuredCommentary({ isClipped: true }),
+      ),
+      Scene.expect(Scene.role('button', { name: 'Read more' })).toHaveAttr(
+        'aria-expanded',
+        'false',
+      ),
+      Scene.click(Scene.role('button', { name: 'Read more' })),
+      Scene.expect(Scene.role('button', { name: 'Read less' })).toHaveAttr('aria-expanded', 'true'),
+    );
+    // A club without a statement renders no commentary block at all.
+    Scene.scene(
+      { update, view },
+      Scene.given({ ...clubProfileModel, route: AppRoute.Club({ slug: 'teplice' }) }),
+      ...acknowledgeStrip,
+      Scene.expect(Scene.text('Commentary')).not.toExist(),
     );
   });
 
@@ -271,7 +329,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given({ ...clubProfileModel, route: AppRoute.Club({ slug: 'teplice' }) }),
-      ...acknowledgeQuote,
+      ...acknowledgeStrip,
       Scene.expect(Scene.role('link', { name: /Instagram/ })).not.toExist(),
     );
   });

@@ -2,6 +2,7 @@ import { RadioGroup } from '@foldkit/ui';
 import { Option, Schema } from 'effect';
 
 import { AppRoute } from './route';
+import { AppToast } from './toast';
 import { FEED_ATTENDANCE, FEED_FEATURED_MATCHES, FEED_TOP_SCORERS, FEED_LABEL } from './widgets';
 
 // A MOCK of the platform: the shell, the navigation, and every screen are
@@ -104,7 +105,12 @@ export const Model = Schema.Struct({
   expandedClubSections: Schema.Array(Schema.String),
   // The club-profile section under the reader's eye, by anchor, kept by the scroll-spy subscription so the jump row can mark it. None while the hero is in view. Reset like the open sections: cleared on leaving the page, kept across a hash jump within it.
   activeClubSection: Schema.Option(Schema.String),
-  // Whether the folded commentary hides lines, as its own mount measures it. False until measured, and from md up, where nothing folds; the More control is drawn only while this is true.
+  // Which of the hero badge's honors is showing. The cycle subscription advances it on a timer and a tap advances it by hand; either way it wraps at the club's count. Reset on leaving the profile, kept across a hash jump within it.
+  honorIndex: Schema.Number,
+  // Whether the hero commentary is unfolded past its first lines. Session-only and reset like the open sections.
+  isCommentaryOpen: Schema.Boolean,
+  // Whether the folded commentary hides lines, as its own mount measures it. False until measured; the Read more control is drawn only while this is true, so it never appears over a statement that is already whole.
+  isCommentaryClipped: Schema.Boolean,
   // Which competition the profile's COMPETITIONS section shows. The league is every club's default and what a fresh profile opens on; kept across a hash jump within the profile.
   competitionTab: CompetitionKind,
   // The competition picker's own state, on the scope picker's terms: the committed tab stays in `competitionTab` above.
@@ -143,6 +149,10 @@ export const Model = Schema.Struct({
   // time-derived id keeps the reducer pure, which is what lets a story assert
   // the key a block was added under.
   nextFeedKey: Schema.Number,
+  // What the last follow toggle did, in a sentence for assistive tech ("Following Sparta Praha"): the button's own state is the visible confirmation, and this is its spoken one. None until a toggle, and cleared on leaving the page.
+  followNotice: Schema.Option(Schema.String),
+  // The toast stack's own state, for an action whose result is not visible on screen. Nothing shows one yet; a follow confirms itself in the button. Survives a route change: a toast shown on one page still reads on the next.
+  toasts: AppToast.Model,
 });
 export type Model = typeof Model.Type;
 

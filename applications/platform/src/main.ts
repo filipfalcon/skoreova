@@ -21,7 +21,9 @@ import {
 } from './model';
 import { Message } from './message';
 import { Load, Navigate, ReadPins, RevealJumpChip, ScrollTrending, WritePins } from './command';
-import { competitionBySlug, featuredClubs, trending } from './data';
+import { heroHonors } from './club-hero';
+import { clubBySlug, competitionBySlug, featuredClubs, trending } from './data';
+import { routeClubSlug } from './screen';
 import { competitionRoundCount } from './schedule';
 import { RadioGroup } from '@foldkit/ui';
 import {
@@ -32,6 +34,7 @@ import {
   SCOPE_GROUP_ID,
   ScopeRadioGroup,
 } from './radio-groups';
+import { AppToast, TOAST_DURATION, TOAST_ID } from './toast';
 import { widgetKind } from './widgets';
 
 // The Model, Messages, Commands, data, shared components, and the screens each
@@ -75,6 +78,9 @@ const initialModel: Model = {
   pinned: [],
   expandedClubSections: [],
   activeClubSection: Option.none(),
+  honorIndex: 0,
+  isCommentaryOpen: false,
+  isCommentaryClipped: false,
   competitionTab: 'League',
   competitionGroup: RadioGroup.init({ id: COMPETITION_GROUP_ID }),
   scorerScope: 'All',
@@ -87,6 +93,8 @@ const initialModel: Model = {
   isWidgetCatalogOpen: false,
   isWidgetAddRefused: false,
   nextFeedKey: DEFAULT_NEXT_FEED_KEY,
+  followNotice: Option.none(),
+  toasts: AppToast.init({ id: TOAST_ID, defaultDuration: TOAST_DURATION }),
 };
 
 // A route change stores the new route and resets the transient per-view state
@@ -104,10 +112,16 @@ const applyRoute = (model: Model, route: AppRoute): Model =>
     expandedClubSections: (current) => (routePath(route) === routePath(model.route) ? current : []),
     activeClubSection: (current) =>
       routePath(route) === routePath(model.route) ? current : Option.none(),
+    // The hero's own state folds with the sections: a fresh profile opens on its first honor with the commentary folded, and its clipping is measured again once the new statement is in the document.
+    honorIndex: (current) => (routePath(route) === routePath(model.route) ? current : 0),
+    isCommentaryOpen: (current) => (routePath(route) === routePath(model.route) ? current : false),
+    isCommentaryClipped: (current) =>
+      routePath(route) === routePath(model.route) ? current : false,
     competitionTab: (current) => (routePath(route) === routePath(model.route) ? current : 'League'),
     isFeedEditing: () => false,
     isWidgetCatalogOpen: () => false,
     isWidgetAddRefused: () => false,
+    followNotice: () => Option.none(),
   });
 
 export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => ({
@@ -232,9 +246,29 @@ export const update = (model: Model, message: Message) =>
       model: evo(model, { prefersReducedMotion: () => reduce }),
     }),
     CompletedScrollTrending: () => ({ model }),
-    ToggledFollow: ({ slug }) => ({
-      model: evo(model, { followed: (followed) => toggleEntry(followed, slug) }),
-    }),
+    // A follow toggles and confirms itself in the button's own state; the notice is the same outcome in a sentence for a screen reader. Nothing asks for confirmation. Free plan, no account gate — every visitor can follow (see the Model).
+    ToggledFollow: ({ slug }) => {
+      const isFollowing = !Array.contains(model.followed, slug);
+      const name = Option.match(clubBySlug(slug), {
+        onNone: () => slug,
+        onSome: (club) => club.name,
+      });
+      return {
+        model: evo(model, {
+          followed: (followed) => toggleEntry(followed, slug),
+          followNotice: () => Option.some(`${isFollowing ? 'Following' : 'Unfollowed'} ${name}`),
+        }),
+      };
+    },
+    GotToastMessage: ({ message }) =>
+      Update.foldChild({
+        update: AppToast.update,
+        read: (parent: Model) => Option.some(parent.toasts),
+        write: (parent: Model, toasts) => evo(parent, { toasts: () => toasts }),
+        toParentMessage: (childMessage) => Message.GotToastMessage({ message: childMessage }),
+        // A dismissed toast leaves nothing behind; the sentence was the whole of it.
+        foldOutMessage: () => (parent: Model) => ({ model: parent }),
+      })(message)(model),
     ToggledClubSection: ({ anchor }) => ({
       model: evo(model, { expandedClubSections: (open) => toggleEntry(open, anchor) }),
     }),
@@ -247,6 +281,20 @@ export const update = (model: Model, message: Message) =>
         anchor === '' ? [] : [RevealJumpChip({ anchor, reduce: model.prefersReducedMotion })],
     }),
     CompletedRevealJumpChip: () => ({ model }),
+    // Wrapped HERE against the club's own count, so `honorIndex` is always a valid index into the badge's lines and the view reads it straight. Off a profile there is nothing to advance.
+    AdvancedHonor: () => {
+      const count = Option.match(clubBySlug(routeClubSlug(model.route)), {
+        onNone: () => 0,
+        onSome: (club) => heroHonors(club).length,
+      });
+      return count === 0
+        ? { model }
+        : { model: evo(model, { honorIndex: (index) => (index + 1) % count }) };
+    },
+    ToggledCommentary: ({ isOpen }) => ({ model: evo(model, { isCommentaryOpen: () => isOpen }) }),
+    MeasuredCommentary: ({ isClipped }) => ({
+      model: evo(model, { isCommentaryClipped: () => isClipped }),
+    }),
     CompletedMatchStripScroll: () => ({ model }),
     LoadedPins: ({ ids }) => ({ model: evo(model, { pinned: () => ids }) }),
     ToggledPin: ({ id }) => {

@@ -30,13 +30,15 @@ export const styles = stylex.create({
     },
     color: tokens.ink,
   },
+  // 72px on a phone: the size at which two crests and a two-digit score still
+  // fit inside a 360px card's own padding, so nothing reaches its edge.
   crestImage: {
     height: {
-      default: '5rem',
+      default: '4.5rem',
       [MD]: '6rem',
     },
     width: {
-      default: '5rem',
+      default: '4.5rem',
       [MD]: '6rem',
     },
     objectFit: 'contain',
@@ -45,7 +47,7 @@ export const styles = stylex.create({
     position: 'relative',
     zIndex: 10,
     marginInline: {
-      default: '-0.5rem',
+      default: 0,
       [MD]: '-1rem',
     },
     display: 'flex',
@@ -93,16 +95,19 @@ export const styles = stylex.create({
     lineHeight: 1,
     color: tokens.ink,
   },
-  // A link: ink text, no underline, and the frame answers the hover.
+  // A link: ink text, no underline, paper under the hairline frame — and the
+  // frame answers the hover. Paper, not surface: the fixture's pink VS mark
+  // sits on the card, and pink may not sit on surface.
   card: {
     display: 'flex',
     flexDirection: 'column',
     width: '100%',
     color: tokens.ink,
     textDecoration: 'none',
+    backgroundColor: tokens.paper,
     borderWidth: 1,
     borderColor: {
-      default: 'color-mix(in srgb, var(--color-ink) 15%, transparent)',
+      default: tokens.hairline,
       ':hover': tokens.pink,
     },
     transitionProperty: 'border-color',
@@ -113,6 +118,8 @@ export const styles = stylex.create({
   // Capped and centered: on a full-width card the two crests would
   // otherwise sit at opposite edges with the score marooned between them,
   // and they stop reading as one fixture.
+  // The `md` inline padding is what a peeking card shows: 16px of tone and
+  // outline, never a crest edge or a digit.
   fixtureRow: {
     marginInline: 'auto',
     display: 'flex',
@@ -124,7 +131,7 @@ export const styles = stylex.create({
       [MD]: '1.25rem',
     },
     paddingInline: {
-      default: '1.25rem',
+      default: spacing.md,
       [MD]: '1.5rem',
     },
     paddingBlock: {
@@ -173,12 +180,31 @@ export const styles = stylex.create({
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
     textTransform: 'uppercase',
   },
-  // The strip. On a phone a native snap scroller: each card is the column less one `lg` and the gap, so the next card shows its first 24px and says there is more — the trending track's arithmetic. From md the cards sit side by side and nothing scrolls.
+  // The strip. On a phone a native snap scroller that bleeds to the screen's
+  // edges and carries the column's gutter as its own padding, with the snap
+  // start on that gutter: at rest the NEXT card's left edge sits on the
+  // gutter, and the cards on either side show exactly 16px of themselves in
+  // the gutters' 20px (the 4px gap is the rest) — the same rest position at
+  // every width, and 16px is inside a card's own padding, so a peek is tone
+  // and outline and never a crest or a digit. From md the cards sit side by
+  // side and nothing scrolls.
   strip: {
     marginTop: '1.5rem',
+    marginInline: {
+      default: '-1.25rem',
+      [MD]: 0,
+    },
+    paddingInline: {
+      default: '1.25rem',
+      [MD]: 0,
+    },
+    scrollPaddingInlineStart: '1.25rem',
     display: 'flex',
     alignItems: 'stretch',
-    gap: spacing.sm,
+    gap: {
+      default: '0.25rem',
+      [MD]: spacing.sm,
+    },
     overflowX: {
       default: 'auto',
       [MD]: 'visible',
@@ -198,7 +224,7 @@ export const styles = stylex.create({
     },
     flexShrink: 0,
     flexBasis: {
-      default: `calc(100% - ${spacing.sm} - ${spacing.lg})`,
+      default: '100%',
       [MD]: '0%',
     },
     minWidth: 0,
@@ -241,19 +267,23 @@ export const styles = stylex.create({
     textIndent: '0.2em',
     textTransform: 'uppercase',
   },
+  // The three form hues from styles.css, ordered by luminance there; the
+  // letter takes whichever of ink and paper clears 4.5:1 on each (measured:
+  // paper on win 4.6, ink on draw 5.3, paper on loss 7.4). The accent is
+  // never one of them: pink is a chip, not a result.
   formWin: {
-    borderColor: tokens.pink,
-    backgroundColor: tokens.pink,
-    color: tokens.ink,
+    borderColor: tokens.formWin,
+    backgroundColor: tokens.formWin,
+    color: tokens.paper,
   },
   formDraw: {
-    borderColor: tokens.hairline,
-    backgroundColor: tokens.paper,
+    borderColor: tokens.formDraw,
+    backgroundColor: tokens.formDraw,
     color: tokens.ink,
   },
   formLoss: {
-    borderColor: tokens.ink,
-    backgroundColor: tokens.ink,
+    borderColor: tokens.formLoss,
+    backgroundColor: tokens.formLoss,
     color: tokens.paper,
   },
   formCaption: {
