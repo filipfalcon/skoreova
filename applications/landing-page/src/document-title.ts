@@ -10,4 +10,4 @@ export const SITE_ORIGIN = 'https://skoreova.com';
 export const documentTitle = (route: AppRoute): string =>
   route._tag === 'Policy'
     ? 'Cookies & Privacy — Skóreová'
-    : 'Skóreová — Czech Women’s Football Coverage';
+    : 'Skóreová — Czech Women’s Football Unlocked';

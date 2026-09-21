@@ -1,6 +1,6 @@
 # Skóreová
 
-> Czech Women’s Football Coverage: the first league, the second league, the
+> Czech Women’s Football Unlocked: the first league, the second league, the
 > domestic cup, Czech clubs in European competitions (UWCL, UWEC), and the
 > national team. Made in Czechia, written in English.
 

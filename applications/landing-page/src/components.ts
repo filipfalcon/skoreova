@@ -471,7 +471,7 @@ export const footerView = (isMenuOpen: boolean, h: HtmlBuilder<Message>): Html =
             [h.Class('display text-base tracking-wide text-paper')],
             ['Skóreová', h.span([h.Class('text-pink')], ['.'])],
           ),
-          h.span([], ['Czech Women’s Football Coverage']),
+          h.span([], ['CZECH WOSO UNLOCKED 🇨🇿']),
           // Reopens the consent banner — index.html owns the handler (the
           // banner lives outside the app; see the script there).
           h.a(
