@@ -325,6 +325,8 @@ const seasonSelect = (competition: Competition, model: Model, h: HtmlBuilder<Mes
       // controls drive one piece of state and can't disagree.
       onChange: (label) =>
         Message.SelectedCompetitionEdition({ label: label === currentLabel ? '' : label }),
+      // The description below is rendered, so the select may point at it.
+      hasDescription: true,
       toView: (attributes) =>
         h.span(
           [...getStyleXAttributes(h, styles.seasonField)],
@@ -333,11 +335,10 @@ const seasonSelect = (competition: Competition, model: Model, h: HtmlBuilder<Mes
             // the clubs search makes: it names the control for AT without
             // showing a word next to a value that already reads as one.
             h.label([...attributes.label, ...getStyleXAttributes(h, shared.srOnly)], ['Season']),
-            // Ui.Select points aria-describedby at this id unconditionally, so
-            // SOMETHING has to answer to it — an unresolved IDREF is what
-            // automated a11y checks flag. Rather than park an empty element
-            // there, it says the one thing a screen reader cannot infer from a
-            // label reading "Season" and a value reading "2025/26".
+            // The one thing a screen reader cannot infer from a label reading
+            // "Season" and a value reading "2025/26". Ui.Select points
+            // aria-describedby at it only because `hasDescription` says it is
+            // here, so the reference never dangles.
             h.span(
               [...attributes.description, ...getStyleXAttributes(h, shared.srOnly)],
               ['Changes the season shown on this page.'],

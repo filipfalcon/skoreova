@@ -144,6 +144,13 @@ export default defineConfig({
       // Added with the 0.12 plugin: full Effect module names instead of aliases, and no clock or randomness read at decision time — both at zero violations once the aliases were expanded.
       'foldkit/prefer-effect-module-names': 'error',
       'foldkit/no-impure-call-at-decision-time': 'error',
+      // Added with the 0.13 plugin, all at zero violations on adoption: dispatch through the union's `match` rather than a `switch` on `_tag`; a Model field that may be absent is an Option, not a nullable; a route query default has to run while the query decodes; a Command's result Message is lifted with `Command.mapMessage`, which Story and Scene can see, never by mapping the Effect; an `acquireRelease` builds its resource inside the acquire; and `preventDefault` never lives in a Stream operator, where it runs a turn after the browser's dispatch.
+      'foldkit/no-switch-on-message-tag': 'error',
+      'foldkit/prefer-option-over-nullable-in-model': 'error',
+      'foldkit/no-route-query-constructor-default': 'error',
+      'foldkit/prefer-command-mapmessage': 'error',
+      'foldkit/acquire-release-constructs-in-acquire-body': 'error',
+      'foldkit/no-prevent-default-in-stream-operator': 'error',
     },
     overrides: [
       {

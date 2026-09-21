@@ -171,26 +171,14 @@ export default {
         },
       });
     }
-    // A method the `Request` constructor rejects can never reach an entry, so
-    // it is refused here rather than turned into a 500 further in.
-    if (Server.isHostSettledMethod(request.method)) {
-      return new Response(null, {
-        status: Server.HOST_METHOD_ANSWERS.refusedStatus,
-        headers: { Allow: Server.HOST_METHOD_ANSWERS.allow },
-      });
-    }
-    // A request that matched no file is not automatically a page. A browser
-    // asks for scripts, styles and images with `Accept: */*`, which accepts
-    // HTML, so a hashed bundle that is no longer deployed would otherwise be
-    // answered with the shell at 200 — a stale client would read that as its
-    // own JavaScript. Classifying the miss answers it as the miss it is.
-    if (
-      Server.classifyRequest(request.url, request.headers.get('sec-fetch-dest') ?? undefined) !==
-      'Page'
-    ) {
-      return new Response('Not found', { status: 404 });
-    }
-    return Server.toResponse(await shell(env, url), await renderPage(request));
+    // Everything that is not a file and not this Worker's own endpoints is
+    // Foldkit's fetch handler: it refuses a method the `Request` constructor
+    // rejects, answers a static miss as the miss it is (a browser asks for a
+    // hashed bundle with `Accept: */*`, which accepts HTML, so a stale client
+    // would otherwise read the shell as its own JavaScript), strips the body
+    // of a HEAD, sets the Vary the negotiation needs, and only then renders.
+    // The shell is read up front because the handler takes a string.
+    return Server.handleRequest(request, { renderPage, template: await shell(env, url) });
   },
 
   async scheduled(_controller: unknown, env: Env): Promise<void> {

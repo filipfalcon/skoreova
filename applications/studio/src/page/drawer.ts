@@ -648,6 +648,8 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
     model: model.dialog,
     view: Dialog.view,
     viewInputs: {
+      // The type pill renders the description the dialog points at.
+      hasDescription: true,
       toView: (render) =>
         h.dialog(
           [...render.dialog],
