@@ -135,30 +135,6 @@ test('a route change clears the per-screen pickers and keeps the durable lists',
   );
 });
 
-// The badge's index wraps at the club's own count, and the hero's state
-// leaves with the profile: another club opens on its first honor, folded.
-test('the honors badge wraps at the club’s count and resets on leaving', () => {
-  Story.story(
-    update,
-    Story.given({ ...clubProfileModel, honorIndex: 2, isCommentaryOpen: true }),
-    Story.message(Message.AdvancedHonor()),
-    Story.model((model) => {
-      expect(model.honorIndex).toBe(0);
-      expect(model.isCommentaryOpen).toBe(true);
-    }),
-    Story.message(Message.AdvancedHonor()),
-    Story.model((model) => {
-      expect(model.honorIndex).toBe(1);
-    }),
-    Story.message(Message.ChangedUrl({ url: url('/clubs/slavia-praha') })),
-    Story.model((model) => {
-      expect(model.honorIndex).toBe(0);
-      expect(model.isCommentaryOpen).toBe(false);
-    }),
-    Story.Command.expectNone(),
-  );
-});
-
 // Each toggle also sets the spoken notice, and leaving the page clears it so
 // a reader never hears a stale one on the next profile.
 test('following a club adds the slug, following again removes it, and each says so', () => {

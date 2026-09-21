@@ -105,12 +105,6 @@ export const Model = Schema.Struct({
   expandedClubSections: Schema.Array(Schema.String),
   // The club-profile section under the reader's eye, by anchor, kept by the scroll-spy subscription so the jump row can mark it. None while the hero is in view. Reset like the open sections: cleared on leaving the page, kept across a hash jump within it.
   activeClubSection: Schema.Option(Schema.String),
-  // Which of the hero badge's honors is showing. The cycle subscription advances it on a timer and a tap advances it by hand; either way it wraps at the club's count. Reset on leaving the profile, kept across a hash jump within it.
-  honorIndex: Schema.Number,
-  // Whether the hero commentary is unfolded past its first lines. Session-only and reset like the open sections.
-  isCommentaryOpen: Schema.Boolean,
-  // Whether the folded commentary hides lines, as its own mount measures it. False until measured; the Read more control is drawn only while this is true, so it never appears over a statement that is already whole.
-  isCommentaryClipped: Schema.Boolean,
   // Which competition the profile's COMPETITIONS section shows. The league is every club's default and what a fresh profile opens on; kept across a hash jump within the profile.
   competitionTab: CompetitionKind,
   // The competition picker's own state, on the scope picker's terms: the committed tab stays in `competitionTab` above.

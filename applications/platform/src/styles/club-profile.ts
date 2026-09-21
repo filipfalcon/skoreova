@@ -4,21 +4,20 @@ import { spacing, tokens, type } from '../tokens.stylex';
 
 // Styles for the club profile (page/club-profile.ts): the full-bleed dark
 // editorial band — the hero's fixed template of photo slot, crest disc, name
-// box, honors badge and commentary — and the paper data act's cup run,
+// box, honors stack and commentary — and the paper data act's cup run,
 // scorer boards, history grid and follow call.
 
 const SM = '@media (min-width: 640px)';
 const MD = '@media (min-width: 768px)';
 const LG = '@media (min-width: 1024px)';
-const REDUCE = '@media (prefers-reduced-motion: reduce)';
 // The width from which a history card holds its full detail line (see historyDetail).
 const CARD_FITS_DETAIL = '@media (min-width: 375px)';
 
-// The honors badge's crossfade: the incoming honor fades in over the paper.
-const honorFade = stylex.keyframes({
-  from: { opacity: 0 },
-  to: { opacity: 1 },
-});
+// One honor stamp's height: its 1.75rem line plus its vertical padding. The
+// honors slot is three of these and the two gaps between them, so a club
+// with one honor leaves two stamps' worth of ink empty and nothing under it
+// moves.
+const STAMP_HEIGHT = { phone: '2.5rem', md: '2.75rem' } as const;
 
 export const styles = stylex.create({
   // The dark act — flows straight out of the header chrome, full-bleed via
@@ -102,12 +101,17 @@ export const styles = stylex.create({
     width: '100%',
     objectFit: 'cover',
   },
-  // The fade into the band: clear for the top 55% of the slot, then ink by
-  // the bottom edge, so the crest disc sits on ink whatever the photo.
+  // The fade into the band: clear for the top 55% of the slot, then ink
+  // from 98% down, so the crest sits on ink whatever the photo. The ink
+  // stop lands BEFORE the edge on purpose: the slot's last rows are solid
+  // ink, and the wash's antialiased bottom row and the gradient's own
+  // dithered end can never show as a line where the slot meets the band.
+  // Measured 2026-09-16 in Chromium: with the stop at 100% every wash club
+  // had one row a few pixels above the edge reading lighter than the band.
   heroArtFade: {
     position: 'absolute',
     inset: 0,
-    backgroundImage: 'linear-gradient(to bottom, transparent 55%, var(--color-ink) 100%)',
+    backgroundImage: 'linear-gradient(to bottom, transparent 55%, var(--color-ink) 98%)',
   },
   // Over the art at every width, 1rem under the header (the band's top IS
   // the header's bottom edge — the negative top margin only cancels the
@@ -167,11 +171,14 @@ export const styles = stylex.create({
   // THE NAME BOX — the headline rung, centred, at one size per viewport
   // width and never fitted to the name. Three lines on a phone at the 1.02
   // leading, two from md: a shorter name leaves its spare lines and nothing
-  // under it moves. A name that would need a fourth line never reaches the
-  // box — heroTitle hands the club's headline form in its place.
+  // under it moves. The name sits on the BOTTOM of the box, so its last line
+  // is always `md` above the first stamp whatever the line count, and the
+  // spare lines open up between the crest and the name instead. A name that
+  // would need a fourth line never reaches the box — heroTitle hands the
+  // club's headline form in its place.
   heroName: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'center',
     height: {
       default: '3.06em',
@@ -189,22 +196,35 @@ export const styles = stylex.create({
     wordBreak: 'normal',
     color: tokens.paper,
   },
-  // THE HONORS SLOT — one badge's height for every club, `md` under the name.
+  // THE HONORS SLOT — three stamps' height for every club, `md` under the
+  // name: the block step, so the name and its honors read as one statement.
+  // The stack inside starts at the top and a club with fewer honors leaves
+  // the rest of the slot empty.
   honorSlot: {
     marginTop: spacing.md,
     display: 'flex',
     justifyContent: 'center',
+    alignItems: 'flex-start',
     height: {
-      default: '2.5rem',
-      [MD]: '2.75rem',
+      default: `calc(3 * ${STAMP_HEIGHT.phone} + 2 * ${spacing.xs})`,
+      [MD]: `calc(3 * ${STAMP_HEIGHT.md} + 2 * ${spacing.xs})`,
     },
   },
-  // The badge: a paper block on the ink, the display face at the subtitle
-  // rung. Every honor it cycles stacks in the same grid cell, so the block
-  // is as wide as the WIDEST of them and its width never moves between
-  // ticks — no measuring, no reflow. Pressed, the paper dims a step.
-  honorBadge: {
-    display: 'grid',
+  // The stack: a plain list, one stamp per line, centred, `xs` apart — the
+  // step that binds marks to what they belong to.
+  honorStack: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: spacing.xs,
+    margin: 0,
+    padding: 0,
+  },
+  // A stamp: a paper block on the ink, the display face at the subtitle
+  // rung, as wide as its own line. STAMP_HEIGHT is this line and padding
+  // added up; change one and the other.
+  honorStamp: {
+    display: 'block',
     paddingInline: {
       default: '0.75rem',
       [MD]: '0.875rem',
@@ -219,47 +239,30 @@ export const styles = stylex.create({
     },
     lineHeight: '1.75rem',
     letterSpacing: type.subtitleTracking,
-    color: tokens.ink,
-    backgroundColor: {
-      default: tokens.paper,
-      ':active': 'color-mix(in srgb, var(--color-paper) 85%, transparent)',
-    },
-    transitionProperty: 'background-color',
-    transitionDuration: '0.15s',
-    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  },
-  honorBadgeButton: {
-    cursor: 'pointer',
-  },
-  honorLine: {
-    gridColumnStart: 1,
-    gridRowStart: 1,
-    textAlign: 'center',
     whiteSpace: 'nowrap',
+    textAlign: 'center',
+    color: tokens.ink,
+    backgroundColor: tokens.paper,
   },
-  // The honor showing fades in over the paper as it takes the cell; the rest
-  // hold the cell's width invisibly. With motion reduced the badge never
-  // cycles, so the fade has nothing to do and is dropped.
-  honorLineShown: {
-    animationName: {
-      default: honorFade,
-      [REDUCE]: 'none',
-    },
-    animationDuration: '200ms',
-    animationTimingFunction: 'ease-out',
-    animationFillMode: 'both',
-  },
-  honorLineHidden: {
-    visibility: 'hidden',
-  },
-  // THE COMMENTARY — `lg` under the honors slot, the quote framed by its
-  // pink rule, folded to its first lines, then Skóreová's byline `sm` under
-  // it. The one slot of the template that collapses: a club without a
-  // statement shows no block at all.
+  // THE COMMENTARY — the section step under the honors, twice the block step
+  // that binds the honors to the name, so the quote reads as the next
+  // statement rather than a fourth line of the honors. Its height is fixed:
+  // the slot's lines at the statement's leading (the counts arrive on the
+  // element as `--commentary-lines` for a phone and `--commentary-lines-md`
+  // from md, set by the view from COMMENTARY_LINES and
+  // COMMENTARY_LINES_TABLET — the wider column needs fewer), then the
+  // byline's `sm` and its 56px portrait. The quote and its byline sit
+  // together at the TOP of the slot and the unused remainder is at the
+  // bottom; a club without a statement draws the slot empty at this height,
+  // so the paper act starts on one y either way.
   commentary: {
     marginInline: 'auto',
-    marginTop: spacing.lg,
+    marginTop: spacing.section,
     maxWidth: '42rem',
+    height: {
+      default: `calc(var(--commentary-lines) * 1.45 * 1.25rem + ${spacing.sm} + 3.5rem)`,
+      [MD]: `calc(var(--commentary-lines-md) * 1.45 * 1.25rem + ${spacing.sm} + 3.5rem)`,
+    },
   },
   // The text's own measure, centered inside the figure.
   commentaryColumn: {
@@ -276,7 +279,13 @@ export const styles = stylex.create({
     width: '2.5rem',
     backgroundColor: tokens.pink,
   },
-  // The 2px pink rule runs the statement's whole height, folded or open.
+  // THE STATEMENT — the body face at 1.25rem, medium weight, on 1.45
+  // leading, paper at 90%, whole: never clamped, never folded, and as tall
+  // as its own text, so the 2px pink rule spans exactly the lines it quotes
+  // and never the slot's empty remainder — it is the quote's one mark, and
+  // the text edge the byline shares. A statement that would need more lines
+  // than the slot holds is caught by club-hero.test.ts before it can reach
+  // the box.
   statement: {
     marginTop: 0,
     marginBottom: 0,
@@ -284,66 +293,12 @@ export const styles = stylex.create({
     borderColor: tokens.pink,
     paddingLeft: '1.25rem',
     textAlign: 'left',
-  },
-  // The statement folds to its first lines by line clamp; open, it is its
-  // whole self. The clamp box is what the overflow mount measures against.
-  // The statement in the body face at 1.25rem, medium weight, on 1.45 leading, paper at 90%; folded to its first lines by line clamp, open it is its whole self. The clamp box is what the overflow mount measures against.
-  statementText: {
-    display: '-webkit-box',
-    WebkitBoxOrient: 'vertical',
-    WebkitLineClamp: 5,
-    overflow: 'hidden',
     fontFamily: tokens.fontBody,
     fontSize: '1.25rem',
     fontWeight: 500,
     lineHeight: 1.45,
     textWrap: 'pretty',
     color: 'color-mix(in srgb, var(--color-paper) 90%, transparent)',
-  },
-  statementTextOpen: {
-    display: 'block',
-    WebkitLineClamp: 'none',
-    overflow: 'visible',
-  },
-  // THE OPENING MARK at its original size — 6rem of the display face in
-  // pink, hanging over the start of the first line. It sits BEFORE the
-  // clamp box rather than inside it: a block or a float inside the box
-  // broke the line clamp (Slavia's fold showed two lines of five), and ink
-  // above the first line would be clipped there anyway. The 0.3 leading
-  // collapses its own line to 1.8rem while the glyph paints above the
-  // baseline; the negative margin pulls the first line up under its ink, and
-  // the quarter-rem hang puts the ink, not the side bearing, on the text edge.
-  quoteMark: {
-    display: 'block',
-    paddingTop: '16px',
-    marginBottom: '-0.75rem',
-    marginLeft: '-0.25rem',
-    fontSize: '6rem',
-    lineHeight: 0.3,
-    color: tokens.pink,
-    userSelect: 'none',
-  },
-  // The fold control, on the statement's text edge, in the meta voice; a 44px
-  // hit area from its own height, with `xs` inset on every side. The margin
-  // gives that inset back so the label still starts on the text edge.
-  readMore: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    minHeight: '2.75rem',
-    paddingInline: spacing.xs,
-    paddingBlock: spacing.xs,
-    marginLeft: `calc(1.25rem + 2px - ${spacing.xs})`,
-    cursor: 'pointer',
-    fontSize: type.metaSize,
-    letterSpacing: type.metaTracking,
-    textTransform: 'uppercase',
-    color: {
-      default: tokens.muted,
-      ':hover': tokens.paper,
-    },
-    transitionProperty: 'color',
-    transitionDuration: '0.15s',
-    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
   // The byline, `sm` under the statement: the 56px portrait, then the lockup.
   byline: {

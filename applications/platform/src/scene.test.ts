@@ -17,11 +17,7 @@ import {
   widgetCatalogModel,
 } from './main.fixtures';
 import { update, view } from './main';
-import {
-  ObserveCommentaryOverflow,
-  ObserveTrendingScroll,
-  ScrollMatchStripToNext,
-} from './command';
+import { ObserveTrendingScroll, ScrollMatchStripToNext } from './command';
 import { Message } from './message';
 import { clubArchive, clubs, scorersFor, standingsFor } from './data';
 import { AppRoute, urlToAppRoute } from './route';
@@ -44,12 +40,6 @@ const acknowledgeMounts = [
 // Every club profile scene renders the match strip, whose opening scroll is a Mount; Scene requires it acknowledged.
 const acknowledgeStrip = [
   Scene.Mount.resolve(ScrollMatchStripToNext, Message.CompletedMatchStripScroll()),
-];
-
-// A profile with a commentary also mounts the fold's measurement. Unclipped mirrors the boot Model — the real measuring needs a browser and never runs here.
-const acknowledgeQuote = [
-  ...acknowledgeStrip,
-  Scene.Mount.resolve(ObserveCommentaryOverflow, Message.MeasuredCommentary({ isClipped: false })),
 ];
 
 describe('view', () => {
@@ -227,7 +217,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeQuote,
+      ...acknowledgeStrip,
       Scene.expect(Scene.role('heading', { name: 'Sparta Praha' })).toExist(),
       Scene.expect(Scene.role('button', { name: 'Follow Sparta' })).toExist(),
       Scene.expect(Scene.text('Top scorers')).toExist(),
@@ -243,50 +233,64 @@ describe('view', () => {
     );
   });
 
-  // The hero's honors badge is a button that moves to the next honor on a tap;
-  // only the honor showing is in its name, the rest hold the width unheard.
-  test('the honors badge advances on a tap', () => {
+  // The hero's honors are a static list — every honor in the document at
+  // once, none of them a control, nothing announcing itself as live.
+  test('the honors stack lists every honor as plain text', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeQuote,
-      Scene.expect(Scene.role('button', { name: /League champions/ })).toExist(),
-      Scene.expect(Scene.role('button', { name: /Cup winners/ })).not.toExist(),
-      Scene.click(Scene.role('button', { name: /League champions/ })),
-      Scene.expect(Scene.role('button', { name: /Cup winners/ })).toExist(),
-      Scene.expect(Scene.role('button', { name: /League champions/ })).not.toExist(),
-    );
-  });
-
-  // The commentary's fold control exists only once the mount has measured
-  // hidden lines, and then reads what pressing it does.
-  test('the commentary offers Read more only when its fold hides lines', () => {
-    Scene.scene(
-      { update, view },
-      Scene.given(clubProfileModel),
-      ...acknowledgeQuote,
-      Scene.expect(Scene.role('button', { name: 'Read more' })).not.toExist(),
-    );
-    Scene.scene(
-      { update, view },
-      Scene.given({ ...clubProfileModel, isCommentaryClipped: true }),
       ...acknowledgeStrip,
-      Scene.Mount.resolve(
-        ObserveCommentaryOverflow,
-        Message.MeasuredCommentary({ isClipped: true }),
-      ),
-      Scene.expect(Scene.role('button', { name: 'Read more' })).toHaveAttr(
-        'aria-expanded',
-        'false',
-      ),
-      Scene.click(Scene.role('button', { name: 'Read more' })),
-      Scene.expect(Scene.role('button', { name: 'Read less' })).toHaveAttr('aria-expanded', 'true'),
+      Scene.expect(Scene.text('League champions')).toExist(),
+      Scene.expect(Scene.text('Cup winners')).toExist(),
+      Scene.expect(Scene.text('Domestic double')).toExist(),
+      Scene.expect(Scene.role('button', { name: /League champions/ })).not.toExist(),
+      Scene.expect(
+        Scene.within(Scene.role('list', { name: 'Honors' }), Scene.selector('button')),
+      ).not.toExist(),
+      Scene.expect(
+        Scene.within(Scene.role('list', { name: 'Honors' }), Scene.selector('[aria-live]')),
+      ).not.toExist(),
     );
-    // A club without a statement renders no commentary block at all.
+    // A club short of three honors lists what it has; one with none lists
+    // its competition and the season instead.
+    Scene.scene(
+      { update, view },
+      Scene.given({ ...clubProfileModel, route: AppRoute.Club({ slug: 'slavia-praha' }) }),
+      ...acknowledgeStrip,
+      Scene.expect(Scene.text('League champions')).toExist(),
+      Scene.expect(Scene.text('Cup winners')).toExist(),
+      Scene.expect(Scene.text('Domestic double')).not.toExist(),
+    );
     Scene.scene(
       { update, view },
       Scene.given({ ...clubProfileModel, route: AppRoute.Club({ slug: 'teplice' }) }),
       ...acknowledgeStrip,
+      Scene.expect(Scene.text('Second League · 2025/26')).toExist(),
+    );
+  });
+
+  // The commentary is a quote with its attribution, shown whole: the
+  // statement's every word is in the document, and no control folds it.
+  test('the commentary is a whole blockquote signed by its caption', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(clubProfileModel),
+      ...acknowledgeStrip,
+      Scene.expect(Scene.selector('figure blockquote')).toHaveText(
+        'Our most successful club and reigning champion: Europa Cup semifinalists, then the domestic double to close the season.',
+      ),
+      Scene.expect(Scene.selector('figure figcaption')).toContainText('Commentary'),
+      Scene.expect(Scene.role('button', { name: 'Read more' })).not.toExist(),
+      Scene.expect(Scene.role('button', { name: 'Read less' })).not.toExist(),
+      Scene.expectAll(Scene.all.selector('figure button')).toHaveCount(0),
+      Scene.expectAll(Scene.all.selector('figure [aria-expanded]')).toHaveCount(0),
+    );
+    // A club without a statement keeps the slot but draws no byline in it.
+    Scene.scene(
+      { update, view },
+      Scene.given({ ...clubProfileModel, route: AppRoute.Club({ slug: 'teplice' }) }),
+      ...acknowledgeStrip,
+      Scene.expect(Scene.selector('blockquote')).not.toExist(),
       Scene.expect(Scene.text('Commentary')).not.toExist(),
     );
   });
@@ -297,7 +301,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeQuote,
+      ...acknowledgeStrip,
       Scene.inside(
         Scene.role('region', { name: 'Competitions' }),
         Scene.expect(Scene.role('radio', { name: 'League' })).toExist(),
@@ -318,7 +322,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeQuote,
+      ...acknowledgeStrip,
       Scene.expect(Scene.role('link', { name: 'sparta.cz' })).toHaveAttr('target', '_blank'),
       Scene.expect(Scene.role('link', { name: 'Instagram — Sparta Praha' })).toHaveAttr(
         'rel',
@@ -342,7 +346,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeQuote,
+      ...acknowledgeStrip,
       Scene.inside(
         Scene.role('region', { name: 'Top scorers' }),
         Scene.expectAll(Scene.all.role('listitem')).toHaveCount(3),
@@ -372,7 +376,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeQuote,
+      ...acknowledgeStrip,
       Scene.inside(
         Scene.role('region', { name: 'Competitions' }),
         Scene.expectAll(Scene.all.role('listitem')).toHaveCount(

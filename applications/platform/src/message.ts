@@ -46,12 +46,6 @@ export const Message = defineMessageUnion({
   ToggledClubSection: { anchor: Schema.String },
   // The scroll-spy's report of the club section under the reader's eye; '' while the hero is in view. Carries a string because a Message field holds no Option — the handler folds it.
   ScrolledClubPage: { anchor: Schema.String },
-  // The hero badge moves to its next honor — the cycle's timer ran out, or the reader tapped it.
-  AdvancedHonor: {},
-  // The commentary unfolded past its first lines, or folded back.
-  ToggledCommentary: { isOpen: Schema.Boolean },
-  // The commentary's own measurement: whether the folded statement hides any of its lines. Measured, not guessed from length, so the Read more control never appears over a statement that is already whole.
-  MeasuredCommentary: { isClipped: Schema.Boolean },
   CompletedRevealJumpChip: {},
   CompletedMatchStripScroll: {},
   // Pins: ReadPins hands the stored ids back through LoadedPins; a pin toggle

@@ -1,11 +1,9 @@
 // Platform subscriptions: the trending countdown and the OS reduced-motion
 // preference it defers to.
 
-import { Duration, Effect, Option, Schedule, Schema, Stream } from 'effect';
+import { Duration, Effect, Schedule, Schema, Stream } from 'effect';
 import { Subscription } from 'foldkit';
 
-import { HONOR_CYCLE_MS, heroHonors } from './club-hero';
-import { clubBySlug } from './data';
 import type { Model } from './model';
 import { Message } from './message';
 import { routeClubSlug, screenOf } from './screen';
@@ -62,40 +60,6 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
               Stream.map(() => Message.AdvancedTrending()),
             )
           : Stream.empty,
-    },
-  ),
-  // The hero badge's cycle: one tick per hold, only on a profile whose badge has more than one honor and only while the page is visible and the reader has not asked for reduced motion — with motion reduced the badge shows its first honor and nothing cycles. The showing honor is a dependency for one reason: a tap advances it by hand, and the stream rebuilding from that change is what makes the next tick a whole hold away rather than whatever was left of the old one. The visibility gate is a switch over the page's own state, so a tab put in the background stops the clock and one brought back starts a fresh hold.
-  honorsCycle: entry(
-    {
-      honorCount: Schema.Number,
-      honorIndex: Schema.Number,
-      prefersReducedMotion: Schema.Boolean,
-    },
-    {
-      modelToDependencies: (model) => ({
-        honorCount: Option.match(clubBySlug(routeClubSlug(model.route)), {
-          onNone: () => 0,
-          onSome: (club) => heroHonors(club).length,
-        }),
-        honorIndex: model.honorIndex,
-        prefersReducedMotion: model.prefersReducedMotion,
-      }),
-      dependenciesToStream: ({ honorCount, prefersReducedMotion }) => {
-        if (honorCount < 2 || prefersReducedMotion) return Stream.empty;
-        const isVisible = (): boolean => document.visibilityState === 'visible';
-        return Stream.concat(
-          Stream.make(isVisible()),
-          Stream.fromEventListener(document, 'visibilitychange').pipe(Stream.map(isVisible)),
-        ).pipe(
-          Stream.switchMap((visible) =>
-            visible
-              ? Stream.fromSchedule(Schedule.spaced(Duration.millis(HONOR_CYCLE_MS))).pipe(
-                  Stream.map(() => Message.AdvancedHonor()),
-                )
-              : Stream.empty,
-          ),
-        );
-      },
     },
   ),
   // The club profile's scroll-spy, alive only on a profile. Scroll events arrive per frame, so the stream is rate-limited two ways at once: a throttle passes at most ten reports a second while the reader scrolls, and a debounce passes the settled position once they stop, which the throttle alone could have dropped. Only changes reach the Model, so a long scroll inside one section costs nothing.

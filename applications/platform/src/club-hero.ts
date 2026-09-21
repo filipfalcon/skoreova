@@ -6,10 +6,12 @@ import type { Club } from './domain/entities';
 
 // The club profile's HERO is one fixed template that every club fits into:
 // a square photo slot, a crest disc on its bottom edge, a three-line name
-// box, one honors badge and the commentary. This module holds what the
-// template reads per club — the photo and where its faces are, the honors
-// the badge cycles, the name the box shows — and the rules that adapt the
-// content to the slots. The slots never adapt to the content.
+// box, a three-line honors stack and a four-line commentary. This module
+// holds what the template reads per club — the photo and where its faces
+// are, the honors the stack lists, the name the box shows, the line
+// Skóreová wrote — and the rules that adapt the content to the slots. The
+// slots never adapt to the content: a name past its box yields to the
+// club's headline form, and a commentary past its budget fails a test.
 
 /**
  * Where a photo's faces are, as percentages of its width and height: the crop's object-position, so
@@ -62,7 +64,7 @@ export const heroPhoto = (club: Club): Option.Option<HeroPhoto> =>
 export const focalPosition = (point: FocalPoint): string => `${point.x}% ${point.y}%`;
 
 /**
- * One line of the honors badge: an optional count and the label it counts.
+ * One line of the honors stack: an optional count and the label it counts.
  */
 export interface HeroHonor {
   readonly count?: number;
@@ -70,17 +72,13 @@ export interface HeroHonor {
 }
 
 /**
- * How many honors the badge cycles through at most.
+ * How many lines the honors stack holds. The slot is drawn at this many lines for every club; a
+ * club with fewer leaves the rest empty.
  */
 export const HONORS_SHOWN = 3;
 
 /**
- * How long the badge holds one honor before the next, in milliseconds.
- */
-export const HONOR_CYCLE_MS = 4000;
-
-/**
- * The honors the badge cycles, derived from the club's record in a fixed order — league titles, cup
+ * The honors the stack lists, derived from the club's record in a fixed order — league titles, cup
  * wins, domestic doubles — and never more than three. A club short of three fills the rest from its
  * standing rather than its silverware: the season it joined the top flight, then the year it was
  * founded. A zero is never an honor, so no line ever reads "0×".
@@ -116,20 +114,18 @@ export const HERO_NAME_LINE_CHARS = 11;
  */
 export const HERO_NAME_LINES = 3;
 
-/**
- * How many lines a name takes in the hero box: a greedy wrap at the measured line budget, with a
- * word longer than the budget counted as a line that overflows (it cannot be broken).
- *
- * @param name The name as the box would show it.
- */
-export const heroNameLines = (name: string): number => {
+// How many lines a text takes in a slot that holds `lineChars` per line: a greedy wrap at that
+// budget, with a word longer than the budget counted as one line past `maxLines` (it cannot be
+// broken, so it overflows whatever the count). The same arithmetic serves the name box and the
+// commentary; only the budgets differ.
+const wrappedLines = (text: string, lineChars: number, maxLines: number): number => {
   let lines = 1;
   let filled = 0;
-  for (const word of name.split(' ')) {
-    if (word.length > HERO_NAME_LINE_CHARS) return HERO_NAME_LINES + 1;
+  for (const word of text.split(' ')) {
+    if (word.length > lineChars) return maxLines + 1;
     if (filled === 0) {
       filled = word.length;
-    } else if (filled + 1 + word.length <= HERO_NAME_LINE_CHARS) {
+    } else if (filled + 1 + word.length <= lineChars) {
       filled += 1 + word.length;
     } else {
       lines += 1;
@@ -138,6 +134,15 @@ export const heroNameLines = (name: string): number => {
   }
   return lines;
 };
+
+/**
+ * How many lines a name takes in the hero box: a greedy wrap at the measured line budget, with a
+ * word longer than the budget counted as a line that overflows (it cannot be broken).
+ *
+ * @param name The name as the box would show it.
+ */
+export const heroNameLines = (name: string): number =>
+  wrappedLines(name, HERO_NAME_LINE_CHARS, HERO_NAME_LINES);
 
 /**
  * The name the hero shows: the full name when it fits the three-line box at 360px, otherwise the
@@ -150,17 +155,64 @@ export const heroTitle = (club: Club): string =>
   heroNameLines(club.name) <= HERO_NAME_LINES ? club.name : club.displayName;
 
 /**
- * How many lines the commentary shows before it folds.
+ * How many lines the commentary slot holds. The slot is drawn at this many lines for every club,
+ * and a statement is never folded or truncated to fit it: one that needs more lines fails
+ * club-hero.test.ts, and the data shortens.
  */
-export const COMMENTARY_LINES = 5;
+export const COMMENTARY_LINES = 4;
+
+/**
+ * The most characters one line of the commentary holds at the narrowest supported phone. MEASURED,
+ * not guessed, the way the name box's budget was: Archivo's lowercase averages 0.46em at the
+ * statement's 20px (9.19px, measured in Chromium at weight 500), and at 360px the statement's text
+ * column is 298px — the 320px band less the rule's 2px and the 20px it stands off the text — which
+ * is thirty-two of them. A greedy wrap at this budget gives every authored line the same count
+ * Chromium draws at 360 and 390: the Sparta line and its predecessor, Slavia's and Liberec's.
+ */
+export const COMMENTARY_LINE_CHARS = 32;
+
+/**
+ * How many lines a statement takes in the commentary slot on a phone: a greedy wrap at the measured
+ * line budget, with a word longer than the budget counted as a line that overflows.
+ *
+ * @param statement The statement as the slot would show it.
+ */
+export const commentaryLines = (statement: string): number =>
+  wrappedLines(statement, COMMENTARY_LINE_CHARS, COMMENTARY_LINES);
+
+/**
+ * How many lines the commentary slot holds from the md breakpoint. The column is wider there, so
+ * the slot gives back one line rather than holding a phone's worth of empty ink under a quote.
+ */
+export const COMMENTARY_LINES_TABLET = 3;
+
+/**
+ * The most characters one line of the commentary holds at the md breakpoint, measured like the
+ * phone budget: at 768px the band's column is 688px, the commentary's measure caps it at 34rem
+ * (544px), and the text column is that less the rule's 2px and its 20px stand-off — 522px, which is
+ * fifty-six of Archivo's 9.19px lowercase average. Chromium draws the Sparta line in two lines
+ * there; the greedy wrap counts three, so the budget is the conservative side of the measurement.
+ */
+export const COMMENTARY_LINE_CHARS_TABLET = 56;
+
+/**
+ * How many lines a statement takes in the commentary slot from md, at the tablet budget.
+ *
+ * @param statement The statement as the slot would show it.
+ */
+export const commentaryLinesTablet = (statement: string): number =>
+  wrappedLines(statement, COMMENTARY_LINE_CHARS_TABLET, COMMENTARY_LINES_TABLET);
 
 // Skóreová's own line on a club — hand-written for the clubs that have one.
-// There is no generated stand-in: a club without a statement shows no
-// commentary block at all, which is the one slot of the template allowed to
-// collapse.
+// There is no generated stand-in: a club without a statement shows an empty
+// commentary slot at the slot's full height, so the paper act starts on the
+// same y as everywhere else. Every club is meant to get a line eventually.
+// Each line has to wrap within COMMENTARY_LINES at the phone budget and
+// within COMMENTARY_LINES_TABLET at the tablet budget — the slot never
+// folds, and club-hero.test.ts holds both lines.
 const clubCommentaries: Record<string, string> = {
   'sparta-praha':
-    'Our most successful club and reigning champion stormed into the Europa Cup semifinals first, then closed out the season with the domestic double in hand.',
+    'Our most successful club and reigning champion: Europa Cup semifinalists, then the domestic double to close the season.',
   'slavia-praha': 'Every derby is a final — and finals are ours to take.',
   'slovan-liberec': 'Europe looks different from under Ještěd.',
 };

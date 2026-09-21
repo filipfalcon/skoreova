@@ -4,6 +4,7 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 import commentaryAvatar from '../assets/commentary-avatar.png';
 import {
   COMMENTARY_LINES,
+  COMMENTARY_LINES_TABLET,
   clubCommentary,
   focalPosition,
   heroHonors,
@@ -34,8 +35,7 @@ import {
   scorersFor,
 } from '../data';
 import { MATCHDAYS_PLAYED, leagueRoundCount } from '../schedule';
-import { Button, Disclosure } from '@foldkit/ui';
-import { ObserveCommentaryOverflow } from '../command';
+import { Button } from '@foldkit/ui';
 import type { AllTimeStats, ArchiveSeason, Club, CupTie, Scorer, StandingsRow } from '../data';
 import { Message } from '../message';
 import type { CompetitionKind, Model, ScorerScope } from '../model';
@@ -57,7 +57,7 @@ import { shared } from '../styles/shared';
 
 // Section headings are a PINK RULE beside display type, not a filled chip
 // (user call). The rule is the brand mark here; the pink block is now
-// reserved for things you can act on — the honor badges, the highlighted
+// reserved for things you can act on — the back link, the highlighted
 // rows — so a heading no longer competes with them for attention.
 // Back to the LANDING PAGE’s grammar (user call): a filled pink block,
 // not a ruled headline — the platform and the landing site should name a
@@ -620,7 +620,6 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
   const competitionLine = `${competition?.name ?? target.league} · ${
     competition?.editions.find((edition) => edition.isCurrent)?.label ?? ''
   }`;
-  const honorIndex = honors.length === 0 ? 0 : model.honorIndex % honors.length;
   const allTime = clubAllTimeStats(target);
   // TWO BANDS, the landing page’s rhythm (user call): the profile opens on
   // a full-bleed DARK act — artwork, crest, name, honors, commentary — and
@@ -632,145 +631,85 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
   // profile being the one dark island in an otherwise light platform.
   //
   // THE DARK ACT IS ONE FIXED TEMPLATE. Every slot — the square photo, the
-  // bare crest on its bottom edge, the three-line name box, the honors
-  // badge, the commentary — has one height for every club on a given
-  // device, and the content adapts to it: a long name yields to the club's
-  // headline form, a long statement folds, a missing photo becomes the crest
-  // wash at the same height. Only the commentary may collapse, and only
-  // when there is none.
-  const honorLines = honors.map((honor, index) =>
-    h.span(
-      [
-        ...getStyleXAttributes(
-          h,
-          styles.honorLine,
-          index === honorIndex ? styles.honorLineShown : styles.honorLineHidden,
-        ),
-        ...(index === honorIndex ? [] : [h.AriaHidden(true)]),
-      ],
-      honor.count === undefined ? [honor.label] : [...timesCount(honor.count, h), honor.label],
-    ),
-  );
-  // The badge cycles on its own clock and a tap moves it on by hand, so with
-  // more than one honor it is a button; with one, or with the season chip,
-  // there is nothing to advance and it is a plain block.
-  const honorBadge =
-    honors.length > 1
-      ? Button.view(
-          {
-            onClick: Message.AdvancedHonor(),
-            toView: ({ button }) =>
-              h.button(
-                [
-                  ...button,
-                  h.AriaLive('polite'),
-                  h.AriaAtomic(true),
-                  ...getStyleXAttributes(
-                    h,
-                    shared.display,
-                    styles.honorBadge,
-                    styles.honorBadgeButton,
-                  ),
-                ],
-                honorLines,
-              ),
-          },
-          h,
-        )
-      : h.span(
-          [...getStyleXAttributes(h, shared.display, styles.honorBadge)],
-          honors.length === 1
-            ? honorLines
-            : [h.span([...getStyleXAttributes(h, styles.honorLine)], [competitionLine])],
-        );
-  const commentary = Option.match(clubCommentary(target), {
-    onNone: () => [],
-    onSome: (statement) => [
-      // SKÓREOVÁ COMMENTARY — the pull-quote under the honors badge, folded to its first lines with the Read more control between it and the byline, which is Skóreová signing the piece. The portrait is a placeholder until her photo lands.
-      h.figure(
-        [...getStyleXAttributes(h, styles.commentary)],
-        [
-          h.div(
-            [...getStyleXAttributes(h, styles.commentaryColumn)],
-            [
-              Disclosure.view(
-                {
-                  id: 'club-commentary',
-                  isOpen: model.isCommentaryOpen,
-                  onToggle: (isOpen) => Message.ToggledCommentary({ isOpen }),
-                  toView: ({ button, panel }) =>
-                    h.div(
-                      [],
-                      [
-                        h.blockquote(
-                          [...panel, ...getStyleXAttributes(h, styles.statement)],
-                          [
-                            // The mark hangs over the first line from outside the clamp box, which counts only the statement's own lines.
-                            h.span(
-                              [
-                                ...getStyleXAttributes(h, shared.display, styles.quoteMark),
-                                h.AriaHidden(true),
-                              ],
-                              ['“'],
-                            ),
-                            h.span(
-                              [
-                                // The fold's own measurement: the control is drawn only once the mount has seen lines hidden.
-                                h.OnMount(ObserveCommentaryOverflow({ lines: COMMENTARY_LINES })),
-                                ...getStyleXAttributes(
-                                  h,
-                                  styles.statementText,
-                                  model.isCommentaryOpen && styles.statementTextOpen,
-                                ),
-                              ],
-                              [statement],
-                            ),
-                          ],
-                        ),
-                        ...(model.isCommentaryClipped
-                          ? [
-                              h.button(
-                                [...button, ...getStyleXAttributes(h, styles.readMore)],
-                                [model.isCommentaryOpen ? 'Read less' : 'Read more'],
-                              ),
-                            ]
-                          : []),
-                      ],
-                    ),
-                },
-                h,
-              ),
-              h.figcaption(
-                [...getStyleXAttributes(h, styles.byline)],
-                [
-                  h.span(
-                    [...getStyleXAttributes(h, styles.portrait)],
-                    [
-                      h.img([
-                        h.Src(commentaryAvatar),
-                        h.Alt('Skóreová reporter'),
-                        h.Loading('lazy'),
-                        ...getStyleXAttributes(h, styles.portraitImage),
-                      ]),
-                    ],
-                  ),
-                  h.span(
-                    [...getStyleXAttributes(h, styles.bylineLockup)],
-                    [
-                      h.span(
-                        [...getStyleXAttributes(h, shared.display, styles.bylineMasthead)],
-                        ['Skóreová'],
-                      ),
-                      h.span([...getStyleXAttributes(h, styles.bylineLabel)], ['Commentary']),
-                    ],
-                  ),
-                ],
-              ),
-            ],
+  // bare crest on its bottom edge, the three-line name box, the three-line
+  // honors stack, the four-line commentary — has one height for every club
+  // on a given device, and the content adapts to it: a long name yields to
+  // the club's headline form, a statement past the slot's budget fails the
+  // data test rather than folding, a missing photo becomes the crest wash at
+  // the same height, and a club with fewer honors or no statement yet leaves
+  // its slot's remainder empty. Nothing here moves on its own and nothing
+  // here is a control: the paper act begins on the same y for every club.
+  //
+  // THE HONORS STACK — the club's honors as a static list, each line its
+  // own paper stamp, in the order heroHonors derives them. With none, the
+  // one line is the club's competition and the current season.
+  const honorStamp = (content: ReadonlyArray<Html | string>): Html =>
+    h.li([...getStyleXAttributes(h, shared.display, styles.honorStamp)], content);
+  const honorStack = h.ul(
+    [h.AriaLabel('Honors'), ...getStyleXAttributes(h, styles.honorStack)],
+    honors.length === 0
+      ? [honorStamp([competitionLine])]
+      : honors.map((honor) =>
+          honorStamp(
+            honor.count === undefined
+              ? [honor.label]
+              : [...timesCount(honor.count, h), honor.label],
           ),
-        ],
-      ),
-    ],
+        ),
+  );
+  // SKÓREOVÁ COMMENTARY — the pull-quote under the honors, whole, then the
+  // byline, which is Skóreová signing the piece; the figure's caption is the
+  // quote's attribution. The slot holds COMMENTARY_LINES at the statement's
+  // leading on a phone and COMMENTARY_LINES_TABLET from md, set here as the
+  // values the styles read, so the heights are the constants' and not a
+  // second copy of them. A club without a line yet
+  // gets the slot empty at the same height — the byline is not drawn, but
+  // the space it would take stays. The portrait is a placeholder until her
+  // photo lands.
+  const commentarySlotAttributes = [
+    h.Style({
+      '--commentary-lines': `${COMMENTARY_LINES}`,
+      '--commentary-lines-md': `${COMMENTARY_LINES_TABLET}`,
+    }),
+    ...getStyleXAttributes(h, styles.commentary),
+  ];
+  const commentary = Option.match(clubCommentary(target), {
+    onNone: () => h.div(commentarySlotAttributes, []),
+    onSome: (statement) =>
+      h.figure(commentarySlotAttributes, [
+        h.div(
+          [...getStyleXAttributes(h, styles.commentaryColumn)],
+          [
+            h.blockquote([...getStyleXAttributes(h, styles.statement)], [statement]),
+            h.figcaption(
+              [...getStyleXAttributes(h, styles.byline)],
+              [
+                h.span(
+                  [...getStyleXAttributes(h, styles.portrait)],
+                  [
+                    h.img([
+                      h.Src(commentaryAvatar),
+                      h.Alt('Skóreová reporter'),
+                      h.Loading('lazy'),
+                      ...getStyleXAttributes(h, styles.portraitImage),
+                    ]),
+                  ],
+                ),
+                h.span(
+                  [...getStyleXAttributes(h, styles.bylineLockup)],
+                  [
+                    h.span(
+                      [...getStyleXAttributes(h, shared.display, styles.bylineMasthead)],
+                      ['Skóreová'],
+                    ),
+                    h.span([...getStyleXAttributes(h, styles.bylineLabel)], ['Commentary']),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ]),
   });
   const darkBand = h.div(
     // Flows straight out of the header chrome — the same full-bleed
@@ -831,11 +770,11 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
                 [...getStyleXAttributes(h, shared.display, styles.heroName)],
                 [heroTitle(target)],
               ),
-              // THE HONORS SLOT — one badge's height for every club, never empty.
-              h.div([...getStyleXAttributes(h, styles.honorSlot)], [honorBadge]),
+              // THE HONORS SLOT — three stamps' height for every club, never empty.
+              h.div([...getStyleXAttributes(h, styles.honorSlot)], [honorStack]),
             ],
           ),
-          ...commentary,
+          commentary,
         ],
       ),
       h.div([...getStyleXAttributesWith(h, 'grain', styles.grainOverlay), h.AriaHidden(true)], []),

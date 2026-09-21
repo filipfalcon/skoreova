@@ -88,7 +88,7 @@ export const pinGlyph = (
 
 // The PIN control — one button, on every board heading and chart card.
 // Pinned reads as a filled pink chip (the site’s "this is mine / act on
-// it" color, the same as a highlighted row or an honor badge); unpinned
+// it" color, the same as a highlighted row); unpinned
 // is a quiet outline that fills on hover so the affordance is obvious. The
 // label names the target so a screen reader hears "Pin Goals to Her Game",
 // not a bare "pin".
