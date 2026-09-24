@@ -17,7 +17,7 @@ import {
   widgetCatalogModel,
 } from './main.fixtures';
 import { update, view } from './main';
-import { ObserveTrendingScroll, ScrollMatchStripToNext } from './command';
+import { ObserveSectionRail, ObserveTrendingScroll, ScrollMatchStripToNext } from './command';
 import { Message } from './message';
 import { clubArchive, clubs, scorersFor, standingsFor } from './data';
 import { AppRoute, urlToAppRoute } from './route';
@@ -39,6 +39,7 @@ const acknowledgeMounts = [
 
 // Every club profile scene renders the match strip, whose opening scroll is a Mount; Scene requires it acknowledged.
 const acknowledgeStrip = [
+  Scene.Mount.resolve(ObserveSectionRail, Message.CompletedObserveSectionRail()),
   Scene.Mount.resolve(ScrollMatchStripToNext, Message.CompletedMatchStripScroll()),
 ];
 
@@ -52,9 +53,20 @@ describe('view', () => {
       // else in the document, and the footer note is on every screen — between
       // them, stable proof the shell mounted around the screen.
       Scene.expect(Scene.text('Leagues')).toExist(),
+      Scene.expect(Scene.selector('header a[href="/"][aria-current="page"]')).toExist(),
       Scene.expect(
         Scene.text('Beta version — all data is placeholder while the platform wires up.'),
       ).toExist(),
+    );
+  });
+
+  test('all five navigation destinations have icons, including the root Her Game tab', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(clubProfileModel),
+      ...acknowledgeStrip,
+      Scene.expectAll(Scene.all.selector('header a svg path[d]')).toHaveCount(5),
+      Scene.expectAll(Scene.all.selector('header a svg path[d=""]')).toHaveCount(0),
     );
   });
 
@@ -277,7 +289,7 @@ describe('view', () => {
       Scene.given(clubProfileModel),
       ...acknowledgeStrip,
       Scene.expect(Scene.selector('figure blockquote')).toHaveText(
-        'Our most successful club and reigning champion: Europa Cup semifinalists, then the domestic double to close the season.',
+        'Our most successful club: reigning champions, Europa Cup semifinalists, then domestic double winners.',
       ),
       Scene.expect(Scene.selector('figure figcaption')).toContainText('Commentary'),
       Scene.expect(Scene.role('button', { name: 'Read more' })).not.toExist(),
@@ -285,7 +297,7 @@ describe('view', () => {
       Scene.expectAll(Scene.all.selector('figure button')).toHaveCount(0),
       Scene.expectAll(Scene.all.selector('figure [aria-expanded]')).toHaveCount(0),
     );
-    // A club without a statement keeps the slot but draws no byline in it.
+    // A club without a statement reserves the same slot without an attribution.
     Scene.scene(
       { update, view },
       Scene.given({ ...clubProfileModel, route: AppRoute.Club({ slug: 'teplice' }) }),

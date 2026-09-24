@@ -17,19 +17,15 @@ import { routeClubSlug, screenOf } from './screen';
  */
 export const TRENDING_ADVANCE_MS = 6000;
 
-// The line a section has to cross to count as the one in view: the fixed header's measured height plus the pinned jump row (about 60px), so the spy agrees with where an anchor jump lands (the sections' scroll margin). In pixels because the spy measures pixels.
-const JUMP_ROW_PX = 65;
-
-const spyLine = (): number =>
-  parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-height')) +
-  JUMP_ROW_PX;
-
 // The anchor of the club section whose top has crossed the spy line — the last one to have, scanning in document order — or '' while none has. Reads the club sections off the document by the shape every one of them has: an id and a heading that labels it.
 const sectionInView = (): string => {
   const sections = document.querySelectorAll<HTMLElement>('section[id][aria-labelledby]');
-  const line = spyLine();
+
   let active = '';
   sections.forEach((section) => {
+    // Use the same resolved clearance as native anchor scrolling, including
+    // enlarged navigation. One pixel absorbs subpixel scroll rounding.
+    const line = parseFloat(getComputedStyle(section).scrollMarginTop) + 1;
     if (section.getBoundingClientRect().top <= line) active = section.id;
   });
   return active;

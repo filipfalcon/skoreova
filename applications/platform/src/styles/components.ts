@@ -15,7 +15,6 @@ const ICON_SIZE = '24px';
 // it holds at any size the tape is set at.
 const TAPE_ARROW_SHIFT = '-0.0625em';
 
-const XS = '@media (min-width: 360px)';
 const MD = '@media (min-width: 768px)';
 const LG = '@media (min-width: 1024px)';
 
@@ -95,6 +94,7 @@ export const styles = stylex.create({
   navIcon: {
     height: ICON_SIZE,
     width: ICON_SIZE,
+    flexShrink: 0,
     display: {
       default: 'block',
       [MD]: 'none',
@@ -110,21 +110,19 @@ export const styles = stylex.create({
       [MD]: 'row',
     },
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: { default: 'flex-start', [MD]: 'center' },
     gap: {
       default: '0.25rem',
       [MD]: null,
     },
     // A touch target of 44 CSS pixels, the floor for a control a thumb has to hit.
-    minHeight: {
-      default: '44px',
-      [MD]: null,
-    },
+    minHeight: '44px',
+    minWidth: 0,
+    width: '100%',
     borderBottomWidth: 2,
-    // Five labelled tabs share 304px at the narrowest supported viewport, so the horizontal padding on each is what the widest label spends its room on.
+    // Compact padding keeps all five labels readable at 320px.
     paddingInline: {
-      default: '0.125rem',
-      [XS]: '0.25rem',
+      default: 0,
       [MD]: '0.625rem',
       [LG]: '1rem',
     },
@@ -132,11 +130,13 @@ export const styles = stylex.create({
       default: '0.375rem',
       [MD]: '0.75rem',
     },
-    whiteSpace: 'nowrap',
+    whiteSpace: 'normal',
+    textAlign: 'center',
+    overflowWrap: 'anywhere',
     textTransform: 'uppercase',
     fontSize: {
       default: null,
-      [MD]: '11px',
+      [MD]: '0.6875rem',
       [LG]: '0.75rem',
     },
     lineHeight: {
@@ -167,19 +167,18 @@ export const styles = stylex.create({
     },
   },
   navLabel: {
-    // The phone rail's own rung of the label scale: the meta size, with the meta tracking held as far down as five tabs on a 320px screen allow.
+    // 11px at the default root size; rem units follow the reader's text size.
     fontSize: {
-      default: '9px',
-      [XS]: '10px',
+      default: '0.6875rem',
       [MD]: null,
     },
-    // Tracked at 0.08em so the five labels clear the rail's right padding at 390px.
+    // Close tracking leaves room for the labels without clipping destinations.
     letterSpacing: {
-      default: '0.08em',
+      default: '0.02em',
       [MD]: null,
     },
     lineHeight: {
-      default: 1,
+      default: 1.25,
       [MD]: null,
     },
   },
@@ -224,8 +223,9 @@ export const styles = stylex.create({
     marginInline: 'auto',
     display: 'grid',
     width: '100%',
-    gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1fr)',
-    alignItems: 'center',
+    // Reflow into fewer columns when the reader enlarges text.
+    gridTemplateColumns: 'repeat(auto-fit, minmax(3rem, 1fr))',
+    alignItems: 'stretch',
     justifyItems: 'center',
     maxWidth: {
       default: null,
@@ -271,13 +271,12 @@ export const styles = stylex.create({
       default: spacing.section,
       [MD]: '5rem',
     },
-    // Clears the fixed header and, on a phone, the pinned jump row under it: the header's measured height plus a 60px row, with a little air.
+    // Measured navigation heights also clear headings when text is enlarged.
     scrollMarginTop: {
-      default: 'calc(var(--header-height) + 4.3125rem)',
+      default: 'calc(var(--header-height) + var(--section-rail-height, 3.8125rem) + 0.5rem)',
       [MD]: 'calc(var(--header-height) + 4.9375rem)',
     },
   },
-  // The heading row: the chip's h2 at one end, the section's control at the other. The chip never wraps or shrinks; the control yields — first onto two lines beside the chip, then, when even its longest word cannot sit there, onto its own line under the chip, `xs` below and still on the right edge.
   clubSectionHeading: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -287,8 +286,10 @@ export const styles = stylex.create({
     rowGap: spacing.xs,
   },
   clubSectionTitle: {
+    minWidth: 0,
+    maxWidth: '100%',
     display: 'flex',
-    flexShrink: 0,
+    flexShrink: 1,
   },
   // The heading-row control — a toggle or a link out — as plain meta text in the muted ink, right-aligned and free to wrap. The 44px hit area comes from padding alone: a drawn box was one more rectangle per section and wrapped the heading row on phones. The side padding is cancelled by a negative margin so the text stays flush with the column's edge.
   clubSectionControl: {
@@ -315,6 +316,9 @@ export const styles = stylex.create({
   },
   // The jump row. On a phone it is a bar pinned flush under the fixed header — at the header's measured height — on opaque paper, bleeding to the screen's edges, its chips scrolling as one line so one peeks in from the right. From md it is a static, wrapped block.
   sectionIndex: {
+    // Reserve the separator before sticking so anchor targets do not shift.
+    borderBottomWidth: { default: 1, [MD]: 0 },
+    borderColor: 'transparent',
     position: {
       default: 'sticky',
       [MD]: 'static',

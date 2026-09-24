@@ -9,7 +9,10 @@ import { spacing, tokens, type } from '../tokens.stylex';
 
 const SM = '@media (min-width: 640px)';
 const MD = '@media (min-width: 768px)';
+const COMPACT = '@container club-data (width < 16em)';
 const LG = '@media (min-width: 1024px)';
+// A text-relative threshold: enlarged text gets the same larger slots on every club.
+const ENLARGED = '@container club-intro (width < 16em)';
 // The width from which a history card holds its full detail line (see historyDetail).
 const CARD_FITS_DETAIL = '@media (min-width: 375px)';
 
@@ -30,14 +33,13 @@ export const styles = stylex.create({
       [MD]: '-3.5rem',
     },
     marginInline: 'calc(50% - 50vw)',
-    overflow: 'hidden',
     backgroundColor: tokens.ink,
     paddingInline: {
       default: '1.25rem',
       [MD]: '2.5rem',
     },
     paddingTop: '2rem',
-    paddingBottom: spacing.lg,
+    paddingBottom: '24px',
   },
   // THE PHOTO SLOT — square on a phone, whatever the photo: 390px tall at
   // 390 wide, 360 at 360. One height for every club on a given device, so
@@ -126,6 +128,9 @@ export const styles = stylex.create({
     zIndex: 10,
   },
   bandColumn: {
+    containerType: 'inline-size',
+    containerName: 'club-intro',
+    fontSize: '1rem',
     position: 'relative',
     zIndex: 10,
     marginInline: 'auto',
@@ -183,16 +188,15 @@ export const styles = stylex.create({
     height: {
       default: '3.06em',
       [MD]: '2.04em',
+      [ENLARGED]: '6.12em',
     },
     marginTop: spacing.md,
-    fontSize: type.headlineXL,
+    // A shared club-hero scale keeps the longest authored names readable.
+    fontSize: 'clamp(3.75rem, 17vw, 7rem)',
     lineHeight: 1.02,
     marginInline: 'auto',
-    maxWidth: {
-      default: '30rem',
-      [MD]: '34rem',
-    },
-    overflowWrap: 'normal',
+    maxWidth: '34rem',
+    overflowWrap: 'anywhere',
     wordBreak: 'normal',
     color: tokens.paper,
   },
@@ -208,6 +212,7 @@ export const styles = stylex.create({
     height: {
       default: `calc(3 * ${STAMP_HEIGHT.phone} + 2 * ${spacing.xs})`,
       [MD]: `calc(3 * ${STAMP_HEIGHT.md} + 2 * ${spacing.xs})`,
+      [ENLARGED]: `calc(3 * 6rem + 2 * ${spacing.xs})`,
     },
   },
   // The stack: a plain list, one stamp per line, centred, `xs` apart — the
@@ -216,6 +221,7 @@ export const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+    maxWidth: '100%',
     gap: spacing.xs,
     margin: 0,
     padding: 0,
@@ -239,7 +245,8 @@ export const styles = stylex.create({
     },
     lineHeight: '1.75rem',
     letterSpacing: type.subtitleTracking,
-    whiteSpace: 'nowrap',
+    maxWidth: '100%',
+    overflowWrap: 'anywhere',
     textAlign: 'center',
     color: tokens.ink,
     backgroundColor: tokens.paper,
@@ -252,20 +259,26 @@ export const styles = stylex.create({
   // from md, set by the view from COMMENTARY_LINES and
   // COMMENTARY_LINES_TABLET — the wider column needs fewer), then the
   // byline's `sm` and its 56px portrait. The quote and its byline sit
-  // together at the TOP of the slot and the unused remainder is at the
-  // bottom; a club without a statement draws the slot empty at this height,
+  // with the attribution at the bottom of the slot, leaving 24px before
+  // the cream section; a club without a statement draws the slot empty at this height,
   // so the paper act starts on one y either way.
   commentary: {
     marginInline: 'auto',
     marginTop: spacing.section,
     maxWidth: '42rem',
+    marginBottom: 0,
     height: {
       default: `calc(var(--commentary-lines) * 1.45 * 1.25rem + ${spacing.sm} + 3.5rem)`,
       [MD]: `calc(var(--commentary-lines-md) * 1.45 * 1.25rem + ${spacing.sm} + 3.5rem)`,
+      [ENLARGED]: `calc(var(--commentary-lines-enlarged) * 1.45 * 1.25rem + ${spacing.sm} + 7rem)`,
     },
   },
   // The text's own measure, centered inside the figure.
   commentaryColumn: {
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
     marginInline: 'auto',
     width: '100%',
     maxWidth: {
@@ -284,8 +297,8 @@ export const styles = stylex.create({
   // as its own text, so the 2px pink rule spans exactly the lines it quotes
   // and never the slot's empty remainder — it is the quote's one mark, and
   // the text edge the byline shares. A statement that would need more lines
-  // than the slot holds is caught by club-hero.test.ts before it can reach
-  // the box.
+  // than the slot holds must be caught by screenshot review; character
+  // estimates in club-hero.test.ts are only an early warning.
   statement: {
     marginTop: 0,
     marginBottom: 0,
@@ -298,27 +311,33 @@ export const styles = stylex.create({
     fontWeight: 500,
     lineHeight: 1.45,
     textWrap: 'pretty',
+    overflowWrap: 'anywhere',
     color: 'color-mix(in srgb, var(--color-paper) 90%, transparent)',
   },
   // The byline, `sm` under the statement: the 56px portrait, then the lockup.
   byline: {
+    minHeight: '3.5rem',
+    flexShrink: 0,
+    flexWrap: 'wrap',
     marginTop: spacing.sm,
     display: 'flex',
     alignItems: 'center',
     gap: '14px',
   },
   bylineLockup: {
+    minWidth: 0,
+    maxWidth: '100%',
     display: 'flex',
     flexDirection: 'column',
     gap: '4px',
   },
   bylineMasthead: {
     display: 'block',
-    fontSize: '24px',
+    fontSize: '1.5rem',
     lineHeight: 1,
     letterSpacing: '0.04em',
     textTransform: 'uppercase',
-    whiteSpace: 'nowrap',
+    overflowWrap: 'anywhere',
     color: tokens.pink,
   },
   bylineLabel: {
@@ -355,6 +374,9 @@ export const styles = stylex.create({
     inset: 0,
   },
   dataBand: {
+    containerType: 'inline-size',
+    containerName: 'club-data',
+    fontSize: '1rem',
     marginInline: 'auto',
     width: '100%',
     maxWidth: '64rem',
@@ -445,7 +467,6 @@ export const styles = stylex.create({
     display: 'flex',
     flexDirection: 'column',
   },
-  // A scorer row takes the standings row's geometry — the zone gutter and its hairline as left padding, the same column gap, the same right padding — so rank, name and goals sit on the table's rank, club and points columns. The row is one link; the press is its affordance, so it carries no arrow.
   scorerRow: {
     borderTopWidth: {
       default: 1,
@@ -454,15 +475,16 @@ export const styles = stylex.create({
     borderColor: 'color-mix(in srgb, var(--color-ink) 10%, transparent)',
   },
   scorerLink: {
-    display: 'flex',
+    display: { default: 'flex', [COMPACT]: 'grid' },
+    gridTemplateColumns: { default: null, [COMPACT]: 'minmax(0, 1fr) auto' },
     alignItems: 'baseline',
     gap: {
       default: '0.5rem',
       [SM]: '0.75rem',
       [MD]: '1rem',
     },
-    paddingLeft: 'calc(1.125rem + 1px)',
-    paddingRight: '0.5rem',
+    paddingLeft: { default: 'calc(1.125rem + 1px)', [COMPACT]: 0 },
+    paddingRight: { default: '0.5rem', [COMPACT]: 0 },
     // A 56px row on phones — the card-name and score rungs, which is what a scorer row is; md keeps the board scale.
     paddingBlock: {
       default: '0.75rem',
@@ -480,6 +502,7 @@ export const styles = stylex.create({
     transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
   scorerRank: {
+    flexShrink: 0,
     width: {
       default: '1.5rem',
       [MD]: '2rem',
@@ -489,12 +512,13 @@ export const styles = stylex.create({
     color: 'color-mix(in srgb, var(--color-ink) 35%, transparent)',
   },
   scorerName: {
+    gridColumn: { default: null, [COMPACT]: '1 / -1' },
+    gridRow: { default: null, [COMPACT]: 2 },
     flexGrow: 1,
     flexShrink: 1,
     flexBasis: '0%',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    minWidth: 0,
+    overflowWrap: 'anywhere',
     fontSize: {
       default: '1.125rem',
       [MD]: '1.5rem',
@@ -506,6 +530,9 @@ export const styles = stylex.create({
     color: tokens.ink,
   },
   scorerGoals: {
+    gridColumn: { default: null, [COMPACT]: 2 },
+    gridRow: { default: null, [COMPACT]: 1 },
+    flexShrink: 0,
     width: {
       default: '2.5rem',
       [MD]: '3rem',
@@ -539,7 +566,7 @@ export const styles = stylex.create({
       [MD]: '2rem',
     },
     rowGap: '2.5rem',
-    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    gridTemplateColumns: { default: 'repeat(3, minmax(0, 1fr))', [COMPACT]: 'minmax(0, 1fr)' },
   },
   historyValue: {
     marginTop: '0.75rem',
@@ -597,7 +624,8 @@ export const styles = stylex.create({
     flexDirection: 'column',
   },
   archiveRow: {
-    display: 'flex',
+    display: { default: 'flex', [COMPACT]: 'grid' },
+    gridTemplateColumns: { default: null, [COMPACT]: 'minmax(0, 1fr) auto' },
     alignItems: 'baseline',
     gap: '1rem',
     borderTopWidth: {
@@ -614,6 +642,8 @@ export const styles = stylex.create({
     lineHeight: '1.75rem',
   },
   archiveLeague: {
+    gridColumn: { default: null, [COMPACT]: '1 / -1' },
+    gridRow: { default: null, [COMPACT]: 2 },
     flexGrow: 1,
     fontSize: '10px',
     letterSpacing: '0.2em',
@@ -647,6 +677,7 @@ export const styles = stylex.create({
     gridTemplateColumns: {
       default: 'repeat(2, minmax(0, 1fr))',
       [LG]: 'repeat(4, minmax(0, 1fr))',
+      [COMPACT]: 'minmax(0, 1fr)',
     },
   },
   statsValue: {
@@ -692,8 +723,10 @@ export const styles = stylex.create({
     marginTop: '2rem',
     display: 'inline-block',
     cursor: 'pointer',
-    whiteSpace: 'nowrap',
-    paddingInline: '2.5rem',
+    whiteSpace: 'normal',
+    maxWidth: '100%',
+    overflowWrap: 'anywhere',
+    paddingInline: { default: '2.5rem', [COMPACT]: '1rem' },
     paddingBlock: '1rem',
     fontSize: {
       default: '1.25rem',
@@ -710,6 +743,8 @@ export const styles = stylex.create({
   },
   // The club's links under the Follow button: the domain, then the glyph squares `md` after it, `xs` apart.
   linksRow: {
+    flexWrap: 'wrap',
+    maxWidth: '100%',
     marginTop: spacing.lg,
     display: 'flex',
     alignItems: 'center',
@@ -727,6 +762,9 @@ export const styles = stylex.create({
     textUnderlineOffset: '0.25em',
   },
   linksGlyphs: {
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    maxWidth: '100%',
     display: 'flex',
     gap: spacing.xs,
   },

@@ -6,12 +6,12 @@ import type { Club } from './domain/entities';
 
 // The club profile's HERO is one fixed template that every club fits into:
 // a square photo slot, a crest disc on its bottom edge, a three-line name
-// box, a three-line honors stack and a four-line commentary. This module
+// box, a three-line honors stack and a shared commentary slot. This module
 // holds what the template reads per club — the photo and where its faces
 // are, the honors the stack lists, the name the box shows, the line
 // Skóreová wrote — and the rules that adapt the content to the slots. The
-// slots never adapt to the content: a name past its box yields to the
-// club's headline form, and a commentary past its budget fails a test.
+// slots are shared across clubs, with a larger text-relative variant for
+// accessibility. Editorial estimates flag risks; screenshots establish fit.
 
 /**
  * Where a photo's faces are, as percentages of its width and height: the crop's object-position, so
@@ -101,10 +101,7 @@ export const heroHonors = (club: Club): ReadonlyArray<HeroHonor> => {
 };
 
 /**
- * The most characters one line of the hero name holds at the narrowest supported phone. MEASURED,
- * not guessed: Anton's caps average 0.46em at the headline size, and at 360px the box is 320px
- * wide, which is eleven of them. Every current club name wraps to two lines within it; "Lokomotiva
- * Brno Horní Heršpice" wraps to exactly three.
+ * Editorial overflow heuristic only; actual title fit requires browser review.
  */
 export const HERO_NAME_LINE_CHARS = 11;
 
@@ -136,8 +133,7 @@ const wrappedLines = (text: string, lineChars: number, maxLines: number): number
 };
 
 /**
- * How many lines a name takes in the hero box: a greedy wrap at the measured line budget, with a
- * word longer than the budget counted as a line that overflows (it cannot be broken).
+ * An estimated line count for editorial review, not a measurement of rendered text.
  *
  * @param name The name as the box would show it.
  */
@@ -145,8 +141,8 @@ export const heroNameLines = (name: string): number =>
   wrappedLines(name, HERO_NAME_LINE_CHARS, HERO_NAME_LINES);
 
 /**
- * The name the hero shows: the full name when it fits the three-line box at 360px, otherwise the
- * club's authored headline form. The template does not stretch for a long name; the data supplies a
+ * The name the hero shows: the full name within the editorial line estimate, otherwise the club's
+ * authored headline form. The template does not stretch for a long name; the data supplies a
  * shorter one.
  *
  * @param club The club.
@@ -155,25 +151,24 @@ export const heroTitle = (club: Club): string =>
   heroNameLines(club.name) <= HERO_NAME_LINES ? club.name : club.displayName;
 
 /**
- * How many lines the commentary slot holds. The slot is drawn at this many lines for every club,
- * and a statement is never folded or truncated to fit it: one that needs more lines fails
- * club-hero.test.ts, and the data shortens.
+ * The shared mobile commentary line budget. Copy must be reviewed at the supported widths and text
+ * settings; the character-count tests are only early warnings.
  */
-export const COMMENTARY_LINES = 4;
+export const COMMENTARY_LINES = 5;
 
 /**
- * The most characters one line of the commentary holds at the narrowest supported phone. MEASURED,
- * not guessed, the way the name box's budget was: Archivo's lowercase averages 0.46em at the
- * statement's 20px (9.19px, measured in Chromium at weight 500), and at 360px the statement's text
- * column is 298px — the 320px band less the rule's 2px and the 20px it stands off the text — which
- * is thirty-two of them. A greedy wrap at this budget gives every authored line the same count
- * Chromium draws at 360 and 390: the Sparta line and its predecessor, Slavia's and Liberec's.
+ * Shared larger budget when the text column is narrow relative to its font size.
  */
-export const COMMENTARY_LINE_CHARS = 32;
+export const COMMENTARY_LINES_ENLARGED = 12;
 
 /**
- * How many lines a statement takes in the commentary slot on a phone: a greedy wrap at the measured
- * line budget, with a word longer than the budget counted as a line that overflows.
+ * A conservative editorial warning threshold for the 320px layout. Character counts do not measure
+ * glyphs or prove fit; rendered screenshots are authoritative.
+ */
+export const COMMENTARY_LINE_CHARS = 27;
+
+/**
+ * An estimated mobile commentary line count for editorial review.
  *
  * @param statement The statement as the slot would show it.
  */
@@ -182,21 +177,17 @@ export const commentaryLines = (statement: string): number =>
 
 /**
  * How many lines the commentary slot holds from the md breakpoint. The column is wider there, so
- * the slot gives back one line rather than holding a phone's worth of empty ink under a quote.
+ * the slot uses a smaller shared budget.
  */
 export const COMMENTARY_LINES_TABLET = 3;
 
 /**
- * The most characters one line of the commentary holds at the md breakpoint, measured like the
- * phone budget: at 768px the band's column is 688px, the commentary's measure caps it at 34rem
- * (544px), and the text column is that less the rule's 2px and its 20px stand-off — 522px, which is
- * fifty-six of Archivo's 9.19px lowercase average. Chromium draws the Sparta line in two lines
- * there; the greedy wrap counts three, so the budget is the conservative side of the measurement.
+ * Editorial warning threshold for the wider text column; not a rendered-fit guarantee.
  */
 export const COMMENTARY_LINE_CHARS_TABLET = 56;
 
 /**
- * How many lines a statement takes in the commentary slot from md, at the tablet budget.
+ * An estimated commentary line count at the tablet editorial budget.
  *
  * @param statement The statement as the slot would show it.
  */
@@ -209,10 +200,10 @@ export const commentaryLinesTablet = (statement: string): number =>
 // same y as everywhere else. Every club is meant to get a line eventually.
 // Each line has to wrap within COMMENTARY_LINES at the phone budget and
 // within COMMENTARY_LINES_TABLET at the tablet budget — the slot never
-// folds, and club-hero.test.ts holds both lines.
+// folds. Tests flag likely overflow; browser captures verify actual fit.
 const clubCommentaries: Record<string, string> = {
   'sparta-praha':
-    'Our most successful club and reigning champion: Europa Cup semifinalists, then the domestic double to close the season.',
+    'Our most successful club: reigning champions, Europa Cup semifinalists, then domestic double winners.',
   'slavia-praha': 'Every derby is a final — and finals are ours to take.',
   'slovan-liberec': 'Europe looks different from under Ještěd.',
 };

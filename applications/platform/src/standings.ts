@@ -345,7 +345,10 @@ const standingsRows = (
                     highlighted ? styles.rowScoreHighlighted : styles.rowScoreRest,
                   ),
                 ],
-                [`${row.scored}:${row.conceded}`],
+                [
+                  h.span([...getStyleXAttributes(h, styles.compactLabel)], ['Goals']),
+                  `${row.scored}:${row.conceded}`,
+                ],
               ),
               h.span(
                 [
@@ -356,7 +359,10 @@ const standingsRows = (
                     highlighted ? styles.rowPointsHighlighted : styles.rowPointsRest,
                   ),
                 ],
-                [`${row.points}`],
+                [
+                  h.span([...getStyleXAttributes(h, styles.compactLabel)], ['Pts']),
+                  `${row.points}`,
+                ],
               ),
             ],
           ),

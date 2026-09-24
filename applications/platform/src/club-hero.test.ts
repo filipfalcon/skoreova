@@ -21,10 +21,8 @@ import type { Club } from './data';
 const sparta = clubs.find((club) => club.slug === 'sparta-praha')!;
 const withName = (name: string, displayName: string): Club => ({ ...sparta, name, displayName });
 
-// The name box is three lines at 360px and never grows. Every club in the
-// data has to fit it under its own name, and the fallback has to fit it too —
-// a headline form that overflows would defeat the rule it exists for.
-test('every club’s hero name fits the three-line box', () => {
+// Fast editorial checks only. Fixed-slot fit is verified from rendered geometry.
+test('every club’s hero name passes the editorial line estimate', () => {
   for (const club of clubs) {
     const title = heroTitle(club);
     expect(heroNameLines(title), `${club.name} overflows the name box`).toBeLessThanOrEqual(
@@ -34,17 +32,14 @@ test('every club’s hero name fits the three-line box', () => {
   }
 });
 
-// The full name wins while it fits; a fourth line, or a word the line cannot
-// hold, hands the box the headline form instead. The three-line case is the
-// measured one: "Lokomotiva Brno Horní Heršpice" wraps to exactly three at
-// 360px, so it keeps its full name.
-test('a name past three lines yields to the headline form', () => {
+// The name policy selects the authored short form when the estimate is over budget.
+test('a name over the editorial estimate yields to the headline form', () => {
   expect(heroNameLines('Lokomotiva Brno Horní Heršpice')).toBe(3);
   expect(heroTitle(withName('Lokomotiva Brno Horní Heršpice', 'Lokomotiva'))).toBe(
     'Lokomotiva Brno Horní Heršpice',
   );
   expect(heroTitle(withName('Tělovýchovná jednota Sokol Horní Heršpice', 'Sokol'))).toBe('Sokol');
-  // One unbreakable word wider than the box is an overflow whatever the count.
+  // A word over the character budget also selects the authored short form.
   expect(heroTitle(withName('Tělovýchovnájednota', 'TJ'))).toBe('TJ');
 });
 
@@ -77,42 +72,17 @@ test('a club without silverware falls back to its standing', () => {
   ).toEqual(['Second League since 2015', 'Founded 1993']);
 });
 
-// The commentary slot is four lines at 360px and never folds, so every
-// authored line has to wrap within it at the measured budget: a line that
-// runs over fails HERE, in the data, and is shortened — the slot never grows
-// and the reader never sees a clipped word. The two named lines are the
-// measured ones: the Sparta line before its cut wrapped to five in Chromium
-// at 360 and 390, and the cut wraps to four.
-test('every club’s commentary fits the four-line slot', () => {
+// These checks flag editorial risks only. Screenshot measurements, not
+// character counts, establish whether the shared slots fit.
+test('authored commentary stays within the editorial warning budget', () => {
   for (const club of clubs) {
     Option.map(clubCommentary(club), (statement) => {
-      expect(commentaryLines(statement), `${club.name}’s commentary overflows`).toBeLessThanOrEqual(
-        COMMENTARY_LINES,
-      );
+      expect(commentaryLines(statement)).toBeLessThanOrEqual(COMMENTARY_LINES);
+      expect(commentaryLinesTablet(statement)).toBeLessThanOrEqual(COMMENTARY_LINES_TABLET);
     });
   }
-  expect(
-    commentaryLines(
-      'Our most successful club and reigning champion stormed into the Europa Cup semifinals first, then closed out the season with the domestic double in hand.',
-    ),
-  ).toBe(5);
-  expect(
-    commentaryLines(
-      'Our most successful club and reigning champion: Europa Cup semifinalists, then the domestic double to close the season.',
-    ),
-  ).toBe(4);
-});
-
-// From md the slot gives back a line, and the wider column has to absorb
-// it: every authored statement wraps within three at the 768px budget, so
-// the tablet slot can never clip a line the phone slot accepted.
-test('every club’s commentary fits the three-line tablet slot', () => {
-  for (const club of clubs) {
-    Option.map(clubCommentary(club), (statement) => {
-      expect(
-        commentaryLinesTablet(statement),
-        `${club.name}’s commentary overflows the tablet slot`,
-      ).toBeLessThanOrEqual(COMMENTARY_LINES_TABLET);
-    });
-  }
+  expect(Option.getOrThrow(clubCommentary(sparta))).toBe(
+    'Our most successful club: reigning champions, Europa Cup semifinalists, then domestic double winners.',
+  );
+  expect(Option.isNone(clubCommentary(clubs.find((club) => club.slug === 'teplice')!))).toBe(true);
 });

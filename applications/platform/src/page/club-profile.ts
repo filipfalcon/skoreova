@@ -4,6 +4,7 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 import commentaryAvatar from '../assets/commentary-avatar.png';
 import {
   COMMENTARY_LINES,
+  COMMENTARY_LINES_ENLARGED,
   COMMENTARY_LINES_TABLET,
   clubCommentary,
   focalPosition,
@@ -632,10 +633,10 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
   //
   // THE DARK ACT IS ONE FIXED TEMPLATE. Every slot — the square photo, the
   // bare crest on its bottom edge, the three-line name box, the three-line
-  // honors stack, the four-line commentary — has one height for every club
+  // honors stack, the shared commentary slot — has one height for every club
   // on a given device, and the content adapts to it: a long name yields to
-  // the club's headline form, a statement past the slot's budget fails the
-  // data test rather than folding, a missing photo becomes the crest wash at
+  // the club's headline form, a statement is edited and checked in the browser against the
+  // shared budget, a missing photo becomes the crest wash at
   // the same height, and a club with fewer honors or no statement yet leaves
   // its slot's remainder empty. Nothing here moves on its own and nothing
   // here is a control: the paper act begins on the same y for every club.
@@ -670,6 +671,7 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
     h.Style({
       '--commentary-lines': `${COMMENTARY_LINES}`,
       '--commentary-lines-md': `${COMMENTARY_LINES_TABLET}`,
+      '--commentary-lines-enlarged': `${COMMENTARY_LINES_ENLARGED}`,
     }),
     ...getStyleXAttributes(h, styles.commentary),
   ];
@@ -767,7 +769,10 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
               ),
               // THE NAME BOX — three lines on a phone; the name that goes in it is the one that fits.
               h.h1(
-                [...getStyleXAttributes(h, shared.display, styles.heroName)],
+                [
+                  h.AriaLabel(target.name),
+                  ...getStyleXAttributes(h, shared.display, styles.heroName),
+                ],
                 [heroTitle(target)],
               ),
               // THE HONORS SLOT — three stamps' height for every club, never empty.

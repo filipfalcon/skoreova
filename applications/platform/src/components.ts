@@ -11,7 +11,7 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import type { Model, Screen } from './model';
 import { Message } from './message';
-import { JUMP_ROW_ID, jumpChipId } from './command';
+import { JUMP_ROW_ID, ObserveSectionRail, jumpChipId } from './command';
 import { type NavEntry, navEntries, screenOf, screenTitles } from './data';
 import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
 import type { StyleXStyle } from './stylexAttributes';
@@ -197,12 +197,13 @@ export const navIcon = (screen: Screen, h: HtmlBuilder<Message>): Html => {
       h.StrokeLinecap('round'),
       h.StrokeLinejoin('round'),
     ],
-    [h.path([h.D(paths[screen] ?? '')], [])],
+    [h.path([h.D(paths[screen === 'Welcome' ? 'HerGame' : screen] ?? '')], [])],
   );
 };
 
 export const desktopNavLink = (model: Model, entry: NavEntry, h: HtmlBuilder<Message>): Html => {
-  const active = screenOf(model.route) === entry.screen;
+  const screen = screenOf(model.route);
+  const active = screen === entry.screen || (entry.screen === 'Welcome' && screen === 'HerGame');
   return h.a(
     [
       h.Href(entry.href),
@@ -263,10 +264,7 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
       h.nav(
         [...getStyleXAttributes(h, styles.sectionRail)],
         [
-          // A symmetric GRID holds HER GAME on the exact center: two 1fr cells
-          // per side flank an auto center column, and equal 1fr tracks mean the
-          // left half always weighs the same as the right. Space-between could
-          // not do that, since the outer labels differ in width.
+          // Equal columns center the five destinations; larger text can reflow them.
           h.div(
             [...getStyleXAttributes(h, styles.sectionRailGrid)],
             navEntries.map((entry) => desktopNavLink(model, entry, h)),
@@ -490,6 +488,7 @@ export const clubSectionIndex = (
   h.nav(
     [
       h.AriaLabel('On this page'),
+      h.OnMount(ObserveSectionRail()),
       ...getStyleXAttributes(
         h,
         styles.sectionIndex,

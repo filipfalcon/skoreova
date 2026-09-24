@@ -119,7 +119,9 @@ export const shared = stylex.create({
     display: 'inline-flex',
     alignItems: 'center',
     gap: '0.625rem',
-    whiteSpace: 'nowrap',
+    whiteSpace: 'normal',
+    maxWidth: '100%',
+    overflowWrap: 'anywhere',
     backgroundColor: tokens.pink,
     paddingBlock: '0.5rem',
     paddingInline: {

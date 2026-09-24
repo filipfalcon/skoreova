@@ -4,6 +4,7 @@ import { spacing, tokens } from '../tokens.stylex';
 
 // Styles for the club profile's LAST/UPCOMING match cards (club-matches.ts).
 
+const COMPACT = '@container club-data (width < 16em)';
 const MD = '@media (min-width: 768px)';
 
 export const styles = stylex.create({
@@ -121,6 +122,7 @@ export const styles = stylex.create({
   // The `md` inline padding is what a peeking card shows: 16px of tone and
   // outline, never a crest edge or a digit.
   fixtureRow: {
+    flexDirection: { default: 'row', [COMPACT]: 'column' },
     marginInline: 'auto',
     display: 'flex',
     width: '100%',
@@ -242,9 +244,8 @@ export const styles = stylex.create({
     textTransform: 'uppercase',
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
   },
-  // The form guide: five 12px squares and a meta caption.
-  // The form guide: one row across the strip's width, the caption at the left and five lettered 24px squares at the right, oldest to newest.
   form: {
+    flexWrap: 'wrap',
     marginTop: spacing.md,
     display: 'flex',
     alignItems: 'center',
@@ -252,6 +253,7 @@ export const styles = stylex.create({
     gap: spacing.sm,
   },
   formSquares: {
+    flexWrap: 'wrap',
     display: 'flex',
     gap: '0.375rem',
   },

@@ -200,3 +200,30 @@ export const ScrollMatchStripToNext = Mount.define('ScrollMatchStripToNext', {
       return Message.CompletedMatchStripScroll();
     }),
 });
+
+/**
+ * Measures the section rail for anchor clearance throughout its mounted lifetime.
+ */
+export const ObserveSectionRail = Mount.define('ObserveSectionRail', {
+  messages: [Message.CompletedObserveSectionRail],
+  execute: ({ element }) =>
+    Effect.acquireRelease(
+      Effect.sync(() => {
+        const column = element.parentElement;
+        const measure = (): void => {
+          column?.style.setProperty(
+            '--section-rail-height',
+            `${element.getBoundingClientRect().height}px`,
+          );
+        };
+        const observer = new ResizeObserver(measure);
+        observer.observe(element, { box: 'border-box' });
+        measure();
+        return () => {
+          observer.disconnect();
+          column?.style.removeProperty('--section-rail-height');
+        };
+      }),
+      (teardown) => Effect.sync(teardown),
+    ).pipe(Effect.as(Message.CompletedObserveSectionRail())),
+});

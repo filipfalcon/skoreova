@@ -5,6 +5,7 @@ import { spacing, tokens } from '../tokens.stylex';
 // Styles for the standings engine (standings.ts): the zone ribbon colors,
 // the table rows, the legend, and the season progress bar.
 
+const COMPACT = '@container club-data (width < 16em)';
 const SM = '@media (min-width: 640px)';
 const MD = '@media (min-width: 768px)';
 
@@ -53,6 +54,7 @@ export const styles = stylex.create({
     marginTop: '1.5rem',
   },
   progressHeader: {
+    flexWrap: 'wrap',
     display: 'flex',
     alignItems: 'baseline',
     justifyContent: 'space-between',
@@ -90,7 +92,7 @@ export const styles = stylex.create({
   // longest name only just clears).
   columnKey: {
     marginTop: '2rem',
-    display: 'flex',
+    display: { default: 'flex', [COMPACT]: 'none' },
     alignItems: 'baseline',
     gap: {
       default: '0.5rem',
@@ -158,7 +160,9 @@ export const styles = stylex.create({
   // tone across the whole row, and 60% of it under a pointer — so it carries
   // no arrow.
   row: {
-    display: 'flex',
+    display: { default: 'flex', [COMPACT]: 'grid' },
+    minWidth: 0,
+    gridTemplateColumns: { default: null, [COMPACT]: 'minmax(0, 1fr) auto' },
     flexGrow: 1,
     flexShrink: 1,
     flexBasis: '0%',
@@ -215,12 +219,13 @@ export const styles = stylex.create({
     color: 'color-mix(in srgb, var(--color-ink) 35%, transparent)',
   },
   rowTeam: {
+    gridColumn: { default: null, [COMPACT]: '1 / -1' },
+    gridRow: { default: null, [COMPACT]: 2 },
+    minWidth: 0,
     flexGrow: 1,
     flexShrink: 1,
     flexBasis: '0%',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    overflowWrap: 'anywhere',
     fontSize: {
       default: '1.125rem',
       [SM]: '1.25rem',
@@ -248,11 +253,13 @@ export const styles = stylex.create({
   // Goal record — "skóre" in the Czech sense: scored:conceded,
   // tabular-nums so the colons line up down the column.
   rowScore: {
+    gridRow: { default: null, [COMPACT]: 3 },
     width: {
+      [COMPACT]: 'auto',
       default: '3rem',
       [MD]: '5rem',
     },
-    textAlign: 'right',
+    textAlign: { default: 'right', [COMPACT]: 'left' },
     fontSize: {
       default: '1rem',
       [MD]: '1.25rem',
@@ -263,6 +270,12 @@ export const styles = stylex.create({
     },
     fontVariantNumeric: 'tabular-nums',
   },
+  compactLabel: {
+    display: { default: 'none', [COMPACT]: 'block' },
+    fontSize: '0.75rem',
+    lineHeight: 1.5,
+    fontFamily: tokens.fontBody,
+  },
   rowScoreHighlighted: {
     color: tokens.muted,
   },
@@ -270,7 +283,9 @@ export const styles = stylex.create({
     color: 'color-mix(in srgb, var(--color-ink) 60%, transparent)',
   },
   rowPoints: {
+    gridRow: { default: null, [COMPACT]: 3 },
     width: {
+      [COMPACT]: 'auto',
       default: '2.5rem',
       [MD]: '3rem',
     },
@@ -293,6 +308,7 @@ export const styles = stylex.create({
   // 0.1em, since a key is a dense row of short words rather than a label
   // (measured at 360: 194px of the 209px beside FULL TABLE).
   legendRow: {
+    flexWrap: 'wrap',
     marginTop: '1.25rem',
     display: 'flex',
     alignItems: 'center',
