@@ -16,6 +16,7 @@ tsconfig.tsbuildinfo
 
 # Vitest
 coverage/
+.vitest/
 
 # Alchemy
 .alchemy/

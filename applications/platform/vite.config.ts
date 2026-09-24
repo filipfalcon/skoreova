@@ -23,21 +23,13 @@ import { defineConfig } from 'vite-plus';
 // Worker owns rendering everywhere else.
 const isUnderAlchemy = process.env['ALCHEMY_CLOUDFLARE_VITE_INJECTED'] === '1';
 
-// The deployment this build belongs to, stamped into the server render and
-// compiled into the client bundle; hydration refuses a page whose id is not
-// this one. A commit is not enough on its own — the same revision can be
-// deployed with different rendering inputs — so CI supplies a per-deployment
-// value and a local build falls back to a fresh one rather than a constant
-// that would make a stale page look current.
-//
-// The fallback is written BACK into the environment, and that is load-bearing.
-// Vite evaluates this config once per environment — once for `client`, once for
-// `ssr` — so a bare `Date.now()` produced two ids milliseconds apart: the Worker
-// stamped one, the client bundle carried the other, and every page refused to
-// hydrate with "This page could not start safely. Reload to get the current
-// version." Both evaluations share a process, so memoizing through `process.env`
-// is what makes the second read the first's value. CI sets the variable and none
-// of this runs.
+// The public deployment ID must match in the client bundle and server HTML.
+// Vite can evaluate this config once per environment. The Foldkit plugin's
+// buildId contract explicitly supports memoizing a local fallback in the
+// environment so those evaluations share one value. Independent build
+// processes must receive the same deployment-supplied FOLDKIT_BUILD_ID.
+// Keep the local fallback fresh per process; a constant production ID would
+// let hydration adopt a page from a different build.
 const BUILD_ID = (process.env['FOLDKIT_BUILD_ID'] ??= `local-${Date.now().toString(36)}`);
 
 const pinAlchemyDevPort = (port: number): Plugin => ({

@@ -132,7 +132,7 @@ export const clubRecordModel = Model.make({
     draft: sampleClub.values.map((value) => NotValidated({ value })),
     isConfirmingDelete: false,
   }),
-  dialog: Dialog.init({ id: DRAWER_DIALOG_ID, isOpen: true }),
+  dialog: Dialog.boot({ id: DRAWER_DIALOG_ID }).model,
 });
 
 // Signed in with a player record open in the drawer’s Overview tab — the state
@@ -148,5 +148,5 @@ export const playerRecordModel = Model.make({
     isConfirmingDelete: false,
   }),
   // The drawer’s content only renders while its Dialog is open.
-  dialog: Dialog.init({ id: DRAWER_DIALOG_ID, isOpen: true }),
+  dialog: Dialog.boot({ id: DRAWER_DIALOG_ID }).model,
 });

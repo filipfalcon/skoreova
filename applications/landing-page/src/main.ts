@@ -2,7 +2,7 @@ import { RadioGroup } from '@foldkit/ui';
 import { Array, Option, Record } from 'effect';
 import type { Runtime } from 'foldkit';
 import { Update } from 'foldkit';
-import { evo } from 'foldkit/struct';
+import { modifyFields } from 'foldkit/struct';
 import { UrlRequest } from 'foldkit/navigation';
 import { toString as urlToString } from 'foldkit/url';
 import type { Url } from 'foldkit/url';
@@ -50,13 +50,13 @@ const initialModel: Model = {
 // landing page.
 const applyRoute = (model: Model, route: AppRoute): Model => {
   const next = AppRoute.match<Model>(route, {
-    Home: () => evo(model, { isMenuOpen: () => false }),
-    Policy: () => evo(model, { isMenuOpen: () => false }),
-    NotFound: () => evo(model, { isMenuOpen: () => false }),
+    Home: () => modifyFields(model, { isMenuOpen: () => false }),
+    Policy: () => modifyFields(model, { isMenuOpen: () => false }),
+    NotFound: () => modifyFields(model, { isMenuOpen: () => false }),
   });
   // Any navigation closes the map’s club card — landing back on the page
   // with a stale card open would be odd.
-  return evo(next, { route: () => route, mapClub: () => Option.none() });
+  return modifyFields(next, { route: () => route, mapClub: () => Option.none() });
 };
 
 // No Flags: every screen derives from the URL, so the server knows everything
@@ -75,7 +75,7 @@ export const update = (model: Model, message: Message) =>
       return {
         // Opening resets the marker to "unknown" so a stale highlight from
         // the previous open can’t flash before detection lands.
-        model: evo(model, {
+        model: modifyFields(model, {
           isMenuOpen: () => isMenuOpen,
           activeSection: (s) => (isMenuOpen ? Option.none() : s),
         }),
@@ -85,18 +85,18 @@ export const update = (model: Model, message: Message) =>
       };
     },
     ClosedMenu: () => ({
-      model: evo(model, { isMenuOpen: () => false }),
+      model: modifyFields(model, { isMenuOpen: () => false }),
       commands: [setScrollLock(false)],
     }),
     // Escape closes like ClosedMenu and additionally hands focus back to
     // the toggle — the overlay it sat in is hidden now.
     PressedMenuEscape: () => ({
-      model: evo(model, { isMenuOpen: () => false }),
+      model: modifyFields(model, { isMenuOpen: () => false }),
       commands: [setScrollLock(false), focusMenuToggle()],
     }),
     CompletedFocusMenuToggle: () => ({ model }),
     DetectedActiveSection: ({ section }) => ({
-      model: evo(model, { activeSection: () => section }),
+      model: modifyFields(model, { activeSection: () => section }),
     }),
     // In-app links (club pins, menu anchors, back links) apply their route
     // immediately and push the URL; external links load normally. Any
@@ -118,14 +118,14 @@ export const update = (model: Model, message: Message) =>
     CompletedLoad: () => ({ model }),
     CompletedSetScrollLock: () => ({ model }),
     SelectedMapLeague: ({ league }) => ({
-      model: evo(model, { mapLeague: () => league, mapClub: () => Option.none() }),
+      model: modifyFields(model, { mapLeague: () => league, mapClub: () => Option.none() }),
     }),
     GotMapLeagueGroupMessage: ({ message }) =>
       Update.foldChild({
         update: MapLeagueRadioGroup.update,
         read: (parent: Model) => Option.some(parent.mapLeagueGroup),
         write: (parent: Model, mapLeagueGroup) =>
-          evo(parent, { mapLeagueGroup: () => mapLeagueGroup }),
+          modifyFields(parent, { mapLeagueGroup: () => mapLeagueGroup }),
         toParentMessage: (childMessage) =>
           Message.GotMapLeagueGroupMessage({ message: childMessage }),
         // Committing a league also drops the open club: the pin behind the
@@ -133,15 +133,15 @@ export const update = (model: Model, message: Message) =>
         foldOutMessage:
           ({ value }) =>
           (parent: Model) => ({
-            model: evo(parent, { mapLeague: () => value, mapClub: () => Option.none() }),
+            model: modifyFields(parent, { mapLeague: () => value, mapClub: () => Option.none() }),
           }),
       })(message)(model),
     OpenedMapClub: ({ slug }) => ({
-      model: evo(model, { mapClub: () => Option.some(slug) }),
+      model: modifyFields(model, { mapClub: () => Option.some(slug) }),
     }),
-    ClosedMapClub: () => ({ model: evo(model, { mapClub: () => Option.none() }) }),
+    ClosedMapClub: () => ({ model: modifyFields(model, { mapClub: () => Option.none() }) }),
     ToggledAreaUnit: () => ({
-      model: evo(model, { isMapAreaImperial: (imperial) => !imperial }),
+      model: modifyFields(model, { isMapAreaImperial: (imperial) => !imperial }),
     }),
     CompletedMountMotion: () => ({ model }),
     // Motion is decorative — if it fails to attach, the page still renders
@@ -150,13 +150,13 @@ export const update = (model: Model, message: Message) =>
     // The hero observer reports whether it has scrolled under the header;
     // the header CTA renders off this flag.
     DetectedHeroPastHeader: ({ past }) => ({
-      model: evo(model, { heroPastHeader: () => past }),
+      model: modifyFields(model, { heroPastHeader: () => past }),
     }),
     // The OS setting flipped mid-session — the keyed motion mount and the
     // wheel subscription both follow this flag. Reveal state resets: the
     // remounted observers re-report everything on-screen within a frame.
     ChangedReducedMotion: ({ reduce }) => ({
-      model: evo(model, { prefersReducedMotion: () => reduce, reveals: () => ({}) }),
+      model: modifyFields(model, { prefersReducedMotion: () => reduce, reveals: () => ({}) }),
     }),
     // The reveal observers' report, and the only message that MOVES a
     // target between reveal states (ChangedReducedMotion above clears the
@@ -164,7 +164,7 @@ export const update = (model: Model, message: Message) =>
     // never downgrades an already-drawn target; `drawn` only upgrades one
     // that is on screen.
     ChangedReveals: ({ revealed, concealed, drawn }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         reveals: (reveals) => {
           const kept = Record.filter(reveals, (_, key) => !Array.contains(concealed, key));
           // union keeps the LEFT value on a conflict, which is the

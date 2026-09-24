@@ -68,6 +68,7 @@ describe('view', () => {
       // card <button>, exactly as it does in a browser.
       Scene.click(Scene.text('Sierra Pennock')),
       Scene.Command.resolve(Dialog.ShowDialog, Dialog.Message.SucceededShowDialog()),
+      Scene.Mount.resolve(Dialog.AcquireResources, Dialog.Message.SucceededAcquireResources()),
       Scene.Command.resolve(Navigate, Message.CompletedNavigate()),
       Scene.Mount.resolve(MountChart, Message.SucceededMountChart({ hostId: CHART_HOST_ID })),
       Scene.Command.resolve(SyncChart, Message.SucceededSyncChart()),
@@ -84,6 +85,7 @@ describe('view', () => {
       Scene.given(editionsListModel),
       Scene.click(Scene.role('button', { name: '+ Add new' })),
       Scene.Command.resolve(Dialog.ShowDialog, Dialog.Message.SucceededShowDialog()),
+      Scene.Mount.resolve(Dialog.AcquireResources, Dialog.Message.SucceededAcquireResources()),
       // AriaDisabled, not the native attribute — a disabled button leaves the
       // tab order and takes its own description with it.
       Scene.expect(Scene.role('button', { name: 'Save' })).toHaveAttr('aria-disabled', 'true'),
@@ -125,6 +127,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(playerRecordModel),
+      Scene.Mount.resolve(Dialog.AcquireResources, Dialog.Message.SucceededAcquireResources()),
       Scene.Mount.resolve(MountChart, Message.SucceededMountChart({ hostId: CHART_HOST_ID })),
       Scene.Command.resolve(SyncChart, Message.SucceededSyncChart()),
       Scene.expect(Scene.label('Record stats chart')).toExist(),

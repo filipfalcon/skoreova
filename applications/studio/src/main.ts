@@ -2,7 +2,7 @@ import { Array, Option, Result, pipe } from 'effect';
 import { DatePicker, Dialog, Tabs } from '@foldkit/ui';
 import type { Runtime } from 'foldkit';
 import { AsyncData, Calendar, Command, Update } from 'foldkit';
-import { evo } from 'foldkit/struct';
+import { modifyFields } from 'foldkit/struct';
 import { UrlRequest } from 'foldkit/navigation';
 import { toString as urlToString } from 'foldkit/url';
 
@@ -123,7 +123,7 @@ const upsertEntry = (rows: ReadonlyArray<Entry>, entry: Entry): ReadonlyArray<En
 ];
 
 // Evolves ONE section’s AsyncData field by name. The field names match the
-// Section literals, but `evo` needs a literal key, so the switch is what turns
+// Section literals, but `modifyFields` needs a literal key, so the switch is what turns
 // a runtime section into the right field — every handler that touches a
 // section’s rows goes through here rather than naming the field itself.
 const evolveSection = (
@@ -133,17 +133,17 @@ const evolveSection = (
 ): Model => {
   switch (section) {
     case 'players':
-      return evo(model, { players: f });
+      return modifyFields(model, { players: f });
     case 'clubs':
-      return evo(model, { clubs: f });
+      return modifyFields(model, { clubs: f });
     case 'nationals':
-      return evo(model, { nationals: f });
+      return modifyFields(model, { nationals: f });
     case 'competitions':
-      return evo(model, { competitions: f });
+      return modifyFields(model, { competitions: f });
     case 'editions':
-      return evo(model, { editions: f });
+      return modifyFields(model, { editions: f });
     case 'associations':
-      return evo(model, { associations: f });
+      return modifyFields(model, { associations: f });
   }
 };
 
@@ -175,7 +175,7 @@ const mergeLocalEdits = (
   const localOnly = known.filter((row) => row.id.startsWith(LOCAL_ID_PREFIX));
   return [
     ...incoming.map((row) =>
-      deleted.has(deletedKey(section, row.id)) ? evo(row, { isDeleted: () => true }) : row,
+      deleted.has(deletedKey(section, row.id)) ? modifyFields(row, { isDeleted: () => true }) : row,
     ),
     ...localOnly,
   ];
@@ -227,7 +227,7 @@ type UpdateReturn = Update.Return<Model, Message>;
 const foldDialogOpen = Update.foldChildStep({
   update: Dialog.open,
   read: (model: Model) => Option.some(model.dialog),
-  write: (model: Model, dialog) => evo(model, { dialog: () => dialog }),
+  write: (model: Model, dialog) => modifyFields(model, { dialog: () => dialog }),
   toParentMessage: (message) => Message.GotDialogMessage({ message }),
   foldOutMessage: () => (stepModel: Model) => ({ model: stepModel }),
 });
@@ -235,7 +235,7 @@ const foldDialogOpen = Update.foldChildStep({
 const closeDialog = Update.foldChildStep({
   update: Dialog.close,
   read: (model: Model) => Option.some(model.dialog),
-  write: (model: Model, dialog) => evo(model, { dialog: () => dialog }),
+  write: (model: Model, dialog) => modifyFields(model, { dialog: () => dialog }),
   toParentMessage: (message) => Message.GotDialogMessage({ message }),
   foldOutMessage: () => (stepModel: Model) => ({ model: stepModel }),
 });
@@ -256,7 +256,7 @@ const showList = (route: AppRoute): Update.Step<Model, Message> =>
   Update.combine([
     closeDialog,
     (stepModel) => ({
-      model: evo(stepModel, {
+      model: modifyFields(stepModel, {
         route: () => route,
         isMenuOpen: () => false,
         drawer: () => DrawerState.Closed(),
@@ -294,7 +294,7 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
         return Update.combine(model, [
           showList(route),
           (stepModel) => ({
-            model: evo(stepModel, { linkError: () => 'That record was deleted.' }),
+            model: modifyFields(stepModel, { linkError: () => 'That record was deleted.' }),
           }),
         ]);
       }
@@ -303,7 +303,7 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
         return Update.combine(model, [
           openDialog,
           (stepModel) => ({
-            model: evo(stepModel, {
+            model: modifyFields(stepModel, {
               route: () => route,
               isMenuOpen: () => false,
               drawer: () => editRecord(entry),
@@ -315,7 +315,7 @@ const applyRoute = (model: Model, route: AppRoute): UpdateReturn =>
       }
       if (section === 'clubs' || section === 'nationals') {
         return {
-          model: evo(model, {
+          model: modifyFields(model, {
             route: () => route,
             isMenuOpen: () => false,
           }),
@@ -368,14 +368,14 @@ const retrySection = (
 const returnToList: Update.Step<Model, Message> = (stepModel) =>
   Option.match(routeSection(stepModel.route), {
     onNone: () => ({
-      model: evo(stepModel, {
+      model: modifyFields(stepModel, {
         route: () => AppRoute.Home(),
         drawer: () => DrawerState.Closed(),
       }),
       commands: [navigate(homeRouter())],
     }),
     onSome: (section) => ({
-      model: evo(stepModel, {
+      model: modifyFields(stepModel, {
         route: () => AppRoute.Section({ section }),
         drawer: () => DrawerState.Closed(),
       }),
@@ -387,7 +387,7 @@ const returnToList: Update.Step<Model, Message> = (stepModel) =>
 const foldDialogMessage = Update.foldChild({
   update: Dialog.update,
   read: (model: Model) => Option.some(model.dialog),
-  write: (model: Model, dialog) => evo(model, { dialog: () => dialog }),
+  write: (model: Model, dialog) => modifyFields(model, { dialog: () => dialog }),
   toParentMessage: (message) => Message.GotDialogMessage({ message }),
   foldOutMessage: (outMessage: Dialog.OutMessage) =>
     Dialog.OutMessage.match<Update.Step<Model, Message>>(outMessage, {
@@ -402,14 +402,14 @@ const foldDialogMessage = Update.foldChild({
 const foldTabsMessage = Update.foldChild({
   update: DrawerTabs.update,
   read: (model: Model) => Option.some(model.tabs),
-  write: (model: Model, tabs) => evo(model, { tabs: () => tabs }),
+  write: (model: Model, tabs) => modifyFields(model, { tabs: () => tabs }),
   toParentMessage: (message) => Message.GotTabsMessage({ message }),
   foldOutMessage:
     ({ value }: Tabs.OutMessage<DrawerTab>) =>
     (stepModel: Model) => ({
-      model: evo(stepModel, {
+      model: modifyFields(stepModel, {
         drawer: (drawer) =>
-          drawer._tag === 'Editing' ? evo(drawer, { tab: () => value }) : drawer,
+          drawer._tag === 'Editing' ? modifyFields(drawer, { tab: () => value }) : drawer,
       }),
     }),
 });
@@ -422,7 +422,7 @@ const setDateBound =
     date: Option.Option<typeof Calendar.CalendarDate.Type>,
   ): Update.Step<Model, Message> =>
   (stepModel) => ({
-    model: evo(stepModel, {
+    model: modifyFields(stepModel, {
       dateFilters: (ranges) => ({
         ...ranges,
         [column]: {
@@ -439,15 +439,19 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     // The credential fields only exist while signed out — a stray input
     // message after sign-in has nothing to write into.
     UpdatedEmail: ({ value }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         session: (session) =>
-          session._tag === 'Anonymous' ? evo(session, { emailInput: () => value }) : session,
+          session._tag === 'Anonymous'
+            ? modifyFields(session, { emailInput: () => value })
+            : session,
       }),
     }),
     UpdatedPassword: ({ value }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         session: (session) =>
-          session._tag === 'Anonymous' ? evo(session, { passwordInput: () => value }) : session,
+          session._tag === 'Anonymous'
+            ? modifyFields(session, { passwordInput: () => value })
+            : session,
       }),
     }),
     // NOTE: mock sign-in — there is no backend authentication endpoint
@@ -487,7 +491,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       // Idle-only guard stranded a Failure (or a pre-auth deep link’s
       // forced Success) until someone hit Retry by hand.
       const participationsFetch = isInFlight(model.participations) ? [] : [fetchParticipations()];
-      const signedIn: Model = evo(model, {
+      const signedIn: Model = modifyFields(model, {
         // Only the email crosses into the signed-in state — the password
         // input is dropped here, not carried along.
         session: (session) =>
@@ -520,7 +524,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     // are seeded once by FetchToday at boot. The URL returns home with the
     // model (leaving /players in the bar would deep-link the next sign-in).
     ClickedSignOut: () => ({
-      model: evo(initialModel(), {
+      model: modifyFields(initialModel(), {
         dialog: () => model.dialog,
         dateFilterPickers: () => model.dateFilterPickers,
       }),
@@ -531,7 +535,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       Update.combine(model, [
         closeDialog,
         (stepModel) => ({
-          model: evo(stepModel, {
+          model: modifyFields(stepModel, {
             route: () => AppRoute.Section({ section }),
             isMenuOpen: () => false,
             search: () => '',
@@ -549,23 +553,23 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ]),
     // Back to the dashboard landing page.
     ClickedDashboard: () => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         route: () => AppRoute.Home(),
         isMenuOpen: () => false,
         linkError: () => '',
       }),
       commands: [navigate(homeRouter())],
     }),
-    ToggledMenu: () => ({ model: evo(model, { isMenuOpen: (open) => !open }) }),
+    ToggledMenu: () => ({ model: modifyFields(model, { isMenuOpen: (open) => !open }) }),
     UpdatedSearch: ({ value }) => ({
-      model: evo(model, { search: () => value, clientPage: () => 1 }),
+      model: modifyFields(model, { search: () => value, clientPage: () => 1 }),
     }),
     // A dropdown column’s exact-match choice; '' (the "All" option) drops
     // the column’s filter entirely.
     SelectedFilter: ({ column, value }) => {
       const { [column]: _removed, ...rest } = model.filters;
       return {
-        model: evo(model, {
+        model: modifyFields(model, {
           filters: () =>
             value === '' ? rest : { ...rest, [column]: ColumnFilter.Exact({ value }) },
           clientPage: () => 1,
@@ -581,7 +585,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         update: FilterListbox.update,
         read: (parent: Model) => Option.fromUndefinedOr(parent.filterListboxes[column]),
         write: (parent: Model, listbox) =>
-          evo(parent, { filterListboxes: (boxes) => ({ ...boxes, [column]: listbox }) }),
+          modifyFields(parent, { filterListboxes: (boxes) => ({ ...boxes, [column]: listbox }) }),
         toParentMessage: (childMessage) =>
           Message.GotFilterListboxMessage({ column, message: childMessage }),
         foldOutMessage:
@@ -594,7 +598,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
               : [...excluded, value];
             const { [column]: _removed, ...rest } = stepModel.filters;
             return {
-              model: evo(stepModel, {
+              model: modifyFields(stepModel, {
                 filters: () =>
                   Array.isReadonlyArrayEmpty(nextExcluded)
                     ? rest
@@ -607,7 +611,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     // Today’s date arrived from the clock at boot — seed the date filter
     // DatePickers with it so their calendar grids open onto it.
     FetchedToday: ({ today }) => ({
-      model: evo(model, { dateFilterPickers: () => initialDateFilterPickers(today) }),
+      model: modifyFields(model, { dateFilterPickers: () => initialDateFilterPickers(today) }),
     }),
     // Delegates to one bound of a date column’s filter DatePicker. Its
     // SelectedDate OutMessage commits that bound of the column’s range;
@@ -621,7 +625,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             (pair) => pair[bound],
           ),
         write: (parent: Model, picker) =>
-          evo(parent, {
+          modifyFields(parent, {
             dateFilterPickers: (pickers) => {
               const pair = pickers[column];
               return pair === undefined
@@ -642,7 +646,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     // DatePickers hold no selection state to reset.
     ClearedDateFilter: ({ column }) => {
       const { [column]: _removed, ...rest } = model.dateFilters;
-      return { model: evo(model, { dateFilters: () => rest, clientPage: () => 1 }) };
+      return { model: modifyFields(model, { dateFilters: () => rest, clientPage: () => 1 }) };
     },
     // Open the drawer in creation mode: a blank draft, no existing record.
     // Only reachable from a section list — on the dashboard there is no
@@ -654,7 +658,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
           Update.combine(model, [
             openDialog,
             (stepModel) => ({
-              model: evo(stepModel, {
+              model: modifyFields(stepModel, {
                 drawer: () => DrawerState.Creating({ section, draft: emptyDraft(section) }),
                 chartError: () => Option.none(),
               }),
@@ -668,7 +672,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       return Update.combine(model, [
         openDialog,
         (stepModel) => ({
-          model: evo(stepModel, {
+          model: modifyFields(stepModel, {
             route: () => AppRoute.Record({ section, id }),
             drawer: () => editRecord(entry),
             chartError: () => Option.none(),
@@ -683,7 +687,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     // what an error is, and the save asks the same question the field already
     // answered rather than re-implementing it.
     UpdatedDraftField: ({ index, value }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         drawer: (drawer) => {
           const column = drawerColumns(drawer)[index];
           const judge = (text: string): FieldValidation.Field<string> =>
@@ -740,7 +744,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         return Update.combine(withRow, [
           closeDialog,
           (stepModel) => ({
-            model: evo(stepModel, {
+            model: modifyFields(stepModel, {
               route: () => AppRoute.Section({ section }),
               nextLocalId: (n) => n + 1,
               drawer: () => DrawerState.Closed(),
@@ -765,7 +769,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       // it open. One stamp, two events.
       if (model.pendingLogRecordId !== '') {
         return {
-          model: evo(model, {
+          model: modifyFields(model, {
             editLog: (log) => [
               LogEntry.RecordCreated({ recordId: model.pendingLogRecordId, at }),
               ...log,
@@ -792,13 +796,13 @@ export const update = (model: Model, message: Message): UpdateReturn =>
 
       const withRows = evolveSection(model, section, (data) =>
         mapSectionRows(data, (rows) =>
-          rows.map((row) => (row.id === id ? evo(row, { values: () => draft }) : row)),
+          rows.map((row) => (row.id === id ? modifyFields(row, { values: () => draft }) : row)),
         ),
       );
       return Update.combine(withRows, [
         closeDialog,
         (stepModel) => ({
-          model: evo(stepModel, {
+          model: modifyFields(stepModel, {
             route: () => AppRoute.Section({ section }),
             editLog: (log) => [...changes, ...log],
             drawer: () => DrawerState.Closed(),
@@ -816,15 +820,19 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     // parent owns.
     GotTabsMessage: ({ message }) => foldTabsMessage(message)(model),
     ClickedDeleteRecord: () => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         drawer: (drawer) =>
-          drawer._tag === 'Editing' ? evo(drawer, { isConfirmingDelete: () => true }) : drawer,
+          drawer._tag === 'Editing'
+            ? modifyFields(drawer, { isConfirmingDelete: () => true })
+            : drawer,
       }),
     }),
     ClickedCancelDelete: () => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         drawer: (drawer) =>
-          drawer._tag === 'Editing' ? evo(drawer, { isConfirmingDelete: () => false }) : drawer,
+          drawer._tag === 'Editing'
+            ? modifyFields(drawer, { isConfirmingDelete: () => false })
+            : drawer,
       }),
     }),
     // Soft-delete: mark the record and close the drawer (mock — no backend yet).
@@ -834,13 +842,13 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       const { section, id } = drawer;
       const withRows = evolveSection(model, section, (data) =>
         mapSectionRows(data, (rows) =>
-          rows.map((row) => (row.id === id ? evo(row, { isDeleted: () => true }) : row)),
+          rows.map((row) => (row.id === id ? modifyFields(row, { isDeleted: () => true }) : row)),
         ),
       );
       return Update.combine(withRows, [
         closeDialog,
         (stepModel) => ({
-          model: evo(stepModel, {
+          model: modifyFields(stepModel, {
             route: () => AppRoute.Section({ section }),
             drawer: () => DrawerState.Closed(),
             // The ledger, not the row flag, is what survives a refetch.
@@ -852,7 +860,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       ]);
     },
     DeletedRecordAt: ({ at }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         editLog: (log) =>
           model.pendingLogRecordId === ''
             ? log
@@ -866,30 +874,30 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     // message — branch on which one just mounted.
     SucceededMountChart: ({ hostId }) => {
       const entry = drawerRecord(model);
-      if (!entry) return { model: evo(model, { chartError: () => Option.none() }) };
+      if (!entry) return { model: modifyFields(model, { chartError: () => Option.none() }) };
       if (hostId === POINTS_CHART_HOST_ID) {
         return {
-          model: evo(model, { chartError: () => Option.none() }),
+          model: modifyFields(model, { chartError: () => Option.none() }),
           commands: [syncPointsChart({ hostId, ...pointsFor(entry) })],
         };
       }
       return {
-        model: evo(model, { chartError: () => Option.none() }),
+        model: modifyFields(model, { chartError: () => Option.none() }),
         commands: [syncChart({ hostId, ...statsFor(entry) })],
       };
     },
     FailedMountChart: ({ reason }) => ({
-      model: evo(model, { chartError: () => Option.some(reason) }),
+      model: modifyFields(model, { chartError: () => Option.some(reason) }),
     }),
     SucceededSyncChart: () => ({ model }),
     FailedSyncChart: ({ reason }) => ({
-      model: evo(model, { chartError: () => Option.some(reason) }),
+      model: modifyFields(model, { chartError: () => Option.some(reason) }),
     }),
     // A fetched page replaces the section’s rows (one page at a time, not the
     // running total). settle folds the result into the AsyncData: success →
     // Success, failure → Failure or, if a prior page is still shown, Stale.
     SucceededFetchPlayers: ({ entries, total }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         players: (data) =>
           SectionData.Success({
             data: mergeLocalEdits(data, entries, 'players', model.deletedRecordIds),
@@ -898,7 +906,9 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       }),
     }),
     FailedFetchPlayers: ({ reason }) => ({
-      model: evo(model, { players: (data) => AsyncData.settle(data, Result.fail(reason)) }),
+      model: modifyFields(model, {
+        players: (data) => AsyncData.settle(data, Result.fail(reason)),
+      }),
     }),
     ClickedRetryPlayers: () =>
       retrySection(model, 'players', [fetchPlayers(model.playersPage), fetchHealth()]),
@@ -912,14 +922,14 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       return Option.match(AsyncData.revalidateOrLoad(model.players), {
         onNone: () => ({ model }),
         onSome: (players) => ({
-          model: evo(model, { players: () => players, playersPage: () => target }),
+          model: modifyFields(model, { players: () => players, playersPage: () => target }),
           commands: [fetchPlayers(target)],
         }),
       });
     },
-    ClickedClientPage: ({ page }) => ({ model: evo(model, { clientPage: () => page }) }),
+    ClickedClientPage: ({ page }) => ({ model: modifyFields(model, { clientPage: () => page }) }),
     SucceededFetchClubs: ({ entries }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         clubs: (data) =>
           SectionData.Success({
             data: mergeLocalEdits(data, entries, 'clubs', model.deletedRecordIds),
@@ -927,11 +937,11 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       }),
     }),
     FailedFetchClubs: ({ reason }) => ({
-      model: evo(model, { clubs: (data) => AsyncData.settle(data, Result.fail(reason)) }),
+      model: modifyFields(model, { clubs: (data) => AsyncData.settle(data, Result.fail(reason)) }),
     }),
     ClickedRetryClubs: () => retrySection(model, 'clubs', [fetchClubs(), fetchHealth()]),
     SucceededFetchNationals: ({ entries }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         nationals: (data) =>
           SectionData.Success({
             data: mergeLocalEdits(data, entries, 'nationals', model.deletedRecordIds),
@@ -939,12 +949,14 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       }),
     }),
     FailedFetchNationals: ({ reason }) => ({
-      model: evo(model, { nationals: (data) => AsyncData.settle(data, Result.fail(reason)) }),
+      model: modifyFields(model, {
+        nationals: (data) => AsyncData.settle(data, Result.fail(reason)),
+      }),
     }),
     ClickedRetryNationals: () =>
       retrySection(model, 'nationals', [fetchNationals(), fetchHealth()]),
     SucceededFetchCompetitions: ({ entries }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         competitions: (data) =>
           SectionData.Success({
             data: mergeLocalEdits(data, entries, 'competitions', model.deletedRecordIds),
@@ -952,14 +964,14 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       }),
     }),
     FailedFetchCompetitions: ({ reason }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         competitions: (data) => AsyncData.settle(data, Result.fail(reason)),
       }),
     }),
     ClickedRetryCompetitions: () =>
       retrySection(model, 'competitions', [fetchCompetitions(), fetchHealth()]),
     SucceededFetchEditions: ({ entries }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         editions: (data) =>
           SectionData.Success({
             data: mergeLocalEdits(data, entries, 'editions', model.deletedRecordIds),
@@ -967,11 +979,13 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       }),
     }),
     FailedFetchEditions: ({ reason }) => ({
-      model: evo(model, { editions: (data) => AsyncData.settle(data, Result.fail(reason)) }),
+      model: modifyFields(model, {
+        editions: (data) => AsyncData.settle(data, Result.fail(reason)),
+      }),
     }),
     ClickedRetryEditions: () => retrySection(model, 'editions', [fetchEditions(), fetchHealth()]),
     SucceededFetchAssociations: ({ entries }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         associations: (data) =>
           SectionData.Success({
             data: mergeLocalEdits(data, entries, 'associations', model.deletedRecordIds),
@@ -979,19 +993,19 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       }),
     }),
     FailedFetchAssociations: ({ reason }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         associations: (data) => AsyncData.settle(data, Result.fail(reason)),
       }),
     }),
     ClickedRetryAssociations: () =>
       retrySection(model, 'associations', [fetchAssociations(), fetchHealth()]),
     SucceededFetchParticipations: ({ participations }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         participations: () => ParticipationsData.Success({ data: participations }),
       }),
     }),
     FailedFetchParticipations: ({ reason }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         participations: (data) => AsyncData.settle(data, Result.fail(reason)),
       }),
     }),
@@ -999,12 +1013,12 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       Option.match(AsyncData.revalidateOrLoad(model.participations), {
         onNone: () => ({ model }),
         onSome: (next) => ({
-          model: evo(model, { participations: () => next }),
+          model: modifyFields(model, { participations: () => next }),
           commands: [fetchParticipations(), fetchHealth()],
         }),
       }),
-    SucceededFetchHealth: () => ({ model: evo(model, { serverHealth: () => 'Ok' }) }),
-    FailedFetchHealth: () => ({ model: evo(model, { serverHealth: () => 'Down' }) }),
+    SucceededFetchHealth: () => ({ model: modifyFields(model, { serverHealth: () => 'Ok' }) }),
+    FailedFetchHealth: () => ({ model: modifyFields(model, { serverHealth: () => 'Down' }) }),
     // Internal anchor clicks navigate within the app; anything else is a
     // real page load.
     ClickedLink: ({ request }) =>
@@ -1027,13 +1041,13 @@ export const update = (model: Model, message: Message): UpdateReturn =>
       // reopen its drawer, which is the same defect the route guard fixes from
       // the other side.
       if (isLedgerDeleted(model, entry.section, entry.id)) {
-        return { model: evo(model, { linkError: () => 'That record was deleted.' }) };
+        return { model: modifyFields(model, { linkError: () => 'That record was deleted.' }) };
       }
       const withRow = evolveSection(model, entry.section, (data) => upsertRecord(data, entry));
       return Update.combine(withRow, [
         openDialog,
         (stepModel) => ({
-          model: evo(stepModel, {
+          model: modifyFields(stepModel, {
             drawer: () => editRecord(entry),
             chartError: () => Option.none(),
             linkError: () => '',
@@ -1041,7 +1055,9 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         }),
       ]);
     },
-    FailedFetchTeamById: ({ reason }) => ({ model: evo(model, { linkError: () => reason }) }),
+    FailedFetchTeamById: ({ reason }) => ({
+      model: modifyFields(model, { linkError: () => reason }),
+    }),
   });
 
 // INIT

@@ -36,21 +36,13 @@ const INLINE_ENTRIES: ReadonlyArray<{ entry: string; after?: string }> = [
 // Worker owns rendering everywhere else.
 const isUnderAlchemy = process.env['ALCHEMY_CLOUDFLARE_VITE_INJECTED'] === '1';
 
-// The deployment this build belongs to, stamped into the server render and
-// compiled into the client bundle; hydration refuses a page whose id is not
-// this one. A commit is not enough on its own — the same revision can be
-// deployed with different rendering inputs — so CI supplies a per-deployment
-// value and a local build falls back to a fresh one rather than a constant
-// that would make a stale page look current.
-//
-// The fallback is written BACK into the environment, and that is load-bearing.
-// Vite evaluates this config once per environment — once for `client`, once for
-// `ssr` — so a bare `Date.now()` produced two ids milliseconds apart: the Worker
-// stamped one, the client bundle carried the other, and every page refused to
-// hydrate with "This page could not start safely. Reload to get the current
-// version." Both evaluations share a process, so memoizing through `process.env`
-// is what makes the second read the first's value. CI sets the variable and none
-// of this runs.
+// The public deployment ID must match in the client bundle and server HTML.
+// Vite can evaluate this config once per environment. The Foldkit plugin's
+// buildId contract explicitly supports memoizing a local fallback in the
+// environment so those evaluations share one value. Independent build
+// processes must receive the same deployment-supplied FOLDKIT_BUILD_ID.
+// Keep the local fallback fresh per process; a constant production ID would
+// let hydration adopt a page from a different build.
 const BUILD_ID = (process.env['FOLDKIT_BUILD_ID'] ??= `local-${Date.now().toString(36)}`);
 
 const placeholderFor = (entry: string): string => `<!-- @inline ${entry} -->`;
@@ -306,41 +298,16 @@ export default defineConfig({
     // test runner reloads mid-import and every test file fails to load.
     include: ['foldkit/brand'],
   },
-  // The fast half of this app’s suite. Story, Scene and the view-identity
-  // canary are pure — update/view never touch the DOM at call time — so they
-  // have no business paying for two browser engines. The guards that DO need a
-  // real one (computed styles, painted geometry, IntersectionObserver, a
-  // parsed stylesheet) are `*.browser.test.ts` and run from
-  // vite.browser.config.ts. The suffix IS the switch: it decides which runner
-  // claims a file, so a new test picks its environment by what it is named.
-  //
-  // `include` deliberately lives here and in the browser config rather than in
-  // anything shared: a project that `extends` another CONCATENATES the array,
-  // so a shared include would hand both runners the whole suite.
   test: {
     name: 'landing-page',
-    // A fixed build id for the server-entry tests: `renderToString` refuses a
-    // hydratable render without one. It rides on `env` rather than the
-    // plugin's `buildId`, because Vitest builds `import.meta.env` itself and
-    // the plugin's compile-time define does not survive into a test run.
-    // Tests compare a render against itself rather than across deployments, so
-    // a constant is the whole of what they need.
+    // Hydratable server tests require a build ID, supplied through env because Vitest constructs import.meta.env itself.
     env: { FOLDKIT_BUILD_ID: 'test' },
     include: ['src/**/*.test.ts'],
     exclude: ['src/**/*.browser.test.ts'],
-    // The app’s own update/view/init never touch the DOM at call time, but the
-    // @foldkit/ui components rendered in the view do (CSS.escape when building
-    // id selectors), so these run under happy-dom rather than bare Node. This
-    // matches @foldkit/ui’s own test setup, and platform’s and studio’s.
+    // src/analytics/gtag.test.ts reads and assigns window.dataLayer.
     environment: 'happy-dom',
-    // Registers Foldkit’s Scene matchers for story.test.ts / scene.test.ts.
     setupFiles: ['./src/vitest-setup.ts'],
-    // Foldkit ships as ESM with subpath exports (foldkit/struct, foldkit/test/*);
-    // inline it so Vitest transforms it instead of externalizing it to a
-    // native import. @foldkit/ui must be inlined alongside foldkit:
-    // externalized it would natively import a second foldkit instance, whose
-    // render-dispatch singleton is not the one Scene drives (its submodel
-    // views then throw "built outside a view").
+    // Inlining foldkit and @foldkit/ui keeps component rendering on the same runtime instance as Scene.
     server: { deps: { inline: ['foldkit', '@foldkit/ui'] } },
   },
 });

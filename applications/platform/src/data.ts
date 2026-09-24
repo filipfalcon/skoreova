@@ -925,15 +925,13 @@ export const clubRowFace = (name: string): ClubRowFace | undefined => {
 export const standingsFor = (league: string): ReadonlyArray<StandingsRow> =>
   pipe(
     clubs.filter((club) => club.league === league),
-    Array.map(
-      (club): StandingsRow => ({
-        team: club.name,
-        played: club.won + club.drawn + club.lost,
-        scored: club.scored,
-        conceded: club.conceded,
-        points: club.won * POINTS_WIN + club.drawn * POINTS_DRAW,
-      }),
-    ),
+    Array.map((club): StandingsRow => ({
+      team: club.name,
+      played: club.won + club.drawn + club.lost,
+      scored: club.scored,
+      conceded: club.conceded,
+      points: club.won * POINTS_WIN + club.drawn * POINTS_DRAW,
+    })),
     // Points, then goal difference, then goals scored — how every league
     // table in the country is ordered.
     Array.sortBy(

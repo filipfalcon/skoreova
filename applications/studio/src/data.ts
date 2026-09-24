@@ -5,7 +5,7 @@ import { Array, Option, String } from 'effect';
 import { DatePicker, Listbox } from '@foldkit/ui';
 import { AsyncData, Calendar } from 'foldkit';
 import * as FieldValidation from 'foldkit/fieldValidation';
-import { evo } from 'foldkit/struct';
+import { modifyFields } from 'foldkit/struct';
 
 import type { Column, ColumnKind } from './api';
 import { associationColumns } from './associationsApi';
@@ -52,8 +52,8 @@ export const withDraft = (
   drawer: DrawerState,
   draft: ReadonlyArray<FieldValidation.Field<string>>,
 ): DrawerState => {
-  if (drawer._tag === 'Creating') return evo(drawer, { draft: () => draft });
-  if (drawer._tag === 'Editing') return evo(drawer, { draft: () => draft });
+  if (drawer._tag === 'Creating') return modifyFields(drawer, { draft: () => draft });
+  if (drawer._tag === 'Editing') return modifyFields(drawer, { draft: () => draft });
   return drawer;
 };
 
@@ -148,7 +148,7 @@ export const resolveDerivedCells = (model: Model, entry: Entry): Entry => {
     const parent = sectionRows(model, referenced).find((row) => row.id === entry.parentId);
     return parent?.values[0] ?? value;
   });
-  return evo(entry, { values: () => values });
+  return modifyFields(entry, { values: () => values });
 };
 
 // A section’s rows as displayed: any derived cell carries the referenced

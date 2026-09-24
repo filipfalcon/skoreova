@@ -200,23 +200,9 @@ export default defineConfig({
     '*': 'vp check --fix',
   },
   test: {
-    // A project is a runner — one Vite server, one environment, one plugin
-    // set, one file list — not a package. This was `packageJson.workspaces`
-    // until web needed two runners for one package (happy-dom for the pure
-    // Story/Scene tests, a real browser for the motion guards), which no
-    // workspaces field can express; the upstream request to derive this list
-    // natively was withdrawn for the same reason.
-    //
-    // Naming config files rather than globbing directories also closes two
-    // traps that only fire later. A `applications/*` glob matches FILES too,
-    // so a stray applications/README.md aborts the entire run at startup; and
-    // a workspace directory without a vite config is registered anyway, as a
-    // project with no plugins, no setup and no environment — green for reasons
-    // no one intended.
+    // Platform and studio run in Node; landing-page units use happy-dom for gtag.test.ts, while browser tests use the separate headless project.
     projects: [
-      // Platform's tests run through a sidecar config, not its app config:
-      // StyleX must load through its rollup entry in test runs — see the
-      // note in applications/platform/vite.test.config.ts.
+      // StyleX tests use its Rollup transform entry.
       'applications/platform/vite.test.config.ts',
       'applications/studio/vite.config.ts',
       'applications/landing-page/vite.config.ts',

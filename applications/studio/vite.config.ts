@@ -92,24 +92,10 @@ export default defineConfig({
     },
   },
   test: {
-    // Without a name the project is called after the package, so filtering
-    // reads `--project '@skoreova/studio-application'`. That is what Vitest
-    // falls back to when a project config names nothing.
     name: 'studio',
     include: ['src/**/*.test.ts'],
-    // The app’s own update/view/init are pure (the ECharts touch lives inside a
-    // Mount effect that Scene intercepts rather than runs), but the @foldkit/ui
-    // components rendered in the view use browser globals (CSS.escape when
-    // building id selectors), so scene tests run under happy-dom rather than
-    // bare Node. This matches @foldkit/ui’s own test setup.
-    environment: 'happy-dom',
     setupFiles: ['./src/vitest-setup.ts'],
-    // Foldkit and ECharts ship as ESM with subpath exports; inline them so
-    // Vitest transforms them instead of externalizing them to a native
-    // import. @foldkit/ui must be inlined alongside foldkit: externalized it
-    // would natively import a second foldkit instance, whose render-dispatch
-    // singleton is not the one Scene drives (its submodel views then throw
-    // "built outside a view").
+    // Inlining foldkit and @foldkit/ui keeps component rendering on the same runtime instance as Scene.
     server: { deps: { inline: ['foldkit', '@foldkit/ui', 'echarts'] } },
   },
 });

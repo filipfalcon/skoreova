@@ -1,7 +1,7 @@
 import { Array, Option, Record } from 'effect';
 import { Update } from 'foldkit';
 import type { Runtime } from 'foldkit';
-import { evo } from 'foldkit/struct';
+import { modifyFields } from 'foldkit/struct';
 import { UrlRequest } from 'foldkit/navigation';
 import { toString as urlToString } from 'foldkit/url';
 import type { Url } from 'foldkit/url';
@@ -96,7 +96,7 @@ const initialModel: Model = {
 // (the edition/round pickers, the clubs search, the carousel index). Opening a
 // club also resets the top-scorers scope; other routes leave it alone.
 const applyRoute = (model: Model, route: AppRoute): Model =>
-  evo(model, {
+  modifyFields(model, {
     route: () => route,
     competitionEdition: () => Option.none(),
     competitionRounds: () => ({}),
@@ -149,13 +149,15 @@ export const update = (model: Model, message: Message) =>
     ChangedUrl: ({ url }) => ({ model: applyRoute(model, urlToAppRoute(url)) }),
     CompletedNavigate: () => ({ model }),
     CompletedLoad: () => ({ model }),
-    SelectedMetric: ({ metric }) => ({ model: evo(model, { metric: () => metric }) }),
-    SelectedScorerScope: ({ scope }) => ({ model: evo(model, { scorerScope: () => scope }) }),
+    SelectedMetric: ({ metric }) => ({ model: modifyFields(model, { metric: () => metric }) }),
+    SelectedScorerScope: ({ scope }) => ({
+      model: modifyFields(model, { scorerScope: () => scope }),
+    }),
     // The chip sends '' for the current edition and 0 for the current
     // matchday; the Model holds None for "current" so the sentinel never
     // lives in the state.
     SelectedCompetitionEdition: ({ label }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         competitionEdition: () => (label === '' ? Option.none() : Option.some(label)),
       }),
     }),
@@ -163,41 +165,43 @@ export const update = (model: Model, message: Message) =>
     // never holds an out-of-range round (0 stays the "current" sentinel,
     // stored as a missing key so each panel keeps its own matchday).
     SelectedCompetitionRound: ({ slug, round }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         competitionRounds: (rounds) =>
           round === 0
             ? Record.remove(rounds, slug)
             : Record.set(rounds, slug, Math.min(roundBound(slug), Math.max(1, round))),
       }),
     }),
-    UpdatedClubQuery: ({ query }) => ({ model: evo(model, { clubQuery: () => query }) }),
+    UpdatedClubQuery: ({ query }) => ({ model: modifyFields(model, { clubQuery: () => query }) }),
     GotScopeGroupMessage: ({ message }) =>
       Update.foldChild({
         update: ScopeRadioGroup.update,
         read: (parent: Model) => Option.some(parent.scopeGroup),
-        write: (parent: Model, scopeGroup) => evo(parent, { scopeGroup: () => scopeGroup }),
+        write: (parent: Model, scopeGroup) =>
+          modifyFields(parent, { scopeGroup: () => scopeGroup }),
         toParentMessage: (childMessage) => Message.GotScopeGroupMessage({ message: childMessage }),
         foldOutMessage:
           ({ value }) =>
-          (parent: Model) => ({ model: evo(parent, { scorerScope: () => value }) }),
+          (parent: Model) => ({ model: modifyFields(parent, { scorerScope: () => value }) }),
       })(message)(model),
     GotCompetitionGroupMessage: ({ message }) =>
       Update.foldChild({
         update: CompetitionRadioGroup.update,
         read: (parent: Model) => Option.some(parent.competitionGroup),
         write: (parent: Model, competitionGroup) =>
-          evo(parent, { competitionGroup: () => competitionGroup }),
+          modifyFields(parent, { competitionGroup: () => competitionGroup }),
         toParentMessage: (childMessage) =>
           Message.GotCompetitionGroupMessage({ message: childMessage }),
         foldOutMessage:
           ({ value }) =>
-          (parent: Model) => ({ model: evo(parent, { competitionTab: () => value }) }),
+          (parent: Model) => ({ model: modifyFields(parent, { competitionTab: () => value }) }),
       })(message)(model),
     GotEditionGroupMessage: ({ message }) =>
       Update.foldChild({
         update: EditionRadioGroup.update,
         read: (parent: Model) => Option.some(parent.editionGroup),
-        write: (parent: Model, editionGroup) => evo(parent, { editionGroup: () => editionGroup }),
+        write: (parent: Model, editionGroup) =>
+          modifyFields(parent, { editionGroup: () => editionGroup }),
         toParentMessage: (childMessage) =>
           Message.GotEditionGroupMessage({ message: childMessage }),
         // The picker's own chip for the current edition sends the empty
@@ -206,7 +210,7 @@ export const update = (model: Model, message: Message) =>
         foldOutMessage:
           ({ value }) =>
           (parent: Model) => ({
-            model: evo(parent, {
+            model: modifyFields(parent, {
               competitionEdition: () => (value === '' ? Option.none() : Option.some(value)),
             }),
           }),
@@ -214,7 +218,7 @@ export const update = (model: Model, message: Message) =>
     // Wrapped HERE, not in the view — `featuredClub` is always a valid
     // index into featuredClubs, so consumers read it straight.
     SelectedFeaturedClub: ({ index }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         featuredClub: () =>
           ((index % featuredClubs.length) + featuredClubs.length) % featuredClubs.length,
       }),
@@ -226,14 +230,18 @@ export const update = (model: Model, message: Message) =>
     AdvancedTrending: () => {
       const next = (model.trendingIndex + 1) % Math.max(trending.length, 1);
       return {
-        model: evo(model, { trendingIndex: () => next }),
+        model: modifyFields(model, { trendingIndex: () => next }),
         commands: [ScrollTrending({ index: next })],
       };
     },
-    ScrolledTrending: ({ index }) => ({ model: evo(model, { trendingIndex: () => index }) }),
-    HeldTrending: ({ isHeld }) => ({ model: evo(model, { isTrendingHeld: () => isHeld }) }),
+    ScrolledTrending: ({ index }) => ({
+      model: modifyFields(model, { trendingIndex: () => index }),
+    }),
+    HeldTrending: ({ isHeld }) => ({
+      model: modifyFields(model, { isTrendingHeld: () => isHeld }),
+    }),
     ChangedReducedMotion: ({ reduce }) => ({
-      model: evo(model, { prefersReducedMotion: () => reduce }),
+      model: modifyFields(model, { prefersReducedMotion: () => reduce }),
     }),
     CompletedScrollTrending: () => ({ model }),
     // A follow toggles and confirms itself in the button's own state; the notice is the same outcome in a sentence for a screen reader. Nothing asks for confirmation. Free plan, no account gate — every visitor can follow (see the Model).
@@ -244,7 +252,7 @@ export const update = (model: Model, message: Message) =>
         onSome: (club) => club.name,
       });
       return {
-        model: evo(model, {
+        model: modifyFields(model, {
           followed: (followed) => toggleEntry(followed, slug),
           followNotice: () => Option.some(`${isFollowing ? 'Following' : 'Unfollowed'} ${name}`),
         }),
@@ -254,17 +262,17 @@ export const update = (model: Model, message: Message) =>
       Update.foldChild({
         update: AppToast.update,
         read: (parent: Model) => Option.some(parent.toasts),
-        write: (parent: Model, toasts) => evo(parent, { toasts: () => toasts }),
+        write: (parent: Model, toasts) => modifyFields(parent, { toasts: () => toasts }),
         toParentMessage: (childMessage) => Message.GotToastMessage({ message: childMessage }),
         // A dismissed toast leaves nothing behind; the sentence was the whole of it.
         foldOutMessage: () => (parent: Model) => ({ model: parent }),
       })(message)(model),
     ToggledClubSection: ({ anchor }) => ({
-      model: evo(model, { expandedClubSections: (open) => toggleEntry(open, anchor) }),
+      model: modifyFields(model, { expandedClubSections: (open) => toggleEntry(open, anchor) }),
     }),
     // The jump row follows the reader: the chip of the section now in view is brought into the row's own scroll, so the active mark is never off the edge of the phone.
     ScrolledClubPage: ({ anchor }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         activeClubSection: () => (anchor === '' ? Option.none() : Option.some(anchor)),
       }),
       commands:
@@ -272,20 +280,23 @@ export const update = (model: Model, message: Message) =>
     }),
     CompletedRevealJumpChip: () => ({ model }),
     CompletedMatchStripScroll: () => ({ model }),
-    LoadedPins: ({ ids }) => ({ model: evo(model, { pinned: () => ids }) }),
+    CompletedObserveSectionRail: () => ({ model }),
+    LoadedPins: ({ ids }) => ({ model: modifyFields(model, { pinned: () => ids }) }),
     ToggledPin: ({ id }) => {
       const pinned = toggleEntry(model.pinned, id);
       // Update the model AND mirror it out in one step — the write is a
       // command so the reducer stays pure and testable.
       return {
-        model: evo(model, { pinned: () => pinned }),
+        model: modifyFields(model, { pinned: () => pinned }),
         commands: [WritePins({ ids: pinned })],
       };
     },
     CompletedWritePins: () => ({ model }),
-    ToggledFeedEditing: () => ({ model: evo(model, { isFeedEditing: (editing) => !editing }) }),
+    ToggledFeedEditing: () => ({
+      model: modifyFields(model, { isFeedEditing: (editing) => !editing }),
+    }),
     ToggledWidgetCatalog: () => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         isWidgetCatalogOpen: (open) => !open,
         isWidgetAddRefused: () => false,
       }),
@@ -304,9 +315,9 @@ export const update = (model: Model, message: Message) =>
       const isCapped =
         !model.isSignedIn && countTowardLimit(model.feedBlocks, kind) >= limitFor(kind);
       return isCapped
-        ? { model: evo(model, { isWidgetAddRefused: () => true }) }
+        ? { model: modifyFields(model, { isWidgetAddRefused: () => true }) }
         : {
-            model: evo(model, {
+            model: modifyFields(model, {
               feedBlocks: (blocks) => [
                 ...blocks,
                 {
@@ -320,10 +331,12 @@ export const update = (model: Model, message: Message) =>
           };
     },
     UnpinnedFeedBlock: ({ key }) => ({
-      model: evo(model, { feedBlocks: (blocks) => blocks.filter((block) => block.key !== key) }),
+      model: modifyFields(model, {
+        feedBlocks: (blocks) => blocks.filter((block) => block.key !== key),
+      }),
     }),
     RenamedFeedLabel: ({ key, text }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         feedBlocks: (blocks) =>
           blocks.map((block) =>
             block.key === key ? { ...block, label: Option.some(text) } : block,
@@ -333,7 +346,7 @@ export const update = (model: Model, message: Message) =>
     // A standalone heading IS its block, so taking its label away would
     // leave a block that draws nothing. Only the block itself can go.
     RemovedFeedLabel: ({ key }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         feedBlocks: (blocks) =>
           blocks.map((block) =>
             block.key === key && !isLabelBlock(block) ? { ...block, label: Option.none() } : block,
@@ -344,7 +357,7 @@ export const update = (model: Model, message: Message) =>
     // one the reader had written: what they wrote left with the removal, and
     // guessing at it would be inventing their words for them.
     RestoredFeedLabel: ({ key }) => ({
-      model: evo(model, {
+      model: modifyFields(model, {
         feedBlocks: (blocks) =>
           blocks.map((block) =>
             block.key === key
