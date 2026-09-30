@@ -20,19 +20,24 @@ const EDGE_SAMPLES = 12;
 const OPAQUE_ALPHA = 250;
 const LIGHT_CHANNEL = 225;
 
+// A decoded PNG as its unfiltered scanlines: each row is its filter byte followed by `width * 4` RGBA bytes, so the pixel at (x, y) starts at `y * (width * 4 + 1) + 1 + x * 4`.
 interface Pixels {
   readonly width: number;
   readonly height: number;
-  readonly rgba: Uint8Array;
+  readonly scanlines: Uint8Array;
 }
 
 const dataUrlBytes = (url: string): Uint8Array => {
   const match = url.match(/^data:([^,]*),(.*)$/s);
   if (match === null) throw new Error('not a data URL');
   const [, meta = '', payload = ''] = match;
-  return meta.endsWith(';base64')
-    ? Uint8Array.from(atob(payload), (char) => char.charCodeAt(0))
-    : new TextEncoder().encode(decodeURIComponent(payload));
+  if (!meta.endsWith(';base64')) return new TextEncoder().encode(decodeURIComponent(payload));
+  const binary = atob(payload);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
 };
 
 const inflate = async (bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array> => {
@@ -56,6 +61,40 @@ const inflate = async (bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array> => {
     offset += chunk.length;
   }
   return out;
+};
+
+// Reverses one scanline's PNG filter in place, against the scanline above it, which is already unfiltered (all zeros above the first). The filters are the five of the PNG specification, section 9.2, with a pixel of 4 bytes.
+const unfilterRow = (filter: number, row: Uint8Array, above: Uint8Array): void => {
+  if (filter === 1) {
+    for (let x = 4; x < row.length; x += 1) {
+      row[x] = ((row[x] ?? 0) + (row[x - 4] ?? 0)) & 0xff;
+    }
+  } else if (filter === 2) {
+    for (let x = 0; x < row.length; x += 1) {
+      row[x] = ((row[x] ?? 0) + (above[x] ?? 0)) & 0xff;
+    }
+  } else if (filter === 3) {
+    for (let x = 0; x < row.length; x += 1) {
+      const left = x >= 4 ? (row[x - 4] ?? 0) : 0;
+      row[x] = ((row[x] ?? 0) + ((left + (above[x] ?? 0)) >> 1)) & 0xff;
+    }
+  } else if (filter === 4) {
+    for (let x = 0; x < row.length; x += 1) {
+      const left = x >= 4 ? (row[x - 4] ?? 0) : 0;
+      const upper = above[x] ?? 0;
+      const upperLeft = x >= 4 ? (above[x - 4] ?? 0) : 0;
+      const toLeft = Math.abs(upper - upperLeft);
+      const toUpper = Math.abs(left - upperLeft);
+      const toUpperLeft = Math.abs(left + upper - 2 * upperLeft);
+      const predictor =
+        toLeft <= toUpper && toLeft <= toUpperLeft
+          ? left
+          : toUpper <= toUpperLeft
+            ? upper
+            : upperLeft;
+      row[x] = ((row[x] ?? 0) + predictor) & 0xff;
+    }
+  }
 };
 
 // A minimal PNG reader for the one shape every crest is saved in: 8-bit RGBA,
@@ -87,37 +126,19 @@ const readPng = async (file: Uint8Array): Promise<Pixels> => {
     joined.set(chunk, at);
     return at + chunk.length;
   }, 0);
-  const raw = await inflate(joined);
-  const bpp = 4;
-  const stride = width * bpp;
-  const rgba = new Uint8Array(stride * height);
+  const scanlines = await inflate(joined);
+  const stride = width * 4 + 1;
+  let above: Uint8Array = new Uint8Array(stride - 1);
   for (let y = 0; y < height; y += 1) {
-    const filter = raw[y * (stride + 1)];
-    const rowStart = y * (stride + 1) + 1;
-    for (let x = 0; x < stride; x += 1) {
-      const value = raw[rowStart + x] ?? 0;
-      const left = x >= bpp ? (rgba[y * stride + x - bpp] ?? 0) : 0;
-      const up = y > 0 ? (rgba[(y - 1) * stride + x] ?? 0) : 0;
-      const upLeft = y > 0 && x >= bpp ? (rgba[(y - 1) * stride + x - bpp] ?? 0) : 0;
-      let predictor = 0;
-      if (filter === 1) predictor = left;
-      else if (filter === 2) predictor = up;
-      else if (filter === 3) predictor = Math.floor((left + up) / 2);
-      else if (filter === 4) {
-        const estimate = left + up - upLeft;
-        const toLeft = Math.abs(estimate - left);
-        const toUp = Math.abs(estimate - up);
-        const toUpLeft = Math.abs(estimate - upLeft);
-        predictor = toLeft <= toUp && toLeft <= toUpLeft ? left : toUp <= toUpLeft ? up : upLeft;
-      }
-      rgba[y * stride + x] = (value + predictor) & 0xff;
-    }
+    const row = scanlines.subarray(y * stride + 1, (y + 1) * stride);
+    unfilterRow(scanlines[y * stride] ?? 0, row, above);
+    above = row;
   }
-  return { width, height, rgba };
+  return { width, height, scanlines };
 };
 
 // The share of a crest's edge that is opaque and light — 1 for a crest drawn on a white card.
-const lightEdgeShare = ({ width, height, rgba }: Pixels): number => {
+const lightEdgeShare = ({ width, height, scanlines }: Pixels): number => {
   const points: Array<readonly [number, number]> = [];
   for (let step = 0; step <= EDGE_SAMPLES; step += 1) {
     const x = Math.round(((width - 1) * step) / EDGE_SAMPLES);
@@ -125,8 +146,13 @@ const lightEdgeShare = ({ width, height, rgba }: Pixels): number => {
     points.push([x, 0], [x, height - 1], [0, y], [width - 1, y]);
   }
   const light = points.filter(([x, y]) => {
-    const index = (y * width + x) * 4;
-    const [r, g, b, a] = [rgba[index], rgba[index + 1], rgba[index + 2], rgba[index + 3]];
+    const index = y * (width * 4 + 1) + 1 + x * 4;
+    const [r, g, b, a] = [
+      scanlines[index],
+      scanlines[index + 1],
+      scanlines[index + 2],
+      scanlines[index + 3],
+    ];
     return (
       a !== undefined &&
       r !== undefined &&
