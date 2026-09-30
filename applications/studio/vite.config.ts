@@ -49,6 +49,8 @@ export default defineConfig({
   plugins: [...tailwindcss(), ...foldkit({ devToolsMcpPort }), pinAlchemyDevPort(5275)],
   optimizeDeps: {
     entries: ['src/entry.ts'],
+    // The plugin's per-module transform injects the foldkit/brand import, so the optimizer's crawl never sees it. Left undeclared, the first page load on a cold cache (fresh install, changed lockfile) discovers it, re-optimizes, and reloads the page.
+    include: ['foldkit/brand'],
   },
   server: {
     // IPv4 loopback, explicitly: under `alchemy dev` all three apps' inner

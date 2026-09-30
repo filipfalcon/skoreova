@@ -228,20 +228,12 @@ const preloadFonts = (): Plugin => ({
   },
 });
 
-// The Foldkit plugin runs in tests too, DevTools MCP port and all — see the note
-// in applications/studio/vite.config.ts for what the port used to cost and what
-// fixed it. The plugin brands view-function identity, and that IS the differ's
+// The Foldkit plugin runs in tests too, without its DevTools MCP port — see
+// `devToolsMcpPort` below for why a test run opens no relay. The plugin brands view-function identity, and that IS the differ's
 // second axis: an identity mismatch replaces a node where a bare tag match would
 // have patched it. Dropping the plugin wholesale left these tests diffing on tag
 // and position alone while production diffed on identity too.
-//
-// It needs `optimizeDeps.include: ['foldkit/brand']` below to work under the
-// browser runner (vite.browser.config.ts). The transform injects that import
-// into every module, so vite’s browser runner discovers a brand-new bare
-// dependency mid-run, pre-bundles it, and reloads the page — which tears down
-// the in-flight dynamic import of the test file itself ("Failed to fetch
-// dynamically imported module", both engines). Pre-declaring it means the
-// optimizer already has it before the run starts.
+
 // Pins the inner dev server's port under `alchemy dev` (web 5273, platform
 // 5274, studio 5275). Alchemy starts each app's vite with an inline
 // `server: { port: 0 }` meaning "any port" — Vite resolves the 0 to its
@@ -293,8 +285,7 @@ export default defineConfig({
   ],
   optimizeDeps: {
     entries: ['src/entry.ts'],
-    // See the plugin note at the top of this file — without this the browser
-    // test runner reloads mid-import and every test file fails to load.
+    // The plugin's per-module transform injects the foldkit/brand import, so the optimizer's crawl never sees it. Left undeclared, the first page load on a cold cache (fresh install, changed lockfile) discovers it, re-optimizes, and reloads the page. The browser test suite declares it separately in vite.browser.config.ts, which does not inherit this file.
     include: ['foldkit/brand'],
   },
   test: {

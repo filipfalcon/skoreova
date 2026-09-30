@@ -62,5 +62,7 @@ export default defineConfig({
   ],
   optimizeDeps: {
     entries: ['src/entry.ts'],
+    // The plugin's per-module transform injects the foldkit/brand import, so the optimizer's crawl never sees it. Left undeclared, the first page load on a cold cache (fresh install, changed lockfile) discovers it, re-optimizes, and reloads the page.
+    include: ['foldkit/brand'],
   },
 });
