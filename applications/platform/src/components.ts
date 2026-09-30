@@ -509,10 +509,19 @@ export const clubSection = (
   );
 
 /**
+ * The DOM id of the list a club section's toggle opens, derived from the section's anchor so the
+ * toggle and the list cannot name different elements.
+ *
+ * @param anchor The section's anchor.
+ */
+export const clubSectionListId = (anchor: string): string => `${anchor}-list`;
+
+/**
  * The heading-row control that opens a club section past its first bite and folds it back. It sits
  * beside the chip rather than under the rows, so folding never leaves the reader stranded below the
  * section they just closed. `openLabel` says what opening shows ("Show all 12 clubs"); folding is
- * always "Show less".
+ * always "Show less". It names the list it grows through `aria-controls`, which the list carries as
+ * `clubSectionListId(anchor)`.
  *
  * @param anchor The section's anchor, which is also its key in `expandedClubSections`.
  * @param isExpanded Whether the section is currently open.
@@ -533,6 +542,7 @@ export const clubSectionToggle = (
           [
             ...button,
             h.AriaExpanded(isExpanded),
+            h.AriaControls(clubSectionListId(anchor)),
             ...getStyleXAttributes(h, styles.clubSectionControl),
           ],
           [isExpanded ? 'Show less' : openLabel],

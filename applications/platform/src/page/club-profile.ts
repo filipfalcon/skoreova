@@ -23,6 +23,7 @@ import {
   clubSection,
   clubSectionIndex,
   clubSectionLink,
+  clubSectionListId,
   clubSectionToggle,
   profileIdentityLine,
   responsiveSource,
@@ -325,23 +326,50 @@ const scorersShown = (
 // One named list view per scope. Each list carries a LITERAL key — the
 // identity of that scope’s board — so switching scopes swaps subtrees
 // (replaying the `.screen` slide-in) without a data-derived key.
-const allScorersList = (target: Club, isExpanded: boolean, h: HtmlBuilder<Message>): Html =>
+const allScorersList = (
+  target: Club,
+  isExpanded: boolean,
+  listId: string,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.ol(
-    [h.Key('club-scorers-all'), ...getStyleXAttributesWith(h, 'screen', styles.scorersList)],
+    [
+      h.Key('club-scorers-all'),
+      h.Id(listId),
+      ...getStyleXAttributesWith(h, 'screen', styles.scorersList),
+    ],
     scorersShown(scorersFor(target, 'All'), isExpanded).map((entry, index) =>
       scorerRow(entry, index, h),
     ),
   );
-const leagueScorersList = (target: Club, isExpanded: boolean, h: HtmlBuilder<Message>): Html =>
+const leagueScorersList = (
+  target: Club,
+  isExpanded: boolean,
+  listId: string,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.ol(
-    [h.Key('club-scorers-league'), ...getStyleXAttributesWith(h, 'screen', styles.scorersList)],
+    [
+      h.Key('club-scorers-league'),
+      h.Id(listId),
+      ...getStyleXAttributesWith(h, 'screen', styles.scorersList),
+    ],
     scorersShown(scorersFor(target, 'League'), isExpanded).map((entry, index) =>
       scorerRow(entry, index, h),
     ),
   );
-const cupScorersList = (target: Club, isExpanded: boolean, h: HtmlBuilder<Message>): Html =>
+const cupScorersList = (
+  target: Club,
+  isExpanded: boolean,
+  listId: string,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.ol(
-    [h.Key('club-scorers-cup'), ...getStyleXAttributesWith(h, 'screen', styles.scorersList)],
+    [
+      h.Key('club-scorers-cup'),
+      h.Id(listId),
+      ...getStyleXAttributesWith(h, 'screen', styles.scorersList),
+    ],
     scorersShown(scorersFor(target, 'Cup'), isExpanded).map((entry, index) =>
       scorerRow(entry, index, h),
     ),
@@ -351,13 +379,14 @@ const scorersListFor = (
   target: Club,
   scope: ScorerScope,
   isExpanded: boolean,
+  listId: string,
   h: HtmlBuilder<Message>,
 ): Html =>
   Match.value(scope).pipe(
     Match.withReturnType<Html>(),
-    Match.when('All', () => allScorersList(target, isExpanded, h)),
-    Match.when('League', () => leagueScorersList(target, isExpanded, h)),
-    Match.when('Cup', () => cupScorersList(target, isExpanded, h)),
+    Match.when('All', () => allScorersList(target, isExpanded, listId, h)),
+    Match.when('League', () => leagueScorersList(target, isExpanded, listId, h)),
+    Match.when('Cup', () => cupScorersList(target, isExpanded, listId, h)),
     Match.exhaustive,
   );
 
@@ -374,7 +403,7 @@ const clubScorersSection = (target: Club, model: Model, h: HtmlBuilder<Message>)
     'Top scorers',
     [
       scopeRadioGroup(model, h),
-      scorersListFor(target, model.scorerScope, isExpanded, h),
+      scorersListFor(target, model.scorerScope, isExpanded, clubSectionListId(anchor), h),
       h.p([...getStyleXAttributes(h, styles.scorersFootnote)], ['Goals — season 2025/26']),
     ],
     anchor,
@@ -388,9 +417,13 @@ const clubScorersSection = (target: Club, model: Model, h: HtmlBuilder<Message>)
 // The season-by-season archive — the whole that HISTORY opens into. A title
 // season is set in pink, so the honors above can be found in the list; every
 // other finish stays ink.
-const archiveList = (archive: ReadonlyArray<ArchiveSeason>, h: HtmlBuilder<Message>): Html =>
+const archiveList = (
+  archive: ReadonlyArray<ArchiveSeason>,
+  listId: string,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.ol(
-    [...getStyleXAttributes(h, styles.archiveList)],
+    [h.Id(listId), ...getStyleXAttributes(h, styles.archiveList)],
     archive.map((entry) =>
       h.li(
         [...getStyleXAttributes(h, styles.archiveRow)],
@@ -462,7 +495,11 @@ const clubHistorySection = (target: Club, model: Model, h: HtmlBuilder<Message>)
           ),
         ),
       ),
-      archiveList(isExpanded ? archive : archive.slice(0, ARCHIVE_SHOWN), h),
+      archiveList(
+        isExpanded ? archive : archive.slice(0, ARCHIVE_SHOWN),
+        clubSectionListId(anchor),
+        h,
+      ),
     ],
     anchor,
     h,

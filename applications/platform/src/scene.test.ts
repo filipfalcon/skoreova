@@ -368,6 +368,12 @@ describe('view', () => {
       Scene.inside(
         Scene.role('region', { name: 'Top scorers' }),
         Scene.expectAll(Scene.all.role('listitem')).toHaveCount(3),
+        // The control names the list it grows, and that list is the one drawn.
+        Scene.expect(Scene.role('button', { name: `Show all ${scorers} scorers` })).toHaveAttr(
+          'aria-controls',
+          'top-scorers-list',
+        ),
+        Scene.expect(Scene.selector('ol#top-scorers-list')).toExist(),
         Scene.click(Scene.role('button', { name: `Show all ${scorers} scorers` })),
         Scene.expectAll(Scene.all.role('listitem')).toHaveCount(scorers),
       ),
@@ -375,6 +381,11 @@ describe('view', () => {
         Scene.role('region', { name: 'History' }),
         // Folded, the latest three seasons show under the counts.
         Scene.expectAll(Scene.all.role('listitem')).toHaveCount(3),
+        Scene.expect(Scene.role('button', { name: `Show all ${seasons} seasons` })).toHaveAttr(
+          'aria-controls',
+          'history-list',
+        ),
+        Scene.expect(Scene.selector('ol#history-list')).toExist(),
         Scene.click(Scene.role('button', { name: `Show all ${seasons} seasons` })),
         Scene.expectAll(Scene.all.role('listitem')).toHaveCount(seasons),
       ),
