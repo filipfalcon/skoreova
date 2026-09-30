@@ -131,13 +131,6 @@ export const TrendingEntry = Schema.Struct({
 });
 export type TrendingEntry = typeof TrendingEntry.Type;
 
-export const MetricSeries = Schema.Struct({
-  label: Schema.String,
-  unit: Schema.String,
-  values: Schema.Array(Schema.Number),
-});
-export type MetricSeries = typeof MetricSeries.Type;
-
 // One season’s running of a competition. `detail` is the one-liner the
 // archive shows — the champion for finished editions, the stage for the
 // current one.

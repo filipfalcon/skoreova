@@ -10,7 +10,6 @@ import { AppRoute, routePath, urlToAppRoute } from './route';
 import {
   DEFAULT_FEED_BLOCKS,
   DEFAULT_NEXT_FEED_KEY,
-  Metric,
   Model,
   Screen,
   ScorerScope,
@@ -40,7 +39,7 @@ import { widgetKind } from './widgets';
 // components.ts, and one module per screen under page/); this file wires them
 // into init/update/view and re-exports the public surface so fixtures and
 // tests import from the entry.
-export { Metric, Model, Screen, ScorerScope };
+export { Model, Screen, ScorerScope };
 
 // MESSAGE — see message.ts.
 export { Message };
@@ -81,7 +80,6 @@ const initialModel: Model = {
   scorerScope: 'All',
   scopeGroup: RadioGroup.init({ id: SCOPE_GROUP_ID }),
   editionGroup: RadioGroup.init({ id: EDITION_GROUP_ID }),
-  metric: 'Goals',
   isSignedIn: false,
   feedBlocks: DEFAULT_FEED_BLOCKS,
   isFeedEditing: false,
@@ -149,10 +147,6 @@ export const update = (model: Model, message: Message) =>
     ChangedUrl: ({ url }) => ({ model: applyRoute(model, urlToAppRoute(url)) }),
     CompletedNavigate: () => ({ model }),
     CompletedLoad: () => ({ model }),
-    SelectedMetric: ({ metric }) => ({ model: modifyFields(model, { metric: () => metric }) }),
-    SelectedScorerScope: ({ scope }) => ({
-      model: modifyFields(model, { scorerScope: () => scope }),
-    }),
     // The chip sends '' for the current edition and 0 for the current
     // matchday; the Model holds None for "current" so the sentinel never
     // lives in the state.

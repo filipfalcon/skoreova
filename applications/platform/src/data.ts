@@ -11,14 +11,13 @@ import {
   playersRouter,
   welcomeRouter,
 } from './route';
-import { Metric, Screen, ScorerScope } from './model';
+import { Screen, ScorerScope } from './model';
 
 import {
   type Club,
   type Competition,
   type CupTie,
   type Edition,
-  type MetricSeries,
   type Official,
   type Player,
   type SavedChart,
@@ -89,41 +88,6 @@ export const navEntries: ReadonlyArray<NavEntry> = [
     href: competitionsRouter(),
   },
 ];
-
-// ONE POINT PER MATCHDAY PLAYED — the chart’s x axis is the season canon, so
-// the series run to MATCHDAYS_PLAYED and no further. They used to carry
-// fourteen points each, which drew two bars for matchdays that have not been
-// played and labeled them 13 and 14 while every competition screen said
-// "Matchday 12 of 14". data.test.ts asserts the length now.
-//
-// AND THE TWO THAT HAVE A SOURCE ARE COMBINATIONS OF IT, matchday by
-// matchday, not a second set of numbers about the same football. The home
-// stat tiles publish per-league boards (`goals` and `attendance` in
-// stat-tiles.ts, themselves tied to the standings tables); this chart is the
-// both-leagues view of the very same rounds, so Goals is their per-matchday
-// SUM and Attendance their per-matchday average PER MATCH — nine matches a
-// round, four in the eight-club First League and five in the eleven-club
-// Second. The old figures agreed with neither: 323 goals against the boards'
-// 346, and disagreeing round by round even where the totals came close.
-// data.test.ts now recomputes both from the boards, so a board edit fails
-// here rather than putting two different seasons on two screens.
-export const metricSeries: Record<Metric, MetricSeries> = {
-  Goals: {
-    label: 'Goals per matchday',
-    unit: 'goals across both leagues',
-    values: [30, 30, 23, 34, 26, 30, 23, 36, 28, 29, 28, 29],
-  },
-  Attendance: {
-    label: 'Average attendance',
-    unit: 'fans per match',
-    values: [2227, 2344, 2288, 2511, 2341, 2564, 2410, 2606, 2493, 2644, 2516, 2673],
-  },
-  Conversion: {
-    label: 'Shot conversion',
-    unit: 'percent of shots scored',
-    values: [9.8, 11.2, 10.1, 12.6, 11.9, 13.4, 12.2, 14.1, 13, 14.8, 13.9, 15.6],
-  },
-};
 
 // Anyone and ANYTHING can trend (user call) â players, clubs, coaches,
 // referees, matches, officials alike. The canonical mock list (user-

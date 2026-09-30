@@ -24,9 +24,6 @@ export const Screen = Schema.Literals([
 ]);
 export type Screen = typeof Screen.Type;
 
-export const Metric = Schema.Literals(['Goals', 'Attendance', 'Conversion']);
-export type Metric = typeof Metric.Type;
-
 // Which competition the club profile’s TOP SCORERS board shows — one
 // component, scoped by chips (user call).
 export const ScorerScope = Schema.Literals(['All', 'League', 'Cup']);
@@ -116,7 +113,6 @@ export const Model = Schema.Struct({
   // The edition picker's own state, on the same terms — the committed
   // edition lives in `competitionEdition`.
   editionGroup: RadioGroup.Model,
-  metric: Metric,
   // Whether the visitor is SIGNED IN, which is the whole of what makes `/`
   // two pages: signed out it is the landing, signed in it is Her Game. No
   // message sets this yet, so it holds its initial value until accounts land

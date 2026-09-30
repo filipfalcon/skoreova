@@ -41,29 +41,15 @@ test('the boot fixture still mirrors what init actually produces', () => {
   expect(boot.commands ?? []).toHaveLength(1);
 });
 
-test('selecting a chart metric records it and fires no command', () => {
+test('edition and round fold their current sentinel to None', () => {
   Story.story(
     update,
     Story.given(welcomeModel),
-    Story.message(Message.SelectedMetric({ metric: 'Attendance' })),
-    Story.model((model) => {
-      expect(model.metric).toBe('Attendance');
-    }),
-    Story.Command.expectNone(),
-  );
-});
-
-test('scope is a field write; edition and round fold their current sentinel to None', () => {
-  Story.story(
-    update,
-    Story.given(welcomeModel),
-    Story.message(Message.SelectedScorerScope({ scope: 'League' })),
     Story.message(Message.SelectedCompetitionEdition({ label: '2023/24' })),
     // The round is clamped against the competition the message names, not
     // the open route — /matches pages two leagues with no profile open.
     Story.message(Message.SelectedCompetitionRound({ slug: 'first-league', round: 7 })),
     Story.model((model) => {
-      expect(model.scorerScope).toBe('League');
       expect(model.competitionEdition).toEqual(Option.some('2023/24'));
       expect(model.competitionRounds).toEqual({ 'first-league': 7 });
     }),

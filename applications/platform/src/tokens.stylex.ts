@@ -37,7 +37,6 @@ export const tokens = stylex.defineVars({
   rise: 'var(--color-rise)',
   fall: 'var(--color-fall)',
   ucl: 'var(--color-ucl)',
-  uec: 'var(--color-uec)',
   drop: 'var(--color-drop)',
   uecInk: 'var(--color-uec-ink)',
   riseInk: 'var(--color-rise-ink)',

@@ -30,7 +30,6 @@ export const welcomeModel = Model.make({
   competitionGroup: RadioGroup.init({ id: COMPETITION_GROUP_ID }),
   scopeGroup: RadioGroup.init({ id: SCOPE_GROUP_ID }),
   editionGroup: RadioGroup.init({ id: EDITION_GROUP_ID }),
-  metric: 'Goals',
   isSignedIn: false,
   feedBlocks: DEFAULT_FEED_BLOCKS,
   isFeedEditing: false,

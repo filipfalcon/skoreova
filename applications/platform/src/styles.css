@@ -75,7 +75,6 @@
      paper — but the lime did not, so it has an -ink variant used for BOTH
      its bar and its label. */
   --color-ucl: #1b3c8a;
-  --color-uec: #d5fe00;
   --color-drop: #6d17c0;
   /* MEASURED at 1.02:1 against paper — the ribbon was not dim, it was
      gone. #d5fe00 is a color for black backgrounds. Darkened along the
@@ -464,42 +463,6 @@ body {
   }
 }
 
-/* The HER GAME nav chip — paper at rest, breathing pink every few seconds
-   (the PS5-reveal treatment): a WIDE soft wash of pink light glides
-   through the chip while a pink glow swells around it and fades out —
-   one slow pulse, then rest. The wash lives in an oversized background
-   image; sliding background-position walks it through the chip once per
-   cycle, the rest of the cycle both (transparent) edges of the image are
-   in view. The glow is box-shadow keyed to peak mid-flight. The ACTIVE
-   chip drops this class and goes solid pink instead. */
-.hergame-chip {
-  background-image: linear-gradient(
-    115deg,
-    transparent 35%,
-    color-mix(in srgb, var(--color-pink) 65%, transparent) 50%,
-    transparent 65%
-  );
-  background-size: 400% 100%;
-  background-repeat: no-repeat;
-  animation: hergame-sweep 4.5s ease-in-out infinite;
-}
-
-@keyframes hergame-sweep {
-  0%,
-  45% {
-    background-position: 100% 0;
-    box-shadow: 0 0 0 0 rgba(255, 47, 142, 0);
-  }
-  62% {
-    box-shadow: 0 0 22px 2px rgba(255, 47, 142, 0.55);
-  }
-  80%,
-  100% {
-    background-position: 0% 0;
-    box-shadow: 0 0 0 0 rgba(255, 47, 142, 0);
-  }
-}
-
 /* Club profile hero PARALLAX — scroll-driven, no JS (motion stays outside
    the model). ONE layer only (user call): the artwork sinks as the page
    scrolls and everything over it holds still. An earlier build had the
@@ -583,21 +546,11 @@ body {
   .hover-card:hover .hover-card-zoom {
     transform: scale(1.04);
   }
-
-  .hover-card:hover .hover-card-pink-ring {
-    border-color: var(--color-pink);
-    color: var(--color-paper);
-  }
-
-  .hover-card:hover .hover-card-paper-text {
-    color: var(--color-paper);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ticker-row,
-  .trend-row,
-  .hergame-chip {
+  .trend-row {
     animation: none;
   }
 }

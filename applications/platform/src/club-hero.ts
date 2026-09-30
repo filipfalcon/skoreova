@@ -30,12 +30,6 @@ export interface HeroPhoto {
   readonly focalPoint: FocalPoint;
 }
 
-/**
- * The focal point a photo gets until one is measured for it: a little above centre, where a
- * standing team's heads are.
- */
-export const DEFAULT_FOCAL_POINT: FocalPoint = { x: 50, y: 35 };
-
 // Per-club hero artwork. EVERY club gets one (user call) — the crest wash is
 // only the interim state for clubs whose photo has not been supplied yet,
 // so a new photo is one import and one line here.

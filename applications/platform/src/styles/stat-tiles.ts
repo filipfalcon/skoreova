@@ -29,16 +29,6 @@ export const styles = stylex.create({
     overflow: 'hidden',
     padding: '1.25rem',
   },
-  // On a PHONE the leader is a full-width band rather than a portrait: it
-  // still leads, but it no longer spends most of a screen doing it. 16rem was
-  // half the viewport for a name and a kind.
-  tileLeader: {
-    minHeight: {
-      default: '10rem',
-      [MD]: '11rem',
-      [LG]: '14rem',
-    },
-  },
   tileFollower: {
     minHeight: {
       default: '10rem',
@@ -85,12 +75,6 @@ export const styles = stylex.create({
     transitionProperty: 'color, background-color, border-color',
     transitionDuration: '0.15s',
     transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  },
-  tileNameLeader: {
-    fontSize: {
-      default: '2.25rem',
-      [SM]: '1.5rem',
-    },
   },
   tileNameFollower: {
     fontSize: {

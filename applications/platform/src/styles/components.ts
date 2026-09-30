@@ -39,12 +39,6 @@ export const styles = stylex.create({
     height: '1rem',
     width: '1rem',
   },
-  pinGlyphEmpty: {
-    height: '1rem',
-    width: '1rem',
-    flexShrink: 0,
-    color: 'color-mix(in srgb, var(--color-ink) 30%, transparent)',
-  },
   pinGlyphTick: {
     height: '0.875rem',
     width: '0.875rem',

@@ -4,7 +4,6 @@ import { defineMessageUnion } from 'foldkit/message';
 import { UrlRequest } from 'foldkit/navigation';
 import { Url } from 'foldkit/url';
 
-import { Metric, ScorerScope } from './model';
 import { AppToast } from './toast';
 
 export const Message = defineMessageUnion({
@@ -12,8 +11,6 @@ export const Message = defineMessageUnion({
   ChangedUrl: { url: Url },
   CompletedNavigate: {},
   CompletedLoad: {},
-  SelectedMetric: { metric: Metric },
-  SelectedScorerScope: { scope: ScorerScope },
   SelectedCompetitionEdition: { label: Schema.String },
   // The pager carries the competition it belongs to: two panels can be on
   // screen at once (/matches), so a round means nothing without its league.

@@ -10,7 +10,6 @@ import {
   featuredClubs,
   leagueCompetitions,
   leagueTeams,
-  metricSeries,
   standingsFor,
   trending,
 } from './data';
@@ -19,7 +18,7 @@ import { AppRoute } from './route';
 import { STORY_LINE_LIMIT, editorialFor } from './editorial';
 import { contenderPhrases } from './page/clubs';
 import { clubEurope } from './standings';
-import { allTimeBests, attendance, goals } from './stat-tiles';
+import { allTimeBests, goals } from './stat-tiles';
 import {
   CUP_TIES,
   MATCHDAYS_PLAYED,
@@ -147,58 +146,6 @@ test.each(LEAGUES)('%s: the home board’s goals per matchday add up to the tabl
   );
   expect(Number.sumAll(board.rounds)).toBe(scored);
   expect(board.rounds).toHaveLength(MATCHDAYS_PLAYED);
-});
-
-// How many matches each matchday actually staged, both leagues together —
-// four in the eight-club First League, five in the eleven-club Second with
-// one club idle. Read off the generated schedule rather than assumed, so the
-// divisor below follows the club tables the way everything else here does.
-const matchesPerMatchday = (): ReadonlyArray<number> =>
-  LEAGUES.map((league) => leagueRounds(league).slice(0, MATCHDAYS_PLAYED)).reduce<
-    ReadonlyArray<number>
-  >(
-    (totals, rounds) => rounds.map((fixtures, index) => (totals[index] ?? 0) + fixtures.length),
-    [],
-  );
-
-// The board for a matchday, both leagues added together.
-const boardTotals = (
-  boards: ReadonlyArray<{ readonly rounds: ReadonlyArray<number> }>,
-): ReadonlyArray<number> =>
-  boards.reduce<ReadonlyArray<number>>(
-    (totals, board) => board.rounds.map((value, index) => (totals[index] ?? 0) + value),
-    [],
-  );
-
-test('the Her Game goals series is the two league boards, matchday by matchday', () => {
-  // The chart and the home tiles describe the SAME rounds — one per league,
-  // one across both — so the chart is a combination of the boards, never a
-  // second opinion. It was one: 323 goals against the boards' 346, and
-  // disagreeing round by round even where the totals nearly met. Only the
-  // totals were ever checked, and only for the boards, so the chart drifted
-  // freely underneath a green suite.
-  expect(metricSeries.Goals.values).toEqual(boardTotals(goals));
-});
-
-test('the Her Game attendance series is the boards divided by the matches played', () => {
-  // Its unit is "fans per match" while the boards are per-round TOTALS, so
-  // the two only agree through the fixture count — nine matches a matchday.
-  const totals = boardTotals(attendance);
-  const matches = matchesPerMatchday();
-
-  expect(metricSeries.Attendance.values).toEqual(
-    totals.map((total, index) => Math.round(total / (matches[index] ?? 1))),
-  );
-});
-
-test('every metric series carries exactly one point per matchday played', () => {
-  // The Her Game chart draws one bar per value and labels it with its index,
-  // so a series longer than the canon invents matchdays: it used to carry
-  // fourteen points and label bars 13 and 14 under a "Matchday 12 of 14"
-  // header.
-  for (const series of Object.values(metricSeries)) {
-    expect(series.values).toHaveLength(MATCHDAYS_PLAYED);
-  }
 });
 
 test('every hand-authored scoreline lands on a fixture that has been played', () => {
