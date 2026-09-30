@@ -7,6 +7,8 @@ export default defineConfig({
   plugins: [stylex.rollup(), ...foldkit()],
   test: {
     name: 'platform',
+    // Compiled modules persist in node_modules/.vitest-cache between runs; recompiling them was most of this project's time. Set per project, because a project named by its config file does not inherit the root's test options.
+    fsModuleCache: true,
     // Hydratable server tests require a build ID, supplied through env because Vitest constructs import.meta.env itself.
     env: { FOLDKIT_BUILD_ID: 'test' },
     include: ['src/**/*.test.ts'],
