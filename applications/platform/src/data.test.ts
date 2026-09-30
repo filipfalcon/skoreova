@@ -1,4 +1,4 @@
-import { Array, Number } from 'effect';
+import { Array, Number, Schema } from 'effect';
 import { expect, test } from 'vite-plus/test';
 
 import {
@@ -28,6 +28,7 @@ import {
   leagueRounds,
   roundDay,
 } from './schedule';
+import { Achievement } from './domain/entities';
 import { tickerQuotes } from './ticker';
 import { BASE, CLUB_NAMES, sitemapPaths } from './worker';
 
@@ -404,4 +405,26 @@ test('the sitemap lists every screen and every profile, once each', () => {
   }
   expect(paths).toContain('/');
   expect(new Set(paths).size).toBe(paths.length);
+});
+
+// The schema's own check: a whole count of at least one.
+const isAchievement = Schema.is(Achievement);
+
+// A club's achievements are what its hero stamps and its history cards count, so each entry has to mean something: at least one per club, one entry per kind, and never a count below one.
+test('every club holds at least one achievement, each kind once, each at least once', () => {
+  for (const club of clubs) {
+    expect(club.achievements.length, club.slug).toBeGreaterThanOrEqual(1);
+    const kinds = club.achievements.map((achievement) => achievement.kind);
+    expect(new Set(kinds).size, `${club.slug} repeats a kind`).toBe(kinds.length);
+    for (const achievement of club.achievements) {
+      expect(isAchievement(achievement), `${club.slug} ${achievement.kind}`).toBe(true);
+    }
+  }
+});
+
+// The hero of a club without a photo is drawn in the club's colour, so every club carries one the wash can read.
+test('every club carries a six-digit hex colour', () => {
+  for (const club of clubs) {
+    expect(club.color, club.slug).toMatch(/^#[0-9a-f]{6}$/i);
+  }
 });

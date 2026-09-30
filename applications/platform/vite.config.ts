@@ -1,7 +1,10 @@
 import { foldkit } from '@foldkit/vite-plugin';
 import stylex from '@stylexjs/unplugin';
+import { imagetools } from 'vite-imagetools';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite-plus';
+
+import { imagePresets } from './src/image-presets';
 
 // Styling is StyleX (the kassandra pattern): tokens in src/tokens.stylex.ts,
 // style modules under src/styles/, the compiled rules appended to the
@@ -47,6 +50,7 @@ export default defineConfig({
   // Studio claims 9988, web 9989 — each app needs its own DevTools MCP port.
   plugins: [
     stylex.vite(),
+    imagetools({ defaultDirectives: imagePresets }),
     ...foldkit({
       devToolsMcpPort: 9990,
       // A plain `vp dev` renders through the same entry the Worker calls, so

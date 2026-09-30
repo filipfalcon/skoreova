@@ -2,7 +2,7 @@ import { Button, Input } from '@foldkit/ui';
 import { Array } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
-import { tickerSpark } from '../components';
+import { responsiveSource, tickerSpark } from '../components';
 import { clubs, featuredClubs } from '../data';
 import type { Club, FeaturedClub } from '../data';
 import { Message } from '../message';
@@ -11,7 +11,7 @@ import { clubRouter } from '../route';
 import { clubEurope } from '../standings';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
 import type { StyleXStyle } from '../stylexAttributes';
-import { styles } from '../styles/clubs';
+import { ARTWORK_LOGO_SIZES, GRID_CREST_SIZE, styles } from '../styles/clubs';
 import { shared } from '../styles/shared';
 
 const clubBySlug = (slug: string): Club | undefined =>
@@ -54,7 +54,7 @@ const featuredArtwork = (
         [...getStyleXAttributes(h, styles.artworkFallback)],
         [
           h.img([
-            h.Src(club?.logo ?? ''),
+            ...(club === undefined ? [] : responsiveSource(club.logo, ARTWORK_LOGO_SIZES, h)),
             h.Alt(''),
             h.Loading('lazy'),
             ...getStyleXAttributes(h, styles.artworkLogo),
@@ -328,7 +328,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
                 [...getStyleXAttributes(h, styles.cardHead)],
                 [
                   h.img([
-                    h.Src(entry.logo),
+                    ...responsiveSource(entry.logo, GRID_CREST_SIZE, h),
                     h.Alt(`${entry.name} crest`),
                     h.Loading('lazy'),
                     ...getStyleXAttributes(h, styles.crest),

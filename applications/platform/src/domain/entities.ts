@@ -17,6 +17,16 @@ export type StandingsRow = typeof StandingsRow.Type;
  * Where a club lives on the web: its site and its accounts, each present only where the club has
  * one. Every value is a full URL.
  */
+/**
+ * An image the browser picks a size of: the fallback source, and for a raster the candidate widths
+ * with their descriptors. A vector has no `srcset`, since it is sharp at every size.
+ */
+export const ResponsiveImage = Schema.Struct({
+  src: Schema.String,
+  srcset: Schema.optionalKey(Schema.String),
+});
+export type ResponsiveImage = typeof ResponsiveImage.Type;
+
 export const ClubLinks = Schema.Struct({
   website: Schema.optionalKey(Schema.String),
   instagram: Schema.optionalKey(Schema.String),
@@ -26,6 +36,30 @@ export const ClubLinks = Schema.Struct({
   youtube: Schema.optionalKey(Schema.String),
 });
 export type ClubLinks = typeof ClubLinks.Type;
+
+/**
+ * The kinds of achievement a club can hold, in prestige order: the most prestigious first.
+ */
+export const AchievementKind = Schema.Literals([
+  'league-title',
+  'domestic-double',
+  'cup-win',
+  'uwcl-season',
+  'uwec-season',
+  'second-league-title',
+  'cup-final',
+  'promotion',
+]);
+export type AchievementKind = typeof AchievementKind.Type;
+
+/**
+ * One kind of achievement a club holds and how many times it holds it.
+ */
+export const Achievement = Schema.Struct({
+  kind: AchievementKind,
+  count: Schema.Int.check(Schema.isGreaterThan(0)),
+});
+export type Achievement = typeof Achievement.Type;
 
 export const Club = Schema.Struct({
   slug: Schema.String,
@@ -48,7 +82,7 @@ export const Club = Schema.Struct({
   // city rather than derived from it: several clubs share a city, and a
   // supporter reads "Letná", not "Prague".
   venue: Schema.String,
-  logo: Schema.String,
+  logo: ResponsiveImage,
   league: Schema.String,
   // The season record. This is the ONE authored source for a club’s league
   // standing: `played` and `points` are arithmetic on it (see standingsFor),
@@ -59,20 +93,10 @@ export const Club = Schema.Struct({
   lost: Schema.Number,
   scored: Schema.Number,
   conceded: Schema.Number,
-  // Honors counts, migrated from the landing page’s profile mock —
-  // placeholder until the real data lands.
-  leagueTitles: Schema.Number,
-  cupTitles: Schema.Number,
-  // Seasons the club won league and cup together, where known — the third
-  // line the hero's honors badge cycles. Absent until real data lands.
-  doubles: Schema.optionalKey(Schema.Number),
-  // The year the club was founded and the season it joined the top flight,
-  // where known. The honors badge falls back to them for a club short of
-  // silverware, so a badge never reads "0×" and never renders empty.
-  founded: Schema.optionalKey(Schema.Number),
-  topFlightSince: Schema.optionalKey(Schema.Number),
-  // The club's primary colour as a CSS colour, where known — the hero's fallback surface tints with it. Absent until real data lands; the UI falls back to pink.
-  color: Schema.optionalKey(Schema.String),
+  // What the club has achieved, at most one entry per kind. Never empty: every club has at least a promotion or a final to its name, so the hero never needs a stand-in.
+  achievements: Schema.NonEmptyArray(Achievement),
+  // The club's primary kit colour as a six-digit hex. The hero of a club without a photo is drawn in it, so every club carries one.
+  color: Schema.String.check(Schema.isPattern(/^#[0-9a-f]{6}$/i)),
   // The club's web presence, where known. Mock for now: the accounts the marquee clubs run in public, absent for the rest until real data lands.
   links: Schema.optionalKey(ClubLinks),
 });
@@ -122,8 +146,6 @@ export const TrendingEntry = Schema.Struct({
   // case the tile simply has no reason row. A name and a kind is all a tile
   // could say before this, which is not enough to earn the space it takes.
   reason: Schema.String,
-  // Club rows carry their crest; '' renders the person’s initials instead.
-  crest: Schema.String,
   // A featured tile background ('' = plain paper card). `focus` is the
   // cover crop’s object-position — where the subject’s face lives.
   photo: Schema.String,
@@ -157,7 +179,7 @@ export type CompetitionStandings = typeof CompetitionStandings.Type;
 export const Competition = Schema.Struct({
   slug: Schema.String,
   name: Schema.String,
-  badge: Schema.String,
+  badge: ResponsiveImage,
   stage: Schema.String,
   progress: Schema.Number,
   tagline: Schema.String,
@@ -223,11 +245,8 @@ export const Match = Schema.Struct({
   // the derived fallback in pulse.ts exists only for the weeks nobody made
   // one.
   featured: Schema.Boolean,
-  // The hero card's background photograph, '' for none. A hero with no photo
-  // is not a hero — it degrades to compact and the slot passes to the next
-  // candidate — because the layout is the photo. Never auto-fetched, and
-  // never a stand-in image.
-  heroImage: Schema.String,
+  // The hero card's background photograph, where the desk chose one. A hero with no photo is not a hero — it degrades to compact and the slot passes to the next candidate — because the layout is the photo. Never auto-fetched, and never a stand-in image.
+  heroImage: Schema.Option(ResponsiveImage),
   // ONE line of editorial copy, '' for none. A bonus, never a condition: a
   // hero without it stays a hero and simply has no story row.
   storyLine: Schema.String,

@@ -84,7 +84,7 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
       },
     },
   ),
-  // Keeps `--header-height` equal to the fixed header's rendered height, now and on every resize of it: a label that wraps on another font engine, a rotation, a font arriving late. Everything the shell hangs under the header reads the variable, so the band, the back link, the pinned jump row and the scroll-spy move with the header instead of assuming its design height. It emits no Messages — it is the sanctioned "maintain a DOM effect for as long as the app runs" kind of Subscription. The header exists once the first render has run, and the frame callback waits for it.
+  // Keeps `--header-height` equal to the fixed header's rendered height, now and on every resize of it: a label that wraps on another font engine, a rotation, a font arriving late. Everything the shell hangs under the header reads the variable, directly or through `--profile-offset`: the spacer, the pinned jump row and the section anchors the scroll-spy reads, so they move with the header instead of assuming its design height. It emits no Messages — it is the sanctioned "maintain a DOM effect for as long as the app runs" kind of Subscription. The header exists once the first render has run, and the frame callback waits for it.
   headerHeight: entry(
     {},
     {

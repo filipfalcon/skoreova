@@ -245,39 +245,53 @@ describe('view', () => {
     );
   });
 
-  // The hero's honors are a static list — every honor in the document at
-  // once, none of them a control, nothing announcing itself as live.
-  test('the honors stack lists every honor as plain text', () => {
+  // The identity line names the club as the page heading, with the way back as an icon link named in words.
+  test('the identity line carries the page heading and a named way back', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
       ...acknowledgeStrip,
-      Scene.expect(Scene.text('League champions')).toExist(),
-      Scene.expect(Scene.text('Cup winners')).toExist(),
-      Scene.expect(Scene.text('Domestic double')).toExist(),
-      Scene.expect(Scene.role('button', { name: /League champions/ })).not.toExist(),
-      Scene.expect(
-        Scene.within(Scene.role('list', { name: 'Honors' }), Scene.selector('button')),
-      ).not.toExist(),
-      Scene.expect(
-        Scene.within(Scene.role('list', { name: 'Honors' }), Scene.selector('[aria-live]')),
-      ).not.toExist(),
+      Scene.expect(Scene.role('heading', { name: 'Sparta Praha' })).toExist(),
+      Scene.expect(Scene.role('link', { name: 'All clubs' })).toExist(),
     );
-    // A club short of three honors lists what it has; one with none lists
-    // its competition and the season instead.
+    // A name over the one-line budget yields to the club's headline form.
     Scene.scene(
       { update, view },
-      Scene.given({ ...clubProfileModel, route: AppRoute.Club({ slug: 'slavia-praha' }) }),
+      Scene.given({
+        ...clubProfileModel,
+        route: AppRoute.Club({ slug: 'dynamo-ceske-budejovice' }),
+      }),
       ...acknowledgeStrip,
-      Scene.expect(Scene.text('League champions')).toExist(),
-      Scene.expect(Scene.text('Cup winners')).toExist(),
-      Scene.expect(Scene.text('Domestic double')).not.toExist(),
+      Scene.expect(Scene.role('heading', { name: 'Dynamo' })).toExist(),
     );
+  });
+
+  // The achievements are a static list in prestige order, read out in full sentences — none of them a control, nothing announcing itself as live.
+  test('the achievements row lists the most prestigious achievements as plain text', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(clubProfileModel),
+      ...acknowledgeStrip,
+      Scene.inside(
+        Scene.role('list', { name: 'Achievements' }),
+        Scene.expect(Scene.text('22 league titles')).toExist(),
+        Scene.expect(Scene.text('9 domestic doubles')).toExist(),
+        Scene.expect(Scene.text('11 cup wins')).toExist(),
+        Scene.expect(Scene.text('8 Champions League seasons')).not.toExist(),
+        Scene.expect(Scene.selector('button')).not.toExist(),
+        Scene.expect(Scene.selector('[aria-live]')).not.toExist(),
+      ),
+    );
+    // A club with a single achievement shows it, and nothing stands in for the rest.
     Scene.scene(
       { update, view },
       Scene.given({ ...clubProfileModel, route: AppRoute.Club({ slug: 'teplice' }) }),
       ...acknowledgeStrip,
-      Scene.expect(Scene.text('Second League · 2025/26')).toExist(),
+      Scene.inside(
+        Scene.role('list', { name: 'Achievements' }),
+        Scene.expect(Scene.text('1 promotion')).toExist(),
+      ),
+      Scene.expect(Scene.text('Second League · 2025/26')).not.toExist(),
     );
   });
 
@@ -296,14 +310,6 @@ describe('view', () => {
       Scene.expect(Scene.role('button', { name: 'Read less' })).not.toExist(),
       Scene.expectAll(Scene.all.selector('figure button')).toHaveCount(0),
       Scene.expectAll(Scene.all.selector('figure [aria-expanded]')).toHaveCount(0),
-    );
-    // A club without a statement reserves the same slot without an attribution.
-    Scene.scene(
-      { update, view },
-      Scene.given({ ...clubProfileModel, route: AppRoute.Club({ slug: 'teplice' }) }),
-      ...acknowledgeStrip,
-      Scene.expect(Scene.selector('blockquote')).not.toExist(),
-      Scene.expect(Scene.text('Commentary')).not.toExist(),
     );
   });
 

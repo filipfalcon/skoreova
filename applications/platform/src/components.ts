@@ -7,15 +7,16 @@
 import { Button } from '@foldkit/ui';
 import { Option } from 'effect';
 import { inertHtml as ih } from 'foldkit/html';
-import type { Html, HtmlBuilder } from 'foldkit/html';
+import type { Attribute, Html, HtmlBuilder } from 'foldkit/html';
 
+import type { ResponsiveImage } from './domain/entities';
 import type { Model, Screen } from './model';
 import { Message } from './message';
 import { JUMP_ROW_ID, ObserveSectionRail, jumpChipId } from './command';
 import { type NavEntry, navEntries, screenOf, screenTitles } from './data';
 import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
 import type { StyleXStyle } from './stylexAttributes';
-import { styles } from './styles/components';
+import { IDENTITY_CREST_SIZE, styles } from './styles/components';
 import { shared } from './styles/shared';
 
 // VIEW HELPERS
@@ -224,6 +225,23 @@ export const desktopNavLink = (model: Model, entry: NavEntry, h: HtmlBuilder<Mes
   );
 };
 
+/**
+ * The attributes that source an img from a responsive image: the fallback `src`, and where the
+ * image has candidate widths, the `srcset` with the `sizes` the browser picks among them by.
+ *
+ * @param image The image.
+ * @param sizes The width the image is drawn at, in the `sizes` syntax.
+ * @param h The builder the attributes are made with.
+ */
+export const responsiveSource = (
+  image: ResponsiveImage,
+  sizes: string,
+  h: HtmlBuilder<Message>,
+): ReadonlyArray<Attribute<Message>> =>
+  image.srcset === undefined
+    ? [h.Src(image.src)]
+    : [h.Src(image.src), h.Srcset(image.srcset), h.Sizes(sizes)];
+
 // The whole header: one row of tabs, fixed over the page. The hairline
 // TERMINATES the backdrop blur — backdrop-filter samples beyond the element's
 // own box, so over a bright backdrop the blur smears the picture a few pixels
@@ -236,11 +254,26 @@ export interface Back {
   readonly href: string;
 }
 
+// The back arrow, drawn rather than set as a text glyph: a text arrow rides the face's own baseline and sits visibly below the optical center of uppercase display type.
+const backArrow = (h: HtmlBuilder<Message>, ...arrowStyles: ReadonlyArray<StyleXStyle>): Html =>
+  h.svg(
+    [
+      h.Xmlns('http://www.w3.org/2000/svg'),
+      h.ViewBox('0 0 16 12'),
+      ...getStyleXAttributes(h, ...arrowStyles),
+      h.Fill('none'),
+      h.Stroke('currentColor'),
+      h.StrokeWidth('2'),
+      h.StrokeLinecap('square'),
+      h.AriaHidden(true),
+    ],
+    [h.path([h.D('M15 6H3M7 1.5L2.5 6L7 10.5')], [])],
+  );
+
 /**
- * The back link — the one component every profile's way back is: meta type on paper inside an ink
- * scrim, so it reads on any photo. The scrim IS the hit area, 44px each way at the least, with the
- * text inset by `xs`. Where it sits is the caller's: `placement` is the position it takes in its
- * band.
+ * The back link — the secondary Button's pink block, so it reads on any photo, with a drawn arrow
+ * before the label. The block is the hit area, 44px tall at the least. Where it sits is the
+ * caller's: `placement` is the position it takes in its band.
  *
  * @param back Where it leads and what it says.
  * @param h The builder the link is drawn with.
@@ -253,13 +286,68 @@ export const backLink = (
 ): Html =>
   // The platform's secondary Button on a plain anchor: focus is the global ring, pressed is the Button's own paper. The library's Button attributes are not spread here — they type a control as a button, and this is a link.
   h.a(
-    [h.Href(back.href), ...getStyleXAttributes(h, shared.buttonSecondary, ...placement)],
-    [`← ${back.label}`],
+    [
+      h.Href(back.href),
+      ...getStyleXAttributes(h, shared.buttonSecondary, styles.backLink, ...placement),
+    ],
+    [backArrow(h, styles.backArrow), back.label],
+  );
+
+/**
+ * What a profile's identity line carries: the way back, the name the page is about, and the
+ * profile's crest where it has one.
+ */
+export interface ProfileIdentity {
+  readonly back: Back;
+  readonly title: string;
+  readonly crest?: ResponsiveImage;
+}
+
+/**
+ * A profile's identity line: an icon-only way back, the profile's crest, then its name as the page
+ * heading, on one line at a fixed `--profile-bar-height`, in the header's chrome material. The name
+ * never wraps; a caller hands in the form that fits. Where it sits is the caller's: `placement` is
+ * the position it takes on the page.
+ *
+ * @param identity The way back, the name and the crest.
+ * @param h The builder the line is drawn with.
+ * @param placement The caller's positioning styles.
+ */
+export const profileIdentityLine = (
+  identity: ProfileIdentity,
+  h: HtmlBuilder<Message>,
+  ...placement: ReadonlyArray<StyleXStyle>
+): Html =>
+  h.div(
+    [...getStyleXAttributes(h, styles.chrome, styles.identityLine, ...placement)],
+    [
+      h.a(
+        [
+          h.Href(identity.back.href),
+          h.AriaLabel(identity.back.label),
+          h.Title(identity.back.label),
+          ...getStyleXAttributes(h, styles.identityBack),
+        ],
+        [drawnLeftArrow(h, styles.identityArrow)],
+      ),
+      // Decoration: the heading beside it already names the profile.
+      ...(identity.crest === undefined
+        ? []
+        : [
+            h.img([
+              ...responsiveSource(identity.crest, IDENTITY_CREST_SIZE, h),
+              h.Alt(''),
+              h.AriaHidden(true),
+              ...getStyleXAttributes(h, styles.identityCrest),
+            ]),
+          ]),
+      h.h1([...getStyleXAttributes(h, shared.display, styles.identityTitle)], [identity.title]),
+    ],
   );
 
 export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.header(
-    [...getStyleXAttributes(h, styles.header)],
+    [...getStyleXAttributes(h, styles.chrome, styles.header)],
     [
       h.nav(
         [...getStyleXAttributes(h, styles.sectionRail)],
@@ -276,13 +364,14 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
 
 // ——— Shared drawn glyphs and the club-profile section wrapper. ———
 
-// The landing page’s drawn arrow, ported with its hover contract intact
-// (`drawn-arrow` nudges right inside any hovered link or button — see
-// styles.css). Filled silhouette, not a text glyph: it sits next to display
-// type here, the same register it does over there.
-export const drawnRightArrow = (
+// The drawn arrow's silhouette, pointing right in its 32×24 box.
+const DRAWN_ARROW_PATH = 'M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z';
+
+// The box every drawn arrow is set in, carrying the `drawn-arrow` hover contract.
+const drawnArrow = (
+  shape: ReadonlyArray<Html>,
   h: HtmlBuilder<Message>,
-  ...arrowStyles: ReadonlyArray<StyleXStyle>
+  arrowStyles: ReadonlyArray<StyleXStyle>,
 ): Html =>
   h.svg(
     [
@@ -292,33 +381,45 @@ export const drawnRightArrow = (
       h.Fill('currentColor'),
       h.AriaHidden(true),
     ],
-    [h.path([h.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')], [])],
+    shape,
+  );
+
+// The landing page’s drawn arrow, ported with its hover contract intact
+// (`drawn-arrow` nudges right inside any hovered link or button — see
+// styles.css). Filled silhouette, not a text glyph: it sits next to display
+// type here, the same register it does over there.
+export const drawnRightArrow = (
+  h: HtmlBuilder<Message>,
+  ...arrowStyles: ReadonlyArray<StyleXStyle>
+): Html => drawnArrow([h.path([h.D(DRAWN_ARROW_PATH)], [])], h, arrowStyles);
+
+/**
+ * The drawn arrow pointing back. The silhouette is mirrored inside the SVG rather than by a CSS
+ * transform, which the arrow contract's hover nudge would overwrite; the caller's styles set
+ * `--drawn-arrow-direction` to -1 so that nudge runs left.
+ *
+ * @param h The builder the arrow is drawn with.
+ * @param arrowStyles The caller's sizing and direction styles.
+ */
+export const drawnLeftArrow = (
+  h: HtmlBuilder<Message>,
+  ...arrowStyles: ReadonlyArray<StyleXStyle>
+): Html =>
+  drawnArrow(
+    [h.g([h.Transform('matrix(-1 0 0 1 32 0)')], [h.path([h.D(DRAWN_ARROW_PATH)], [])])],
+    h,
+    arrowStyles,
   );
 
 // The inline drawn-arrow size most sites want — exported beside the arrow
 // so callers don't re-declare it.
 export const drawnArrowInline = styles.drawnArrowInline;
 
-// The multiplication mark, DRAWN for the same reason (user call: next to
-// Anton’s caps the text × all but disappeared — it is a light maths glyph
-// in a face whose letters are anything but, so it reads as a smudge
-// between the number and the word). Built to Anton’s weight instead:
-// arms a fifth of the box thick, cut at 45°.
+// The multiplication mark, DRAWN for the same reason (user call: next to Anton’s caps the text × all but disappeared — it is a light maths glyph in a face whose letters are anything but, so it reads as a smudge between the number and the word). Built to Anton’s weight instead: arms a fifth of the box thick, cut at 45°.
 //
-// Sized against Anton’s MEASURED figures, not against a generic em. The
-// face runs abnormally large on the body — x-height 0.73em, figures
-// 0.86em — which is exactly why the text × vanished: a maths glyph drawn
-// for a normal face is far too small beside characters this big. At
-// 0.52em the mark is a little over half the figure height, which holds
-// its own without reading as a letter.
+// Sized against Anton’s MEASURED figures, not against a generic em. The face runs abnormally large on the body — x-height 0.73em, figures 0.86em — which is exactly why the text × vanished: a maths glyph drawn for a normal face is far too small beside characters this big. At 0.52em the mark is a little over half the figure height, which holds its own without reading as a letter.
 //
-// Centered on the FIGURE axis rather than the usual x-height one, because
-// this mark only ever lands between digits and caps ("22× LEAGUE") and
-// never beside lowercase — on the x-height axis it sat a visible pixel
-// low against the numerals. An inline-block baselines on its BOTTOM
-// MARGIN EDGE, so the margin is the control: mb + height/2 ≈ half the
-// figure height. Both are em, so it holds at any size it inherits — it
-// renders at 18px in the honors chip and 36px in the history grid.
+// Centered on the FIGURE axis rather than the usual x-height one, because this mark only ever lands between digits and caps ("22× LEAGUE") and never beside lowercase — on the x-height axis it sat a visible pixel low against the numerals. An inline-block baselines on its BOTTOM MARGIN EDGE, so the margin is the control: mb + height/2 ≈ half the figure height. Both are em, so it holds at any size it inherits — it renders at 16px in an achievement stamp on a phone, 20px from md, and 36px in the history grid.
 export const drawnTimes = (
   h: HtmlBuilder<Message>,
   ...timesStyles: ReadonlyArray<StyleXStyle>

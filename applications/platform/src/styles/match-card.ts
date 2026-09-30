@@ -67,6 +67,11 @@ const SCRIM = [
   'color-mix(in srgb, var(--color-ink) 72%, transparent) 100%',
 ].join(', ');
 
+/**
+ * A crest's box in a match card, in both cuts, and so the width its image is drawn at.
+ */
+export const CREST_SIZE = '1.5rem';
+
 export const styles = stylex.create({
   card: {
     position: 'relative',
@@ -180,8 +185,8 @@ export const styles = stylex.create({
     gap: spacing.xs,
   },
   heroCrest: {
-    height: '1.5rem',
-    width: '1.5rem',
+    height: CREST_SIZE,
+    width: CREST_SIZE,
     objectFit: 'contain',
   },
   meta: {
@@ -234,8 +239,8 @@ export const styles = stylex.create({
     gap: spacing.xs,
   },
   crest: {
-    height: '1.5rem',
-    width: '1.5rem',
+    height: CREST_SIZE,
+    width: CREST_SIZE,
     flexShrink: 0,
     objectFit: 'contain',
   },

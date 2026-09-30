@@ -1,5 +1,6 @@
 import { Array, Option } from 'effect';
 
+import { achievementCount } from './achievements';
 import { clubArchive } from './data';
 import type { ArchiveSeason, Club } from './data';
 
@@ -89,18 +90,18 @@ export const historyStats = (target: Club): ReadonlyArray<HistoryStat> => {
   const firstLeagueSeasons = archive.filter((season) => season.league === FIRST_LEAGUE).length;
   const climbs = promotions(archive);
   const candidates: ReadonlyArray<HistoryStat | undefined> = [
-    target.leagueTitles > 0
+    achievementCount(target, 'league-title') > 0
       ? {
-          value: `${target.leagueTitles}`,
+          value: `${achievementCount(target, 'league-title')}`,
           isCount: true,
           label: 'Titles',
           detail: latestTitle === undefined ? '' : `Last ${latestTitle.season}`,
           shortDetail: latestTitle?.season ?? '',
         }
       : undefined,
-    target.cupTitles > 0
+    achievementCount(target, 'cup-win') > 0
       ? {
-          value: `${target.cupTitles}`,
+          value: `${achievementCount(target, 'cup-win')}`,
           isCount: true,
           label: 'Cup wins',
           detail: latestCup === undefined ? '' : `Last ${latestCup.season}`,

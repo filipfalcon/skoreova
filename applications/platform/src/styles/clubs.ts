@@ -7,9 +7,23 @@ import { tokens, type } from '../tokens.stylex';
 // grid.
 
 const SM = '@media (min-width: 640px)';
-const MD = '@media (min-width: 768px)';
+const MD_QUERY = '(min-width: 768px)';
+const MD = `@media ${MD_QUERY}`;
 const LG = '@media (min-width: 1024px)';
 const XL = '@media (min-width: 1280px)';
+
+// A photoless contender's crest box, per viewport.
+const ARTWORK_LOGO_SIZE = { phone: '7rem', md: '10rem' } as const;
+
+/**
+ * The width a photoless contender's crest is drawn at, in the `sizes` syntax.
+ */
+export const ARTWORK_LOGO_SIZES = `${MD_QUERY} ${ARTWORK_LOGO_SIZE.md}, ${ARTWORK_LOGO_SIZE.phone}`;
+
+/**
+ * A crest's box in the clubs grid, and so the width its image is drawn at.
+ */
+export const GRID_CREST_SIZE = '3.5rem';
 
 export const styles = stylex.create({
   // Photoless featured clubs center their crest on the panel tone instead
@@ -24,12 +38,12 @@ export const styles = stylex.create({
   },
   artworkLogo: {
     height: {
-      default: '7rem',
-      [MD]: '10rem',
+      default: ARTWORK_LOGO_SIZE.phone,
+      [MD]: ARTWORK_LOGO_SIZE.md,
     },
     width: {
-      default: '7rem',
-      [MD]: '10rem',
+      default: ARTWORK_LOGO_SIZE.phone,
+      [MD]: ARTWORK_LOGO_SIZE.md,
     },
     objectFit: 'contain',
   },
@@ -403,8 +417,8 @@ export const styles = stylex.create({
     gap: '1rem',
   },
   crest: {
-    height: '3.5rem',
-    width: '3.5rem',
+    height: GRID_CREST_SIZE,
+    width: GRID_CREST_SIZE,
     objectFit: 'contain',
   },
   leagueTag: {

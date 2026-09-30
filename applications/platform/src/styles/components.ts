@@ -10,6 +10,18 @@ import { spacing, tokens, type } from '../tokens.stylex';
 // one optical weight.
 const ICON_SIZE = '24px';
 
+// The chrome material: how opaque its ink is, and what it does to the page behind it. At 0.9 the pink active nav label holds 5.1:1 and the muted labels 7.8:1 over paper and pink passing underneath; at 0.8 the pink label fell to 3.8:1, under AA for its size.
+const CHROME_INK_OPACITY = 0.9;
+const CHROME_BACKDROP = 'blur(24px) saturate(180%)';
+
+// A profile identity line's name size, which its back arrow is set against.
+const IDENTITY_TITLE_SIZE = { phone: '2rem', md: '2.5rem' } as const;
+
+/**
+ * A crest's box in a profile's identity line, and so the width its image is drawn at.
+ */
+export const IDENTITY_CREST_SIZE = '2rem';
+
 // How far the tape's rise/fall mark drops to sit on the numerals' own centre
 // rather than their line box's. Measured against the rendered tape, in em so
 // it holds at any size the tape is set at.
@@ -188,16 +200,20 @@ export const styles = stylex.create({
       [MD]: 'block',
     },
   },
+  // The chrome material the header and a profile's identity bar share: translucent ink over the page, blurred wide and saturated so what passes underneath dissolves into soft colour rather than showing as shapes; at 8px a pink chip still read as a dark blotch. The hairline TERMINATES the blur, which samples past the element's own box and would otherwise smear a bright backdrop into a soft halo under the edge.
+  chrome: {
+    borderBottomWidth: 1,
+    borderColor: 'color-mix(in srgb, var(--color-paper) 10%, transparent)',
+    backgroundColor: `rgba(0, 0, 0, ${CHROME_INK_OPACITY})`,
+    color: tokens.paper,
+    WebkitBackdropFilter: CHROME_BACKDROP,
+    backdropFilter: CHROME_BACKDROP,
+  },
   header: {
     position: 'fixed',
     insetInline: 0,
     top: 0,
     zIndex: 50,
-    borderBottomWidth: 1,
-    borderColor: 'color-mix(in srgb, var(--color-paper) 10%, transparent)',
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    color: tokens.paper,
-    backdropFilter: 'blur(8px)',
   },
   sectionRail: {
     marginInline: 'auto',
@@ -230,6 +246,71 @@ export const styles = stylex.create({
     display: 'inline-block',
     height: '0.72em',
     width: 'auto',
+  },
+  // The back link's row: the arrow and the label, centered on each other.
+  backLink: {
+    gap: spacing.xs,
+  },
+  // The back arrow at about the display face's cap height, so its shaft sits on the caps' optical center.
+  backArrow: {
+    flexShrink: 0,
+    height: '0.75em',
+    width: '1em',
+  },
+  // A profile's identity line: `--profile-bar-height` tall whatever the name, so the photo under it starts on one y for every profile, and the offsets that clear the bar read the same value.
+  identityLine: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing.xs,
+    height: 'var(--profile-bar-height)',
+  },
+  identityCrest: {
+    flexShrink: 0,
+    height: IDENTITY_CREST_SIZE,
+    width: IDENTITY_CREST_SIZE,
+    objectFit: 'contain',
+  },
+  // The icon-only way back: a 44px target, paper at rest, pink under the pointer and under keyboard focus.
+  identityBack: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    height: '2.75rem',
+    width: '2.75rem',
+    fontSize: {
+      default: IDENTITY_TITLE_SIZE.phone,
+      [MD]: IDENTITY_TITLE_SIZE.md,
+    },
+    color: {
+      default: tokens.paper,
+      ':hover': tokens.pink,
+      ':focus-visible': tokens.pink,
+    },
+    transitionProperty: 'color',
+    transitionDuration: '0.3s',
+    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  // The back arrow at the name's cap height: the display face's caps stand 0.859em, and the link carries the name's own size. The arrow's 4:3 box is capped at the target's width, which it would pass from md.
+  identityArrow: {
+    '--drawn-arrow-direction': -1,
+    height: '0.859em',
+    width: 'auto',
+    maxWidth: '100%',
+  },
+  // The name on one line. The clip is a guard for enlarged text only; at the default size the caller's name already fits.
+  identityTitle: {
+    minWidth: 0,
+    // Tall enough for the accents over the capitals (Í, Á, Ň): the display face's own 0.92 leading ends at the cap line, and the clip would cut everything above it.
+    lineHeight: 1.3,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    fontSize: {
+      default: IDENTITY_TITLE_SIZE.phone,
+      [MD]: IDENTITY_TITLE_SIZE.md,
+    },
+    color: tokens.paper,
   },
   drawnTimes: {
     marginBottom: '0.11em',
@@ -267,8 +348,8 @@ export const styles = stylex.create({
     },
     // Measured navigation heights also clear headings when text is enlarged.
     scrollMarginTop: {
-      default: 'calc(var(--header-height) + var(--section-rail-height, 3.8125rem) + 0.5rem)',
-      [MD]: 'calc(var(--header-height) + 4.9375rem)',
+      default: 'calc(var(--profile-offset) + var(--section-rail-height, 3.8125rem) + 0.5rem)',
+      [MD]: 'calc(var(--profile-offset) + 4.9375rem)',
     },
   },
   clubSectionHeading: {
@@ -308,7 +389,7 @@ export const styles = stylex.create({
     transitionDuration: '0.15s',
     transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
-  // The jump row. On a phone it is a bar pinned flush under the fixed header — at the header's measured height — on opaque paper, bleeding to the screen's edges, its chips scrolling as one line so one peeks in from the right. From md it is a static, wrapped block.
+  // The jump row. On a phone it is a bar pinned flush under the header and the profile's identity bar — at `--profile-offset` — on opaque paper, bleeding to the screen's edges, its chips scrolling as one line so one peeks in from the right. From md it is a static, wrapped block.
   sectionIndex: {
     // Reserve the separator before sticking so anchor targets do not shift.
     borderBottomWidth: { default: 1, [MD]: 0 },
@@ -318,7 +399,7 @@ export const styles = stylex.create({
       [MD]: 'static',
     },
     top: {
-      default: 'var(--header-height)',
+      default: 'var(--profile-offset)',
       [MD]: 'auto',
     },
     zIndex: 40,

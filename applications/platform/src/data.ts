@@ -11,6 +11,7 @@ import {
   playersRouter,
   welcomeRouter,
 } from './route';
+import { achievementCount } from './achievements';
 import { Screen, ScorerScope } from './model';
 
 import {
@@ -20,6 +21,7 @@ import {
   type Edition,
   type Official,
   type Player,
+  type ResponsiveImage,
   type SavedChart,
   type Scorer,
   type StandingsRow,
@@ -31,28 +33,28 @@ import {
 export * from './domain/entities';
 export * from './screen';
 
-import abcBranikLogo from './assets/clubs/AbcBranik.png';
-import artisBrnoLogo from './assets/clubs/ArtisBrno.png';
-import banikOstravaLogo from './assets/clubs/BanikOstrava.png';
-import dynamoBudejoviceLogo from './assets/clubs/DynamoCeskeBudejovice.png';
-import hradecKraloveLogo from './assets/clubs/HradecKralove.png';
-import lokomotivaBrnoLogo from './assets/clubs/LokomotivaBrno.png';
+import abcBranikLogo from './assets/clubs/AbcBranik.png?emblem';
+import artisBrnoLogo from './assets/clubs/ArtisBrno.png?emblem';
+import banikOstravaLogo from './assets/clubs/BanikOstrava.png?emblem';
+import dynamoBudejoviceLogo from './assets/clubs/DynamoCeskeBudejovice.png?emblem';
+import hradecKraloveLogo from './assets/clubs/HradecKralove.png?emblem';
+import lokomotivaBrnoLogo from './assets/clubs/LokomotivaBrno.png?emblem';
 import pardubiceLogo from './assets/clubs/Pardubice.svg';
-import pragueRaptorsLogo from './assets/clubs/PragueRaptors.png';
-import sigmaOlomoucLogo from './assets/clubs/SigmaOlomouc.png';
-import slaviaPrahaLogo from './assets/clubs/SlaviaPraha.png';
-import slovackoLogo from './assets/clubs/Slovacko.png';
-import slovanLiberecLogo from './assets/clubs/SlovanLiberec.png';
-import spartaPrahaLogo from './assets/clubs/SpartaPraha.png';
-import tepliceLogo from './assets/clubs/Teplice.png';
-import viktoriaPlzenLogo from './assets/clubs/ViktoriaPlzen.png';
-import vysocinaJihlavaLogo from './assets/clubs/VysocinaJihlava.png';
-import domesticCupBadge from './assets/competitions/domestic-cup.png';
-import firstLeagueBadge from './assets/competitions/first-league.png';
-import nationalTeamBadge from './assets/competitions/national-team.png';
-import secondLeagueBadge from './assets/competitions/second-league.png';
-import uwclBadge from './assets/competitions/uwcl.png';
-import uwecBadge from './assets/competitions/uwec.png';
+import pragueRaptorsLogo from './assets/clubs/PragueRaptors.png?emblem';
+import sigmaOlomoucLogo from './assets/clubs/SigmaOlomouc.png?emblem';
+import slaviaPrahaLogo from './assets/clubs/SlaviaPraha.png?emblem';
+import slovackoLogo from './assets/clubs/Slovacko.png?emblem';
+import slovanLiberecLogo from './assets/clubs/SlovanLiberec.png?emblem';
+import spartaPrahaLogo from './assets/clubs/SpartaPraha.png?emblem';
+import tepliceLogo from './assets/clubs/Teplice.png?emblem';
+import viktoriaPlzenLogo from './assets/clubs/ViktoriaPlzen.png?emblem';
+import vysocinaJihlavaLogo from './assets/clubs/VysocinaJihlava.png?emblem';
+import domesticCupBadge from './assets/competitions/domestic-cup.png?emblem';
+import firstLeagueBadge from './assets/competitions/first-league.png?emblem';
+import nationalTeamBadge from './assets/competitions/national-team.png?emblem';
+import secondLeagueBadge from './assets/competitions/second-league.png?emblem';
+import uwclBadge from './assets/competitions/uwcl.png?emblem';
+import uwecBadge from './assets/competitions/uwec.png?emblem';
 import pardubicePhoto from './assets/trending/pardubice.jpg';
 import sierraPhoto from './assets/trending/sierra.jpg';
 import spartaPhoto from './assets/trending/sparta.jpg';
@@ -101,7 +103,6 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     kind: 'Player',
     reason: 'Most shots on target this month.',
     href: playersRouter(),
-    crest: '',
     photo: sierraPhoto,
     focus: '50% 22%',
   },
@@ -111,7 +112,6 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     kind: 'Club',
     reason: 'Top of the First League, one defeat.',
     href: clubRouter({ slug: 'sparta-praha' }),
-    crest: spartaPrahaLogo,
     photo: spartaPhoto,
     focus: '50% 35%',
   },
@@ -126,7 +126,6 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     kind: 'Club',
     reason: 'Seventeen points from eleven games.',
     href: clubRouter({ slug: 'pardubice' }),
-    crest: pardubiceLogo,
     photo: pardubicePhoto,
     focus: '50% 40%',
   },
@@ -136,7 +135,6 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     kind: 'Club',
     reason: 'Three points off the top.',
     href: clubRouter({ slug: 'slavia-praha' }),
-    crest: slaviaPrahaLogo,
     photo: '',
     focus: '',
   },
@@ -146,7 +144,6 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     kind: 'Club',
     reason: 'Second in the Second League, 29 scored.',
     href: clubRouter({ slug: 'sigma-olomouc' }),
-    crest: sigmaOlomoucLogo,
     photo: '',
     focus: '',
   },
@@ -156,7 +153,6 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     kind: 'Club',
     reason: 'Five wins, five defeats.',
     href: clubRouter({ slug: 'banik-ostrava' }),
-    crest: banikOstravaLogo,
     photo: '',
     focus: '',
   },
@@ -166,7 +162,6 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     kind: 'Club',
     reason: 'One win in twelve.',
     href: clubRouter({ slug: 'prague-raptors' }),
-    crest: pragueRaptorsLogo,
     photo: '',
     focus: '',
   },
@@ -176,7 +171,6 @@ export const trending: ReadonlyArray<TrendingEntry> = [
     kind: 'Club',
     reason: 'Top of the Second League on 23.',
     href: clubRouter({ slug: 'sparta-praha-b' }),
-    crest: spartaPrahaLogo,
     photo: '',
     focus: '',
   },
@@ -197,8 +191,8 @@ export const trending: ReadonlyArray<TrendingEntry> = [
 // eleven clubs mean one club sits out each matchday (Sparta Praha B has
 // taken two byes so far, hence its ten).
 export const clubs: ReadonlyArray<Club> = [
-  // Honors track the ALL-TIME BESTS canon: Sparta holds both records
-  // (22× league, 11× cup).
+  // Colors are MOCK: each club's primary kit colour, a B team wearing its parent's.
+  // Achievements are MOCK. League titles and cup wins track the ALL-TIME BESTS canon — Sparta holds both records (22× league, 11× cup) — and no club outside that canon holds either.
   {
     slug: 'sparta-praha',
     name: 'Sparta Praha',
@@ -207,16 +201,21 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Prague',
     venue: 'Letná',
     logo: spartaPrahaLogo,
+    color: '#9b1b30',
     league: 'First League',
     won: 9,
     drawn: 2,
     lost: 1,
     scored: 31,
     conceded: 9,
-    leagueTitles: 22,
-    cupTitles: 11,
-    // The nine seasons the league and the cup went to Letná together.
-    doubles: 9,
+    achievements: [
+      { kind: 'league-title', count: 22 },
+      // The nine seasons the league and the cup went to Letná together.
+      { kind: 'domestic-double', count: 9 },
+      { kind: 'cup-win', count: 11 },
+      { kind: 'uwcl-season', count: 8 },
+      { kind: 'uwec-season', count: 1 },
+    ],
     links: {
       website: 'https://www.sparta.cz',
       instagram: 'https://www.instagram.com/spartawomen/',
@@ -232,14 +231,18 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Prague',
     venue: 'Eden',
     logo: slaviaPrahaLogo,
+    color: '#e3001b',
     league: 'First League',
     won: 8,
     drawn: 2,
     lost: 2,
     scored: 27,
     conceded: 12,
-    leagueTitles: 9,
-    cupTitles: 9,
+    achievements: [
+      { kind: 'league-title', count: 9 },
+      { kind: 'cup-win', count: 9 },
+      { kind: 'uwcl-season', count: 10 },
+    ],
     links: {
       website: 'https://www.slavia.cz',
       instagram: 'https://www.instagram.com/slaviazeny/',
@@ -255,14 +258,18 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Uherské Hradiště',
     venue: 'Městský stadion',
     logo: slovackoLogo,
+    color: '#2b3f8f',
     league: 'First League',
     won: 7,
     drawn: 2,
     lost: 3,
     scored: 22,
     conceded: 15,
-    leagueTitles: 0,
-    cupTitles: 2,
+    achievements: [
+      { kind: 'cup-win', count: 2 },
+      { kind: 'uwec-season', count: 1 },
+      { kind: 'cup-final', count: 3 },
+    ],
   },
   {
     slug: 'sparta-praha-b',
@@ -272,14 +279,14 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Prague',
     venue: 'Strahov',
     logo: spartaPrahaLogo,
+    color: '#9b1b30',
     league: 'Second League',
     won: 7,
     drawn: 2,
     lost: 1,
     scored: 32,
     conceded: 10,
-    leagueTitles: 0,
-    cupTitles: 0,
+    achievements: [{ kind: 'second-league-title', count: 3 }],
   },
   {
     slug: 'vysocina-jihlava',
@@ -289,14 +296,14 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Jihlava',
     venue: 'Stadion v Jiráskově',
     logo: vysocinaJihlavaLogo,
+    color: '#2748a8',
     league: 'Second League',
     won: 5,
     drawn: 3,
     lost: 3,
     scored: 19,
     conceded: 16,
-    leagueTitles: 0,
-    cupTitles: 0,
+    achievements: [{ kind: 'promotion', count: 1 }],
   },
   {
     slug: 'banik-ostrava',
@@ -306,14 +313,18 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Ostrava',
     venue: 'Bazaly',
     logo: banikOstravaLogo,
+    color: '#005baa',
     league: 'First League',
     won: 5,
     drawn: 2,
     lost: 5,
     scored: 17,
     conceded: 18,
-    leagueTitles: 2,
-    cupTitles: 3,
+    achievements: [
+      { kind: 'league-title', count: 2 },
+      { kind: 'cup-win', count: 3 },
+      { kind: 'cup-final', count: 2 },
+    ],
   },
   {
     slug: 'viktoria-plzen',
@@ -323,14 +334,18 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Plzeň',
     venue: 'Štruncovy sady',
     logo: viktoriaPlzenLogo,
+    color: '#d0021b',
     league: 'First League',
     won: 2,
     drawn: 3,
     lost: 7,
     scored: 12,
     conceded: 22,
-    leagueTitles: 0,
-    cupTitles: 1,
+    achievements: [
+      { kind: 'cup-win', count: 1 },
+      { kind: 'cup-final', count: 1 },
+      { kind: 'promotion', count: 1 },
+    ],
   },
   {
     slug: 'slovan-liberec',
@@ -340,14 +355,18 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Liberec',
     venue: 'Stadion u Nisy',
     logo: slovanLiberecLogo,
+    color: '#3d8fdc',
     league: 'First League',
     won: 2,
     drawn: 2,
     lost: 8,
     scored: 11,
     conceded: 25,
-    leagueTitles: 0,
-    cupTitles: 0,
+    achievements: [
+      { kind: 'uwec-season', count: 1 },
+      { kind: 'cup-final', count: 2 },
+      { kind: 'promotion', count: 1 },
+    ],
   },
   {
     slug: 'hradec-kralove',
@@ -357,14 +376,17 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Hradec Králové',
     venue: 'Malšovická aréna',
     logo: hradecKraloveLogo,
+    color: '#c9a227',
     league: 'Second League',
     won: 6,
     drawn: 2,
     lost: 3,
     scored: 24,
     conceded: 13,
-    leagueTitles: 0,
-    cupTitles: 0,
+    achievements: [
+      { kind: 'second-league-title', count: 1 },
+      { kind: 'promotion', count: 1 },
+    ],
   },
   {
     slug: 'pardubice',
@@ -373,15 +395,18 @@ export const clubs: ReadonlyArray<Club> = [
     displayName: 'Pardubice',
     city: 'Pardubice',
     venue: 'Letní stadion',
-    logo: pardubiceLogo,
+    logo: { src: pardubiceLogo },
+    color: '#d71920',
     league: 'Second League',
     won: 5,
     drawn: 2,
     lost: 4,
     scored: 18,
     conceded: 17,
-    leagueTitles: 0,
-    cupTitles: 0,
+    achievements: [
+      { kind: 'second-league-title', count: 1 },
+      { kind: 'cup-final', count: 1 },
+    ],
   },
   {
     slug: 'sigma-olomouc',
@@ -391,14 +416,17 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Olomouc',
     venue: 'Andrův stadion',
     logo: sigmaOlomoucLogo,
+    color: '#004b93',
     league: 'Second League',
     won: 7,
     drawn: 1,
     lost: 3,
     scored: 29,
     conceded: 11,
-    leagueTitles: 0,
-    cupTitles: 0,
+    achievements: [
+      { kind: 'cup-final', count: 1 },
+      { kind: 'promotion', count: 2 },
+    ],
   },
   {
     slug: 'lokomotiva-brno',
@@ -408,14 +436,17 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Brno',
     venue: 'Za Lužánkami',
     logo: lokomotivaBrnoLogo,
+    color: '#d9c400',
     league: 'First League',
     won: 6,
     drawn: 1,
     lost: 5,
     scored: 19,
     conceded: 17,
-    leagueTitles: 0,
-    cupTitles: 0,
+    achievements: [
+      { kind: 'second-league-title', count: 2 },
+      { kind: 'promotion', count: 2 },
+    ],
   },
   {
     slug: 'artis-brno',
@@ -425,14 +456,14 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Brno',
     venue: 'Srbská',
     logo: artisBrnoLogo,
+    color: '#2a3a9a',
     league: 'Second League',
     won: 5,
     drawn: 1,
     lost: 5,
     scored: 16,
     conceded: 18,
-    leagueTitles: 0,
-    cupTitles: 0,
+    achievements: [{ kind: 'second-league-title', count: 1 }],
   },
   {
     slug: 'dynamo-ceske-budejovice',
@@ -442,14 +473,17 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'České Budějovice',
     venue: 'Střelecký ostrov',
     logo: dynamoBudejoviceLogo,
+    color: '#1e5bb8',
     league: 'Second League',
     won: 2,
     drawn: 1,
     lost: 8,
     scored: 9,
     conceded: 25,
-    leagueTitles: 0,
-    cupTitles: 0,
+    achievements: [
+      { kind: 'second-league-title', count: 1 },
+      { kind: 'promotion', count: 1 },
+    ],
   },
   {
     slug: 'abc-branik',
@@ -459,14 +493,17 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Prague',
     venue: 'Stadion Braník',
     logo: abcBranikLogo,
+    color: '#3f6fc0',
     league: 'Second League',
     won: 1,
     drawn: 1,
     lost: 9,
     scored: 7,
     conceded: 31,
-    leagueTitles: 0,
-    cupTitles: 0,
+    achievements: [
+      { kind: 'cup-final', count: 1 },
+      { kind: 'promotion', count: 3 },
+    ],
   },
   {
     slug: 'slovan-liberec-b',
@@ -476,14 +513,14 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Liberec',
     venue: 'Vesec',
     logo: slovanLiberecLogo,
+    color: '#3d8fdc',
     league: 'Second League',
     won: 3,
     drawn: 2,
     lost: 6,
     scored: 12,
     conceded: 22,
-    leagueTitles: 0,
-    cupTitles: 0,
+    achievements: [{ kind: 'promotion', count: 1 }],
   },
   {
     slug: 'viktoria-plzen-b',
@@ -493,14 +530,17 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Plzeň',
     venue: 'Luční',
     logo: viktoriaPlzenLogo,
+    color: '#d0021b',
     league: 'Second League',
     won: 6,
     drawn: 2,
     lost: 3,
     scored: 20,
     conceded: 15,
-    leagueTitles: 0,
-    cupTitles: 0,
+    achievements: [
+      { kind: 'second-league-title', count: 1 },
+      { kind: 'promotion', count: 1 },
+    ],
   },
   {
     slug: 'prague-raptors',
@@ -510,14 +550,14 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Prague',
     venue: 'Ďolíček',
     logo: pragueRaptorsLogo,
+    color: '#009fdf',
     league: 'First League',
     won: 1,
     drawn: 2,
     lost: 9,
     scored: 8,
     conceded: 29,
-    leagueTitles: 0,
-    cupTitles: 0,
+    achievements: [{ kind: 'promotion', count: 1 }],
   },
   {
     slug: 'teplice',
@@ -527,14 +567,14 @@ export const clubs: ReadonlyArray<Club> = [
     city: 'Teplice',
     venue: 'Na Stínadlech',
     logo: tepliceLogo,
+    color: '#0033a0',
     league: 'Second League',
     won: 3,
     drawn: 3,
     lost: 5,
     scored: 13,
     conceded: 21,
-    leagueTitles: 0,
-    cupTitles: 0,
+    achievements: [{ kind: 'promotion', count: 1 }],
   },
 ];
 
@@ -860,7 +900,7 @@ export interface ClubRowFace {
   readonly shortName: string;
   // The headline form, for a match card's "SPARTA × SLAVIA".
   readonly displayName: string;
-  readonly crest: string;
+  readonly crest: ResponsiveImage;
 }
 
 // The ground a HOME side plays on, by the name a fixture carries. Separate
@@ -1032,8 +1072,8 @@ export const ARCHIVE_SEASONS = 10;
 
 /**
  * The club's season-by-season archive, newest first — a seeded placeholder like the rest of the
- * mock. It agrees with the club's honors: a champion's latest season is a title, and a club with
- * none never finishes first, and only a cup winner has cup seasons, its latest among them.
+ * mock. It agrees with the club's achievements: a champion's latest season is a title, and a club
+ * with none never finishes first, and only a cup winner has cup seasons, its latest among them.
  *
  * @param target The club.
  */
@@ -1044,16 +1084,17 @@ export const clubArchive = (target: Club): ReadonlyArray<ArchiveSeason> => {
     const endYear = 2025 - index;
     const drawn = 1 + ((seed + index * 7) % size);
     const position =
-      target.leagueTitles > 0 && index === 0
+      achievementCount(target, 'league-title') > 0 && index === 0
         ? 1
-        : target.leagueTitles === 0 && drawn === 1
+        : achievementCount(target, 'league-title') === 0 && drawn === 1
           ? 2
           : drawn;
     return {
       season: `${endYear - 1}/${String(endYear).slice(2)}`,
       league: target.league,
       position,
-      isCupWinner: target.cupTitles > 0 && (index === 0 || (seed + index * 11) % 4 === 0),
+      isCupWinner:
+        achievementCount(target, 'cup-win') > 0 && (index === 0 || (seed + index * 11) % 4 === 0),
     };
   });
 };

@@ -2,12 +2,20 @@ import { Button, Select } from '@foldkit/ui';
 import { Match, Option, Record } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
-import domesticCupHeroPhoto from '../assets/competitions-hero/domestic-cup.jpg';
-import firstLeagueHeroPhoto from '../assets/competitions-hero/first-league.jpg';
-import secondLeagueHeroPhoto from '../assets/competitions-hero/second-league.jpg';
-import { backLink, chevron, clubChip, pinkTick, sectionLabel } from '../components';
+import domesticCupHeroPhoto from '../assets/competitions-hero/domestic-cup.jpg?photo';
+import firstLeagueHeroPhoto from '../assets/competitions-hero/first-league.jpg?photo';
+import secondLeagueHeroPhoto from '../assets/competitions-hero/second-league.jpg?photo';
+import {
+  backLink,
+  chevron,
+  clubChip,
+  pinkTick,
+  responsiveSource,
+  sectionLabel,
+} from '../components';
 import { POINTS_DRAW, POINTS_WIN, clubRowFace, leagueTeams, standingsFor } from '../data';
 import type { Competition, Edition } from '../data';
+import type { ResponsiveImage } from '../domain/entities';
 import { Message } from '../message';
 import type { Model } from '../model';
 import { clubRouter, competitionsRouter } from '../route';
@@ -24,7 +32,7 @@ import type { SeasonShape } from '../schedule';
 import { EditionRadioGroup } from '../radio-groups';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
 import type { StyleXStyle } from '../stylexAttributes';
-import { styles } from '../styles/competition-profile';
+import { HERO_ART_SIZES, STANDINGS_CREST_SIZE, styles } from '../styles/competition-profile';
 import { shared } from '../styles/shared';
 
 // Per-competition hero artwork — the club profile's device (user call: the
@@ -33,7 +41,7 @@ import { shared } from '../styles/shared';
 // An index signature rather than the Record utility type: effect's Record
 // import shadows it in this module.
 interface HeroArt {
-  readonly photo: string;
+  readonly photo: ResponsiveImage;
   readonly focus: string;
 }
 
@@ -386,7 +394,7 @@ const competitionHero = (
           // hero's treatment, for the same reason (players shrink to specks
           // in the wide frame).
           h.img([
-            h.Src(heroArt.photo),
+            ...responsiveSource(heroArt.photo, HERO_ART_SIZES, h),
             h.Alt(''),
             ...getStyleXAttributes(h, styles.heroArtImage),
             h.Style({ 'object-position': heroArt.focus, 'transform-origin': heroArt.focus }),
@@ -594,7 +602,7 @@ const standingsPanel = (
                     ? []
                     : [
                         h.img([
-                          h.Src(face.crest),
+                          ...responsiveSource(face.crest, STANDINGS_CREST_SIZE, h),
                           h.Alt(''),
                           h.Loading('lazy'),
                           ...getStyleXAttributes(h, styles.standingsCrest),
@@ -880,11 +888,7 @@ const editionArchive = (competition: Competition, model: Model, h: HtmlBuilder<M
 
 // A finished edition’s card — the champion holds the stage until the full
 // per-season archive lands with the real data.
-const editionArchivePanel = (
-  competition: Competition,
-  open: Edition,
-  h: HtmlBuilder<Message>,
-): Html =>
+const editionArchivePanel = (open: Edition, h: HtmlBuilder<Message>): Html =>
   h.section(
     [...getStyleXAttributes(h, shared.panel, styles.panelBody)],
     [
@@ -918,7 +922,6 @@ export const view = (competition: Competition, model: Model, h: HtmlBuilder<Mess
             ? [competitionStandingsPanel(competition, h), matchesPanel(competition, model, h)]
             : [
                 editionArchivePanel(
-                  competition,
                   competition.editions.find(
                     (entry) => entry.label === Option.getOrNull(model.competitionEdition),
                   ) ??

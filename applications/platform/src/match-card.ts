@@ -1,14 +1,15 @@
-import { Match as EffectMatch } from 'effect';
+import { Match as EffectMatch, Option } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { clubRowFace, clubStanding } from './data';
 import type { Match, MatchState } from './data';
 import type { Message } from './message';
 import { matchesRouter } from './route';
+import { responsiveSource } from './components';
 import { getStyleXAttributes } from './stylexAttributes';
 import type { StyleXStyle } from './stylexAttributes';
 import { shared } from './styles/shared';
-import { compactSurface, styles } from './styles/match-card';
+import { CREST_SIZE, compactSurface, styles } from './styles/match-card';
 
 // THE MATCH CARD — one fixture or result, in the one component every surface
 // that shows a match uses. The home page's weekly carousel is its first
@@ -31,7 +32,13 @@ import { compactSurface, styles } from './styles/match-card';
 // product decision, not a card change. The type says so: MatchState is a
 // closed union and this file matches it exhaustively.
 
-export type MatchCardVariant = 'hero' | 'compact';
+/**
+ * Which cut a match card is drawn in. A hero carries its photograph's drawn width in the `sizes`
+ * syntax, since that is set by the slot the caller puts it in rather than by the card.
+ */
+export type MatchCardVariant =
+  | { readonly kind: 'compact' }
+  | { readonly kind: 'hero'; readonly photoSizes: string };
 
 // One side of the tie. The crest and the short name are looked up by the name
 // the fixture carries, exactly as a standings row does — a side with no entry
@@ -50,7 +57,7 @@ const side = (
       face === undefined
         ? h.span([...getStyleXAttributes(h, styles.crestBlank)], [])
         : h.img([
-            h.Src(face.crest),
+            ...responsiveSource(face.crest, CREST_SIZE, h),
             h.Alt(''),
             h.Loading('lazy'),
             ...getStyleXAttributes(h, styles.crest),
@@ -150,7 +157,7 @@ const heroCrests = (match: Match, h: HtmlBuilder<Message>): Html =>
         ? []
         : [
             h.img([
-              h.Src(face.crest),
+              ...responsiveSource(face.crest, CREST_SIZE, h),
               h.Alt(''),
               h.Loading('lazy'),
               ...getStyleXAttributes(h, styles.heroCrest),
@@ -169,7 +176,7 @@ export const matchCard = (
   variant: MatchCardVariant,
   h: HtmlBuilder<Message>,
 ): Html => {
-  const isHero = variant === 'hero';
+  const isHero = variant.kind === 'hero';
   const [homeGoals, awayGoals] = goalsOf(match.state);
   // A finished COMPACT card runs quieter than one still to be played: its two
   // club names drop to --color-muted-ink (4.7:1 on the card surface, past AA)
@@ -328,17 +335,22 @@ export const matchCard = (
         isHero ? null : compactSurface,
       ),
     ],
-    isHero
+    variant.kind === 'hero'
       ? [
           // The photograph is an <img> rather than a background so it can lazy
           // load and so its crop is one property; the scrim is a sibling over
           // it, not a layer inside it.
-          h.img([
-            h.Src(match.heroImage),
-            h.Alt(''),
-            h.Loading('lazy'),
-            ...getStyleXAttributes(h, styles.heroPhoto),
-          ]),
+          ...Option.match(match.heroImage, {
+            onNone: () => [],
+            onSome: (photo) => [
+              h.img([
+                ...responsiveSource(photo, variant.photoSizes, h),
+                h.Alt(''),
+                h.Loading('lazy'),
+                ...getStyleXAttributes(h, styles.heroPhoto),
+              ]),
+            ],
+          }),
           h.div([...getStyleXAttributes(h, styles.heroScrim), h.AriaHidden(true)], []),
           h.div([...getStyleXAttributes(h, styles.heroBody)], body),
         ]

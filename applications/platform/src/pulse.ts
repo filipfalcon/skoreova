@@ -96,7 +96,7 @@ const leagueMatch = (
       home,
       away,
       featured: desk.featured ?? false,
-      heroImage: desk.heroImage ?? '',
+      heroImage: Option.fromUndefinedOr(desk.heroImage),
       storyLine: desk.storyLine ?? '',
       state: isPostponed(seed)
         ? PostponedMatch.make({})
@@ -150,7 +150,7 @@ const cupRound = (weekend: number): ReadonlyArray<Scheduled> => {
         home: tie.home,
         away: tie.away,
         featured: desk.featured ?? false,
-        heroImage: desk.heroImage ?? '',
+        heroImage: Option.fromUndefinedOr(desk.heroImage),
         storyLine: desk.storyLine ?? '',
         state: isPostponed(seed)
           ? PostponedMatch.make({})
@@ -231,7 +231,7 @@ export interface Pulse {
 // round is the one after it, the last results are the one at it.
 export const pulse = (played: number): Pulse => {
   const upcoming = inOrder([...leagueRound(played + 1, false), ...cupRound(played + 1)]);
-  const hero = heroCandidates(upcoming).find((match) => match.heroImage !== '');
+  const hero = heroCandidates(upcoming).find((match) => Option.isSome(match.heroImage));
   return {
     hero,
     // Compared by identity, not by name: the same two clubs can legitimately

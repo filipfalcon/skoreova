@@ -1,12 +1,12 @@
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
-import { screenHeader } from '../components';
+import { responsiveSource, screenHeader } from '../components';
 import { competitions } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';
 import { competitionRouter } from '../route';
 import { getStyleXAttributes } from '../stylexAttributes';
-import { styles } from '../styles/competitions';
+import { BADGE_SIZE, styles } from '../styles/competitions';
 import { shared } from '../styles/shared';
 
 export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
@@ -33,7 +33,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                 ],
                 [
                   h.img([
-                    h.Src(competition.badge),
+                    ...responsiveSource(competition.badge, BADGE_SIZE, h),
                     h.Alt(`${competition.name} badge`),
                     h.Loading('lazy'),
                     ...getStyleXAttributes(h, styles.badge),

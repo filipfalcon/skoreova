@@ -5,7 +5,16 @@ import { spacing, tokens, type } from '../tokens.stylex';
 // Styles for the club profile's LAST/UPCOMING match cards (club-matches.ts).
 
 const COMPACT = '@container club-data (width < 16em)';
-const MD = '@media (min-width: 768px)';
+const MD_QUERY = '(min-width: 768px)';
+const MD = `@media ${MD_QUERY}`;
+
+// A match strip crest's box, per viewport.
+const CREST_SIZE = { phone: '4.5rem', md: '6rem' } as const;
+
+/**
+ * The width a match strip crest is drawn at, in the `sizes` syntax.
+ */
+export const CREST_SIZES = `${MD_QUERY} ${CREST_SIZE.md}, ${CREST_SIZE.phone}`;
 
 export const styles = stylex.create({
   crestCell: {
@@ -35,12 +44,12 @@ export const styles = stylex.create({
   // fit inside a 360px card's own padding, so nothing reaches its edge.
   crestImage: {
     height: {
-      default: '4.5rem',
-      [MD]: '6rem',
+      default: CREST_SIZE.phone,
+      [MD]: CREST_SIZE.md,
     },
     width: {
-      default: '4.5rem',
-      [MD]: '6rem',
+      default: CREST_SIZE.phone,
+      [MD]: CREST_SIZE.md,
     },
     objectFit: 'contain',
   },

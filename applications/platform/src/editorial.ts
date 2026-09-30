@@ -1,6 +1,7 @@
 import { Calendar } from 'foldkit';
 
-import spartaPrahaHero from './assets/clubs-hero/sparta-praha.webp';
+import spartaPrahaHero from './assets/clubs-hero/sparta-praha.webp?photo';
+import type { ResponsiveImage } from './domain/entities';
 import { CUP_TIES, fixtureSeed } from './schedule';
 
 // THE DESK — the handful of fields on the weekly board that a person writes
@@ -25,7 +26,7 @@ export interface MatchEditorial {
   // — the meeting itself where such a picture exists, otherwise the home
   // club's own artwork. No automatic image lookup lives anywhere in this app,
   // and a match with no photograph gets no photograph.
-  readonly heroImage?: string;
+  readonly heroImage?: ResponsiveImage;
   // One line, in the app's voice. Never generated from the fixture, and never
   // longer than STORY_LINE_LIMIT.
   readonly storyLine?: string;

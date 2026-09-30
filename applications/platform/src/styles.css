@@ -9,8 +9,11 @@
    Component styling lives in src/styles/ via stylex.create. */
 
 :root {
-  /* The fixed header's height, as the shell measures it: the spacer under it, the club band's start, the pinned jump row and the scroll-spy all read this one value, so a header that wraps a label or renders taller on another font engine moves everything under it by the same amount. The served value is the phone design height; the header subscription corrects it as the runtime subscribes. */
+  /* The fixed header's height, as the shell measures it: the spacer under the header reads it, and so does every offset built on it below, so a header that wraps a label or renders taller on another font engine moves everything under it by the same amount. The served value is the phone design height; the header subscription corrects it as the runtime subscribes. */
   --header-height: 55px;
+  /* A profile's identity bar, pinned under the header, and the offset that clears the two together: the pinned jump row sits at it, and every section anchor lands below it. */
+  --profile-bar-height: 3.5rem;
+  --profile-offset: calc(var(--header-height) + var(--profile-bar-height));
   --color-ink: #0d0c0c;
   --color-panel: #151313;
   --color-paper: #f3efe8;
@@ -502,14 +505,16 @@ body {
 
 /* The arrow contract, carried over from the landing page: every drawn
    arrow inside a hovered link or button nudges along its direction — the
-   "go on" gesture. Hover-gated so touch browsers never stick it. */
+   "go on" gesture, and for a back arrow, which sets
+   --drawn-arrow-direction to -1, the "go back" one. Hover-gated so touch
+   browsers never stick it. */
 .drawn-arrow {
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (hover: hover) {
   :is(a, button):hover .drawn-arrow {
-    transform: translateX(0.14em);
+    transform: translateX(calc(var(--drawn-arrow-direction, 1) * 0.14em));
   }
 }
 

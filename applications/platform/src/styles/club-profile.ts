@@ -2,100 +2,133 @@ import * as stylex from '@stylexjs/stylex';
 
 import { spacing, tokens, type } from '../tokens.stylex';
 
-// Styles for the club profile (page/club-profile.ts): the full-bleed dark
-// editorial band — the hero's fixed template of photo slot, crest disc, name
-// box, honors stack and commentary — and the paper data act's cup run,
-// scorer boards, history grid and follow call.
-
 const SM = '@media (min-width: 640px)';
-const MD = '@media (min-width: 768px)';
+const MD_QUERY = '(min-width: 768px)';
+const MD = `@media ${MD_QUERY}`;
 const COMPACT = '@container club-data (width < 16em)';
 const LG = '@media (min-width: 1024px)';
-// A text-relative threshold: enlarged text gets the same larger slots on every club.
+// A text-relative threshold: enlarged text gets the same larger budgets on every club.
 const ENLARGED = '@container club-intro (width < 16em)';
 // The width from which a history card holds its full detail line (see historyDetail).
 const CARD_FITS_DETAIL = '@media (min-width: 375px)';
 
-// One honor stamp's height: its 1.75rem line plus its vertical padding. The
-// honors slot is three of these and the two gaps between them, so a club
-// with one honor leaves two stamps' worth of ink empty and nothing under it
-// moves.
-const STAMP_HEIGHT = { phone: '2.5rem', md: '2.75rem' } as const;
+// The crest's box, which is also the crest slot's height.
+const CREST_SIZE = { phone: '9rem', md: '12rem' } as const;
+
+// The one gap the intro's three blocks are set apart by: crest to achievements, achievements to quote.
+const INTRO_GAP = spacing.lg;
+
+// The photo slot's shape on a phone, and its height from md, where it runs edge to edge at a fixed height instead.
+const HERO_ART_ASPECT = { width: 4, height: 3 } as const;
+const HERO_ART_MD_HEIGHT_REM = 34;
+
+// The photoless wash, in percent: the club colour's strength at the corner, the strength it still holds a third of the way along the diagonal, and how far along the diagonal it is gone. The hold is what keeps a dark kit colour (maroon, navy) reading as colour: faded in a straight line it spends most of the slot in its darkest stretch, which reads black.
+const WASH_ORIGIN_STRENGTH = 70;
+const WASH_HOLD_STRENGTH = 50;
+const WASH_HOLD_AT = 35;
+const WASH_REACH = 75;
+
+// The watermark, in percent: its height against the slot's, the share of its own width cropped off the slot's right edge, and where its vertical center sits in the slot. Then the opacity its emboss is blended at.
+const WATERMARK_SCALE = 125;
+const WATERMARK_CROP = 30;
+const WATERMARK_CENTER = 42;
+const WATERMARK_OPACITY = 0.22;
+
+/**
+ * The width the hero photo is drawn at: the photo slot runs edge to edge at every width.
+ */
+export const HERO_ART_SIZES = '100vw';
+
+/**
+ * The width the photoless hero's watermark is drawn at, taken as its height, which crests roughly
+ * match: WATERMARK_SCALE percent of the slot's height.
+ */
+export const WATERMARK_SIZES = `${MD_QUERY} ${(WATERMARK_SCALE / 100) * HERO_ART_MD_HEIGHT_REM}rem, ${
+  (WATERMARK_SCALE * HERO_ART_ASPECT.height) / HERO_ART_ASPECT.width
+}vw`;
+
+/**
+ * The width the hero crest is drawn at, in the `sizes` syntax.
+ */
+export const CREST_SIZES = `${MD_QUERY} ${CREST_SIZE.md}, ${CREST_SIZE.phone}`;
+
+// One achievement stamp's height: its line plus its vertical padding, which is also the achievements row's height.
+const STAMP_HEIGHT = { phone: '2rem', md: '2.75rem' } as const;
+
+// The statement's size and leading, which set one line of the commentary budget.
+const STATEMENT_SIZE = '1.25rem';
+const STATEMENT_LEADING = 1.45;
+
+// The byline's height: the 56px portrait, or the portrait over the wrapped lockup when text is enlarged.
+const BYLINE_HEIGHT = { default: '3.5rem', enlarged: '7rem' } as const;
 
 export const styles = stylex.create({
-  // The dark act — flows straight out of the header chrome, full-bleed via
-  // the 50%-50vw margin trick. Closes `lg` under the commentary's byline —
-  // the last fixed gap of the template before the paper act.
-  darkBand: {
-    position: 'relative',
+  // The dark act — flows straight out of the header chrome, full-bleed via the 50%-50vw margin trick. Closes `lg` under the intro — the last fixed gap of the template before the paper act.
+  // The identity bar, pinned under the header for the whole profile, so the way back and the club's name are one tap away at any depth. It sits at the page level rather than in the band, since a sticky element only sticks within its parent; full-bleed like the band, straight out of the header chrome, above the page's content and below the header, its pinned jump row and every overlay.
+  identityBar: {
+    position: 'sticky',
+    top: 'var(--header-height)',
+    zIndex: 45,
     marginTop: {
       default: '-2.5rem',
       [MD]: '-3.5rem',
     },
+    marginInline: 'calc(50% - 50vw)',
+    paddingInline: {
+      default: '1.25rem',
+      [MD]: '2.5rem',
+    },
+  },
+  darkBand: {
+    position: 'relative',
     marginInline: 'calc(50% - 50vw)',
     backgroundColor: tokens.ink,
     paddingInline: {
       default: '1.25rem',
       [MD]: '2.5rem',
     },
-    paddingTop: '2rem',
     paddingBottom: '24px',
   },
-  // THE PHOTO SLOT — square on a phone, whatever the photo: 390px tall at
-  // 390 wide, 360 at 360. One height for every club on a given device, so
-  // the crest, the name and the paper act land on the same y for all of
-  // them. The wrapper cancels the band's padding so the photo runs edge to
-  // edge; the parallax drift is the club-hero-art contract.
+  // THE PHOTO SLOT — 4:3 on a phone, whatever the photo: 270px tall at 360 wide. One height for every club on a given device, so the crest and the paper act land on the same y for all of them. The wrapper cancels the band's padding so the photo runs edge to edge; the parallax drift is the club-hero-art contract.
   heroArt: {
     position: 'relative',
     marginInline: {
       default: '-1.25rem',
       [MD]: '-2.5rem',
     },
-    marginTop: '-2rem',
     aspectRatio: {
-      default: '1 / 1',
+      default: `${HERO_ART_ASPECT.width} / ${HERO_ART_ASPECT.height}`,
       [MD]: 'auto',
     },
     height: {
       default: 'auto',
-      [MD]: '34rem',
+      [MD]: `${HERO_ART_MD_HEIGHT_REM}rem`,
     },
     overflow: 'hidden',
-    // Its own stacking context: the wash's blur composites against this
-    // slot alone and can never sample the page under it.
-    isolation: 'isolate',
     willChange: 'transform',
   },
-  // A club without a photo keeps the slot at its full height on the panel
-  // tone, with its own crest blown up, blurred and faint behind the real one.
+  // A club without a photo keeps the slot at its full height, drawn in the club's colour: a radial wash of it from the top-right corner over ink. The colour arrives on the element as `--club-color`. Interim: every club is to get a hero photo, and the wash and its watermark go with the last one.
   heroArtWashed: {
-    backgroundColor: tokens.panel,
+    // Its own stacking context: the watermark's blend composites against this slot's wash alone and never reaches the page under it.
+    isolation: 'isolate',
+    backgroundColor: tokens.ink,
+    backgroundImage: `radial-gradient(circle farthest-corner at 100% 0%, color-mix(in srgb, var(--club-color) ${WASH_ORIGIN_STRENGTH}%, transparent), color-mix(in srgb, var(--club-color) ${WASH_HOLD_STRENGTH}%, transparent) ${WASH_HOLD_AT}%, transparent ${WASH_REACH}%)`,
   },
-  // The crest asset itself, blown up past the slot on every side and blurred
-  // wide, so its colour reaches all four edges of the square rather than
-  // pooling in its middle; the same fade to ink as a photo runs over it.
-  // A plain img with a filter, never a backdrop-filter: a backdrop would
-  // blur whatever the page put behind the slot. Kept to 150% of the slot
-  // and on its own layer, since a much larger blurred layer is where a
-  // phone's compositor starts tiling in pieces of other layers.
-  heroWashImage: {
+  // The crest as a tone-on-tone emboss in the club colour: grayscale, blended over the wash so its lights lift the colour and its darks deepen it, whole enough to read as the club and quiet enough never to rival the real crest. It sits high, above most of the fade, and runs off the right edge.
+  heroWatermark: {
     position: 'absolute',
-    top: '-25%',
-    left: '-25%',
-    height: '150%',
-    width: '150%',
+    top: `${WATERMARK_CENTER}%`,
+    right: 0,
+    height: `${WATERMARK_SCALE}%`,
+    width: 'auto',
     // The reset caps every img at its container; this one has to run past it.
     maxWidth: 'none',
-    objectFit: 'contain',
-    // Saturated before the opacity thins it: at 40% over ink an unsaturated
-    // blur read as brown or olive for the crests that lean red or green.
-    filter: 'blur(120px) saturate(1.6)',
-    opacity: 0.4,
-    transform: 'translateZ(0)',
+    transform: `translate(${WATERMARK_CROP}%, -50%)`,
+    filter: 'grayscale(1) contrast(1.1)',
+    mixBlendMode: 'soft-light',
+    opacity: WATERMARK_OPACITY,
   },
-  // The photo fills the square; where its faces are is the club's own
-  // focal point, written inline as object-position.
+  // The photo fills the slot; where its faces are is the club's own focal point, written inline as object-position.
   heroArtImage: {
     position: 'absolute',
     inset: 0,
@@ -115,18 +148,6 @@ export const styles = stylex.create({
     inset: 0,
     backgroundImage: 'linear-gradient(to bottom, transparent 55%, var(--color-ink) 98%)',
   },
-  // Over the art at every width, 1rem under the header (the band's top IS
-  // the header's bottom edge — the negative top margin only cancels the
-  // shell's padding).
-  backLinkOnArt: {
-    position: 'absolute',
-    top: '1rem',
-    left: {
-      default: '1.25rem',
-      [MD]: '2.5rem',
-    },
-    zIndex: 10,
-  },
   bandColumn: {
     containerType: 'inline-size',
     containerName: 'club-intro',
@@ -137,148 +158,113 @@ export const styles = stylex.create({
     width: '100%',
     maxWidth: '64rem',
   },
-  // The crest slot is centred on the photo's bottom edge — half over the
-  // art, half over the band — so the pull-up is exactly half the slot.
-  hero: {
-    position: 'relative',
-    marginTop: {
-      default: '-5rem',
-      [MD]: '-6.5rem',
+  // THE INTRO — everything under the photo slot, at one height for every club on a given device, so the paper act starts on one y for all of them. The height is the worst case added up: the crest slot, INTRO_GAP, the achievements row, INTRO_GAP again, and the commentary at its line budget with its byline; whatever a club leaves unused stays at the bottom. The commentary budgets arrive on the element from the constants in club-hero.ts (`--commentary-lines*`), and each term resolves per viewport on its own, so enlarged text on a wide screen still counts the wide crest.
+  // The crest slot is centered on the photo's bottom edge — half over the art, half over the band — so the pull-up is exactly half the slot.
+  intro: {
+    '--intro-crest': {
+      default: CREST_SIZE.phone,
+      [MD]: CREST_SIZE.md,
     },
+    '--intro-stamp': {
+      default: STAMP_HEIGHT.phone,
+      [MD]: STAMP_HEIGHT.md,
+    },
+    '--intro-voice': {
+      default: `calc(var(--commentary-lines) * ${STATEMENT_LEADING} * ${STATEMENT_SIZE} + ${spacing.sm} + ${BYLINE_HEIGHT.default})`,
+      [MD]: `calc(var(--commentary-lines-md) * ${STATEMENT_LEADING} * ${STATEMENT_SIZE} + ${spacing.sm} + ${BYLINE_HEIGHT.default})`,
+      [ENLARGED]: `calc(var(--commentary-lines-enlarged) * ${STATEMENT_LEADING} * ${STATEMENT_SIZE} + ${spacing.sm} + ${BYLINE_HEIGHT.enlarged})`,
+    },
+    height: `calc(var(--intro-crest) + ${INTRO_GAP} + var(--intro-stamp) + ${INTRO_GAP} + var(--intro-voice))`,
+    marginTop: {
+      default: `calc(${CREST_SIZE.phone} / -2)`,
+      [MD]: `calc(${CREST_SIZE.md} / -2)`,
+    },
+  },
+  // THE IDENTITY GROUP — the crest, and the achievements row under it.
+  hero: {
     textAlign: 'center',
   },
-  // THE CREST SLOT — 160px tall on a phone, the crest bare inside it at the
-  // slot's full size. No disc and no ground: every crest asset is
-  // transparent (crest-assets.test.ts holds that line), so it sits on the
-  // photo's fade or on the wash directly, and the slot's height is what
-  // keeps the name and everything under it on one y for every club.
+  // THE CREST SLOT — the crest bare inside it at the slot's full size. No disc and no ground: every crest asset is transparent (crest-assets.test.ts holds that line), so it sits on the photo's fade or on the wash directly.
   crestSlot: {
     marginInline: 'auto',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     height: {
-      default: '10rem',
-      [MD]: '13rem',
+      default: CREST_SIZE.phone,
+      [MD]: CREST_SIZE.md,
     },
   },
   crest: {
     height: {
-      default: '10rem',
-      [MD]: '13rem',
+      default: CREST_SIZE.phone,
+      [MD]: CREST_SIZE.md,
     },
     width: {
-      default: '10rem',
-      [MD]: '13rem',
+      default: CREST_SIZE.phone,
+      [MD]: CREST_SIZE.md,
     },
     objectFit: 'contain',
   },
-  // THE NAME BOX — the headline rung, centred, at one size per viewport
-  // width and never fitted to the name. Three lines on a phone at the 1.02
-  // leading, two from md: a shorter name leaves its spare lines and nothing
-  // under it moves. The name sits on the BOTTOM of the box, so its last line
-  // is always `md` above the first stamp whatever the line count, and the
-  // spare lines open up between the crest and the name instead. A name that
-  // would need a fourth line never reaches the box — heroTitle hands the
-  // club's headline form in its place.
-  heroName: {
+  // THE ACHIEVEMENTS ROW — one centered line of stamps, `xs` apart, one stamp tall. It never wraps: a stamp that would not fit is not drawn, by the caps below.
+  achievementsRow: {
     display: 'flex',
-    alignItems: 'flex-end',
+    flexWrap: 'nowrap',
     justifyContent: 'center',
-    height: {
-      default: '3.06em',
-      [MD]: '2.04em',
-      [ENLARGED]: '6.12em',
-    },
-    marginTop: spacing.md,
-    // A shared club-hero scale keeps the longest authored names readable.
-    fontSize: 'clamp(3.75rem, 17vw, 7rem)',
-    lineHeight: 1.02,
-    marginInline: 'auto',
-    maxWidth: '34rem',
-    overflowWrap: 'anywhere',
-    wordBreak: 'normal',
-    color: tokens.paper,
-  },
-  // THE HONORS SLOT — three stamps' height for every club, `md` under the
-  // name: the block step, so the name and its honors read as one statement.
-  // The stack inside starts at the top and a club with fewer honors leaves
-  // the rest of the slot empty.
-  honorSlot: {
-    marginTop: spacing.md,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    height: {
-      default: `calc(3 * ${STAMP_HEIGHT.phone} + 2 * ${spacing.xs})`,
-      [MD]: `calc(3 * ${STAMP_HEIGHT.md} + 2 * ${spacing.xs})`,
-      [ENLARGED]: `calc(3 * 6rem + 2 * ${spacing.xs})`,
-    },
-  },
-  // The stack: a plain list, one stamp per line, centred, `xs` apart — the
-  // step that binds marks to what they belong to.
-  honorStack: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    maxWidth: '100%',
     gap: spacing.xs,
-    margin: 0,
+    height: {
+      default: STAMP_HEIGHT.phone,
+      [MD]: STAMP_HEIGHT.md,
+    },
+    // Measured from the crest's box. A crest whose bottom edge is a dark outline reads up to 3.5px farther away on the ink, which does not show at this scale.
+    marginTop: INTRO_GAP,
+    marginBottom: 0,
     padding: 0,
   },
-  // A stamp: a paper block on the ink, the display face at the subtitle
-  // rung, as wide as its own line. STAMP_HEIGHT is this line and padding
-  // added up; change one and the other.
-  honorStamp: {
+  // A stamp: a paper block on the ink in the display face, as wide as its own line. STAMP_HEIGHT is this line and padding added up; change one and the other.
+  achievementStamp: {
     display: 'block',
+    flexShrink: 0,
     paddingInline: {
-      default: '0.75rem',
+      default: '0.625rem',
       [MD]: '0.875rem',
     },
     paddingBlock: {
-      default: '0.375rem',
+      default: '0.25rem',
       [MD]: '0.5rem',
     },
     fontSize: {
-      default: type.subtitleSize,
+      default: '1rem',
       [MD]: '1.25rem',
     },
-    lineHeight: '1.75rem',
+    lineHeight: {
+      default: '1.5rem',
+      [MD]: '1.75rem',
+    },
     letterSpacing: type.subtitleTracking,
-    maxWidth: '100%',
-    overflowWrap: 'anywhere',
-    textAlign: 'center',
+    whiteSpace: 'nowrap',
     color: tokens.ink,
     backgroundColor: tokens.paper,
   },
-  // THE COMMENTARY — the section step under the honors, twice the block step
-  // that binds the honors to the name, so the quote reads as the next
-  // statement rather than a fourth line of the honors. Its height is fixed:
-  // the slot's lines at the statement's leading (the counts arrive on the
-  // element as `--commentary-lines` for a phone and `--commentary-lines-md`
-  // from md, set by the view from COMMENTARY_LINES and
-  // COMMENTARY_LINES_TABLET — the wider column needs fewer), then the
-  // byline's `sm` and its 56px portrait. The quote and its byline sit
-  // with the attribution at the bottom of the slot, leaving 24px before
-  // the cream section; a club without a statement draws the slot empty at this height,
-  // so the paper act starts on one y either way.
-  commentary: {
-    marginInline: 'auto',
-    marginTop: spacing.section,
-    maxWidth: '42rem',
-    marginBottom: 0,
-    height: {
-      default: `calc(var(--commentary-lines) * 1.45 * 1.25rem + ${spacing.sm} + 3.5rem)`,
-      [MD]: `calc(var(--commentary-lines-md) * 1.45 * 1.25rem + ${spacing.sm} + 3.5rem)`,
-      [ENLARGED]: `calc(var(--commentary-lines-enlarged) * 1.45 * 1.25rem + ${spacing.sm} + 7rem)`,
+  // The stamp caps, from the widest possible row in the display face's own advances with two-digit counts. Enlarged text holds one stamp: the widest single stamp is about half the 16em column.
+  achievementBeyondFirst: {
+    display: {
+      default: 'block',
+      [ENLARGED]: 'none',
     },
   },
-  // The text's own measure, centered inside the figure.
-  commentaryColumn: {
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
+  // A stamp past the club's phone count, which phoneStampCount estimates. The widest possible row of three takes 398px, so every row of three first fits the column at the 640px breakpoint.
+  achievementPastPhoneCount: {
+    display: {
+      default: 'none',
+      [SM]: 'block',
+      [ENLARGED]: 'none',
+    },
+  },
+  // THE VOICE GROUP — the quote with its byline directly under it, on the text's own measure. The quote's pink rule spans its line box, so this margin is the visible gap.
+  commentary: {
+    marginTop: INTRO_GAP,
+    marginBottom: 0,
     marginInline: 'auto',
     width: '100%',
     maxWidth: {
@@ -292,13 +278,7 @@ export const styles = stylex.create({
     width: '2.5rem',
     backgroundColor: tokens.pink,
   },
-  // THE STATEMENT — the body face at 1.25rem, medium weight, on 1.45
-  // leading, paper at 90%, whole: never clamped, never folded, and as tall
-  // as its own text, so the 2px pink rule spans exactly the lines it quotes
-  // and never the slot's empty remainder — it is the quote's one mark, and
-  // the text edge the byline shares. A statement that would need more lines
-  // than the slot holds must be caught by screenshot review; character
-  // estimates in club-hero.test.ts are only an early warning.
+  // THE STATEMENT — the body face, medium weight, paper at 90%, whole: never clamped, never folded, and as tall as its own text, so the 2px pink rule spans exactly the lines it quotes — it is the quote's one mark, and the text edge the byline shares. A statement that would need more lines than the budget holds must be caught by screenshot review; character estimates in club-hero.test.ts are only an early warning.
   statement: {
     marginTop: 0,
     marginBottom: 0,
@@ -307,17 +287,16 @@ export const styles = stylex.create({
     paddingLeft: '1.25rem',
     textAlign: 'left',
     fontFamily: tokens.fontBody,
-    fontSize: '1.25rem',
+    fontSize: STATEMENT_SIZE,
     fontWeight: 500,
-    lineHeight: 1.45,
+    lineHeight: STATEMENT_LEADING,
     textWrap: 'pretty',
     overflowWrap: 'anywhere',
     color: 'color-mix(in srgb, var(--color-paper) 90%, transparent)',
   },
   // The byline, `sm` under the statement: the 56px portrait, then the lockup.
   byline: {
-    minHeight: '3.5rem',
-    flexShrink: 0,
+    minHeight: BYLINE_HEIGHT.default,
     flexWrap: 'wrap',
     marginTop: spacing.sm,
     display: 'flex',
@@ -329,11 +308,12 @@ export const styles = stylex.create({
     maxWidth: '100%',
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px',
+    // The 28px masthead, this gap and the 11px label stack to 45px, centered on the 56px portrait.
+    gap: '6px',
   },
   bylineMasthead: {
     display: 'block',
-    fontSize: '1.5rem',
+    fontSize: '1.75rem',
     lineHeight: 1,
     letterSpacing: '0.04em',
     textTransform: 'uppercase',

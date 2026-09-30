@@ -7,8 +7,23 @@ import { spacing, tokens, type } from '../tokens.stylex';
 // matches panel, and the edition picker.
 
 const SM = '@media (min-width: 640px)';
-const MD = '@media (min-width: 768px)';
+const MD_QUERY = '(min-width: 768px)';
+const MD = `@media ${MD_QUERY}`;
 const LG = '@media (min-width: 1024px)';
+
+// How far phones zoom the hero artwork in, past the full-bleed crop md+ shows.
+const HERO_PHONE_ZOOM = 1.45;
+
+/**
+ * The width the hero artwork is drawn at: edge to edge, and on phones zoomed by HERO_PHONE_ZOOM, so
+ * its pixels spread over that much more of the screen.
+ */
+export const HERO_ART_SIZES = `${MD_QUERY} 100vw, ${HERO_PHONE_ZOOM * 100}vw`;
+
+/**
+ * A crest's box in a standings row, and so the width its image is drawn at.
+ */
+export const STANDINGS_CREST_SIZE = '1.5rem';
 
 export const styles = stylex.create({
   // ——— The hero opening — the club profile's dark act, value for value
@@ -61,7 +76,7 @@ export const styles = stylex.create({
     height: '100%',
     width: '100%',
     transform: {
-      default: 'scale(1.45)',
+      default: `scale(${HERO_PHONE_ZOOM})`,
       [MD]: 'scale(1)',
     },
     objectFit: 'cover',
@@ -561,8 +576,8 @@ export const styles = stylex.create({
     color: 'color-mix(in srgb, var(--color-ink) 30%, transparent)',
   },
   standingsCrest: {
-    height: '1.5rem',
-    width: '1.5rem',
+    height: STANDINGS_CREST_SIZE,
+    width: STANDINGS_CREST_SIZE,
     flexShrink: 0,
     objectFit: 'contain',
   },

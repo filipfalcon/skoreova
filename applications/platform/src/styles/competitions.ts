@@ -8,6 +8,11 @@ import { tokens, type } from '../tokens.stylex';
 const SM = '@media (min-width: 640px)';
 const LG = '@media (min-width: 1024px)';
 
+/**
+ * A competition badge's box in the competitions list, and so the width its image is drawn at.
+ */
+export const BADGE_SIZE = '3rem';
+
 export const styles = stylex.create({
   grid: {
     marginTop: '3rem',
@@ -32,8 +37,8 @@ export const styles = stylex.create({
     transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
   badge: {
-    height: '3rem',
-    width: '3rem',
+    height: BADGE_SIZE,
+    width: BADGE_SIZE,
   },
   name: {
     marginTop: '1.25rem',

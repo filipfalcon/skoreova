@@ -1,11 +1,18 @@
 import { Array, Option } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
-import { clubSection, clubSectionLink, drawnArrowInline, drawnRightArrow } from './components';
+import {
+  clubSection,
+  clubSectionLink,
+  drawnArrowInline,
+  drawnRightArrow,
+  responsiveSource,
+} from './components';
 import { MATCH_STRIP_ID, ScrollMatchStripToNext } from './command';
 import type { ClubSectionEntry } from './components';
 import { clubs } from './data';
 import type { Club } from './data';
+import type { ResponsiveImage } from './domain/entities';
 import type { Message } from './message';
 import { matchesRouter } from './route';
 import {
@@ -20,7 +27,7 @@ import {
 import type { FormResult } from './schedule';
 import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
 import { shared } from './styles/shared';
-import { styles } from './styles/club-matches';
+import { CREST_SIZES, styles } from './styles/club-matches';
 
 interface ClubMatch {
   readonly round: number;
@@ -72,7 +79,7 @@ const describeMatch = (target: Club, match: ClubMatch, isPlayed: boolean): Playe
 // Crest for a team NAME. The B sides don’t carry their own badge, so
 // they fall back to the parent club’s — and anything still unmatched
 // falls back to its name rather than an empty square.
-const crestFor = (team: string): string | undefined =>
+const crestFor = (team: string): ResponsiveImage | undefined =>
   (
     clubs.find((entry) => entry.name === team) ??
     clubs.find((entry) => entry.name === team.replace(/ B$/, ''))
@@ -87,7 +94,7 @@ const clubMatchCrest = (team: string, h: HtmlBuilder<Message>): Html => {
       crest === undefined
         ? h.span([...getStyleXAttributes(h, shared.display, styles.crestFallback)], [team])
         : h.img([
-            h.Src(crest),
+            ...responsiveSource(crest, CREST_SIZES, h),
             h.Alt(team),
             h.Loading('lazy'),
             ...getStyleXAttributes(h, styles.crestImage),

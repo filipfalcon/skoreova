@@ -2,18 +2,19 @@ import { Array, Number, Option } from 'effect';
 import { Button, Input } from '@foldkit/ui';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
-import banikOstravaLogo from '../assets/clubs/BanikOstrava.png';
-import slaviaPrahaLogo from '../assets/clubs/SlaviaPraha.png';
-import spartaPrahaLogo from '../assets/clubs/SpartaPraha.png';
-import viktoriaPlzenLogo from '../assets/clubs/ViktoriaPlzen.png';
-import domesticCupBadge from '../assets/competitions/domestic-cup.png';
-import firstLeagueBadge from '../assets/competitions/first-league.png';
-import uwclBadge from '../assets/competitions/uwcl.png';
+import banikOstravaLogo from '../assets/clubs/BanikOstrava.png?emblem';
+import slaviaPrahaLogo from '../assets/clubs/SlaviaPraha.png?emblem';
+import spartaPrahaLogo from '../assets/clubs/SpartaPraha.png?emblem';
+import viktoriaPlzenLogo from '../assets/clubs/ViktoriaPlzen.png?emblem';
+import domesticCupBadge from '../assets/competitions/domestic-cup.png?emblem';
+import firstLeagueBadge from '../assets/competitions/first-league.png?emblem';
+import uwclBadge from '../assets/competitions/uwcl.png?emblem';
 import { ObserveTrendingScroll, TRENDING_TRACK_ID } from '../command';
-import { chipHeading, tapeArrow, tickerSpark } from '../components';
+import { chipHeading, responsiveSource, tapeArrow, tickerSpark } from '../components';
 import { clubs, competitions, officials, savedCharts, trending } from '../data';
 import { TRENDING_ADVANCE_MS } from '../subscription';
 import type { Club } from '../data';
+import type { ResponsiveImage } from '../domain/entities';
 import { matchCard, returnsCard } from '../match-card';
 import { Message } from '../message';
 import { isLabelBlock } from '../model';
@@ -41,7 +42,12 @@ import {
 import type { StatEntry } from '../stat-tiles';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
 import { shared } from '../styles/shared';
-import { styles } from '../styles/her-game';
+import {
+  CREST_RAIL_SIZE,
+  PULSE_HERO_SIZES,
+  SECTION_TILE_ART_SIZE,
+  styles,
+} from '../styles/her-game';
 import { tickerQuotes } from '../ticker';
 import {
   FEED_ATTENDANCE,
@@ -305,7 +311,7 @@ const crestChip = (entry: Club, delaySeconds: number, h: HtmlBuilder<Message>): 
         [...getStyleXAttributes(h, styles.crestCell)],
         [
           h.img([
-            h.Src(entry.logo),
+            ...responsiveSource(entry.logo, CREST_RAIL_SIZE, h),
             h.Alt(''),
             h.Loading('lazy'),
             ...getStyleXAttributes(h, styles.crestLogo),
@@ -424,12 +430,14 @@ const invitationSlots = (
   // The hero leads, when there is one. There is no hero on a week with no
   // fixtures, and none on a week where nothing the desk could lead with has
   // a photograph — pulse.ts decides that, not the view.
-  ...(hero === undefined ? [] : [{ card: matchCard(hero, 'hero', h), isHero: true }]),
+  ...(hero === undefined
+    ? []
+    : [{ card: matchCard(hero, { kind: 'hero', photoSizes: PULSE_HERO_SIZES }, h), isHero: true }]),
   // The pause card stands in only when the WHOLE invitation half is empty:
   // no hero and nothing upcoming.
   ...(hero === undefined && upcoming.length === 0
     ? [slot(returnsCard(resumesLabel(), h))]
-    : upcoming.map((match) => slot(matchCard(match, 'compact', h)))),
+    : upcoming.map((match) => slot(matchCard(match, { kind: 'compact' }, h)))),
 ];
 
 // A real list, so assistive tech can count the week and step through it rather
@@ -468,7 +476,7 @@ const pulseSection = (h: HtmlBuilder<Message>): Html => {
       matchTrack(
         [
           ...invitationSlots(week, h),
-          ...week.finished.map((match) => slot(matchCard(match, 'compact', h))),
+          ...week.finished.map((match) => slot(matchCard(match, { kind: 'compact' }, h))),
         ],
         h,
       ),
@@ -686,7 +694,6 @@ const labelControl = (block: FeedBlock, name: string, h: HtmlBuilder<Message>): 
 const feedBlockFrame = (
   model: Model,
   block: FeedBlock,
-  kind: WidgetKind,
   name: string,
   body: ReadonlyArray<Html>,
   h: HtmlBuilder<Message>,
@@ -744,14 +751,7 @@ const feedBody = (model: Model, block: FeedBlock, h: HtmlBuilder<Message>): Html
   if (kind === undefined) {
     return undefined;
   }
-  return feedBlockFrame(
-    model,
-    block,
-    kind,
-    feedBlockName(block, kind),
-    widgetBody(model, block, h),
-    h,
-  );
+  return feedBlockFrame(model, block, feedBlockName(block, kind), widgetBody(model, block, h), h);
 };
 
 const feedSection = (model: Model, h: HtmlBuilder<Message>): Html => {
@@ -801,7 +801,7 @@ interface SectionTile {
   readonly label: string;
   readonly count: string;
   readonly caption: string;
-  readonly art: ReadonlyArray<string>;
+  readonly art: ReadonlyArray<ResponsiveImage>;
 }
 
 const sectionTiles: ReadonlyArray<SectionTile> = [
@@ -868,9 +868,9 @@ const sectionTileView = (tile: SectionTile, h: HtmlBuilder<Message>): Html =>
           ),
           h.div(
             [...getStyleXAttributes(h, styles.sectionTileArt)],
-            tile.art.map((src) =>
+            tile.art.map((image) =>
               h.img([
-                h.Src(src),
+                ...responsiveSource(image, SECTION_TILE_ART_SIZE, h),
                 h.Alt(''),
                 h.Loading('lazy'),
                 ...getStyleXAttributes(h, styles.sectionTileCrest),

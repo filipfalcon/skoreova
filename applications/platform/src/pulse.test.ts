@@ -1,3 +1,4 @@
+import { Option } from 'effect';
 import { expect, test } from 'vite-plus/test';
 
 import { clubStanding, clubs, leagueCompetitions } from './data';
@@ -190,7 +191,7 @@ test('exactly one card leads the week, and it is the desk’s pick', () => {
   expect(hero?.featured).toBe(true);
   // The rule that outranks every other rule: a hero without a photograph is
   // not a hero, because the layout IS the photograph.
-  expect(hero?.heroImage).not.toBe('');
+  expect(hero !== undefined && Option.isSome(hero.heroImage)).toBe(true);
 });
 
 test('a featured match with no photograph does not take the hero slot', () => {
@@ -199,7 +200,7 @@ test('a featured match with no photograph does not take the hero slot', () => {
   // rather than rendering a hero over nothing.
   const { hero, upcoming } = pulse(MATCHDAYS_PLAYED);
   const withoutPhoto = [...(hero === undefined ? [] : [hero]), ...upcoming].filter(
-    (match) => match.featured && match.heroImage === '',
+    (match) => match.featured && Option.isNone(match.heroImage),
   );
   withoutPhoto.forEach((match) => expect(match).not.toBe(hero));
 });
@@ -209,7 +210,7 @@ test('with no photograph anywhere the carousel is compact end to end', () => {
   // that week carries artwork — the state the rule describes, reached without
   // editing the desk.
   const barren = pulse(13);
-  expect(barren.upcoming.every((match) => match.heroImage === '')).toBe(true);
+  expect(barren.upcoming.every((match) => Option.isNone(match.heroImage))).toBe(true);
   expect(barren.hero).toBeUndefined();
 });
 
@@ -244,7 +245,7 @@ test('a match with no desk entry carries three empty editorial fields', () => {
   // three ever came back non-empty for a match nobody wrote about, something
   // had started inventing copy.
   plain.forEach((match) => {
-    expect(match.heroImage).toBe('');
+    expect(match.heroImage).toEqual(Option.none());
     expect(match.storyLine).toBe('');
   });
 });

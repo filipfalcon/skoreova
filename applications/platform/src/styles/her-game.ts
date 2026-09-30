@@ -8,8 +8,32 @@ import { spacing, tokens, type } from '../tokens.stylex';
 
 const SM = '@media (min-width: 640px)';
 const MD = '@media (min-width: 768px)';
-const LG = '@media (min-width: 1024px)';
+const LG_QUERY = '(min-width: 1024px)';
+const LG = `@media ${LG_QUERY}`;
 const XL = '@media (min-width: 1280px)';
+
+// A crest rail cell's width below xl, the widest it gets, and the inset its crest sits in.
+const CREST_CELL_WIDTH = '72px';
+const CREST_CELL_PADDING = '0.875rem';
+
+/**
+ * The widest a crest rail crest is drawn at: its cell less the inset on both sides.
+ */
+export const CREST_RAIL_SIZE = `calc(${CREST_CELL_WIDTH} - 2 * ${CREST_CELL_PADDING})`;
+
+/**
+ * An emblem's box in a browse tile's fan, and so the width its image is drawn at.
+ */
+export const SECTION_TILE_ART_SIZE = '2.5rem';
+
+// The hero slot's share of the pulse track from lg; below it the slot is nearly the whole track.
+const PULSE_HERO_SHARE = 66.666;
+
+/**
+ * The widest the pulse hero's photograph is drawn at: its share of the track, measured against the
+ * viewport, which the track's gutters only make narrower.
+ */
+export const PULSE_HERO_SIZES = `${LG_QUERY} ${PULSE_HERO_SHARE}vw, 100vw`;
 
 export const styles = stylex.create({
   section: {
@@ -282,7 +306,7 @@ export const styles = stylex.create({
     flexBasis: {
       default: `calc(100% - ${spacing.sm} - ${spacing.lg})`,
       [SM]: `calc(100% - ${spacing.sm} - ${spacing.lg})`,
-      [LG]: `calc(66.666% - ${spacing.sm} - ${spacing.xs})`,
+      [LG]: `calc(${PULSE_HERO_SHARE}% - ${spacing.sm} - ${spacing.xs})`,
     },
   },
   newList: {
@@ -468,7 +492,7 @@ export const styles = stylex.create({
       [XL]: '82px',
     },
     width: {
-      default: '72px',
+      default: CREST_CELL_WIDTH,
       [XL]: '71px',
     },
     alignItems: 'center',
@@ -477,7 +501,7 @@ export const styles = stylex.create({
       default: '#fff',
       ':hover': tokens.pink,
     },
-    padding: '0.875rem',
+    padding: CREST_CELL_PADDING,
     clipPath: 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)',
     transitionProperty: 'color, background-color, border-color',
     transitionDuration: '0.15s',
@@ -550,8 +574,8 @@ export const styles = stylex.create({
       default: '-0.75rem',
       ':first-child': 0,
     },
-    height: '2.5rem',
-    width: '2.5rem',
+    height: SECTION_TILE_ART_SIZE,
+    width: SECTION_TILE_ART_SIZE,
     borderRadius: '9999px',
     borderWidth: 1,
     borderColor: 'color-mix(in srgb, var(--color-ink) 15%, transparent)',
