@@ -27,13 +27,7 @@ const INLINE_ENTRIES: ReadonlyArray<{ entry: string; after?: string }> = [
   { entry: 'src/analytics/start.ts', after: 'id="cookie-consent"' },
 ];
 
-// Alchemy's Cloudflare plugin replaces the `ssr` environment with a workerd
-// one, which is not runnable, and `foldkitSsr`'s dev middleware loads the
-// server entry through `ssrLoadModule` — which requires a runnable one. Under
-// `alchemy dev` the middleware is redundant as well as broken: requests reach
-// workerd running `src/worker.ts`, which renders through the same entry
-// anyway. So the dev integration belongs to a PLAIN vite dev server, and the
-// Worker owns rendering everywhere else.
+// Alchemy sets this marker around the vite runs it drives.
 const isUnderAlchemy = process.env['ALCHEMY_CLOUDFLARE_VITE_INJECTED'] === '1';
 
 // The public deployment ID must match in the client bundle and server HTML.
@@ -285,8 +279,10 @@ export default defineConfig({
       devToolsMcpPort,
       // A plain `vp dev` renders through the same entry the Worker calls, so
       // a hydration mismatch shows up while editing rather than after a
-      // deploy. See `isUnderAlchemy` for why it is not always on.
-      ...(isUnderAlchemy ? {} : { ssr: { serverEntry: '/src/entry.server.ts' } }),
+      // deploy. Under `alchemy dev` the `ssr` environment is workerd's, which
+      // the plugin detects: it leaves page requests to the Worker, which
+      // renders through this same entry.
+      ssr: { serverEntry: '/src/entry.server.ts' },
       buildId: BUILD_ID,
     }),
     inlineConsent(import.meta.dirname),
