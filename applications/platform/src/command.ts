@@ -1,5 +1,5 @@
 import { Effect, Option, Schema, Stream } from 'effect';
-import { Command, Mount } from 'foldkit';
+import { Command, Dom, Mount } from 'foldkit';
 import { load, pushUrl } from 'foldkit/navigation';
 
 import { Message } from './message';
@@ -7,11 +7,42 @@ import { Message } from './message';
 export const Navigate = Command.define('Navigate', {
   args: { url: Schema.String },
   messages: [Message.CompletedNavigate],
-  execute: ({ url }) =>
-    pushUrl(url).pipe(
-      Effect.andThen(Effect.sync(() => window.scrollTo(0, 0))),
-      Effect.as(Message.CompletedNavigate()),
-    ),
+  execute: ({ url }) => pushUrl(url).pipe(Effect.as(Message.CompletedNavigate())),
+});
+
+/**
+ * Puts a newly opened page at its top, at once rather than smoothly: the page is new, so there is
+ * nowhere to glide from.
+ */
+export const ScrollToTop = Command.define('ScrollToTop', {
+  messages: [Message.CompletedScrollToTop],
+  execute: Effect.sync(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    return Message.CompletedScrollToTop();
+  }),
+});
+
+/**
+ * Lands on the element a URL fragment names, once the page it lives on has painted, and moves focus
+ * there so keyboard navigation continues from it.
+ *
+ * The fragment arrives percent-encoded and an element id is matched against its decoded form, so it
+ * is decoded first; one that does not decode is looked up as written. A fragment that names no
+ * element is a completed no-op. Whether the scroll is smooth is left to the document's
+ * `scroll-behavior`.
+ */
+export const ScrollToAnchor = Command.define('ScrollToAnchor', {
+  args: { hash: Schema.String },
+  messages: [Message.CompletedScrollToAnchor],
+  execute: ({ hash }) =>
+    Effect.gen(function* () {
+      const id = yield* Effect.try(() => decodeURIComponent(hash)).pipe(
+        Effect.orElseSucceed(() => hash),
+      );
+      const target = `#${CSS.escape(id)}`;
+      yield* Dom.scrollIntoViewAfterPaint(target, { block: 'start' });
+      yield* Dom.focus(target, { preventScroll: true, makeFocusable: true });
+    }).pipe(Effect.ignore, Effect.as(Message.CompletedScrollToAnchor())),
 });
 
 export const Load = Command.define('Load', {

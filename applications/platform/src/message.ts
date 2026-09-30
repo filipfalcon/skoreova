@@ -11,6 +11,8 @@ export const Message = defineMessageUnion({
   ChangedUrl: { url: Url },
   CompletedNavigate: {},
   CompletedLoad: {},
+  CompletedScrollToTop: {},
+  CompletedScrollToAnchor: {},
   SelectedCompetitionEdition: { label: Schema.String },
   // The pager carries the competition it belongs to: two panels can be on
   // screen at once (/matches), so a round means nothing without its league.

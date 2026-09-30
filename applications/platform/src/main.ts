@@ -19,7 +19,16 @@ import {
   limitFor,
 } from './model';
 import { Message } from './message';
-import { Load, Navigate, ReadPins, RevealJumpChip, ScrollTrending, WritePins } from './command';
+import {
+  Load,
+  Navigate,
+  ReadPins,
+  RevealJumpChip,
+  ScrollToAnchor,
+  ScrollToTop,
+  ScrollTrending,
+  WritePins,
+} from './command';
 import { clubBySlug, competitionBySlug, featuredClubs, trending } from './data';
 import { competitionRoundCount } from './schedule';
 import { RadioGroup } from '@foldkit/ui';
@@ -112,13 +121,21 @@ const applyRoute = (model: Model, route: AppRoute): Model =>
     followNotice: () => Option.none(),
   });
 
+// Where a URL lands the reader: on the element its fragment names, or at the top of a page they were not already on. A fragment always wins, so a jump within a page never throws the reader back to its top.
+const landingCommands = (url: Url, isNewPage: boolean) =>
+  Option.match(url.hash, {
+    onNone: () => (isNewPage ? [ScrollToTop()] : []),
+    onSome: (hash) => [ScrollToAnchor({ hash })],
+  });
+
 export const init: Runtime.RoutingApplicationInit<Model, Message> = (url) => ({
   model: applyRoute(initialModel, urlToAppRoute(url)),
   // Hydrate pins from storage on boot. Any pin toggle before this resolves
   // is fine — ReadPins only seeds the initial list, it never clobbers a
   // later one (localStorage is synchronous, so this lands on the first tick
   // anyway).
-  commands: [ReadPins()],
+  // A fresh document already opens at its top, so only a fragment moves it. The server render runs no Commands, and the landing waits for the hydrated page's first paint, which the served markup has already filled.
+  commands: [ReadPins(), ...landingCommands(url, false)],
 });
 
 // The round picker’s bound, resolved from the competition the pick CAME
@@ -144,9 +161,17 @@ export const update = (model: Model, message: Message) =>
         Internal: ({ url }) => ({ model, commands: [Navigate({ url: urlToString(url) })] }),
         External: ({ href }) => ({ model, commands: [Load({ href })] }),
       }),
-    ChangedUrl: ({ url }) => ({ model: applyRoute(model, urlToAppRoute(url)) }),
+    ChangedUrl: ({ url }) => {
+      const route = urlToAppRoute(url);
+      return {
+        model: applyRoute(model, route),
+        commands: landingCommands(url, routePath(route) !== routePath(model.route)),
+      };
+    },
     CompletedNavigate: () => ({ model }),
     CompletedLoad: () => ({ model }),
+    CompletedScrollToTop: () => ({ model }),
+    CompletedScrollToAnchor: () => ({ model }),
     // The chip sends '' for the current edition and 0 for the current
     // matchday; the Model holds None for "current" so the sentinel never
     // lives in the state.
@@ -363,7 +388,16 @@ export const update = (model: Model, message: Message) =>
   });
 
 // COMMAND — see command.ts.
-export { Load, Navigate, ReadPins, RevealJumpChip, ScrollTrending, WritePins };
+export {
+  Load,
+  Navigate,
+  ReadPins,
+  RevealJumpChip,
+  ScrollToAnchor,
+  ScrollToTop,
+  ScrollTrending,
+  WritePins,
+};
 
 // The view composition lives in view.ts; each screen in its own module under
 // page/, reached through that directory’s barrel.

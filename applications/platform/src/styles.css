@@ -179,6 +179,15 @@ html {
   overflow-x: clip;
 }
 
+/* A fragment landing glides to its section; a reader who asks for reduced
+   motion gets the jump. Page changes scroll with an explicit instant
+   behavior, which this does not reach. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 body {
   font-family: var(--font-body);
   overflow-x: clip;

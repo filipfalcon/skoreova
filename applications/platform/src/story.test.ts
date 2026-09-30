@@ -20,6 +20,8 @@ import {
   Message,
   Navigate,
   RevealJumpChip,
+  ScrollToAnchor,
+  ScrollToTop,
   ScrollTrending,
   WritePins,
   init,
@@ -112,11 +114,13 @@ test('a route change clears the per-screen pickers and keeps the durable lists',
       expect(model.followed).toEqual(['sparta-praha']);
       expect(model.pinned).toEqual(['trending:sparta-praha']);
     }),
+    Story.Command.resolve(ScrollToTop, Message.CompletedScrollToTop()),
     // …and opening a club profile is the one route that resets the scope.
     Story.message(Message.ChangedUrl({ url: url('/clubs/slavia-praha') })),
     Story.model((model) => {
       expect(model.scorerScope).toBe('All');
     }),
+    Story.Command.resolve(ScrollToTop, Message.CompletedScrollToTop()),
     Story.Command.expectNone(),
   );
 });
@@ -142,6 +146,7 @@ test('following a club adds the slug, following again removes it, and each says 
     Story.model((model) => {
       expect(model.followNotice).toEqual(Option.none());
     }),
+    Story.Command.resolve(ScrollToTop, Message.CompletedScrollToTop()),
     Story.Command.expectNone(),
   );
 });
@@ -201,6 +206,8 @@ test('an internal link only pushes the url — ChangedUrl applies the route', ()
     Story.model((model) => {
       expect(model.route._tag).toBe('HerGame');
     }),
+    Story.Command.expectExact(ScrollToTop),
+    Story.Command.resolve(ScrollToTop, Message.CompletedScrollToTop()),
   );
 });
 
@@ -215,6 +222,7 @@ test('a browser back/forward to a club profile applies the slug route', () => {
         expect(model.route.slug).toBe('sparta-praha');
       }
     }),
+    Story.Command.resolve(ScrollToTop, Message.CompletedScrollToTop()),
     Story.Command.expectNone(),
   );
 });
@@ -489,6 +497,7 @@ test('a club section opens, folds back, and survives a jump within the profile',
     Story.model((model) => {
       expect(model.expandedClubSections).toEqual(['standings']);
     }),
+    Story.Command.resolve(ScrollToAnchor, Message.CompletedScrollToAnchor()),
     Story.message(Message.ToggledClubSection({ anchor: 'standings' })),
     Story.model((model) => {
       expect(model.expandedClubSections).toEqual([]);
@@ -512,6 +521,7 @@ test('the jump row marks the section in view and follows it', () => {
     Story.model((model) => {
       expect(model.activeClubSection).toEqual(Option.some('standings'));
     }),
+    Story.Command.resolve(ScrollToAnchor, Message.CompletedScrollToAnchor()),
     Story.message(Message.ScrolledClubPage({ anchor: '' })),
     Story.model((model) => {
       expect(model.activeClubSection).toEqual(Option.none());
@@ -525,6 +535,7 @@ test('the jump row marks the section in view and follows it', () => {
     Story.model((model) => {
       expect(model.activeClubSection).toEqual(Option.none());
     }),
+    Story.Command.resolve(ScrollToTop, Message.CompletedScrollToTop()),
   );
 });
 
@@ -537,10 +548,78 @@ test('the matches route carries an optional club', () => {
     Story.model((model) => {
       expect(model.route).toEqual(AppRoute.Matches({ club: 'sparta-praha' }));
     }),
+    Story.Command.resolve(ScrollToTop, Message.CompletedScrollToTop()),
     Story.message(Message.ChangedUrl({ url: url('/matches') })),
     Story.model((model) => {
       expect(model.route._tag).toBe('Matches');
       expect(model.route._tag === 'Matches' ? model.route.club : 'set').toBeUndefined();
     }),
+    Story.Command.resolve(ScrollToTop, Message.CompletedScrollToTop()),
+  );
+});
+
+// THE LANDING. Where a URL puts the reader is decided from the URL itself: its fragment, or failing that whether the page changed.
+test('a fragment on the page already open lands on its section and never scrolls to the top', () => {
+  Story.story(
+    update,
+    Story.given(clubProfileModel),
+    Story.message(Message.ChangedUrl({ url: url('/clubs/sparta-praha#history') })),
+    Story.Command.expectExact(ScrollToAnchor),
+    Story.Command.resolve(ScrollToAnchor, Message.CompletedScrollToAnchor()),
+    Story.Command.expectNone(),
+  );
+});
+
+test('a new page without a fragment opens at its top', () => {
+  Story.story(
+    update,
+    Story.given(clubProfileModel),
+    Story.message(Message.ChangedUrl({ url: url('/clubs') })),
+    Story.Command.expectExact(ScrollToTop),
+    Story.Command.resolve(ScrollToTop, Message.CompletedScrollToTop()),
+    Story.Command.expectNone(),
+  );
+});
+
+test('a new page with a fragment lands on its section instead of its top', () => {
+  Story.story(
+    update,
+    Story.given(clubsModel),
+    Story.message(Message.ChangedUrl({ url: url('/clubs/sparta-praha#history') })),
+    Story.Command.expectExact(ScrollToAnchor),
+    Story.Command.resolve(ScrollToAnchor, Message.CompletedScrollToAnchor()),
+    Story.Command.expectNone(),
+  );
+});
+
+test('the same url again moves nothing', () => {
+  Story.story(
+    update,
+    Story.given(clubProfileModel),
+    Story.message(Message.ChangedUrl({ url: url('/clubs/sparta-praha') })),
+    Story.Command.expectNone(),
+  );
+});
+
+test('a cold load with a fragment lands on its section after the pins are read', () => {
+  const boot = init(url('/clubs/sparta-praha#history'));
+  expect(boot.commands?.map((command) => command.name)).toEqual(['ReadPins', 'ScrollToAnchor']);
+  expect(init(url('/clubs/sparta-praha')).commands?.map((command) => command.name)).toEqual([
+    'ReadPins',
+  ]);
+});
+
+test('an internal fragment link only pushes the url', () => {
+  Story.story(
+    update,
+    Story.given(clubProfileModel),
+    Story.message(
+      Message.ClickedLink({
+        request: UrlRequest.Internal({ url: url('/clubs/sparta-praha#history') }),
+      }),
+    ),
+    Story.Command.expectExact(Navigate),
+    Story.Command.resolve(Navigate, Message.CompletedNavigate()),
+    Story.Command.expectNone(),
   );
 });
