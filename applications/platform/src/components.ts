@@ -107,15 +107,19 @@ export const pinToggle = (
         h.button(
           [
             ...button,
+            // A toggle keeps one name and lets aria-pressed carry the state; a name that flipped to
+            // "Unpin" as well would be read as "Unpin …, pressed", two signals that disagree.
             h.AriaPressed(pinned ? 'true' : 'false'),
-            h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
+            h.AriaLabel(`Pin ${label} to Her Game`),
             ...getStyleXAttributes(
               h,
               styles.pinToggle,
               pinned ? styles.pinTogglePinned : styles.pinToggleUnpinned,
             ),
           ],
-          [pinGlyph(h, styles.pinGlyphChip), pinned ? 'Pinned' : 'Pin'],
+          // The visible word stays "Pin" for the same reason, and because it must sit inside the
+          // accessible name; the filled chip is what shows the pin is set.
+          [pinGlyph(h, styles.pinGlyphChip), 'Pin'],
         ),
     },
     h,
@@ -519,19 +523,20 @@ export const clubSectionListId = (anchor: string): string => `${anchor}-list`;
 /**
  * The heading-row control that opens a club section past its first bite and folds it back. It sits
  * beside the chip rather than under the rows, so folding never leaves the reader stranded below the
- * section they just closed. `openLabel` says what opening shows ("Show all 12 clubs"); folding is
- * always "Show less". It names the list it grows through `aria-controls`, which the list carries as
- * `clubSectionListId(anchor)`.
+ * section they just closed. `label` names what the control holds ("All 12 clubs") and stays the
+ * same in both states: aria-expanded carries whether it is open, and a label that flipped to "Show
+ * less" would say it twice. It names the list it grows through `aria-controls`, which the list
+ * carries as `clubSectionListId(anchor)`.
  *
  * @param anchor The section's anchor, which is also its key in `expandedClubSections`.
  * @param isExpanded Whether the section is currently open.
- * @param openLabel The label while folded.
+ * @param label The label, the same folded and open.
  * @param h The builder the control is drawn with.
  */
 export const clubSectionToggle = (
   anchor: string,
   isExpanded: boolean,
-  openLabel: string,
+  label: string,
   h: HtmlBuilder<Message>,
 ): Html =>
   Button.view(
@@ -545,7 +550,7 @@ export const clubSectionToggle = (
             h.AriaControls(clubSectionListId(anchor)),
             ...getStyleXAttributes(h, styles.clubSectionControl),
           ],
-          [isExpanded ? 'Show less' : openLabel],
+          [label],
         ),
     },
     h,

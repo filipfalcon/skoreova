@@ -59,18 +59,18 @@ test('the overlay is hidden before the menu is opened', () => {
 });
 
 test('opening reveals the overlay, closing hides it again', async () => {
-  await page.getByRole('button', { name: 'Open menu' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true, expanded: false }).click();
   await expect.poll(overlayIsOpen).toBe(true);
   await expect.poll(overlayVisibility).toBe('visible');
 
-  await page.getByRole('button', { name: 'Close menu' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true, expanded: true }).click();
   await expect.poll(overlayIsOpen).toBe(false);
   // The overlay must actually stop being painted, not merely lose `is-open`.
   await expect.poll(overlayVisibility, { timeout: 2000 }).toBe('hidden');
 });
 
 test('choosing a menu item also closes and hides the overlay', async () => {
-  await page.getByRole('button', { name: 'Open menu' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true, expanded: false }).click();
   await expect.poll(overlayVisibility).toBe('visible');
 
   await page.getByRole('link', { name: 'Battling through', exact: true }).click();
@@ -87,17 +87,17 @@ test('the page behind the open overlay is inert', async () => {
   expect(main?.inert).toBe(false);
   expect(footer?.inert).toBe(false);
 
-  await page.getByRole('button', { name: 'Open menu' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true, expanded: false }).click();
   await expect.poll(() => document.querySelector<HTMLElement>('main')?.inert).toBe(true);
   await expect.poll(() => document.querySelector<HTMLElement>('footer')?.inert).toBe(true);
 
-  await page.getByRole('button', { name: 'Close menu' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true, expanded: true }).click();
   await expect.poll(() => document.querySelector<HTMLElement>('main')?.inert).toBe(false);
   await expect.poll(() => document.querySelector<HTMLElement>('footer')?.inert).toBe(false);
 });
 
 test('Escape closes the overlay and returns focus to the toggle', async () => {
-  await page.getByRole('button', { name: 'Open menu' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true, expanded: false }).click();
   await expect.poll(overlayVisibility).toBe('visible');
 
   document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -121,13 +121,13 @@ test('the open overlay marks the section the viewport is in', async () => {
   // An earlier test navigated to /#battling-through — park back at the hero.
   window.scrollTo({ top: 0, behavior: 'instant' });
 
-  await page.getByRole('button', { name: 'Open menu' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true, expanded: false }).click();
   await expect.poll(overlayVisibility).toBe('visible');
   // At the hero there is no section to mark.
   await new Promise((resolve) => setTimeout(resolve, 100));
   expect(overlay().querySelector('a[aria-current="location"]')).toBeNull();
 
-  await page.getByRole('button', { name: 'Close menu' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true, expanded: true }).click();
   await expect.poll(overlayVisibility, { timeout: 2000 }).toBe('hidden');
   // Wait out the scroll-lock release before scrolling — while the page is
   // locked (Dom.lockScroll sets overflow: hidden) the jump below might not
@@ -141,12 +141,12 @@ test('the open overlay marks the section the viewport is in', async () => {
     behavior: 'instant',
   });
 
-  await page.getByRole('button', { name: 'Open menu' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true, expanded: false }).click();
   await expect.poll(overlayVisibility).toBe('visible');
   await expect
     .poll(() => overlay().querySelector('a[aria-current="location"]')?.textContent)
     .toBe('Across the lands.');
 
-  await page.getByRole('button', { name: 'Close menu' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true, expanded: true }).click();
   await expect.poll(overlayVisibility, { timeout: 2000 }).toBe('hidden');
 });

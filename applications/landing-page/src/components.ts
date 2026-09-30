@@ -289,7 +289,8 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
                         // The FocusMenuToggle Command returns focus here after
                         // Escape closes the overlay.
                         h.Id('menu-toggle'),
-                        h.AriaLabel(model.isMenuOpen ? 'Close menu' : 'Open menu'),
+                        // One name in both states; aria-expanded carries which.
+                        h.AriaLabel('Menu'),
                         h.AriaExpanded(model.isMenuOpen),
                         h.AriaControls('menu-overlay'),
                         // The text size exists for the glyph alone (the button has

@@ -217,8 +217,9 @@ export const pinOverlay = (
         h.button(
           [
             ...button,
+            // One name for both states; aria-pressed carries which one it is.
             h.AriaPressed(pinned ? 'true' : 'false'),
-            h.AriaLabel(pinned ? `Unpin ${label} from Her Game` : `Pin ${label} to Her Game`),
+            h.AriaLabel(`Pin ${label} to Her Game`),
             ...getStyleXAttributes(
               h,
               styles.pinOverlay,
@@ -438,12 +439,9 @@ export const bestRecord = (
             h.button(
               [
                 ...button,
+                // One name for both states; aria-pressed carries which one it is.
                 h.AriaPressed(pinned ? 'true' : 'false'),
-                h.AriaLabel(
-                  pinned
-                    ? `Unpin ${record.label} from Her Game`
-                    : `Pin ${record.label} to Her Game`,
-                ),
+                h.AriaLabel(`Pin ${record.label} to Her Game`),
                 // The tick, now a hit target: pink bar at rest, growing a pin
                 // glyph beside it when pinned so the state reads without color.
                 ...getStyleXAttributes(

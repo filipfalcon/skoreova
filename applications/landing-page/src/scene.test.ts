@@ -28,7 +28,7 @@ describe('view', () => {
       Scene.given(landingModel),
       ...acknowledgeMounts,
       Scene.expect(Scene.text('Discover')).toExist(),
-      Scene.expect(Scene.role('button', { name: 'Open menu' })).toExist(),
+      Scene.expect(Scene.role('button', { name: 'Menu' })).toHaveAttr('aria-expanded', 'false'),
     );
   });
 
@@ -42,12 +42,12 @@ describe('view', () => {
     );
   });
 
-  test('opening the menu swaps the control and reveals the section links', () => {
+  test('opening the menu expands the control and reveals the section links', () => {
     Scene.scene(
       { update, view },
       Scene.given(menuOpenModel),
       ...acknowledgeMounts,
-      Scene.expect(Scene.role('button', { name: 'Close menu' })).toExist(),
+      Scene.expect(Scene.role('button', { name: 'Menu' })).toHaveAttr('aria-expanded', 'true'),
       Scene.expect(Scene.role('link', { name: 'On the rise' })).toExist(),
     );
   });
@@ -61,14 +61,14 @@ describe('view', () => {
       { update, view },
       Scene.given(landingModel),
       ...acknowledgeMounts,
-      Scene.click(Scene.role('button', { name: 'Open menu' })),
+      Scene.click(Scene.role('button', { name: 'Menu' })),
       // Opening locks the page scroll and asks which section the reader is in.
       Scene.Command.resolve(SetScrollLock, Message.CompletedSetScrollLock()),
       Scene.Command.resolve(
         DetectActiveSection,
         Message.DetectedActiveSection({ section: Option.none() }),
       ),
-      Scene.expect(Scene.role('button', { name: 'Close menu' })).toExist(),
+      Scene.expect(Scene.role('button', { name: 'Menu' })).toHaveAttr('aria-expanded', 'true'),
       Scene.expect(Scene.role('link', { name: 'On the rise' })).toExist(),
     );
   });

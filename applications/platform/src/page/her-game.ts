@@ -498,11 +498,9 @@ const feedManageToggle = (model: Model, h: HtmlBuilder<Message>): Html =>
       onClick: Message.ToggledFeedEditing(),
       toView: ({ button }) =>
         h.button(
-          [
-            ...button,
-            h.AriaPressed(model.isFeedEditing ? 'true' : 'false'),
-            ...getStyleXAttributes(h, styles.feedManage),
-          ],
+          // An action button, not a toggle: its label names what pressing it does next, so it
+          // carries no aria-pressed, which would contradict "Done" once editing had begun.
+          [...button, ...getStyleXAttributes(h, styles.feedManage)],
           [model.isFeedEditing ? 'Done' : 'Manage'],
         ),
     },
@@ -550,7 +548,9 @@ const addWidgetInvitation = (model: Model, h: HtmlBuilder<Message>): Html =>
             h.AriaExpanded(model.isWidgetCatalogOpen),
             ...getStyleXAttributes(h, shared.display, styles.feedAddWidget),
           ],
-          [model.isWidgetCatalogOpen ? 'Close' : 'Add a widget'],
+          // One label in both states: aria-expanded carries whether the catalog is open, and the
+          // catalog unfolding beneath it is what shows it.
+          ['Add a widget'],
         ),
     },
     h,

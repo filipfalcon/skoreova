@@ -409,7 +409,7 @@ const clubScorersSection = (target: Club, model: Model, h: HtmlBuilder<Message>)
     anchor,
     h,
     total > SCORERS_SHOWN
-      ? clubSectionToggle(anchor, isExpanded, `Show all ${total} scorers`, h)
+      ? clubSectionToggle(anchor, isExpanded, `All ${total} scorers`, h)
       : undefined,
   );
 };
@@ -504,7 +504,7 @@ const clubHistorySection = (target: Club, model: Model, h: HtmlBuilder<Message>)
     anchor,
     h,
     archive.length > ARCHIVE_SHOWN
-      ? clubSectionToggle(anchor, isExpanded, `Show all ${archive.length} seasons`, h)
+      ? clubSectionToggle(anchor, isExpanded, `All ${archive.length} seasons`, h)
       : undefined,
   );
 };
@@ -567,7 +567,9 @@ const clubFollowSection = (target: Club, model: Model, h: HtmlBuilder<Message>):
                 h.AriaPressed(following ? 'true' : 'false'),
                 // The call to action is the pink block; the settled "following"
                 // state is the ink block with the live-pink stroke under it.
-                // Tapping again unfollows, and a toast says so either way.
+                // Tapping again unfollows, and a toast says so either way. The
+                // label stays the same in both states: aria-pressed carries the
+                // state, and a label that changed with it would say it twice.
                 ...getStyleXAttributes(
                   h,
                   shared.display,
@@ -575,7 +577,7 @@ const clubFollowSection = (target: Club, model: Model, h: HtmlBuilder<Message>):
                   following ? styles.followOn : styles.followOff,
                 ),
               ],
-              [following ? 'Following' : followLabel],
+              [followLabel],
             ),
         },
         h,

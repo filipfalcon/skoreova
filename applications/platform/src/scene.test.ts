@@ -369,25 +369,35 @@ describe('view', () => {
         Scene.role('region', { name: 'Top scorers' }),
         Scene.expectAll(Scene.all.role('listitem')).toHaveCount(3),
         // The control names the list it grows, and that list is the one drawn.
-        Scene.expect(Scene.role('button', { name: `Show all ${scorers} scorers` })).toHaveAttr(
+        Scene.expect(Scene.role('button', { name: `All ${scorers} scorers` })).toHaveAttr(
           'aria-controls',
           'top-scorers-list',
         ),
         Scene.expect(Scene.selector('ol#top-scorers-list')).toExist(),
-        Scene.click(Scene.role('button', { name: `Show all ${scorers} scorers` })),
+        Scene.click(Scene.role('button', { name: `All ${scorers} scorers` })),
         Scene.expectAll(Scene.all.role('listitem')).toHaveCount(scorers),
+        // Open, the control keeps its name and reports the state instead.
+        Scene.expect(Scene.role('button', { name: `All ${scorers} scorers` })).toHaveAttr(
+          'aria-expanded',
+          'true',
+        ),
       ),
       Scene.inside(
         Scene.role('region', { name: 'History' }),
         // Folded, the latest three seasons show under the counts.
         Scene.expectAll(Scene.all.role('listitem')).toHaveCount(3),
-        Scene.expect(Scene.role('button', { name: `Show all ${seasons} seasons` })).toHaveAttr(
+        Scene.expect(Scene.role('button', { name: `All ${seasons} seasons` })).toHaveAttr(
           'aria-controls',
           'history-list',
         ),
         Scene.expect(Scene.selector('ol#history-list')).toExist(),
-        Scene.click(Scene.role('button', { name: `Show all ${seasons} seasons` })),
+        Scene.click(Scene.role('button', { name: `All ${seasons} seasons` })),
         Scene.expectAll(Scene.all.role('listitem')).toHaveCount(seasons),
+        // Open, the control keeps its name and reports the state instead.
+        Scene.expect(Scene.role('button', { name: `All ${seasons} seasons` })).toHaveAttr(
+          'aria-expanded',
+          'true',
+        ),
       ),
     );
   });
