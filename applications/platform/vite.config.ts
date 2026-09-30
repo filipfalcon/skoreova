@@ -33,7 +33,10 @@ const isUnderAlchemy = process.env['ALCHEMY_CLOUDFLARE_VITE_INJECTED'] === '1';
 // processes must receive the same deployment-supplied FOLDKIT_BUILD_ID.
 // Keep the local fallback fresh per process; a constant production ID would
 // let hydration adopt a page from a different build.
-const BUILD_ID = (process.env['FOLDKIT_BUILD_ID'] ??= `local-${Date.now().toString(36)}`);
+// `||=` rather than `??=`: the plugin treats an empty FOLDKIT_BUILD_ID as
+// absent, so an empty value must take the fallback too, or the build would
+// compile no ID and every hydratable render would fail.
+const BUILD_ID = (process.env['FOLDKIT_BUILD_ID'] ||= `local-${Date.now().toString(36)}`);
 
 const pinAlchemyDevPort = (port: number): Plugin => ({
   name: 'skoreova:pin-alchemy-dev-port',
