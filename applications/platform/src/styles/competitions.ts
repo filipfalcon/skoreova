@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { tokens } from '../tokens.stylex';
+import { tokens, type } from '../tokens.stylex';
 
 // Styles for the competitions index (page/competitions.ts): the card grid
 // and the per-competition progress track.
@@ -43,8 +43,8 @@ export const styles = stylex.create({
   },
   stage: {
     marginTop: '0.5rem',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     color: 'color-mix(in srgb, var(--color-ink) 40%, transparent)',
   },

@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { spacing, tokens } from '../tokens.stylex';
+import { spacing, tokens, type } from '../tokens.stylex';
 
 // Styles for the app shell (view.ts): the page wrapper, the header spacer,
 // the main column, and the footer.
@@ -57,14 +57,14 @@ export const styles = stylex.create({
     paddingBlock: '1.5rem',
   },
   footerNote: {
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     color: 'color-mix(in srgb, var(--color-ink) 30%, transparent)',
   },
   cookieLink: {
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     color: {
       default: 'color-mix(in srgb, var(--color-ink) 30%, transparent)',

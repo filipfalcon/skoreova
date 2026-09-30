@@ -29,7 +29,7 @@ export const shared = stylex.create({
   },
   // META TEXT — the quiet uppercase voice: breadcrumbs, the hero subtitle,
   // and the base the season selector's value composes on top of. One size
-  // and one tracking, matching the app's 10px label scale, so nothing in a
+  // and one tracking, matching the app's 11px label scale, so nothing in a
   // meta row can be a step larger than its neighbours by accident. The
   // muted grey is the token, not a per-site mix of paper.
   //

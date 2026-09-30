@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { spacing, tokens } from '../tokens.stylex';
+import { spacing, tokens, type } from '../tokens.stylex';
 
 // Styles for the home screen (page/welcome.ts): the market ticker, the
 // crest honeycomb, the section boards, the new-content ledger, the
@@ -327,11 +327,8 @@ export const styles = stylex.create({
   },
   newKind: {
     marginTop: '0.375rem',
-    fontSize: {
-      default: '10px',
-      [MD]: '11px',
-    },
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     color: 'color-mix(in srgb, var(--color-ink) 40%, transparent)',
     textTransform: 'uppercase',
   },
@@ -573,8 +570,8 @@ export const styles = stylex.create({
   },
   sectionTileCaption: {
     marginTop: '0.25rem',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     color: 'color-mix(in srgb, var(--color-ink) 40%, transparent)',
   },

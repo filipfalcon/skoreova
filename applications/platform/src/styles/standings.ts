@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { spacing, tokens } from '../tokens.stylex';
+import { spacing, tokens, type } from '../tokens.stylex';
 
 // Styles for the standings engine (standings.ts): the zone ribbon colors,
 // the table rows, the legend, and the season progress bar.
@@ -13,7 +13,7 @@ export const styles = stylex.create({
   // Zone colors — bars and their label inks. NOT brand pink (user call):
   // pink is the points column and every chip, so it reads as brand rather
   // than as a prize. The -ink variants are what the picked hues
-  // become as 10px uppercase type on PAPER — see the tokens in styles.css.
+  // become as 11px uppercase type on PAPER — see the tokens in styles.css.
   uclBar: {
     backgroundColor: tokens.ucl,
   },
@@ -58,8 +58,8 @@ export const styles = stylex.create({
     display: 'flex',
     alignItems: 'baseline',
     justifyContent: 'space-between',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
   },
   progressLabel: {
@@ -101,8 +101,8 @@ export const styles = stylex.create({
     },
     paddingRight: '0.5rem',
     paddingLeft: '19px',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     color: 'color-mix(in srgb, var(--color-ink) 45%, transparent)',
     textTransform: 'uppercase',
   },
@@ -243,8 +243,8 @@ export const styles = stylex.create({
       [MD]: 'block',
     },
     width: '7rem',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
   },
   rowZoneHighlighted: {
@@ -340,7 +340,7 @@ export const styles = stylex.create({
     flexShrink: 0,
   },
   legendLabel: {
-    fontSize: '10px',
+    fontSize: type.metaSize,
     letterSpacing: '0.1em',
     whiteSpace: 'nowrap',
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',

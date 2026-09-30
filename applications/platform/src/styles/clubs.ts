@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { tokens } from '../tokens.stylex';
+import { tokens, type } from '../tokens.stylex';
 
 // Styles for the clubs directory (page/clubs.ts): the immersive contenders
 // hero — stage, shout, plaque, tape — the search field, and the club card
@@ -87,7 +87,7 @@ export const styles = stylex.create({
     textAlign: 'right',
   },
   ghostEpithet: {
-    fontSize: '10px',
+    fontSize: type.metaSize,
     lineHeight: 1,
     letterSpacing: '0.3em',
     color: 'color-mix(in srgb, var(--color-paper) 25%, transparent)',
@@ -408,8 +408,8 @@ export const styles = stylex.create({
     objectFit: 'contain',
   },
   leagueTag: {
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     color: 'color-mix(in srgb, var(--color-ink) 40%, transparent)',
   },
@@ -436,8 +436,8 @@ export const styles = stylex.create({
   },
   formCaption: {
     marginTop: '0.5rem',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     color: 'color-mix(in srgb, var(--color-ink) 40%, transparent)',
   },

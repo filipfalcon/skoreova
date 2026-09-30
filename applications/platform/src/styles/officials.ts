@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { tokens } from '../tokens.stylex';
+import { tokens, type } from '../tokens.stylex';
 
 // Styles for the officials screen (page/officials.ts): the card grid, the
 // initials box, and the stat pairs.
@@ -65,8 +65,8 @@ export const styles = stylex.create({
   },
   statLabel: {
     marginTop: '0.25rem',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     color: 'color-mix(in srgb, var(--color-ink) 40%, transparent)',
   },

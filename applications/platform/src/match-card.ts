@@ -281,7 +281,7 @@ export const matchCard = (
       ],
       [
         h.span([...getStyleXAttributes(h, styles.metaCompetition)], [match.competition]),
-        h.span([], [match.stage]),
+        h.span([...getStyleXAttributes(h, styles.metaStage)], [match.stage]),
       ],
     ),
     ...(useRows

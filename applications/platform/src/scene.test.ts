@@ -55,7 +55,7 @@ describe('view', () => {
       Scene.expect(Scene.text('Leagues')).toExist(),
       Scene.expect(Scene.selector('header a[href="/"][aria-current="page"]')).toExist(),
       Scene.expect(
-        Scene.text('Beta version — all data is placeholder while the platform wires up.'),
+        Scene.text('Beta — all data is placeholder while the platform wires up.'),
       ).toExist(),
     );
   });

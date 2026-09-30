@@ -20,7 +20,7 @@ const LG = '@media (min-width: 1024px)';
 
 export const styles = stylex.create({
   sectionLabel: {
-    fontSize: '10px',
+    fontSize: type.metaSize,
     letterSpacing: '0.25em',
     textTransform: 'uppercase',
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
@@ -56,8 +56,8 @@ export const styles = stylex.create({
     borderWidth: 1,
     paddingBlock: '0.375rem',
     paddingInline: '0.625rem',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     transitionProperty: 'color, background-color, border-color',
     transitionDuration: '0.15s',
@@ -297,8 +297,8 @@ export const styles = stylex.create({
     marginRight: '-0.5rem',
     cursor: 'pointer',
     textAlign: 'right',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     color: {
       default: tokens.mutedInk,
@@ -465,7 +465,7 @@ export const styles = stylex.create({
     transform: `translateY(${TAPE_ARROW_SHIFT}) scaleY(-1)`,
   },
   // ONE optical size for the chevron wherever it appears, so the mark beside
-  // a 10px breadcrumb and the one beside the season value carry the same
+  // an 11px breadcrumb and the one beside the season value carry the same
   // stroke weight. Fixed rather than `em` for that reason: em would scale
   // the stroke with whatever type it sat next to, which is how the two
   // drifted apart in the first place.

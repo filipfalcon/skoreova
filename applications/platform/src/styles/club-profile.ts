@@ -418,8 +418,8 @@ export const styles = stylex.create({
     lineHeight: '1.75rem',
   },
   tieResult: {
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
   },
   tieResultUpcoming: {
@@ -439,8 +439,8 @@ export const styles = stylex.create({
     borderWidth: 1,
     paddingInline: '1rem',
     paddingBlock: '0.5rem',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     transitionProperty: 'color, background-color, border-color',
     transitionDuration: '0.15s',
@@ -552,8 +552,8 @@ export const styles = stylex.create({
   scorersFootnote: {
     marginTop: '0.75rem',
     paddingInline: '0.5rem',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     color: 'color-mix(in srgb, var(--color-ink) 45%, transparent)',
     textTransform: 'uppercase',
   },
@@ -599,7 +599,7 @@ export const styles = stylex.create({
   // at 390 and 99px at 360, so under 375 the line is the season alone.
   historyDetail: {
     marginTop: '0.375rem',
-    fontSize: '10px',
+    fontSize: type.metaSize,
     letterSpacing: '0.25em',
     whiteSpace: 'nowrap',
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
@@ -645,8 +645,8 @@ export const styles = stylex.create({
     gridColumn: { default: null, [COMPACT]: '1 / -1' },
     gridRow: { default: null, [COMPACT]: 2 },
     flexGrow: 1,
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
   },
@@ -687,7 +687,7 @@ export const styles = stylex.create({
   },
   statsLabel: {
     marginTop: '0.75rem',
-    fontSize: '10px',
+    fontSize: type.metaSize,
     letterSpacing: '0.25em',
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
     textTransform: 'uppercase',
@@ -752,8 +752,8 @@ export const styles = stylex.create({
     gap: spacing.md,
   },
   linksSite: {
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     color: tokens.ink,
     textDecorationLine: 'underline',

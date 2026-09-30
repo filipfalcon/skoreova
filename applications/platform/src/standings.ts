@@ -19,7 +19,7 @@ export interface StandingsZone {
 // NOT brand pink (user call): pink is the highlight row, the points and
 // every chip, so it reads as brand rather than as a prize — and it
 // disappears completely against the club’s own pink row.
-// `bar` carries the picked hue; `text` is what that hue becomes as 10px
+// `bar` carries the picked hue; `text` is what that hue becomes as 11px
 // uppercase type on PAPER — see the -ink tokens in styles.css.
 const UWCL_ZONE: StandingsZone = { label: 'UWCL', bar: styles.uclBar, text: styles.uclText };
 const UWEC_ZONE: StandingsZone = { label: 'UWEC', bar: styles.uecInkBar, text: styles.uecInkText };

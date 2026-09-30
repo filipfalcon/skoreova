@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { spacing, tokens } from '../tokens.stylex';
+import { spacing, tokens, type } from '../tokens.stylex';
 
 // Styles for the club profile's LAST/UPCOMING match cards (club-matches.ts).
 
@@ -177,8 +177,8 @@ export const styles = stylex.create({
     color: tokens.ink,
   },
   dateLine: {
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
     textTransform: 'uppercase',
   },
@@ -239,8 +239,8 @@ export const styles = stylex.create({
       [MD]: '1.5rem',
     },
     paddingTop: '1rem',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
   },
@@ -264,7 +264,8 @@ export const styles = stylex.create({
     height: '1.5rem',
     width: '1.5rem',
     borderWidth: 1,
-    fontSize: '10px',
+    // A result letter centered in its square, a data mark rather than a label, so it keeps its own size.
+    fontSize: '11px',
     letterSpacing: '0.2em',
     textIndent: '0.2em',
     textTransform: 'uppercase',
@@ -289,8 +290,8 @@ export const styles = stylex.create({
     color: tokens.paper,
   },
   formCaption: {
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
   },

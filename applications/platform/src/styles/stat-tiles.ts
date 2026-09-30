@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { tokens } from '../tokens.stylex';
+import { tokens, type } from '../tokens.stylex';
 
 // Styles for the pinnable tiles (stat-tiles.ts): trending tiles, the
 // league stat cards, the pin overlay, and the all-time-best records.
@@ -90,12 +90,9 @@ export const styles = stylex.create({
   },
   tileKind: {
     marginTop: '0.5rem',
-    fontSize: {
-      default: '11px',
-      [SM]: '10px',
-    },
+    fontSize: type.metaSize,
     lineHeight: 1,
-    letterSpacing: '0.2em',
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
   },
   tileKindPaper: {
@@ -287,9 +284,9 @@ export const styles = stylex.create({
   },
   cardCaption: {
     marginTop: '0.5rem',
-    fontSize: '10px',
+    fontSize: type.metaSize,
     lineHeight: 1,
-    letterSpacing: '0.2em',
+    letterSpacing: type.metaTracking,
     color: 'color-mix(in srgb, var(--color-paper) 50%, transparent)',
     textTransform: 'uppercase',
   },
@@ -400,10 +397,7 @@ export const styles = stylex.create({
   },
   recordLabel: {
     marginTop: '0.375rem',
-    fontSize: {
-      default: '10px',
-      [MD]: '11px',
-    },
+    fontSize: type.metaSize,
     letterSpacing: '0.25em',
     color: 'color-mix(in srgb, var(--color-ink) 50%, transparent)',
     textTransform: 'uppercase',

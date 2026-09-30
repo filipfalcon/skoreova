@@ -77,9 +77,9 @@
   --color-ucl: #1b3c8a;
   --color-drop: #6d17c0;
   /* MEASURED at 1.02:1 against paper — the ribbon was not dim, it was
-     gone. #d5fe00 is a color for black backgrounds. Darkened along the
-     same hue until the bar reads as a bar and the 10px label reads as
-     type; --color-uec keeps the original for any dark surface. */
+     gone. The original lime, #d5fe00, is a color for black backgrounds.
+     Darkened along the same hue until the bar reads as a bar and the 11px
+     label reads as type. */
   --color-uec-ink: #6b7a00;
   /* Same story, less extreme, for the promotion green and the calendar's
      W letter (1.9:1). The ticker's --color-rise stays untouched — it

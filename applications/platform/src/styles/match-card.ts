@@ -189,6 +189,8 @@ export const styles = stylex.create({
     alignItems: 'baseline',
     justifyContent: 'space-between',
     gap: spacing.xs,
+    // Tighter than the meta tracking: at 0.2em "Second League" and "Round 13" need 204px of a compact card's 202px row at 360; at 0.15em they need 193px.
+    letterSpacing: '0.15em',
   },
   // The competition can be long ("Second League"); the stage never is. Only
   // the competition gives up room.
@@ -196,6 +198,10 @@ export const styles = stylex.create({
     minWidth: 0,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  metaStage: {
+    flexShrink: 0,
     whiteSpace: 'nowrap',
   },
   // ——— The four text tones. shared.metaText carries --color-muted, which is
@@ -267,8 +273,8 @@ export const styles = stylex.create({
   // ONE line of editorial copy, sitting straight under the headline at META
   // SIZE — a caption to the names, not a second headline competing with them.
   // Body voice and sentence case rather than the display face and the meta
-  // row's uppercase: it is prose, and 48 characters of 10px uppercase at
-  // 0.2em would run to some 400px, which is wider than the card.
+  // row's uppercase: it is prose, and 48 characters of 11px uppercase at
+  // 0.2em would run well past 400px, which is wider than the card.
   //
   // No wrap and no ellipsis. The 48-character limit is enforced at authoring
   // (editorial.ts), so this row can assume every line it is handed fits.

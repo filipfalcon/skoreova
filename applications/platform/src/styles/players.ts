@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 
-import { tokens } from '../tokens.stylex';
+import { tokens, type } from '../tokens.stylex';
 
 // Styles for the players screen (page/players.ts): the scrollable stats
 // table.
@@ -20,8 +20,8 @@ export const styles = stylex.create({
   headRow: {
     borderBottomWidth: 1,
     borderBottomColor: 'color-mix(in srgb, var(--color-ink) 10%, transparent)',
-    fontSize: '10px',
-    letterSpacing: '0.2em',
+    fontSize: type.metaSize,
+    letterSpacing: type.metaTracking,
     textTransform: 'uppercase',
     color: 'color-mix(in srgb, var(--color-ink) 40%, transparent)',
   },

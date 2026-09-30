@@ -77,15 +77,7 @@ export const spacing = stylex.defineVars({
 // season value, phase labels, section labels. `subtitle` is the step above
 // it, the hero's middle voice between that scale and the display headline.
 //
-// Their TRACKING differs on purpose. It began as a fit constraint — at the
-// subtitle's size the meta 0.2em ran the line past a 390px screen, and this
-// line must not wrap — and 0.07em was the figure that held down to 360px,
-// the narrowest phone still in circulation. The copy has since shortened
-// twice, to "8 TEAMS · 2 PHASES", so the constraint no longer binds and
-// this is a choice: tightening tracking as size grows is the ordinary
-// typographic move, since wide letterspacing earns its keep on small caps
-// and stops doing so as the type gets bigger. There is now room to widen it
-// back toward the meta value if the line ever wants more air.
+// Their TRACKING differs on purpose. It began as a fit constraint — at the subtitle's size the meta 0.2em ran the line past a 390px screen, and this line must not wrap — and 0.07em was the figure that held down to 360px, the narrowest phone still in circulation. The copy has since changed to lines like "8 TEAMS · 2 PHASES · 3-1-0", each of which holds one line at 360px, so the constraint no longer binds and this is a choice: tightening tracking as size grows is the ordinary typographic move, since wide letterspacing earns its keep on small caps and stops doing so as the type gets bigger. There is room to widen it back toward the meta value if the line ever wants more air.
 export const type = stylex.defineVars({
   // Two rungs for the hero's display name. XL is the size the hero was
   // designed at; L exists ONLY because some competition names are longer
@@ -93,7 +85,8 @@ export const type = stylex.defineVars({
   // gets which is measured, not guessed — see HEADLINE_L_SLUGS in the view.
   headlineXL: 'clamp(3.75rem, 17vw, 9rem)',
   headlineL: 'clamp(3rem, 14.5vw, 9rem)',
-  metaSize: '0.625rem',
+  // 11px, the common floor for text on a phone, and the smallest size the platform sets.
+  metaSize: '0.6875rem',
   metaTracking: '0.2em',
   subtitleSize: '1.125rem',
   subtitleTracking: '0.07em',

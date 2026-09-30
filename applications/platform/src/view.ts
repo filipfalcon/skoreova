@@ -109,7 +109,7 @@ const shellView = (model: Model, h: HtmlBuilder<Message>): Html =>
             [
               h.p(
                 [...getStyleXAttributes(h, styles.footerNote)],
-                ['Beta version — all data is placeholder while the platform wires up.'],
+                ['Beta — all data is placeholder while the platform wires up.'],
               ),
               // Reopens the consent banner — index.html owns the handler
               // (the banner lives outside the app; see the script there).
