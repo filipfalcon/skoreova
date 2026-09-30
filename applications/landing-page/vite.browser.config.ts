@@ -24,7 +24,9 @@ import { defineConfig } from 'vite-plus';
 // stylesheet rules, foldkit because the identity branding must match what a
 // build produces.
 export default defineConfig({
-  plugins: [...tailwindcss(), ...foldkit()],
+  // The hydration test renders through the server entry and hydrates the result, and both halves
+  // refuse to run without a build ID. A fixed one is right here: a test run is one build.
+  plugins: [...tailwindcss(), ...foldkit({ buildId: 'test' })],
   optimizeDeps: {
     // The optimizer's initial crawl can only find imports that appear in source, and foldkit/brand arrives injected by the plugin's per-module transform instead. Left undeclared, a cold cache (fresh install, changed lockfile) discovers it mid-run and the re-optimization's full-page reload tears down the running suite. The devtools overlay's own imports are declared by the plugin itself since @foldkit/vite-plugin 0.20.1.
     include: ['foldkit/brand'],

@@ -15,6 +15,8 @@ export default defineConfig({
     // Hydratable server tests require a build ID, supplied through env because Vitest constructs import.meta.env itself.
     env: { FOLDKIT_BUILD_ID: 'test' },
     include: ['src/**/*.test.ts'],
+    // Browser-mode tests run in vite.browser.config.ts.
+    exclude: ['src/**/*.browser.test.ts'],
     setupFiles: ['./src/vitest-setup.ts'],
     // Inlining foldkit and @foldkit/ui keeps component rendering on the same runtime instance as Scene.
     server: { deps: { inline: ['foldkit', '@foldkit/ui'] } },

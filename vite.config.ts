@@ -204,6 +204,7 @@ export default defineConfig({
     projects: [
       // StyleX tests use its Rollup transform entry.
       'applications/platform/vite.test.config.ts',
+      'applications/platform/vite.browser.config.ts',
       'applications/studio/vite.config.ts',
       'applications/landing-page/vite.config.ts',
       'applications/landing-page/vite.browser.config.ts',

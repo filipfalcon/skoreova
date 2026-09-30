@@ -21,6 +21,8 @@
   "devDependencies": {
     "@foldkit/vite-plugin": "0.24.0",
     "@stylexjs/unplugin": "0.19.0",
+    "@vitest/browser-playwright": "5.0.1",
+    "playwright": "1.61.1",
     "vite": "8.1.5",
     "vite-imagetools": "12.0.1"
   }
