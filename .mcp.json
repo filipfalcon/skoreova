@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "foldkit-landing-page": {
+      "command": "npm",
+      "args": ["exec", "--workspace", "applications/landing-page", "--", "foldkit-devtools-mcp"]
+    },
+    "foldkit-platform": {
+      "command": "npm",
+      "args": ["exec", "--workspace", "applications/platform", "--", "foldkit-devtools-mcp"]
+    },
+    "foldkit-studio": {
+      "command": "npm",
+      "args": ["exec", "--workspace", "applications/studio", "--", "foldkit-devtools-mcp"]
+    }
+  }
+}
