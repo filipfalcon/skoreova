@@ -94,10 +94,20 @@ test('choosing a menu item moves focus to its section', async () => {
   await page.getByRole('button', { name: 'Menu', exact: true, expanded: false }).click();
   await expect.poll(overlayVisibility).toBe('visible');
 
-  const link = page.getByRole('link', { name: 'Battling through', exact: true });
+  // Matched by prefix: the menu marks the section in view with a trailing
+  // period, and the tests before this one move the page.
+  const link = page.getByRole('link', { name: /^Across the lands/ });
   const fragment = link.element().getAttribute('href')?.split('#')[1];
   await link.click();
   await expect.poll(() => document.activeElement?.id).toBe(fragment);
+  // Let the landing's scroll ride finish, so it cannot carry on into the
+  // tests after this one and pull their page back to this section.
+  await waitUntil(() => {
+    const section = fragment === undefined ? null : document.getElementById(fragment);
+    if (section === null) return false;
+    const margin = Number.parseFloat(getComputedStyle(section).scrollMarginTop) || 0;
+    return Math.abs(section.getBoundingClientRect().top - margin) < 1;
+  });
 });
 
 // The keyboard contract for a full-screen overlay: while it’s open the page
