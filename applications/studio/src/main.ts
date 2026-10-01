@@ -1026,9 +1026,9 @@ export const update = (model: Model, message: Message): UpdateReturn =>
         Internal: ({ url }) => ({ model, commands: [navigate(urlToString(url))] }),
         External: ({ href }) => ({ model, commands: [load(href)] }),
       }),
-    // Fires on browser back/forward (pushUrl from our own Navigate command
-    // updates the model directly instead, so this only reacts to real
-    // navigation).
+    // Fires on browser back/forward and after our own Navigate command too:
+    // pushUrl reports the new URL here, so this is the one place a route is
+    // applied.
     ChangedUrl: ({ url }) => applyRoute(model, urlToAppRoute(url)),
     CompletedNavigate: () => ({ model }),
     CompletedLoad: () => ({ model }),

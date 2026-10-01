@@ -148,7 +148,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => ({
   title: documentTitle(model.route),
   canonical: `${SITE_ORIGIN}${routePath(model.route)}`,
   ogUrl: `${SITE_ORIGIN}${routePath(model.route)}`,
-  // American English, the language every string in this app is written in; the runtime writes it after the first render, so what a crawler reads is whatever the served document already carried.
+  // American English, the language every string in this app is written in. The server render stamps it on <html>, so a crawler reads it in the served document, and the runtime keeps it there.
   lang: 'en-US',
   body: h.div([...getStyleXAttributes(h, styles.page)], [shellView(model, h)]),
 });

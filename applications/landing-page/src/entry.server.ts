@@ -6,8 +6,8 @@ import { init, routing, view } from './main';
 import { urlToAppRoute } from './route';
 
 // THE SERVER ENTRY — one Web Request in, one delivery result out. The host
-// places the result into the HTML shell; nothing here knows which host called
-// it (the Vite dev middleware, or the build-time prerender).
+// (the Worker, or the Vite dev server) places the result into the HTML shell;
+// nothing here knows which one called it.
 //
 // There are no Flags: every screen this app draws derives from the URL, so the
 // server knows nothing at render time that the browser does not. That is what
