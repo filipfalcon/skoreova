@@ -181,6 +181,9 @@ interface MarqueeTrack {
 // state), and the recount watcher runs its own small loop here. Never
 // installed under reduced motion: the view force-reveals everything and
 // the numbers rest on their final values.
+// The viewport from which 'replay' reveal groups keep their simultaneous formation.
+const DESKTOP_VIEWPORT_QUERY = '(min-width: 768px)';
+
 // Both motion Mounts read the preference themselves, when they start. The Model's
 // `prefersReducedMotion` cannot serve them: Foldkit runs Mounts in the first render, before any
 // Subscription has reported, and on a server-rendered page the Model's value at that moment is the
@@ -193,6 +196,7 @@ const prefersReducedMotionNow = (): boolean => window.matchMedia(REDUCED_MOTION_
 
 const setUpReveals = (
   root: HTMLElement,
+  isDesktopViewport: boolean,
   emit: (message: typeof Message.ChangedReveals.Type) => void,
 ): (() => void) => {
   const cleanups: Array<() => void> = [];
@@ -550,7 +554,6 @@ const setUpReveals = (
     // rebuttal land together). Non-late targets inside stay per-item, so a
     // headline can reveal early while its payoff waits. Grouped on every
     // viewport and replays like 'replay'.
-    const desktopViewport = window.matchMedia('(min-width: 768px)').matches;
     const targetsByProxy = new Map<Element, Array<HTMLElement>>();
     for (const target of revealTargets) {
       const groupElement = target.closest<HTMLElement>('[data-reveal-group]');
@@ -558,7 +561,7 @@ const setUpReveals = (
       const group =
         groupElement &&
         (groupPolicy === 'once' ||
-          (groupPolicy === 'late' ? target.dataset['revealLate'] !== undefined : desktopViewport))
+          (groupPolicy === 'late' ? target.dataset['revealLate'] !== undefined : isDesktopViewport))
           ? groupElement
           : null;
       const proxy =
@@ -709,7 +712,7 @@ const setUpReveals = (
     // tuning (15% + an 8% inset) felt late on a small screen.
     const observer = new IntersectionObserver(
       onReveal,
-      desktopViewport
+      isDesktopViewport
         ? { threshold: 0.15, rootMargin: '0px 0px -8% 0px' }
         : { threshold: 0.05, rootMargin: '0px' },
     );
@@ -729,7 +732,7 @@ const setUpReveals = (
     // (the map is short on a phone) but the stroke is actually watched.
     // The un-draw still waits for a full exit, so a half-scrolled map
     // doesn’t reset mid-view.
-    const drawObserver = desktopViewport
+    const drawObserver = isDesktopViewport
       ? null
       : new IntersectionObserver(
           (entries) => {
@@ -1278,17 +1281,38 @@ export const MountMotion = Mount.define('MountMotion', {
 // per-frame choreography; this one only OBSERVES and reports, because
 // reveal state is discrete and belongs to the Model. One OnMount per element,
 // so this sits on the page root while <main> carries MountMotion.
+//
+// The grouping policy depends on the viewport, so the observers are rebuilt
+// whenever it crosses the desktop breakpoint: a rotated tablet regroups
+// instead of keeping the formation it loaded with. The query is followed here,
+// inside the Mount that owns the observers, rather than through the Model: a
+// Mount's args are captured once, and re-keying the page root to deliver a
+// new value would rebuild the whole hydrated page.
 export const ObserveReveals = Mount.defineStream('ObserveReveals', {
   messages: [Message.ChangedReveals],
   execute: ({ element }) =>
     Stream.callback<typeof Message.ChangedReveals.Type>((queue) =>
       Effect.gen(function* () {
         yield* Effect.acquireRelease(
-          Effect.sync(() =>
-            !prefersReducedMotionNow() && element instanceof HTMLElement
-              ? setUpReveals(element, (message) => Queue.offerUnsafe(queue, message))
-              : (): void => {},
-          ),
+          Effect.sync(() => {
+            if (prefersReducedMotionNow() || !(element instanceof HTMLElement)) {
+              return (): void => {};
+            }
+            const emit = (message: typeof Message.ChangedReveals.Type): void => {
+              Queue.offerUnsafe(queue, message);
+            };
+            const desktop = window.matchMedia(DESKTOP_VIEWPORT_QUERY);
+            let teardown = setUpReveals(element, desktop.matches, emit);
+            const regroup = (): void => {
+              teardown();
+              teardown = setUpReveals(element, desktop.matches, emit);
+            };
+            desktop.addEventListener('change', regroup);
+            return () => {
+              desktop.removeEventListener('change', regroup);
+              teardown();
+            };
+          }),
           (teardown) => Effect.sync(teardown),
         );
         return yield* Effect.never;
