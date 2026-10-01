@@ -34,10 +34,20 @@ interface Env {
 // the inlined consent script, the font preloads — none of which exists in the
 // source file. The binding is a local lookup rather than a network call, so
 // this is read per request instead of held in a module-level cache.
+const TEMPLATE_PATH = '/index.html';
+
 const shell = (env: Env, url: URL): Promise<string> =>
-  env.ASSETS.fetch(new Request(new URL('/index.html', url.origin))).then((response) =>
+  env.ASSETS.fetch(new Request(new URL(TEMPLATE_PATH, url.origin))).then((response) =>
     response.text(),
   );
+
+// The shell's own public URL. It is a static file, which Cloudflare would
+// serve before this Worker runs: an empty page at 200 that a crawler could
+// index. alchemy.run.ts routes that one path here first, and it answers with a
+// permanent redirect to the page the shell becomes, keeping any query. The
+// ASSETS binding above reads the file directly and never passes through here.
+const templateRedirect = (url: URL): Response =>
+  Response.redirect(new URL(`/${url.search}`, url.origin).href, 301);
 
 export default Sentry.withSentry(
   () => ({
@@ -52,10 +62,12 @@ export default Sentry.withSentry(
     // own JavaScript), strips the body of a HEAD, sets the Vary the
     // negotiation needs, and only then renders. The shell is read up front
     // because the handler takes a string.
-    fetch: async (request: Request, env: Env): Promise<Response> =>
-      Server.handleRequest(request, {
-        renderPage,
-        template: await shell(env, new URL(request.url)),
-      }),
+    fetch: async (request: Request, env: Env): Promise<Response> => {
+      const url = new URL(request.url);
+      if (url.pathname === TEMPLATE_PATH) {
+        return templateRedirect(url);
+      }
+      return Server.handleRequest(request, { renderPage, template: await shell(env, url) });
+    },
   },
 );

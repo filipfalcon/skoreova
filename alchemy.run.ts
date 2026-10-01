@@ -40,11 +40,15 @@ export default Alchemy.Stack(
       //
       // Files still come from the asset layer directly — only requests that
       // match no file reach the Worker, which is exactly the set of pages.
-      // `/index.html` keeps matching literally, which is what the Worker
-      // reads its shell from.
+      // The one exception is `/index.html`: it is a file, the unrendered
+      // shell the Worker reads through its ASSETS binding, and served as one
+      // it would answer every visitor with an empty page at 200. Routed to
+      // the Worker first, it redirects to `/`; the binding still reads the
+      // file directly.
       assets: {
         htmlHandling: 'none',
         notFoundHandling: 'none',
+        runWorkerFirst: ['/index.html'],
       },
     });
 
@@ -84,11 +88,15 @@ export default Alchemy.Stack(
       //
       // Files still come from the asset layer directly — only requests that
       // match no file reach the Worker, which is exactly the set of pages.
-      // `/index.html` keeps matching literally, which is what the Worker
-      // reads its shell from.
+      // The one exception is `/index.html`: it is a file, the unrendered
+      // shell the Worker reads through its ASSETS binding, and served as one
+      // it would answer every visitor with an empty page at 200. Routed to
+      // the Worker first, it redirects to `/`; the binding still reads the
+      // file directly.
       assets: {
         htmlHandling: 'none',
         notFoundHandling: 'none',
+        runWorkerFirst: ['/index.html'],
       },
     });
 
