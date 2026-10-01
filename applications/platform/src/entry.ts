@@ -2,6 +2,7 @@ import '@fontsource/anton/400.css';
 import '@fontsource-variable/archivo/index.css';
 import { Runtime } from 'foldkit';
 
+import { crashView } from './crash';
 import { Message, Model, init, routing, subscriptions, update, view } from './main';
 
 const application = Runtime.makeApplication({
@@ -12,6 +13,7 @@ const application = Runtime.makeApplication({
   container: document.getElementById('root'),
   routing,
   subscriptions,
+  crash: { view: crashView },
   devTools: { Message },
 });
 
