@@ -100,26 +100,29 @@ const initialModel: Model = {
 };
 
 // A route change stores the new route and resets the transient per-view state
-// (the edition/round pickers, the clubs search, the carousel index). Opening a
-// club also resets the top-scorers scope; other routes leave it alone.
-const applyRoute = (model: Model, route: AppRoute): Model =>
-  modifyFields(model, {
+// (the edition/round pickers, the clubs search, the carousel index). A hash
+// jump within a page arrives here as the same path again, so what the reader
+// set on the page they are still on survives it: the sections they opened,
+// the competition tab, the top-scorers scope. Opening a profile resets the
+// scope; other routes leave it alone.
+const applyRoute = (model: Model, route: AppRoute): Model => {
+  const isSamePage = routePath(route) === routePath(model.route);
+  return modifyFields(model, {
     route: () => route,
     competitionEdition: () => Option.none(),
     competitionRounds: () => ({}),
     clubQuery: () => '',
     featuredClub: () => 0,
-    scorerScope: (current) => (route._tag === 'Club' ? 'All' : current),
-    // A hash jump within a profile arrives here as the same route again; the sections the reader opened stay open across it and fold only on leaving the page.
-    expandedClubSections: (current) => (routePath(route) === routePath(model.route) ? current : []),
-    activeClubSection: (current) =>
-      routePath(route) === routePath(model.route) ? current : Option.none(),
-    competitionTab: (current) => (routePath(route) === routePath(model.route) ? current : 'League'),
+    scorerScope: (current) => (route._tag === 'Club' && !isSamePage ? 'All' : current),
+    expandedClubSections: (current) => (isSamePage ? current : []),
+    activeClubSection: (current) => (isSamePage ? current : Option.none()),
+    competitionTab: (current) => (isSamePage ? current : 'League'),
     isFeedEditing: () => false,
     isWidgetCatalogOpen: () => false,
     isWidgetAddRefused: () => false,
     followNotice: () => Option.none(),
   });
+};
 
 // Where a URL lands the reader: on the element its fragment names, or at the top of a page they were not already on. A fragment always wins, so a jump within a page never throws the reader back to its top.
 const landingCommands = (url: Url, isNewPage: boolean) =>

@@ -127,6 +127,20 @@ test('a route change clears the per-screen pickers and keeps the durable lists',
 
 // Each toggle also sets the spoken notice, and leaving the page clears it so
 // a reader never hears a stale one on the next profile.
+// A hash jump within a profile is the same page: the scope the reader picked
+// for the top scorers stays picked across it, as the open sections do.
+test('a jump to a section of the same profile keeps the top-scorers scope', () => {
+  Story.story(
+    update,
+    Story.given({ ...clubProfileModel, scorerScope: 'Cup' }),
+    Story.message(Message.ChangedUrl({ url: url('/clubs/sparta-praha#matches') })),
+    Story.model((model) => {
+      expect(model.scorerScope).toBe('Cup');
+    }),
+    Story.Command.resolve(ScrollToAnchor, Message.CompletedScrollToAnchor()),
+  );
+});
+
 test('following a club adds the slug, following again removes it, and each says so', () => {
   Story.story(
     update,
