@@ -53,7 +53,9 @@ describe('view', () => {
       // else in the document, and the footer note is on every screen — between
       // them, stable proof the shell mounted around the screen.
       Scene.expect(Scene.text('Leagues')).toExist(),
-      Scene.expect(Scene.selector('header a[href="/"][aria-current="page"]')).toExist(),
+      // The nav marks this page, and nothing else claims to be it.
+      Scene.expect(Scene.role('link', { name: /^Her Game/, current: 'page' })).toExist(),
+      Scene.expectAll(Scene.all.role('link', { current: 'page' })).toHaveCount(1),
       Scene.expect(
         Scene.text('Beta — all data is placeholder while the platform wires up.'),
       ).toExist(),
