@@ -560,9 +560,10 @@ const clubFollowSection = (target: Club, model: Model, h: HtmlBuilder<Message>):
                 h.AriaPressed(following ? 'true' : 'false'),
                 // The call to action is the pink block; the settled "following"
                 // state is the ink block with the live-pink stroke under it.
-                // Tapping again unfollows, and a toast says so either way. The
-                // label stays the same in both states: aria-pressed carries the
-                // state, and a label that changed with it would say it twice.
+                // Tapping again unfollows, and the live region below says so
+                // either way. The label stays the same in both states:
+                // aria-pressed carries the state, and a label that changed with
+                // it would say it twice.
                 ...getStyleXAttributes(
                   h,
                   shared.display,

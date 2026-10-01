@@ -2,9 +2,10 @@ import { Toast } from '@foldkit/ui';
 import { Schema } from 'effect';
 
 // THE PLATFORM'S TOAST STACK — one bound Toast Submodel for every passing
-// confirmation the app makes (a follow, an unfollow). The payload is the
-// sentence and nothing else: the entry's tone, place and timing are the
-// stack's, so no caller can invent a toast that looks different.
+// confirmation of an action whose result is not visible on screen. None shows
+// one yet: a follow confirms itself in its button and a polite live region.
+// The payload is the sentence and nothing else: the entry's tone, place and
+// timing are the stack's, so no caller can invent a toast that looks different.
 
 /**
  * What a toast carries: one line of paper text.
