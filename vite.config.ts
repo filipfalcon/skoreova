@@ -1,3 +1,4 @@
+import foldkitRecommended from '@foldkit/oxlint-plugin/recommended.json' with { type: 'json' };
 import { defineConfig } from 'vite-plus';
 
 export default defineConfig({
@@ -20,11 +21,13 @@ export default defineConfig({
     },
   },
   lint: {
+    // Foldkit's own preset rather than a hand-picked list of its rules: every
+    // rule the plugin ships, on in app code, with the decision-time rule off in
+    // entries and the definition rules off in tests, as the plugin intends. It
+    // also registers the `foldkit` plugin, so only ours is listed below.
+    extends: [foldkitRecommended],
     plugins: ['typescript', 'jsdoc'],
-    jsPlugins: [
-      { name: 'foldkit', specifier: '@foldkit/oxlint-plugin' },
-      { name: 'skoreova', specifier: './tools/oxlint/plugin.ts' },
-    ],
+    jsPlugins: [{ name: 'skoreova', specifier: './tools/oxlint/plugin.ts' }],
     options: {
       // `typeAware` routes the type-aware rules below through tsgolint;
       // `typeCheck` additionally reports the TypeScript compiler’s own
@@ -133,26 +136,26 @@ export default defineConfig({
       'typescript/no-floating-promises': 'error',
       'typescript/no-misused-promises': 'error',
       'typescript/await-thenable': 'error',
-      'foldkit/no-noop-message': 'error',
-      'foldkit/got-submodel-message-name': 'error',
-      'foldkit/got-prefix-requires-submodel-payload': 'error',
-      'foldkit/no-empty-object-tagged-call': 'error',
-      'foldkit/no-empty-commands-array': 'error',
-      'foldkit/prefer-callable-message-constructor': 'error',
-      'foldkit/command-binding-matches-name': 'error',
-      'foldkit/no-module-level-mutable-state': 'error',
-      // Added with the 0.12 plugin: full Effect module names instead of aliases, and no clock or randomness read at decision time — both at zero violations once the aliases were expanded.
-      'foldkit/prefer-effect-module-names': 'error',
-      'foldkit/no-impure-call-at-decision-time': 'error',
-      // Added with the 0.13 plugin, all at zero violations on adoption: dispatch through the union's `match` rather than a `switch` on `_tag`; a Model field that may be absent is an Option, not a nullable; a route query default has to run while the query decodes; a Command's result Message is lifted with `Command.mapMessage`, which Story and Scene can see, never by mapping the Effect; an `acquireRelease` builds its resource inside the acquire; and `preventDefault` never lives in a Stream operator, where it runs a turn after the browser's dispatch.
-      'foldkit/no-switch-on-message-tag': 'error',
-      'foldkit/prefer-option-over-nullable-in-model': 'error',
-      'foldkit/no-route-query-constructor-default': 'error',
-      'foldkit/prefer-command-mapmessage': 'error',
-      'foldkit/acquire-release-constructs-in-acquire-body': 'error',
-      'foldkit/no-prevent-default-in-stream-operator': 'error',
     },
     overrides: [
+      {
+        // The Workers are server code the preset's globs (`entry.server`,
+        // `server/**`, `prerender`) do not name, so the portability rule is
+        // switched on for them here.
+        files: ['applications/*/src/worker.ts'],
+        rules: {
+          'foldkit/no-nonportable-server-globals': 'error',
+        },
+      },
+      {
+        // A crash view renders after the runtime has stopped, so its builder
+        // can express no Message, and Foldkit's documented way to reload from
+        // it is a raw `onclick`. The rule has no exception for crash views.
+        files: ['applications/*/src/crash.ts'],
+        rules: {
+          'foldkit/no-raw-dom-event-attributes': 'off',
+        },
+      },
       {
         // The decision-time rule guards update and view code. These files are the other side of the line: the landing page's motion engine and its scroll rides read the clock inside frames and timers the rule cannot see as deferred, the browser tests poll it in their wait helpers, and the platform Worker jitters a mock ticker per request. None of them decides a Model.
         files: [
