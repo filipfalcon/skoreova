@@ -92,7 +92,7 @@ export const Message = defineMessageUnion({
   // column the instance belongs to. A toggled value comes back out as the
   // Listbox’s Selected OutMessage, folded into that column’s excluded set.
   GotFilterListboxMessage: {
-    column: Schema.String,
+    columnId: Schema.String,
     message: Listbox.Message,
   },
   // Carries the current calendar date fetched from the clock by FetchToday at
@@ -103,8 +103,8 @@ export const Message = defineMessageUnion({
   // back out as the DatePicker’s SelectedDate OutMessage, folded into
   // `dateFilters`.
   GotDateFilterMessage: {
-    column: Schema.String,
-    bound: Schema.Literals(['from', 'to']),
+    columnId: Schema.String,
+    boundId: Schema.Literals(['from', 'to']),
     message: DatePicker.Message,
   },
   // Clears both bounds of a date column’s range filter. Purely parent-side:

@@ -408,7 +408,8 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
           panelClassName: datePickerPanelStyle,
           toCalendarView: (attributes) => calendarView(attributes, h),
         },
-        toParentMessage: (message) => Message.GotDateFilterMessage({ column, bound, message }),
+        toParentMessage: (message) =>
+          Message.GotDateFilterMessage({ columnId: column, boundId: bound, message }),
       });
 
     return h.div(
@@ -472,7 +473,7 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
         ariaLabel: `${column} filter`,
         anchor: { placement: 'bottom-start', gap: 4 },
       },
-      toParentMessage: (message) => Message.GotFilterListboxMessage({ column, message }),
+      toParentMessage: (message) => Message.GotFilterListboxMessage({ columnId: column, message }),
     });
   };
 
@@ -488,7 +489,7 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
   const failureError = sectionState._tag === 'Failure' ? sectionState.error : '';
 
   const skeletonBar = (widthClass: string): Html =>
-    h.div([h.Class(`h-3 rounded bg-neutral-200 ${widthClass}`)], []);
+    h.div([h.Class(`h-3 rounded bg-neutral-200 ${widthClass}`)]);
 
   const skeletonCard = (): Html =>
     h.div(
@@ -649,7 +650,7 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
             [
               h.h1([h.Class('text-2xl font-medium md:text-3xl')], [label]),
               showSkeleton
-                ? h.div([h.Class('mt-2 h-4 w-20 rounded bg-neutral-200')], [])
+                ? h.div([h.Class('mt-2 h-4 w-20 rounded bg-neutral-200')])
                 : h.p([h.Class('mt-1 text-sm text-neutral-500')], [countLine]),
             ],
           ),
@@ -664,16 +665,13 @@ const content = (model: Model, current: Section, h: HtmlBuilder<Message>): Html 
                 [
                   // Role('status') makes the diode a live region, so a health
                   // flip is announced, not just recolored.
-                  h.span(
-                    [
-                      h.Role('status'),
-                      h.AriaLabel(
-                        model.serverHealth === 'Down' ? 'Server unreachable' : 'Server reachable',
-                      ),
-                      h.Class(`${diodeStyle} ${diodeColorStyle[model.serverHealth]}`),
-                    ],
-                    [],
-                  ),
+                  h.span([
+                    h.Role('status'),
+                    h.AriaLabel(
+                      model.serverHealth === 'Down' ? 'Server unreachable' : 'Server reachable',
+                    ),
+                    h.Class(`${diodeStyle} ${diodeColorStyle[model.serverHealth]}`),
+                  ]),
                   Button.view(
                     {
                       onClick: retry,

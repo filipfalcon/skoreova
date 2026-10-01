@@ -580,14 +580,14 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     // OutMessage flips the value’s membership in that column’s *excluded*
     // (unchecked) set. An emptied set drops the column’s filter — nothing
     // excluded = all checked (the default).
-    GotFilterListboxMessage: ({ column, message }) =>
+    GotFilterListboxMessage: ({ columnId: column, message }) =>
       Update.foldChild({
         update: FilterListbox.update,
         read: (parent: Model) => Option.fromUndefinedOr(parent.filterListboxes[column]),
         write: (parent: Model, listbox) =>
           modifyFields(parent, { filterListboxes: (boxes) => ({ ...boxes, [column]: listbox }) }),
         toParentMessage: (childMessage) =>
-          Message.GotFilterListboxMessage({ column, message: childMessage }),
+          Message.GotFilterListboxMessage({ columnId: column, message: childMessage }),
         foldOutMessage:
           ({ value }) =>
           (stepModel: Model) => {
@@ -616,7 +616,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
     // Delegates to one bound of a date column’s filter DatePicker. Its
     // SelectedDate OutMessage commits that bound of the column’s range;
     // ChangedViewMonth is just the visible month moving.
-    GotDateFilterMessage: ({ column, bound, message }) =>
+    GotDateFilterMessage: ({ columnId: column, boundId: bound, message }) =>
       Update.foldChild({
         update: DatePicker.update,
         read: (parent: Model) =>
@@ -634,7 +634,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
             },
           }),
         toParentMessage: (childMessage) =>
-          Message.GotDateFilterMessage({ column, bound, message: childMessage }),
+          Message.GotDateFilterMessage({ columnId: column, boundId: bound, message: childMessage }),
         foldOutMessage: (outMessage: DatePicker.OutMessage) =>
           DatePicker.OutMessage.match<Update.Step<Model, Message>>(outMessage, {
             ChangedViewMonth: () => (stepModel) => ({ model: stepModel }),

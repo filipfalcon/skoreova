@@ -358,26 +358,18 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
         // drawer tears the host down and remounts it — OnMount refires, and the
         // new record’s data is synced in (an unkeyed host would keep the prior
         // record’s chart, since OnMount only fires once per element).
-        h.keyed('div')(
-          `chart-${entry.id}`,
-          [
-            h.OnMount(MountChart({ hostId: CHART_HOST_ID })),
-            h.AriaLabel('Record stats chart'),
-            h.Class('h-56 w-full'),
-          ],
-          [],
-        ),
+        h.keyed('div')(`chart-${entry.id}`, [
+          h.OnMount(MountChart({ hostId: CHART_HOST_ID })),
+          h.AriaLabel('Record stats chart'),
+          h.Class('h-56 w-full'),
+        ]),
         // Points-over-time only makes sense for a team’s league campaign.
         isTeam
-          ? h.keyed('div')(
-              `points-${entry.id}`,
-              [
-                h.OnMount(MountChart({ hostId: POINTS_CHART_HOST_ID })),
-                h.AriaLabel('Points over time chart'),
-                h.Class('h-56 w-full'),
-              ],
-              [],
-            )
+          ? h.keyed('div')(`points-${entry.id}`, [
+              h.OnMount(MountChart({ hostId: POINTS_CHART_HOST_ID })),
+              h.AriaLabel('Points over time chart'),
+              h.Class('h-56 w-full'),
+            ])
           : h.empty,
         Option.match(model.chartError, {
           onNone: () => h.empty,
@@ -655,7 +647,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
           [...render.dialog],
           render.isVisible
             ? [
-                h.div([...render.backdrop, h.Class('fixed inset-0 bg-black/30')], []),
+                h.div([...render.backdrop, h.Class('fixed inset-0 bg-black/30')]),
                 h.aside(
                   [
                     ...render.panel,
