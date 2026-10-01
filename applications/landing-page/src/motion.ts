@@ -1,4 +1,4 @@
-import { Effect, Queue, Schema, Stream } from 'effect';
+import { Effect, Queue, Stream } from 'effect';
 import { Mount } from 'foldkit';
 
 import { Message } from './message';
@@ -181,6 +181,16 @@ interface MarqueeTrack {
 // state), and the recount watcher runs its own small loop here. Never
 // installed under reduced motion: the view force-reveals everything and
 // the numbers rest on their final values.
+// Both motion Mounts read the preference themselves, when they start. The Model's
+// `prefersReducedMotion` cannot serve them: Foldkit runs Mounts in the first render, before any
+// Subscription has reported, and on a server-rendered page the Model's value at that moment is the
+// server's default, `false`. Taking it would start the motion for a reader who asked for none, and
+// keep it running until the flag flipped. The Model's value still decides everything `update`
+// does, which only runs once the Subscription has reported, and the page root is keyed on it, so a
+// change of preference mid-session restarts both Mounts.
+export const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+const prefersReducedMotionNow = (): boolean => window.matchMedia(REDUCED_MOTION_QUERY).matches;
+
 const setUpReveals = (
   root: HTMLElement,
   emit: (message: typeof Message.ChangedReveals.Type) => void,
@@ -784,7 +794,7 @@ const setUpReveals = (
 };
 
 const setUpMotion = (root: HTMLElement): (() => void) => {
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduceMotion = prefersReducedMotionNow();
   const cleanups: Array<() => void> = [];
 
   // iOS Safari only engages CSS `:active` states on touch once the page has
@@ -1266,19 +1276,16 @@ export const MountMotion = Mount.define('MountMotion', {
 
 // The reveal observers as their own streaming Mount — MountMotion keeps the
 // per-frame choreography; this one only OBSERVES and reports, because
-// reveal state is discrete and belongs to the Model. `reduceMotion` rides
-// in from the Model (one OnMount per element, so this sits on the page
-// root while <main> carries MountMotion; the root is keyed on the flag, so
-// a flip re-runs this factory with the fresh value).
+// reveal state is discrete and belongs to the Model. One OnMount per element,
+// so this sits on the page root while <main> carries MountMotion.
 export const ObserveReveals = Mount.defineStream('ObserveReveals', {
-  args: { reduceMotion: Schema.Boolean },
   messages: [Message.ChangedReveals],
-  execute: ({ element, reduceMotion }) =>
+  execute: ({ element }) =>
     Stream.callback<typeof Message.ChangedReveals.Type>((queue) =>
       Effect.gen(function* () {
         yield* Effect.acquireRelease(
           Effect.sync(() =>
-            !reduceMotion && element instanceof HTMLElement
+            !prefersReducedMotionNow() && element instanceof HTMLElement
               ? setUpReveals(element, (message) => Queue.offerUnsafe(queue, message))
               : (): void => {},
           ),

@@ -92,10 +92,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
     // per-frame choreography’s MountMotion).
     body: h.keyed('div')(
       rootKey,
-      [
-        h.Class('bg-ink font-body text-paper antialiased'),
-        h.OnMount(ObserveReveals({ reduceMotion: model.prefersReducedMotion })),
-      ],
+      [h.Class('bg-ink font-body text-paper antialiased'), h.OnMount(ObserveReveals())],
       [
         headerView(model, h),
         menuOverlayView(model, h),

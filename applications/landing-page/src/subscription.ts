@@ -6,6 +6,7 @@ import { Subscription } from 'foldkit';
 
 import type { Model } from './model';
 import { Message } from './message';
+import { REDUCED_MOTION_QUERY } from './motion';
 
 // SUBSCRIPTIONS
 
@@ -130,7 +131,7 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
   // before any frame the user could act on.
   reducedMotion: Subscription.persistent(
     Subscription.fromMediaQuery({
-      query: '(prefers-reduced-motion: reduce)',
+      query: REDUCED_MOTION_QUERY,
       mapMatches: (reduce) => Message.ChangedReducedMotion({ reduce }),
     }),
   ),
