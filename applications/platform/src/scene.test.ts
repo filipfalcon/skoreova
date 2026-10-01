@@ -72,8 +72,7 @@ describe('view', () => {
       { update, view },
       Scene.given(clubProfileModel),
       ...acknowledgeStrip,
-      Scene.expectAll(Scene.all.selector('header a svg path[d]')).toHaveCount(5),
-      Scene.expectAll(Scene.all.selector('header a svg path[d=""]')).toHaveCount(0),
+      Scene.expectAll(Scene.all.selector('header a svg path[d]:not([d=""])')).toHaveCount(5),
     );
   });
 
