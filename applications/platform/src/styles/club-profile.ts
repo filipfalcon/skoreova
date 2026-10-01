@@ -63,7 +63,6 @@ const STATEMENT_LEADING = 1.45;
 const BYLINE_HEIGHT = { default: '3.5rem', enlarged: '7rem' } as const;
 
 export const styles = stylex.create({
-  // The dark act — flows straight out of the header chrome, full-bleed via the 50%-50vw margin trick. Closes `lg` under the intro — the last fixed gap of the template before the paper act.
   // The identity bar, pinned under the header for the whole profile, so the way back and the club's name are one tap away at any depth. It sits at the page level rather than in the band, since a sticky element only sticks within its parent; full-bleed like the band, straight out of the header chrome, above the page's content and below the header, its pinned jump row and every overlay.
   identityBar: {
     position: 'sticky',
@@ -79,9 +78,13 @@ export const styles = stylex.create({
       [MD]: '2.5rem',
     },
   },
+  // The dark act — flows straight out of the header chrome, full-bleed via the 50%-50vw margin trick. Closes `lg` under the intro — the last fixed gap of the template before the paper act.
+  // It starts directly under the header and runs under the identity bar, so at rest the bar's translucent chrome lies over ink, as the header's lies over the black spacer, and the two rows read as one colour. The band rises by the bar's height and pads back down by the same amount, so nothing inside it moves.
   darkBand: {
     position: 'relative',
+    marginTop: 'calc(-1 * var(--profile-bar-height))',
     marginInline: 'calc(50% - 50vw)',
+    paddingTop: 'var(--profile-bar-height)',
     backgroundColor: tokens.ink,
     paddingInline: {
       default: '1.25rem',

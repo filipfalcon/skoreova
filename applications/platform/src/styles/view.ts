@@ -16,13 +16,15 @@ export const styles = stylex.create({
   shell: {
     minHeight: '100vh',
   },
-  // A BLACK spacer clears the fixed header (bar + section rail) instead
-  // of padding: the translucent header must rest on black, not on the
+  // An INK spacer clears the fixed header (bar + section rail) instead
+  // of padding: the translucent header must rest on ink, not on the
   // paper page — content still slides beneath the blur once you scroll.
+  // Ink rather than black, the ground a profile's dark band lays under its
+  // identity bar, so at rest the two chrome rows read as one colour.
   headerSpacer: {
     // The row of tabs and the hairline under it. Below `md` a tab stacks a glyph over its label, which is what makes the phone header the taller of the two.
     height: 'var(--header-height)',
-    backgroundColor: 'black',
+    backgroundColor: tokens.ink,
   },
   main: {
     marginInline: 'auto',
