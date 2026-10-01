@@ -30,7 +30,7 @@ export const Message = defineMessageUnion({
   OpenedMapClub: { slug: Schema.String },
   // Closes the open club card.
   ClosedMapClub: {},
-  ToggledAreaUnit: {},
+  ToggledAreaUnit: { isImperial: Schema.Boolean },
   // The OS-level `prefers-reduced-motion` setting flipped mid-session — see
   // the reducedMotion subscription.
   ChangedReducedMotion: { reduce: Schema.Boolean },

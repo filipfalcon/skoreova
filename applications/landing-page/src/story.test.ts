@@ -105,9 +105,9 @@ test('opening a club card records its slug; the area unit toggles', () => {
     Story.model((model) => {
       expect(model.mapClub).toEqual(Option.none());
     }),
-    Story.message(Message.ToggledAreaUnit()),
+    // Rests imperial; the switch reports the unit it turned to.
+    Story.message(Message.ToggledAreaUnit({ isImperial: false })),
     Story.model((model) => {
-      // Rests imperial, so the first toggle flips it to metric.
       expect(model.isMapAreaImperial).toBe(false);
     }),
     Story.Command.expectNone(),

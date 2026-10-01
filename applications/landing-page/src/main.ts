@@ -144,8 +144,8 @@ export const update = (model: Model, message: Message) =>
       model: modifyFields(model, { mapClub: () => Option.some(slug) }),
     }),
     ClosedMapClub: () => ({ model: modifyFields(model, { mapClub: () => Option.none() }) }),
-    ToggledAreaUnit: () => ({
-      model: modifyFields(model, { isMapAreaImperial: (imperial) => !imperial }),
+    ToggledAreaUnit: ({ isImperial }) => ({
+      model: modifyFields(model, { isMapAreaImperial: () => isImperial }),
     }),
     CompletedMountMotion: () => ({ model }),
     // Motion is decorative — if it fails to attach, the page still renders

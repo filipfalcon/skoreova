@@ -1,4 +1,4 @@
-import { Button } from '@foldkit/ui';
+import { Button, Switch } from '@foldkit/ui';
 import clsx from 'clsx';
 import { Option } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
@@ -554,12 +554,20 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
               // occupy the same grid cell, so the width never shifts — it’s
               // fixed by the wider one, and the sentence period lives inside
               // each variant to hug its own number.
-              // A real button so the unit swap also works from the keyboard
-              // and gets the pink focus ring; cursor-help still signals
-              // "informational" rather than navigational.
-              Button.view(
+              // A switch, named for the unit it turns on, so the swap works
+              // from the keyboard, gets the pink focus ring and announces its
+              // state; cursor-help still signals "informational" rather than
+              // navigational. A switch's content is not read, so the figure
+              // the sentence states is given to assistive tech beside it.
+              h.span(
+                [h.Class('sr-only')],
+                [model.isMapAreaImperial ? '30,452 sq mi.' : '78,871 km².'],
+              ),
+              Switch.view(
                 {
-                  onClick: Message.ToggledAreaUnit(),
+                  id: 'area-unit',
+                  isChecked: model.isMapAreaImperial,
+                  onToggle: (isImperial) => Message.ToggledAreaUnit({ isImperial }),
                   toView: ({ button }) =>
                     h.button(
                       [
@@ -575,7 +583,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                           // number would sink out of the sentence’s line.
                           'area-swap inline-grid cursor-help justify-items-start whitespace-nowrap select-none [clip-path:inset(0)]',
                         ),
-                        h.AriaLabel('Toggle between metric and imperial area'),
+                        h.AriaLabel('Imperial units'),
                       ],
                       [
                         h.span(

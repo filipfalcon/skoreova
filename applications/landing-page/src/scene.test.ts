@@ -39,7 +39,8 @@ describe('view', () => {
       Scene.given(landingModel),
       ...acknowledgeMounts,
       Scene.expect(Scene.role('radio', { name: 'All clubs' })).toExist(),
-      Scene.expect(Scene.label('Toggle between metric and imperial area')).toExist(),
+      Scene.expect(Scene.role('switch', { name: 'Imperial units', checked: true })).toExist(),
+      Scene.expect(Scene.text('30,452 sq mi.')).toExist(),
     );
   });
 
