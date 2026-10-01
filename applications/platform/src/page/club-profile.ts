@@ -472,7 +472,7 @@ const clubHistorySection = (target: Club, model: Model, h: HtmlBuilder<Message>)
           h.div(
             [],
             [
-              h.div([...getStyleXAttributes(h, styles.pinkRule)], []),
+              h.div([...getStyleXAttributes(h, styles.pinkRule)]),
               h.p(
                 [...getStyleXAttributes(h, shared.display, styles.historyValue)],
                 entry.isCount ? timesCount(Number(entry.value), h) : [entry.value],
@@ -750,7 +750,7 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
                 h.Style({ 'object-position': focalPosition(focalPoint) }),
               ]),
           }),
-          h.div([...getStyleXAttributes(h, styles.heroArtFade)], []),
+          h.div([...getStyleXAttributes(h, styles.heroArtFade)]),
         ],
       ),
       h.div(
@@ -789,7 +789,7 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
           ),
         ],
       ),
-      h.div([...getStyleXAttributesWith(h, 'grain', styles.grainOverlay), h.AriaHidden(true)], []),
+      h.div([...getStyleXAttributesWith(h, 'grain', styles.grainOverlay), h.AriaHidden(true)]),
     ],
   );
 

@@ -175,7 +175,7 @@ const europeanContenders = (model: Model, h: HtmlBuilder<Message>): Html => {
               h.div(
                 [...getStyleXAttributes(h, styles.frame)],
                 [
-                  h.div([...getStyleXAttributes(h, styles.offsetFrame), h.AriaHidden(true)], []),
+                  h.div([...getStyleXAttributes(h, styles.offsetFrame), h.AriaHidden(true)]),
                   h.a(
                     [
                       h.Key(entryAt(active).slug),
@@ -222,7 +222,7 @@ const europeanContenders = (model: Model, h: HtmlBuilder<Message>): Html => {
                     [...getStyleXAttributes(h, shared.display, styles.plaqueName)],
                     [clubAt(active)?.name ?? ''],
                   ),
-                  h.div([...getStyleXAttributes(h, styles.plaqueRule)], []),
+                  h.div([...getStyleXAttributes(h, styles.plaqueRule)]),
                 ],
               ),
               ghost(next, styles.ghostEnd),
@@ -242,7 +242,7 @@ const europeanContenders = (model: Model, h: HtmlBuilder<Message>): Html => {
         ],
       ),
       // Film grain over the whole band — the landing hero’s skin.
-      h.div([...getStyleXAttributesWith(h, 'grain', styles.grainOverlay), h.AriaHidden(true)], []),
+      h.div([...getStyleXAttributesWith(h, 'grain', styles.grainOverlay), h.AriaHidden(true)]),
     ],
   );
 };
@@ -340,13 +340,10 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
               h.div(
                 [...getStyleXAttributes(h, styles.formBar)],
                 [
-                  h.div(
-                    [
-                      ...getStyleXAttributes(h, styles.formWins),
-                      h.Style({ width: `${(entry.won / played) * 100}%` }),
-                    ],
-                    [],
-                  ),
+                  h.div([
+                    ...getStyleXAttributes(h, styles.formWins),
+                    h.Style({ width: `${(entry.won / played) * 100}%` }),
+                  ]),
                   // INK tints, not paper. These segments date from the dark
                   // build; on the paper panel this card actually sits on,
                   // the paper tints were invisible, so the form bar read as
@@ -354,20 +351,14 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html => {
                   // tint is 25% rather than 10% for the same reason at a
                   // smaller scale: at 10% a club with few defeats still
                   // showed a bar that appeared to end early.
-                  h.div(
-                    [
-                      ...getStyleXAttributes(h, styles.formDraws),
-                      h.Style({ width: `${(entry.drawn / played) * 100}%` }),
-                    ],
-                    [],
-                  ),
-                  h.div(
-                    [
-                      ...getStyleXAttributes(h, styles.formLosses),
-                      h.Style({ width: `${(entry.lost / played) * 100}%` }),
-                    ],
-                    [],
-                  ),
+                  h.div([
+                    ...getStyleXAttributes(h, styles.formDraws),
+                    h.Style({ width: `${(entry.drawn / played) * 100}%` }),
+                  ]),
+                  h.div([
+                    ...getStyleXAttributes(h, styles.formLosses),
+                    h.Style({ width: `${(entry.lost / played) * 100}%` }),
+                  ]),
                 ],
               ),
               h.p(

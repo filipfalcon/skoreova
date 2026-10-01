@@ -201,7 +201,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                   h.Style({ '--reveal-delay': `${index * 0.15}s` }),
                 ],
                 [
-                  h.div([h.Class('mb-4 h-1 w-12 bg-ink sm:mx-auto md:mx-0')], []),
+                  h.div([h.Class('mb-4 h-1 w-12 bg-ink sm:mx-auto md:mx-0')]),
                   // Aria-hidden + sr-only twin: mid-animation the visible
                   // text is a rolling intermediate, not the stat.
                   h.span(

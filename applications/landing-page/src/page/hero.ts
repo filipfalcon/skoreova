@@ -84,22 +84,19 @@ export const view = (h: HtmlBuilder<Message>): Html =>
       // it always covers the whole hero. Inside the layer it moved with the
       // parallax, and when the offset pushed the layer down it left a thin
       // undimmed strip of the bright photo at the hero’s top edge.
-      h.div([h.Class('absolute inset-0 bg-ink/50')], []),
+      h.div([h.Class('absolute inset-0 bg-ink/50')]),
       // Bottom scrim — a light ink gradient rising from the base so the
       // corner captions read against the photo’s bright areas (the white
       // shorts), while fading out fast enough to leave the picture’s
       // overall exposure alone.
-      h.div(
-        [
-          h.Class(
-            'pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ink/50 to-transparent md:h-40',
-          ),
-        ],
-        [],
-      ),
+      h.div([
+        h.Class(
+          'pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ink/50 to-transparent md:h-40',
+        ),
+      ]),
       // Film grain over the darkened photo — below the content layer, so the
       // headline, neon and CTA stay clean above it.
-      h.div([h.Class('grain pointer-events-none absolute inset-0')], []),
+      h.div([h.Class('grain pointer-events-none absolute inset-0')]),
       h.div(
         // No bottom padding below sm — the scroll cue centers itself in the
         // leftover space below the CTA (my-auto), and any padding here would

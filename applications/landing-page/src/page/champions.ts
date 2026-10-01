@@ -1114,7 +1114,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                         h.Style({ '--reveal-delay': `${0.15 + index * 0.1}s` }),
                       ],
                       [
-                        h.div([h.Class('mb-4 h-1 w-12 bg-ink')], []),
+                        h.div([h.Class('mb-4 h-1 w-12 bg-ink')]),
                         h.p([h.Class('display text-xl text-pink md:text-2xl')], [value]),
                         h.p(
                           [h.Class('mt-3 text-xs tracking-[0.2em] uppercase md:text-sm')],
@@ -1131,18 +1131,15 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                       h.Style({ '--reveal-delay': '0.45s' }),
                     ],
                     [
-                      h.div([h.Class('mb-4 h-1 w-12 bg-ink')], []),
+                      h.div([h.Class('mb-4 h-1 w-12 bg-ink')]),
                       h.div(
                         [h.Class('flex h-7 items-center gap-1.5 md:h-8')],
                         [
                           ...['#1f58ad', '#faa713', '#c81313'].map((color) =>
-                            h.span(
-                              [
-                                h.Class('inline-block h-5 w-5 border border-ink/20 md:h-6 md:w-6'),
-                                h.Style({ 'background-color': color }),
-                              ],
-                              [],
-                            ),
+                            h.span([
+                              h.Class('inline-block h-5 w-5 border border-ink/20 md:h-6 md:w-6'),
+                              h.Style({ 'background-color': color }),
+                            ]),
                           ),
                           h.span([h.Class('sr-only')], ['Blue, yellow, and red']),
                         ],

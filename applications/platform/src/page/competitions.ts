@@ -48,13 +48,10 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                   h.div(
                     [...getStyleXAttributes(h, styles.track)],
                     [
-                      h.div(
-                        [
-                          ...getStyleXAttributes(h, styles.fill),
-                          h.Style({ width: `${competition.progress}%` }),
-                        ],
-                        [],
-                      ),
+                      h.div([
+                        ...getStyleXAttributes(h, styles.fill),
+                        h.Style({ width: `${competition.progress}%` }),
+                      ]),
                     ],
                   ),
                 ],

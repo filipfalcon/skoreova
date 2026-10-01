@@ -260,18 +260,12 @@ const clubPin = (model: Model, club: Club, h: HtmlBuilder<Message>): Html => {
         ],
         [
           // The connector, rotated around the dot (origin-bottom, bottom = dot).
-          h.div(
-            [h.Class('club-pin-line absolute bottom-0 left-0 w-px origin-bottom bg-paper')],
-            [],
-          ),
-          h.div(
-            [
-              h.Class(
-                'club-pin-dot absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper',
-              ),
-            ],
-            [],
-          ),
+          h.div([h.Class('club-pin-line absolute bottom-0 left-0 w-px origin-bottom bg-paper')]),
+          h.div([
+            h.Class(
+              'club-pin-dot absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper',
+            ),
+          ]),
           // The chip: every crest sits inside an identical paper circle —
           // normalization by construction (shields, circles, and star-topped
           // crests all read as one calm system). A few crest images carry
@@ -669,7 +663,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                       h.Style({ '--reveal-delay': `${index * 0.15}s` }),
                     ],
                     [
-                      h.div([h.Class('mb-4 h-1 w-12 bg-pink')], []),
+                      h.div([h.Class('mb-4 h-1 w-12 bg-pink')]),
                       // Aria-hidden: the count-up/recount rewrites this
                       // text mid-flight — the sr-only twin (model-driven,
                       // so it follows the league filter too) carries the
@@ -798,34 +792,28 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                           // is `stroke-none` — its neighbors draw both its borders.
                           ...CZECH_REGIONS.map((region, index) => {
                             const wipe = LAND_BORDER_WIPES[region.name];
-                            return h.path(
-                              [
-                                h.D(region.d),
-                                h.DataAttribute('land', region.name),
-                                h.Style({
-                                  '--tint-delay': `${landTintDelaySeconds(index)}s`,
-                                  // Inline on purpose: the unlayered .region-path
-                                  // stroke in styles.css outweighs any utility.
-                                  ...(wipe
-                                    ? {
-                                        '--border-delay': `${wipe.delay}s`,
-                                        '--border-duration': `${wipe.duration}s`,
-                                      }
-                                    : { stroke: 'none' }),
-                                }),
-                                h.Class('region-path fill-pink/25 transition-[fill] duration-300'),
-                              ],
-                              [],
-                            );
+                            return h.path([
+                              h.D(region.d),
+                              h.DataAttribute('land', region.name),
+                              h.Style({
+                                '--tint-delay': `${landTintDelaySeconds(index)}s`,
+                                // Inline on purpose: the unlayered .region-path
+                                // stroke in styles.css outweighs any utility.
+                                ...(wipe
+                                  ? {
+                                      '--border-delay': `${wipe.delay}s`,
+                                      '--border-duration': `${wipe.duration}s`,
+                                    }
+                                  : { stroke: 'none' }),
+                              }),
+                              h.Class('region-path fill-pink/25 transition-[fill] duration-300'),
+                            ]);
                           }),
-                          h.path(
-                            [
-                              h.D(CZECHIA_PATH),
-                              h.Attribute('pathLength', '1'),
-                              h.Class('map-path'),
-                            ],
-                            [],
-                          ),
+                          h.path([
+                            h.D(CZECHIA_PATH),
+                            h.Attribute('pathLength', '1'),
+                            h.Class('map-path'),
+                          ]),
                         ],
                       ),
                       // The league filter HIDES pins outright — no dimmed
@@ -862,14 +850,11 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                       ...(Option.isNone(model.mapClub)
                         ? []
                         : [
-                            h.div(
-                              [
-                                h.Class('absolute inset-0 z-[5]'),
-                                h.OnClick(Message.ClosedMapClub()),
-                                h.AriaHidden(true),
-                              ],
-                              [],
-                            ),
+                            h.div([
+                              h.Class('absolute inset-0 z-[5]'),
+                              h.OnClick(Message.ClosedMapClub()),
+                              h.AriaHidden(true),
+                            ]),
                           ]),
                     ],
                   ),

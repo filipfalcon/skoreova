@@ -178,22 +178,19 @@ const seasonTimeline = (shape: SeasonShape, h: HtmlBuilder<Message>): Html => {
               }
             : {}),
         };
-        return h.div(
-          [
-            ...getStyleXAttributesWith(
-              h,
-              contract,
-              styles.timelinePiece,
-              isPlayed
-                ? isCurrent
-                  ? styles.timelinePieceCurrent
-                  : styles.timelinePiecePlayed
-                : styles.timelinePieceRest,
-            ),
-            h.Style(timings),
-          ],
-          [],
-        );
+        return h.div([
+          ...getStyleXAttributesWith(
+            h,
+            contract,
+            styles.timelinePiece,
+            isPlayed
+              ? isCurrent
+                ? styles.timelinePieceCurrent
+                : styles.timelinePiecePlayed
+              : styles.timelinePieceRest,
+          ),
+          h.Style(timings),
+        ]);
       }),
     );
   const phaseLabel = (phase: (typeof phases)[number], isActive: boolean): Html =>
@@ -296,7 +293,7 @@ const heroSubtitleLine = (competition: Competition, h: HtmlBuilder<Message>): Ht
         ? [part]
         : [
             ' ',
-            h.span([...getStyleXAttributes(h, styles.heroSubtitleDot), h.AriaHidden(true)], []),
+            h.span([...getStyleXAttributes(h, styles.heroSubtitleDot), h.AriaHidden(true)]),
             ' ',
             part,
           ],
@@ -410,12 +407,12 @@ const competitionHero = (
       // scroll position and every photo, which is the point — each
       // competition brings its own photography and none of it can be
       // trusted to be dark where the type lands.
-      h.div([...getStyleXAttributes(h, styles.heroScrim), h.AriaHidden(true)], []),
+      h.div([...getStyleXAttributes(h, styles.heroScrim), h.AriaHidden(true)]),
       // The TOP scrim, the bottom one's twin (user call): the wayfinding
       // line has to sit on guaranteed dark whatever the photo does up
       // there. Same reasoning, same reason it is a sibling and not a child
       // of the drifting artwork.
-      h.div([...getStyleXAttributes(h, styles.heroTopScrim), h.AriaHidden(true)], []),
+      h.div([...getStyleXAttributes(h, styles.heroTopScrim), h.AriaHidden(true)]),
       // THE WAYFINDING LINE — breadcrumb left, season right (user call).
       // The two belong together: both answer "where am I", neither is
       // content, and the top of the artwork was empty once the badge went.
@@ -458,7 +455,7 @@ const competitionHero = (
       ),
       // Film grain over the dark world only — the data act below stays
       // clean paper, exactly like the club profile's seam.
-      h.div([...getStyleXAttributesWith(h, 'grain', styles.heroGrain), h.AriaHidden(true)], []),
+      h.div([...getStyleXAttributesWith(h, 'grain', styles.heroGrain), h.AriaHidden(true)]),
     ],
   );
 };
@@ -525,7 +522,7 @@ const formStrip = (league: string, team: string, h: HtmlBuilder<Message>): Html 
       ),
     ],
     results.map((result) =>
-      h.span([...getStyleXAttributes(h, styles.formSquare, FORM_STYLE[result] ?? null)], []),
+      h.span([...getStyleXAttributes(h, styles.formSquare, FORM_STYLE[result] ?? null)]),
     ),
   );
 };

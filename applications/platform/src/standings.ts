@@ -177,16 +177,13 @@ export const seasonProgress = (played: number, total: number, h: HtmlBuilder<Mes
       h.div(
         [...getStyleXAttributes(h, styles.progressTrack)],
         Array.makeBy(total, (index) =>
-          h.div(
-            [
-              ...getStyleXAttributes(
-                h,
-                styles.progressSegment,
-                index < played ? styles.progressSegmentPlayed : styles.progressSegmentLeft,
-              ),
-            ],
-            [],
-          ),
+          h.div([
+            ...getStyleXAttributes(
+              h,
+              styles.progressSegment,
+              index < played ? styles.progressSegmentPlayed : styles.progressSegmentLeft,
+            ),
+          ]),
         ),
       ),
     ],
@@ -250,7 +247,7 @@ const standingsColumnKey = (h: HtmlBuilder<Message>): Html =>
   h.div(
     [...getStyleXAttributes(h, styles.columnKey)],
     [
-      h.span([...getStyleXAttributes(h, styles.columnPosition)], []),
+      h.span([...getStyleXAttributes(h, styles.columnPosition)]),
       h.span([...getStyleXAttributes(h, styles.columnClub)], ['Club']),
       h.span([...getStyleXAttributes(h, styles.columnQualification)], ['Qualification']),
       h.span([...getStyleXAttributes(h, styles.columnScore)], ['Goals']),
@@ -298,7 +295,7 @@ const standingsRows = (
         // row's fill.
         [...getStyleXAttributes(h, styles.rowShell)],
         [
-          h.span([...getStyleXAttributes(h, styles.rowGutter, zoneBar), h.AriaHidden(true)], []),
+          h.span([...getStyleXAttributes(h, styles.rowGutter, zoneBar), h.AriaHidden(true)]),
           rowElement(
             [
               ...rowLink,
@@ -381,10 +378,7 @@ const standingsLegend = (zones: ReadonlyArray<StandingsZone>, h: HtmlBuilder<Mes
       h.li(
         [...getStyleXAttributes(h, styles.legendEntry)],
         [
-          h.span(
-            [...getStyleXAttributes(h, styles.legendSwatch, zone.bar), h.AriaHidden(true)],
-            [],
-          ),
+          h.span([...getStyleXAttributes(h, styles.legendSwatch, zone.bar), h.AriaHidden(true)]),
           h.span([...getStyleXAttributes(h, styles.legendLabel)], [zone.label]),
         ],
       ),

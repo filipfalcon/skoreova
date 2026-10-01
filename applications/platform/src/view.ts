@@ -92,7 +92,7 @@ const shellView = (model: Model, h: HtmlBuilder<Message>): Html =>
       h.div(
         [],
         [
-          h.div([...getStyleXAttributes(h, styles.headerSpacer)], []),
+          h.div([...getStyleXAttributes(h, styles.headerSpacer)]),
           // Keyed per screen AND per open profile so the slide-in replays
           // on every section or profile change.
           h.main(

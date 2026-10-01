@@ -66,7 +66,7 @@ export const trendingTile = (
                   ...getStyleXAttributes(h, styles.tilePhoto),
                   h.Style({ 'object-position': entry.focus }),
                 ]),
-                h.div([...getStyleXAttributes(h, styles.tileGradient)], []),
+                h.div([...getStyleXAttributes(h, styles.tileGradient)]),
               ]
             : []),
           // Names WRAP instead of truncating — the long ones (KATEŘINA
@@ -184,18 +184,15 @@ export const statSpark = (rounds: ReadonlyArray<number>, h: HtmlBuilder<Message>
       const max = Math.max(...rounds);
       const spread = max - min;
       const height = 25 + (spread === 0 ? 65 : ((value - min) / spread) * 65);
-      return h.div(
-        [
-          ...getStyleXAttributesWith(
-            h,
-            'bar',
-            styles.sparkBar,
-            index === rounds.length - 1 ? styles.sparkBarCurrent : styles.sparkBarPast,
-          ),
-          h.Style({ height: `${height.toFixed(1)}%`, '--bar-delay': `${index * 0.03}s` }),
-        ],
-        [],
-      );
+      return h.div([
+        ...getStyleXAttributesWith(
+          h,
+          'bar',
+          styles.sparkBar,
+          index === rounds.length - 1 ? styles.sparkBarCurrent : styles.sparkBarPast,
+        ),
+        h.Style({ height: `${height.toFixed(1)}%`, '--bar-delay': `${index * 0.03}s` }),
+      ]);
     }),
   );
 
@@ -298,7 +295,7 @@ export const statCard = (
                 // The seam carries the brand: a hard pink rule between
                 // the photo and the figures, the same ink-meets-pink
                 // edge the section chips stamp everywhere else.
-                h.div([...getStyleXAttributes(h, styles.cardSeam)], []),
+                h.div([...getStyleXAttributes(h, styles.cardSeam)]),
               ]),
           h.div(
             [...getStyleXAttributes(h, styles.cardFooter)],
@@ -451,7 +448,7 @@ export const bestRecord = (
                 ),
               ],
               [
-                h.div([...getStyleXAttributes(h, styles.recordTick)], []),
+                h.div([...getStyleXAttributes(h, styles.recordTick)]),
                 pinned ? pinGlyph(h, componentStyles.pinGlyphTick) : h.empty,
               ],
             ),

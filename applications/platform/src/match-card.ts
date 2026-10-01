@@ -55,7 +55,7 @@ const side = (
     [...getStyleXAttributes(h, styles.side)],
     [
       face === undefined
-        ? h.span([...getStyleXAttributes(h, styles.crestBlank)], [])
+        ? h.span([...getStyleXAttributes(h, styles.crestBlank)])
         : h.img([
             ...responsiveSource(face.crest, CREST_SIZE, h),
             h.Alt(''),
@@ -351,7 +351,7 @@ export const matchCard = (
               ]),
             ],
           }),
-          h.div([...getStyleXAttributes(h, styles.heroScrim), h.AriaHidden(true)], []),
+          h.div([...getStyleXAttributes(h, styles.heroScrim), h.AriaHidden(true)]),
           h.div([...getStyleXAttributes(h, styles.heroBody)], body),
         ]
       : body,

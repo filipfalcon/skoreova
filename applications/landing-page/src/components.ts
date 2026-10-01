@@ -135,7 +135,7 @@ export const drawnRightArrow = (classes: string): Html =>
       ih.Fill('currentColor'),
       ih.AriaHidden(true),
     ],
-    [ih.path([ih.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')], [])],
+    [ih.path([ih.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')])],
   );
 
 // Follows text (the left margin is the word gap)…
@@ -165,7 +165,7 @@ export const drawnExternalArrow = (classes: string): Html =>
       ih.StrokeWidth('3.1'),
       ih.AriaHidden(true),
     ],
-    [ih.path([ih.D('M2.5 21.5 L21.5 2.5 M10 2.5 H21.5 V14')], [])],
+    [ih.path([ih.D('M2.5 21.5 L21.5 2.5 M10 2.5 H21.5 V14')])],
   );
 // Same 0.72em as the right arrow — next to the small body type of receipts
 // and handles the shaft then matches the text’s own stroke weight, which is
@@ -199,12 +199,9 @@ export const menuGlyph = (open: boolean, h: HtmlBuilder<Message>): Html =>
       h.AriaHidden(true),
     ],
     [
-      h.line([h.Class('menu-glyph-top'), h.X1('0'), h.Y1('1.715'), h.X2('24'), h.Y2('1.715')], []),
-      h.line([h.Class('menu-glyph-mid'), h.X1('0'), h.Y1('10'), h.X2('24'), h.Y2('10')], []),
-      h.line(
-        [h.Class('menu-glyph-bottom'), h.X1('0'), h.Y1('18.285'), h.X2('24'), h.Y2('18.285')],
-        [],
-      ),
+      h.line([h.Class('menu-glyph-top'), h.X1('0'), h.Y1('1.715'), h.X2('24'), h.Y2('1.715')]),
+      h.line([h.Class('menu-glyph-mid'), h.X1('0'), h.Y1('10'), h.X2('24'), h.Y2('10')]),
+      h.line([h.Class('menu-glyph-bottom'), h.X1('0'), h.Y1('18.285'), h.X2('24'), h.Y2('18.285')]),
     ],
   );
 

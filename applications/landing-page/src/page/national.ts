@@ -53,10 +53,9 @@ const playoffTie = (
       // Czechia carries the pink — the eye should find our side of the
       // bracket first.
       h.p([h.Class(clsx('display mt-4 text-fluid-2xl-4xl', { 'text-pink': czech }))], [home]),
-      h.div(
-        [h.Class('my-3 h-px bg-paper/15 transition-colors duration-300 group-hover:bg-ink/15')],
-        [],
-      ),
+      h.div([
+        h.Class('my-3 h-px bg-paper/15 transition-colors duration-300 group-hover:bg-ink/15'),
+      ]),
       h.p([h.Class('display text-fluid-2xl-4xl')], [away]),
     ],
   );
@@ -79,34 +78,28 @@ const bracketJoint = (
   h.div(
     [h.Class(`relative hidden md:block ${position}`), h.DataAttribute('bracket-step', `${step}`)],
     [
-      h.div(
-        [
-          h.Class(
-            // A bridging joint turns at the middle of its column, so the
-            // stub out of the cell stops there and the next cell gets a
-            // run of its own to be entered by (the turn used to sit flush
-            // against that cell, which read as the bar grazing it rather
-            // than arriving). The pass-through carries the full width.
-            bridge === 'none'
-              ? 'absolute top-1/2 -left-1 right-0 h-1 -translate-y-1/2 bg-ink'
-              : 'absolute top-1/2 left-0 right-1/2 h-1 -translate-y-1/2 bg-ink',
-          ),
-        ],
-        [],
-      ),
+      h.div([
+        h.Class(
+          // A bridging joint turns at the middle of its column, so the
+          // stub out of the cell stops there and the next cell gets a
+          // run of its own to be entered by (the turn used to sit flush
+          // against that cell, which read as the bar grazing it rather
+          // than arriving). The pass-through carries the full width.
+          bridge === 'none'
+            ? 'absolute top-1/2 -left-1 right-0 h-1 -translate-y-1/2 bg-ink'
+            : 'absolute top-1/2 left-0 right-1/2 h-1 -translate-y-1/2 bg-ink',
+        ),
+      ]),
       ...(bridge === 'none'
         ? []
         : [
-            h.div(
-              [
-                h.Class(
-                  bridge === 'down'
-                    ? 'absolute top-1/2 right-1/2 -bottom-4 w-1 translate-x-1/2 bg-ink'
-                    : 'absolute -top-4 right-1/2 bottom-1/2 w-1 translate-x-1/2 bg-ink',
-                ),
-              ],
-              [],
-            ),
+            h.div([
+              h.Class(
+                bridge === 'down'
+                  ? 'absolute top-1/2 right-1/2 -bottom-4 w-1 translate-x-1/2 bg-ink'
+                  : 'absolute -top-4 right-1/2 bottom-1/2 w-1 translate-x-1/2 bg-ink',
+              ),
+            ]),
           ]),
       // The converged run into the next round, drawn by the DOWN joint
       // alone: its vertical center sits at the row gap’s center (cell
@@ -115,7 +108,7 @@ const bracketJoint = (
       // card. One parent for elbow, bar, and run — pieces split across
       // parents each round their own 50% and land a pixel apart.
       ...(bridge === 'down'
-        ? [h.div([h.Class('absolute -right-1 -bottom-[0.875rem] left-1/2 h-1 bg-ink')], [])]
+        ? [h.div([h.Class('absolute -right-1 -bottom-[0.875rem] left-1/2 h-1 bg-ink')])]
         : []),
     ],
   );
@@ -123,7 +116,7 @@ const bracketJoint = (
 // The joint’s phone-sized sibling: a short centered drop between the
 // stacked bracket stages.
 const bracketDrop = (h: HtmlBuilder<Message>): Html =>
-  h.div([h.Class('mx-auto h-10 w-1 bg-ink md:hidden')], []);
+  h.div([h.Class('mx-auto h-10 w-1 bg-ink md:hidden')]);
 
 // The matchday PRINT PILE: five celebration photos hard-cutting through
 // one tile (the .photo-cycle loop in styles.css; reduced motion pins the
@@ -213,7 +206,7 @@ const nationalIdCard = (
             ]
           : [h.Class(seat)],
         [
-          h.div([h.Class('mb-4 h-1 w-12 bg-ink mx-auto md:mx-0')], []),
+          h.div([h.Class('mb-4 h-1 w-12 bg-ink mx-auto md:mx-0')]),
           h.p([h.Class('display text-2xl text-paper md:text-3xl')], [value]),
           h.p([h.Class('mt-3 text-xs tracking-[0.2em] uppercase md:text-sm')], [label]),
         ],
@@ -536,25 +529,22 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                           // stays inside the three-color palette (and the webkit-
                           // prefixed twins matter: where mask support is missing,
                           // an unmasked div is a solid black rectangle).
-                          h.div(
-                            [
-                              h.Class(
-                                'pointer-events-none absolute right-5 bottom-4 h-40 bg-ink md:-right-2 md:h-44 xl:right-8 xl:h-56',
-                              ),
-                              h.Style({
-                                aspectRatio: '348 / 1339',
-                                maskImage: `url("${worldCupTrophyMask}")`,
-                                maskSize: 'contain',
-                                maskRepeat: 'no-repeat',
-                                maskPosition: 'bottom',
-                                webkitMaskImage: `url("${worldCupTrophyMask}")`,
-                                webkitMaskSize: 'contain',
-                                webkitMaskRepeat: 'no-repeat',
-                                webkitMaskPosition: 'bottom',
-                              }),
-                            ],
-                            [],
-                          ),
+                          h.div([
+                            h.Class(
+                              'pointer-events-none absolute right-5 bottom-4 h-40 bg-ink md:-right-2 md:h-44 xl:right-8 xl:h-56',
+                            ),
+                            h.Style({
+                              aspectRatio: '348 / 1339',
+                              maskImage: `url("${worldCupTrophyMask}")`,
+                              maskSize: 'contain',
+                              maskRepeat: 'no-repeat',
+                              maskPosition: 'bottom',
+                              webkitMaskImage: `url("${worldCupTrophyMask}")`,
+                              webkitMaskSize: 'contain',
+                              webkitMaskRepeat: 'no-repeat',
+                              webkitMaskPosition: 'bottom',
+                            }),
+                          ]),
                           h.p(
                             // Ink, not the pink its sibling kickers wear: 11px pink
                             // on paper is 3.0:1, under the 4.5:1 small text needs —

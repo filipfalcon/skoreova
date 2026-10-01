@@ -131,22 +131,17 @@ const trendingCountdownLine = (model: Model, h: HtmlBuilder<Message>): Html =>
     : h.div(
         [h.AriaHidden(true), ...getStyleXAttributes(h, styles.trendingCountdown)],
         [
-          h.div(
-            [
-              h.Key(
-                `trending-countdown-${model.trendingIndex}-${model.isTrendingHeld ? 'held' : 'running'}`,
-              ),
-              ...getStyleXAttributesWith(
-                h,
-                model.isTrendingHeld
-                  ? 'trending-countdown-fill is-held'
-                  : 'trending-countdown-fill',
-                styles.trendingCountdownFill,
-              ),
-              h.Style({ '--trending-advance': `${TRENDING_ADVANCE_MS}ms` }),
-            ],
-            [],
-          ),
+          h.div([
+            h.Key(
+              `trending-countdown-${model.trendingIndex}-${model.isTrendingHeld ? 'held' : 'running'}`,
+            ),
+            ...getStyleXAttributesWith(
+              h,
+              model.isTrendingHeld ? 'trending-countdown-fill is-held' : 'trending-countdown-fill',
+              styles.trendingCountdownFill,
+            ),
+            h.Style({ '--trending-advance': `${TRENDING_ADVANCE_MS}ms` }),
+          ]),
         ],
       );
 

@@ -36,22 +36,19 @@ const takeSegment = (
           ),
         ],
       ),
-      h.span(
-        [
-          h.Class(
-            clsx(
-              'pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 -rotate-2 bg-pink md:hidden',
-              revealClass(model, `${key}-strike`),
-            ),
+      h.span([
+        h.Class(
+          clsx(
+            'pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 -rotate-2 bg-pink md:hidden',
+            revealClass(model, `${key}-strike`),
           ),
-          h.AriaHidden(true),
-          h.DataAttribute('reveal', 'strike'),
-          h.DataAttribute('reveal-key', `${key}-strike`),
-          h.DataAttribute('reveal-late', ''),
-          h.Style({ '--reveal-delay': strikeDelay }),
-        ],
-        [],
-      ),
+        ),
+        h.AriaHidden(true),
+        h.DataAttribute('reveal', 'strike'),
+        h.DataAttribute('reveal-key', `${key}-strike`),
+        h.DataAttribute('reveal-late', ''),
+        h.Style({ '--reveal-delay': strikeDelay }),
+      ]),
     ],
   );
 
@@ -86,37 +83,34 @@ const equationLine = (
             [h.Class('relative inline-block')],
             [
               '=',
-              h.span(
-                [
-                  h.Class(
-                    // Native translate/rotate compose with the strike
-                    // animation’s transform (it only owns scaleX); origin
-                    // left = the pen draws along the slash’s own axis.
-                    // That origin also means the ROTATION swings around
-                    // the bar’s left end, so a naive 50%/50% seat lands
-                    // the slash high-left of the glyph. The seat and
-                    // length here are measured against the rendered '='
-                    // (canvas glyph metrics + live rects): 72.5%/88% puts
-                    // the slash’s center on the glyph’s visual center —
-                    // Anton’s '=' rides well above the baseline — and
-                    // 160% crosses the glyph with a short overhang past
-                    // each bar. The seat values shift WITH the length
-                    // (the origin-left rotation folds width into the
-                    // final position), so the three numbers form one
-                    // tuned set. All-percentage values, so the seat holds
-                    // at every fluid size.
-                    clsx(
-                      'pointer-events-none absolute top-[72.5%] left-[88%] h-1 w-[160%] -translate-x-1/2 -translate-y-1/2 -rotate-[58deg] bg-pink md:h-1.5',
-                      revealClass(model, `${key}-strike`),
-                    ),
+              h.span([
+                h.Class(
+                  // Native translate/rotate compose with the strike
+                  // animation’s transform (it only owns scaleX); origin
+                  // left = the pen draws along the slash’s own axis.
+                  // That origin also means the ROTATION swings around
+                  // the bar’s left end, so a naive 50%/50% seat lands
+                  // the slash high-left of the glyph. The seat and
+                  // length here are measured against the rendered '='
+                  // (canvas glyph metrics + live rects): 72.5%/88% puts
+                  // the slash’s center on the glyph’s visual center —
+                  // Anton’s '=' rides well above the baseline — and
+                  // 160% crosses the glyph with a short overhang past
+                  // each bar. The seat values shift WITH the length
+                  // (the origin-left rotation folds width into the
+                  // final position), so the three numbers form one
+                  // tuned set. All-percentage values, so the seat holds
+                  // at every fluid size.
+                  clsx(
+                    'pointer-events-none absolute top-[72.5%] left-[88%] h-1 w-[160%] -translate-x-1/2 -translate-y-1/2 -rotate-[58deg] bg-pink md:h-1.5',
+                    revealClass(model, `${key}-strike`),
                   ),
-                  h.AriaHidden(true),
-                  h.DataAttribute('reveal', 'strike'),
-                  h.DataAttribute('reveal-key', `${key}-strike`),
-                  h.Style({ '--reveal-delay': `${delaySeconds + 0.35}s` }),
-                ],
-                [],
-              ),
+                ),
+                h.AriaHidden(true),
+                h.DataAttribute('reveal', 'strike'),
+                h.DataAttribute('reveal-key', `${key}-strike`),
+                h.Style({ '--reveal-delay': `${delaySeconds + 0.35}s` }),
+              ]),
             ],
           ),
           ` ${right}`,
@@ -172,22 +166,19 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                   // full-width −2° stroke takes over. Rem breakpoint, not
                   // px — px arbitrary variants can’t sort against the rem
                   // scale and land before `sm:` in the cascade.
-                  h.span(
-                    [
-                      h.Class(
-                        clsx(
-                          'pointer-events-none absolute top-[87%] left-[10%] right-[4%] hidden h-1.5 -translate-y-1/2 -rotate-[9.5deg] bg-pink md:block md:h-2.5 min-[54rem]:top-1/2 min-[54rem]:right-0 min-[54rem]:left-0 min-[54rem]:-rotate-2',
-                          revealClass(model, 'statement-strike-full'),
-                        ),
+                  h.span([
+                    h.Class(
+                      clsx(
+                        'pointer-events-none absolute top-[87%] left-[10%] right-[4%] hidden h-1.5 -translate-y-1/2 -rotate-[9.5deg] bg-pink md:block md:h-2.5 min-[54rem]:top-1/2 min-[54rem]:right-0 min-[54rem]:left-0 min-[54rem]:-rotate-2',
+                        revealClass(model, 'statement-strike-full'),
                       ),
-                      h.AriaHidden(true),
-                      h.DataAttribute('reveal', 'strike'),
-                      h.DataAttribute('reveal-key', 'statement-strike-full'),
-                      h.DataAttribute('reveal-late', ''),
-                      h.Style({ '--reveal-delay': '0.25s' }),
-                    ],
-                    [],
-                  ),
+                    ),
+                    h.AriaHidden(true),
+                    h.DataAttribute('reveal', 'strike'),
+                    h.DataAttribute('reveal-key', 'statement-strike-full'),
+                    h.DataAttribute('reveal-late', ''),
+                    h.Style({ '--reveal-delay': '0.25s' }),
+                  ]),
                 ],
               ),
               // The rebuttal slides in under the crossed-out take — same

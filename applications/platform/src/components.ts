@@ -25,7 +25,7 @@ export const sectionLabel = (text: string, h: HtmlBuilder<Message>): Html =>
   h.p([...getStyleXAttributes(h, styles.sectionLabel)], [text]);
 
 export const pinkTick = (h: HtmlBuilder<Message>): Html =>
-  h.div([...getStyleXAttributes(h, styles.pinkTick)], []);
+  h.div([...getStyleXAttributes(h, styles.pinkTick)]);
 
 // THE chevron — one drawn mark for every "there is more this way" glyph.
 // Both hero uses render this: the breadcrumb pointing left, the season
@@ -58,7 +58,7 @@ export const chevron = (
       h.StrokeLinecap('round'),
       h.StrokeLinejoin('round'),
     ],
-    [h.path([h.D('M6 9 L12 15 L18 9')], [])],
+    [h.path([h.D('M6 9 L12 15 L18 9')])],
   );
 
 // The push-pin, drawn to sit at the corner of anything pinnable. Filled
@@ -76,14 +76,11 @@ export const pinGlyph = (
       h.AriaHidden(true),
     ],
     [
-      h.path(
-        [
-          h.D(
-            'M15.5 2.5 21.5 8.5 18.4 9.6 16.3 15 13.4 12.1 8.4 18.5 7 17.1 12.9 11 10 8.1 15.4 6 Z',
-          ),
-        ],
-        [],
-      ),
+      h.path([
+        h.D(
+          'M15.5 2.5 21.5 8.5 18.4 9.6 16.3 15 13.4 12.1 8.4 18.5 7 17.1 12.9 11 10 8.1 15.4 6 Z',
+        ),
+      ]),
     ],
   );
 
@@ -158,10 +155,12 @@ export const sparkline = (values: ReadonlyArray<number>, h: HtmlBuilder<Message>
       h.AriaHidden(true),
     ],
     [
-      h.polyline(
-        [h.Points(points), h.Fill('none'), h.Stroke('var(--color-pink)'), h.StrokeWidth('2')],
-        [],
-      ),
+      h.polyline([
+        h.Points(points),
+        h.Fill('none'),
+        h.Stroke('var(--color-pink)'),
+        h.StrokeWidth('2'),
+      ]),
     ],
   );
 };
@@ -202,7 +201,7 @@ export const navIcon = (screen: Screen, isActive: boolean, h: HtmlBuilder<Messag
       h.StrokeLinecap('round'),
       h.StrokeLinejoin('round'),
     ],
-    [h.path([h.D(paths[screen === 'Welcome' ? 'HerGame' : screen] ?? '')], [])],
+    [h.path([h.D(paths[screen === 'Welcome' ? 'HerGame' : screen] ?? '')])],
   );
 };
 
@@ -271,7 +270,7 @@ const backArrow = (h: HtmlBuilder<Message>, ...arrowStyles: ReadonlyArray<StyleX
       h.StrokeLinecap('square'),
       h.AriaHidden(true),
     ],
-    [h.path([h.D('M15 6H3M7 1.5L2.5 6L7 10.5')], [])],
+    [h.path([h.D('M15 6H3M7 1.5L2.5 6L7 10.5')])],
   );
 
 /**
@@ -395,7 +394,7 @@ const drawnArrow = (
 export const drawnRightArrow = (
   h: HtmlBuilder<Message>,
   ...arrowStyles: ReadonlyArray<StyleXStyle>
-): Html => drawnArrow([h.path([h.D(DRAWN_ARROW_PATH)], [])], h, arrowStyles);
+): Html => drawnArrow([h.path([h.D(DRAWN_ARROW_PATH)])], h, arrowStyles);
 
 /**
  * The drawn arrow pointing back. The silhouette is mirrored inside the SVG rather than by a CSS
@@ -410,7 +409,7 @@ export const drawnLeftArrow = (
   ...arrowStyles: ReadonlyArray<StyleXStyle>
 ): Html =>
   drawnArrow(
-    [h.g([h.Transform('matrix(-1 0 0 1 32 0)')], [h.path([h.D(DRAWN_ARROW_PATH)], [])])],
+    [h.g([h.Transform('matrix(-1 0 0 1 32 0)')], [h.path([h.D(DRAWN_ARROW_PATH)])])],
     h,
     arrowStyles,
   );
@@ -437,14 +436,11 @@ export const drawnTimes = (
       h.AriaHidden(true),
     ],
     [
-      h.path(
-        [
-          h.D(
-            'M3.4 0 L12 8.6 L20.6 0 L24 3.4 L15.4 12 L24 20.6 L20.6 24 L12 15.4 L3.4 24 L0 20.6 L8.6 12 L0 3.4 Z',
-          ),
-        ],
-        [],
-      ),
+      h.path([
+        h.D(
+          'M3.4 0 L12 8.6 L20.6 0 L24 3.4 L15.4 12 L24 20.6 L20.6 24 L12 15.4 L3.4 24 L0 20.6 L8.6 12 L0 3.4 Z',
+        ),
+      ]),
     ],
   );
 
@@ -672,14 +668,11 @@ export const tickerSpark: Html = ih.svg(
     ih.Fill('currentColor'),
   ],
   [
-    ih.path(
-      [
-        ih.D(
-          'M12 0 C13.5 7.5 16.5 10.5 24 12 C16.5 13.5 13.5 16.5 12 24 C10.5 16.5 7.5 13.5 0 12 C7.5 10.5 10.5 7.5 12 0 Z',
-        ),
-      ],
-      [],
-    ),
+    ih.path([
+      ih.D(
+        'M12 0 C13.5 7.5 16.5 10.5 24 12 C16.5 13.5 13.5 16.5 12 24 C10.5 16.5 7.5 13.5 0 12 C7.5 10.5 10.5 7.5 12 0 Z',
+      ),
+    ]),
   ],
 );
 
@@ -697,7 +690,7 @@ export const tapeArrow = (up: boolean, h: HtmlBuilder<Message>): Html =>
       h.AriaHidden(true),
       h.Fill('currentColor'),
     ],
-    [h.path([h.D('M6 0 L12 10 H0 Z')], [])],
+    [h.path([h.D('M6 0 L12 10 H0 Z')])],
   );
 
 /**
@@ -754,7 +747,7 @@ export const socialGlyph = (
       h.StrokeLinecap('round'),
       h.StrokeLinejoin('round'),
     ],
-    [h.path([h.D(SOCIAL_PATHS[network])], [])],
+    [h.path([h.D(SOCIAL_PATHS[network])])],
   );
 
 /**

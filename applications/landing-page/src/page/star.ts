@@ -87,17 +87,14 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                       // does too), painting under the cutout as her own
                       // moving backdrop. (It reads as a squad number, so it
                       // must BE her number, not a stat.)
-                      h.span(
-                        [
-                          h.Class(
-                            'watermark display pointer-events-none absolute -top-[12%] left-1/2 -translate-x-1/2 leading-none text-paper/5 select-none text-fluid-watermark',
-                          ),
-                          h.DataAttribute('watermark', '26'),
-                          // Generated content is exposed to assistive tech like any text, so the decoration still needs hiding.
-                          h.AriaHidden(true),
-                        ],
-                        [],
-                      ),
+                      h.span([
+                        h.Class(
+                          'watermark display pointer-events-none absolute -top-[12%] left-1/2 -translate-x-1/2 leading-none text-paper/5 select-none text-fluid-watermark',
+                        ),
+                        h.DataAttribute('watermark', '26'),
+                        // Generated content is exposed to assistive tech like any text, so the decoration still needs hiding.
+                        h.AriaHidden(true),
+                      ]),
                       h.img([
                         h.Src(rancovaImage),
                         h.Width('973'),
@@ -158,17 +155,14 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                         ],
                         [
                           // Three wobbly spikes...
-                          h.path(
-                            [
-                              h.D(
-                                'M16,76 Q13,50 20,28 Q33,46 46,52 Q57,32 68,12 Q80,34 92,50 Q105,41 118,24 Q125,50 122,74',
-                              ),
-                              h.Attribute('pathLength', '1'),
-                            ],
-                            [],
-                          ),
+                          h.path([
+                            h.D(
+                              'M16,76 Q13,50 20,28 Q33,46 46,52 Q57,32 68,12 Q80,34 92,50 Q105,41 118,24 Q125,50 122,74',
+                            ),
+                            h.Attribute('pathLength', '1'),
+                          ]),
                           // ...and the lazy band underneath.
-                          h.path([h.D('M13,89 Q69,80 125,86'), h.Attribute('pathLength', '1')], []),
+                          h.path([h.D('M13,89 Q69,80 125,86'), h.Attribute('pathLength', '1')]),
                         ],
                       ),
                     ],
@@ -243,7 +237,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                         [
                           // Paper, NOT pink: a pink tick is the map
                           // counters' "clickable + on" signal.
-                          h.div([h.Class('mb-4 h-1 w-12 bg-paper')], []),
+                          h.div([h.Class('mb-4 h-1 w-12 bg-paper')]),
                           // Paper numbers, not pink: after the pink name
                           // above, the section’s pink budget belongs to the
                           // haul stamps and the CTA. (Nations-league stats
