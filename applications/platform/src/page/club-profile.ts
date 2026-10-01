@@ -48,7 +48,12 @@ import {
   zoneFor,
 } from '../standings';
 import type { StandingsZone } from '../standings';
-import { COMPETITION_GROUP_ID, CompetitionRadioGroup, ScopeRadioGroup } from '../radio-groups';
+import {
+  COMPETITION_GROUP_ID,
+  CompetitionRadioGroup,
+  SCOPE_GROUP_ID,
+  ScopeRadioGroup,
+} from '../radio-groups';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
 import { CREST_SIZES, HERO_ART_SIZES, WATERMARK_SIZES, styles } from '../styles/club-profile';
 import { shared } from '../styles/shared';
@@ -276,7 +281,7 @@ const SCOPE_LABELS: Record<ScorerScope, string> = { All: 'All', League: 'League'
 
 const scopeRadioGroup = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.submodel({
-    slotId: 'club-top-scorers-scope',
+    slotId: SCOPE_GROUP_ID,
     model: model.scopeGroup,
     view: ScopeRadioGroup.view,
     toParentMessage: (message) => Message.GotScopeGroupMessage({ message }),

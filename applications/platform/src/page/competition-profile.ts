@@ -29,7 +29,7 @@ import {
   formWindow,
 } from '../schedule';
 import type { SeasonShape } from '../schedule';
-import { EditionRadioGroup } from '../radio-groups';
+import { EDITION_GROUP_ID, EditionRadioGroup } from '../radio-groups';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
 import type { StyleXStyle } from '../stylexAttributes';
 import { HERO_ART_SIZES, STANDINGS_CREST_SIZE, styles } from '../styles/competition-profile';
@@ -838,7 +838,7 @@ const editionRadioGroup = (
   const currentLabel = competition.editions.find((entry) => entry.isCurrent)?.label ?? '';
   const openLabel = Option.getOrElse(model.competitionEdition, () => currentLabel);
   return h.submodel({
-    slotId: 'competition-edition',
+    slotId: EDITION_GROUP_ID,
     model: model.editionGroup,
     view: EditionRadioGroup.view,
     toParentMessage: (message) => Message.GotEditionGroupMessage({ message }),
