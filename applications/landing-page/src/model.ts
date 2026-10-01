@@ -53,9 +53,8 @@ export const Model = Schema.Struct({
   // for every visitor, so a boot-time flag could only carry a build-time guess.
   // Everything renders from `false` for the moment before the subscription
   // lands; the stylesheet's own reduced-motion rules cover that window. The
-  // motion
-  // mount is keyed on it (view.ts), so flipping the OS setting mid-session
-  // re-runs the choreography setup instead of leaving a stale snapshot.
+  // motion mounts follow the media query themselves rather than this field
+  // (see REDUCED_MOTION_QUERY in motion.ts).
   prefersReducedMotion: Schema.Boolean,
   // The reveal system’s discrete state, keyed by each target’s
   // data-reveal-key: the observers (ObserveReveals in motion.ts) report

@@ -34,10 +34,10 @@ import {
 // them on.
 //
 // Keyed rather than plain createLazy, and keyed on the SAME string as the root
-// below: a cached VNode may only be rendered at one position, and flipping
-// reduced motion re-keys the root, which tears this subtree down and builds a
-// new one. Sharing the key means that rebuild gets its own slot instead of
-// reusing a VNode still pointing at the removed DOM.
+// below: a cached VNode may only be rendered at one position, and a page swap
+// re-keys the root, which tears this subtree down and builds a new one. Sharing
+// the key means each page gets its own slot instead of reusing a VNode still
+// pointing at the removed DOM.
 const heroLazy = createKeyedLazy();
 const marqueeLazy = createKeyedLazy();
 
@@ -65,14 +65,17 @@ const landingSections = (
 ];
 
 export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
-  // Keyed on the route tag as well as the motion flag: navigating between
-  // the landing and the policy page tears the motion mounts down and re-runs
-  // their setup against the page actually on screen — the choreography's
-  // element lists are captured at setup, so a mount surviving a page swap
-  // would drive detached nodes and leave the new page inert. NotFound renders
-  // the landing, and shares its key so the swap is a no-op.
+  // Keyed on the page: navigating between the landing and the policy page
+  // tears the motion mounts down and re-runs their setup against the page
+  // actually on screen — the choreography's element lists are captured at
+  // setup, so a mount surviving a page swap would drive detached nodes and
+  // leave the new page inert. NotFound renders the landing, and shares its key
+  // so the swap is a no-op. The reduced-motion preference is NOT part of the
+  // key: it starts `false` in the served Model, and re-keying when it flips
+  // would rebuild the whole hydrated page for every reader who asked for
+  // stillness. The motion mounts follow the preference themselves (motion.ts).
   const isPolicy = model.route._tag === 'Policy';
-  const rootKey = `motion-${model.prefersReducedMotion}-${isPolicy ? 'policy' : 'landing'}`;
+  const rootKey = isPolicy ? 'policy' : 'landing';
   return {
     title: documentTitle(model.route),
     // Built from the ROUTE rather than the request, so the query string drops:
@@ -85,11 +88,8 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
     ogUrl: `${SITE_ORIGIN}${routePath(model.route)}`,
     // American English, the language every string in this app is written in. The server render stamps it on <html>, so a crawler reads it in the served document, and the runtime keeps it there.
     lang: 'en-US',
-    // The root is keyed on the reduced-motion flag: flipping the OS setting
-    // tears both motion mounts down (symmetric release) and re-runs their
-    // setup with the fresh value — no stale mount-time snapshot. The reveal
-    // observers sit HERE (one OnMount per element; <main> below carries the
-    // per-frame choreography’s MountMotion).
+    // The reveal observers sit HERE (one OnMount per element; <main> below
+    // carries the per-frame choreography’s MountMotion).
     body: h.keyed('div')(
       rootKey,
       [h.Class('bg-ink font-body text-paper antialiased'), h.OnMount(ObserveReveals())],

@@ -184,15 +184,37 @@ interface MarqueeTrack {
 // The viewport from which 'replay' reveal groups keep their simultaneous formation.
 const DESKTOP_VIEWPORT_QUERY = '(min-width: 768px)';
 
-// Both motion Mounts read the preference themselves, when they start. The Model's
+// Both motion Mounts follow the preference themselves, from the query. The Model's
 // `prefersReducedMotion` cannot serve them: Foldkit runs Mounts in the first render, before any
 // Subscription has reported, and on a server-rendered page the Model's value at that moment is the
 // server's default, `false`. Taking it would start the motion for a reader who asked for none, and
-// keep it running until the flag flipped. The Model's value still decides everything `update`
-// does, which only runs once the Subscription has reported, and the page root is keyed on it, so a
-// change of preference mid-session restarts both Mounts.
+// keep it running until the flag flipped. A Mount's args are also captured once, and re-keying the
+// page root to deliver a new value would rebuild the whole hydrated page. The Model's value still
+// decides everything `update` and the view do, which only runs once the Subscription has reported.
 export const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-const prefersReducedMotionNow = (): boolean => window.matchMedia(REDUCED_MOTION_QUERY).matches;
+
+/**
+ * Runs `setUp` now and again whenever one of `queries` changes, tearing the previous set-up down
+ * first. `setUp` reads the queries' current `matches` itself. Returns the final teardown.
+ *
+ * @param queries The media queries the set-up depends on; only their `change` events are read.
+ * @param setUp Builds the behavior and returns its teardown.
+ */
+export const followQueries = (
+  queries: ReadonlyArray<EventTarget>,
+  setUp: () => () => void,
+): (() => void) => {
+  let tearDown = setUp();
+  const rebuild = (): void => {
+    tearDown();
+    tearDown = setUp();
+  };
+  for (const query of queries) query.addEventListener('change', rebuild);
+  return () => {
+    for (const query of queries) query.removeEventListener('change', rebuild);
+    tearDown();
+  };
+};
 
 const setUpReveals = (
   root: HTMLElement,
@@ -796,8 +818,7 @@ const setUpReveals = (
   };
 };
 
-const setUpMotion = (root: HTMLElement): (() => void) => {
-  const reduceMotion = prefersReducedMotionNow();
+const setUpMotion = (root: HTMLElement, reduceMotion: boolean): (() => void) => {
   const cleanups: Array<() => void> = [];
 
   // iOS Safari only engages CSS `:active` states on touch once the page has
@@ -1261,9 +1282,11 @@ export const MountMotion = Mount.define('MountMotion', {
         return Message.FailedMountMotion({ reason: 'Motion host is not an HTMLElement.' });
       }
 
+      const reducedMotion = window.matchMedia(REDUCED_MOTION_QUERY);
       return yield* Effect.acquireRelease(
         Effect.try({
-          try: () => setUpMotion(element),
+          try: () =>
+            followQueries([reducedMotion], () => setUpMotion(element, reducedMotion.matches)),
           catch: (error) =>
             error instanceof Error ? error : new Error(`Failed to set up motion: ${error}`),
         }),
@@ -1282,12 +1305,11 @@ export const MountMotion = Mount.define('MountMotion', {
 // reveal state is discrete and belongs to the Model. One OnMount per element,
 // so this sits on the page root while <main> carries MountMotion.
 //
-// The grouping policy depends on the viewport, so the observers are rebuilt
-// whenever it crosses the desktop breakpoint: a rotated tablet regroups
-// instead of keeping the formation it loaded with. The query is followed here,
-// inside the Mount that owns the observers, rather than through the Model: a
-// Mount's args are captured once, and re-keying the page root to deliver a
-// new value would rebuild the whole hydrated page.
+// The observers are rebuilt whenever the reduced-motion preference flips or
+// the viewport crosses the desktop breakpoint, on which the grouping policy
+// depends: a rotated tablet regroups instead of keeping the formation it
+// loaded with. Both queries are followed here, inside the Mount that owns the
+// observers, for the reasons given at REDUCED_MOTION_QUERY.
 export const ObserveReveals = Mount.defineStream('ObserveReveals', {
   messages: [Message.ChangedReveals],
   execute: ({ element }) =>
@@ -1295,23 +1317,17 @@ export const ObserveReveals = Mount.defineStream('ObserveReveals', {
       Effect.gen(function* () {
         yield* Effect.acquireRelease(
           Effect.sync(() => {
-            if (prefersReducedMotionNow() || !(element instanceof HTMLElement)) {
+            if (!(element instanceof HTMLElement)) {
               return (): void => {};
             }
             const emit = (message: typeof Message.ChangedReveals.Type): void => {
               Queue.offerUnsafe(queue, message);
             };
+            const reducedMotion = window.matchMedia(REDUCED_MOTION_QUERY);
             const desktop = window.matchMedia(DESKTOP_VIEWPORT_QUERY);
-            let teardown = setUpReveals(element, desktop.matches, emit);
-            const regroup = (): void => {
-              teardown();
-              teardown = setUpReveals(element, desktop.matches, emit);
-            };
-            desktop.addEventListener('change', regroup);
-            return () => {
-              desktop.removeEventListener('change', regroup);
-              teardown();
-            };
+            return followQueries([reducedMotion, desktop], () =>
+              reducedMotion.matches ? (): void => {} : setUpReveals(element, desktop.matches, emit),
+            );
           }),
           (teardown) => Effect.sync(teardown),
         );

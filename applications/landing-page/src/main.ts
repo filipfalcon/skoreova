@@ -156,15 +156,16 @@ export const update = (model: Model, message: Message) =>
     DetectedHeroPastHeader: ({ past }) => ({
       model: modifyFields(model, { heroPastHeader: () => past }),
     }),
-    // The OS setting flipped mid-session — the keyed motion mount and the
-    // wheel subscription both follow this flag. Reveal state resets: the
-    // remounted observers re-report everything on-screen within a frame.
+    // The OS setting, on subscribe and on every flip. The view force-reveals
+    // everything while it is set, and the wheel subscription follows it. The
+    // motion mounts follow the query themselves; when motion comes back,
+    // their rebuilt observers report every target's state afresh, so the
+    // reveal record needs no reset here — a reset would race those reports.
     ChangedReducedMotion: ({ reduce }) => ({
-      model: modifyFields(model, { prefersReducedMotion: () => reduce, reveals: () => ({}) }),
+      model: modifyFields(model, { prefersReducedMotion: () => reduce }),
     }),
-    // The reveal observers' report, and the only message that MOVES a
-    // target between reveal states (ChangedReducedMotion above clears the
-    // record wholesale, which is a reset, not a transition). `revealed`
+    // The reveal observers' report, and the only message that moves a
+    // target between reveal states. `revealed`
     // never downgrades an already-drawn target; `drawn` only upgrades one
     // that is on screen.
     ChangedReveals: ({ revealed, concealed, drawn }) => ({
