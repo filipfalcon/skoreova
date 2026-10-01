@@ -47,3 +47,44 @@ test('a page still renders through the shell', async () => {
   expect(reads).toEqual(['/index.html']);
   expect(await response.text()).toContain('data-foldkit-app');
 });
+
+const withMethod = (path: string, method: string) =>
+  new Request(`${SITE_ORIGIN}${path}`, { method, headers: { Accept: 'text/html' } });
+
+// Pages are read-only: GET and HEAD read them, OPTIONS describes them, and every
+// other method is refused with the list of what is allowed.
+test('a page refuses a write and names the methods it allows', async () => {
+  const { env } = environment();
+  const response = await worker.fetch(withMethod('/policy', 'POST'), env);
+  expect(response.status).toBe(405);
+  expect(response.headers.get('Allow')).toBe('GET, HEAD, OPTIONS');
+});
+
+test('OPTIONS describes a page without rendering it', async () => {
+  const { env } = environment();
+  const response = await worker.fetch(withMethod('/policy', 'OPTIONS'), env);
+  expect(response.status).toBe(204);
+  expect(response.headers.get('Allow')).toBe('GET, HEAD, OPTIONS');
+  expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
+});
+
+test('a rendered page holds the browser to its content type', async () => {
+  const { env } = environment();
+  const response = await worker.fetch(page('/policy'), env);
+  expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+});
+
+test('HEAD answers with the page headers and no body', async () => {
+  const { env } = environment();
+  const response = await worker.fetch(withMethod('/policy', 'HEAD'), env);
+  expect(response.status).toBe(200);
+  expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+  expect(await response.text()).toBe('');
+});
+
+test('the shell URL refuses a write instead of redirecting it', async () => {
+  const { env } = environment();
+  const response = await worker.fetch(withMethod('/index.html', 'POST'), env);
+  expect(response.status).toBe(405);
+  expect(response.headers.get('Location')).toBeNull();
+});

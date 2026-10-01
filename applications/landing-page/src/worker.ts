@@ -19,6 +19,7 @@ import { Server } from 'foldkit/experimental';
 
 import { SITE_ORIGIN } from './document-title';
 import { renderPage } from './entry.server';
+import { BASE_HEADERS, answerNonReadMethod } from './http';
 
 export { SITE_ORIGIN };
 
@@ -47,7 +48,10 @@ const shell = (env: Env, url: URL): Promise<string> =>
 // permanent redirect to the page the shell becomes, keeping any query. The
 // ASSETS binding above reads the file directly and never passes through here.
 const templateRedirect = (url: URL): Response =>
-  Response.redirect(new URL(`/${url.search}`, url.origin).href, 301);
+  new Response(null, {
+    status: 301,
+    headers: { ...BASE_HEADERS, location: new URL(`/${url.search}`, url.origin).href },
+  });
 
 export default Sentry.withSentry(
   () => ({
@@ -65,7 +69,7 @@ export default Sentry.withSentry(
     fetch: async (request: Request, env: Env): Promise<Response> => {
       const url = new URL(request.url);
       if (url.pathname === TEMPLATE_PATH) {
-        return templateRedirect(url);
+        return answerNonReadMethod(request.method) ?? templateRedirect(url);
       }
       return Server.handleRequest(request, { renderPage, template: await shell(env, url) });
     },
