@@ -210,29 +210,6 @@ export const RevealJumpChip = Command.define('RevealJumpChip', {
 });
 
 /**
- * The id the club profile's match strip renders under.
- */
-export const MATCH_STRIP_ID = 'club-match-strip';
-
-// Opens the match strip on the card at `index` — the upcoming match, with the last result one swipe back. Set once, on mount, instantly: the strip is a native scroller, so this is a scroll position and not a transform, and from md the strip does not scroll at all, where the call is a no-op.
-export const ScrollMatchStripToNext = Mount.define('ScrollMatchStripToNext', {
-  args: { index: Schema.Number },
-  messages: [Message.CompletedMatchStripScroll],
-  execute: ({ element, index }) =>
-    Effect.sync(() => {
-      if (element instanceof HTMLElement) {
-        const children = [...element.children];
-        const target = children[index];
-        const base = children[0] instanceof HTMLElement ? children[0].offsetLeft : 0;
-        if (target instanceof HTMLElement) {
-          element.scrollTo({ left: target.offsetLeft - base, behavior: 'instant' });
-        }
-      }
-      return Message.CompletedMatchStripScroll();
-    }),
-});
-
-/**
  * Keeps `--header-height` equal to the fixed header's rendered height for as long as the header is
  * mounted.
  *

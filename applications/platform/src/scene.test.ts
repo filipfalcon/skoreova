@@ -22,7 +22,6 @@ import {
   ObserveSectionRail,
   ObserveTrendingScroll,
   RevealJumpChip,
-  ScrollMatchStripToNext,
   WritePins,
 } from './command';
 import { Message } from './message';
@@ -51,11 +50,10 @@ const acknowledgeMounts = [
   Scene.Mount.resolve(ObserveTrendingScroll, Message.ScrolledTrending({ index: 0 })),
 ];
 
-// Every club profile scene renders the match strip, whose opening scroll is a Mount; Scene requires it acknowledged.
-const acknowledgeStrip = [
+// Every club profile scene renders the jump row, whose section rail is measured by a Mount; Scene requires it acknowledged.
+const acknowledgeProfile = [
   ...acknowledgeShell,
   Scene.Mount.resolve(ObserveSectionRail, Message.CompletedObserveSectionRail()),
-  Scene.Mount.resolve(ScrollMatchStripToNext, Message.CompletedMatchStripScroll()),
 ];
 
 describe('view', () => {
@@ -81,7 +79,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeStrip,
+      ...acknowledgeProfile,
       Scene.expectAll(Scene.all.selector('header a svg path[d]:not([d=""])')).toHaveCount(5),
     );
   });
@@ -264,7 +262,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeStrip,
+      ...acknowledgeProfile,
       Scene.expect(Scene.role('heading', { name: 'Sparta Praha' })).toExist(),
       Scene.expect(Scene.role('button', { name: 'Follow Sparta' })).toExist(),
       Scene.expect(Scene.text('Top scorers')).toExist(),
@@ -273,10 +271,19 @@ describe('view', () => {
       Scene.expect(Scene.role('navigation', { name: 'On this page' })).toExist(),
       Scene.expect(Scene.role('heading', { name: 'Matches' })).toExist(),
       Scene.expect(Scene.role('link', { name: 'All fixtures' })).toExist(),
-      // The strip's cards, each named by its status word, and the form guide.
-      Scene.expect(Scene.text('Result')).toExist(),
-      Scene.expect(Scene.text('Next')).toExist(),
-      Scene.expect(Scene.text('Form · last 5')).toExist(),
+      // The next match as one link that reads it whole, the last result as
+      // another from the club's side, and the form guide under it.
+      Scene.expect(
+        Scene.role('link', {
+          name: 'Next match: Sparta vs Slovácko, Saturday 8 November, 14:00, First League round 13, at Letná',
+        }),
+      ).toExist(),
+      Scene.expect(
+        Scene.role('link', {
+          name: 'Last result: lost 2–4 at Baník, First League round 12, 1 November',
+        }),
+      ).toExist(),
+      Scene.expect(Scene.role('list', { name: /^Last five: .+, newest last$/ })).toExist(),
     );
   });
 
@@ -285,7 +292,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeStrip,
+      ...acknowledgeProfile,
       Scene.expect(Scene.role('heading', { name: 'Sparta Praha' })).toExist(),
       Scene.expect(Scene.role('link', { name: 'All clubs' })).toExist(),
     );
@@ -296,7 +303,7 @@ describe('view', () => {
         ...clubProfileModel,
         route: AppRoute.Club({ slug: 'dynamo-ceske-budejovice' }),
       }),
-      ...acknowledgeStrip,
+      ...acknowledgeProfile,
       Scene.expect(Scene.role('heading', { name: 'Dynamo' })).toExist(),
     );
   });
@@ -306,7 +313,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeStrip,
+      ...acknowledgeProfile,
       Scene.inside(
         Scene.role('list', { name: 'Achievements' }),
         Scene.expect(Scene.text('22 league titles')).toExist(),
@@ -324,7 +331,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given({ ...clubProfileModel, route: AppRoute.Club({ slug: 'teplice' }) }),
-      ...acknowledgeStrip,
+      ...acknowledgeProfile,
       Scene.inside(
         Scene.role('list', { name: 'Achievements' }),
         Scene.expect(Scene.text('1 promotion')).toExist(),
@@ -340,7 +347,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeStrip,
+      ...acknowledgeProfile,
       // The caption names the figure, so finding it by that name is the signature check.
       Scene.inside(
         Scene.role('figure', { name: /Commentary/ }),
@@ -361,7 +368,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeStrip,
+      ...acknowledgeProfile,
       Scene.inside(
         Scene.role('region', { name: 'Competitions' }),
         Scene.expect(Scene.role('radio', { name: 'League' })).toExist(),
@@ -382,7 +389,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeStrip,
+      ...acknowledgeProfile,
       Scene.expect(Scene.role('link', { name: 'sparta.cz' })).toHaveAttr('target', '_blank'),
       Scene.expect(Scene.role('link', { name: 'Instagram — Sparta Praha' })).toHaveAttr(
         'rel',
@@ -393,7 +400,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given({ ...clubProfileModel, route: AppRoute.Club({ slug: 'teplice' }) }),
-      ...acknowledgeStrip,
+      ...acknowledgeProfile,
       Scene.expect(Scene.role('link', { name: /Instagram/ })).not.toExist(),
     );
   });
@@ -404,7 +411,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeStrip,
+      ...acknowledgeProfile,
       Scene.expect(Scene.role('button', { name: 'Follow Sparta', pressed: false })).toExist(),
       Scene.click(Scene.role('button', { name: 'Follow Sparta' })),
       Scene.expect(Scene.role('button', { name: 'Follow Sparta', pressed: true })).toExist(),
@@ -419,7 +426,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeStrip,
+      ...acknowledgeProfile,
       Scene.inside(
         Scene.role('region', { name: 'Top scorers' }),
         Scene.expectAll(Scene.all.role('listitem')).toHaveCount(3),
@@ -461,7 +468,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeStrip,
+      ...acknowledgeProfile,
       // Nothing is marked before the reader scrolls into a section.
       Scene.expectAll(Scene.all.role('link', { current: true })).toHaveCount(0),
       Scene.Subscription.emit(Message.ScrolledClubPage({ anchor: 'history' })),
@@ -484,7 +491,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubProfileModel),
-      ...acknowledgeStrip,
+      ...acknowledgeProfile,
       Scene.inside(
         Scene.role('region', { name: 'Competitions' }),
         Scene.expectAll(Scene.all.role('listitem')).toHaveCount(

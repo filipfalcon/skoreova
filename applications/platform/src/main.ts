@@ -317,7 +317,6 @@ export const update = (model: Model, message: Message) =>
         anchor === '' ? [] : [RevealJumpChip({ anchor, reduce: model.prefersReducedMotion })],
     }),
     CompletedRevealJumpChip: () => ({ model }),
-    CompletedMatchStripScroll: () => ({ model }),
     CompletedObserveSectionRail: () => ({ model }),
     CompletedObserveHeaderHeight: () => ({ model }),
     LoadedPins: ({ ids }) => ({ model: modifyFields(model, { pinned: () => ids }) }),

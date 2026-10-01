@@ -46,7 +46,6 @@ export const Message = defineMessageUnion({
   // The scroll-spy's report of the club section under the reader's eye; '' while the hero is in view. Carries a string because a Message field holds no Option — the handler folds it.
   ScrolledClubPage: { anchor: Schema.String },
   CompletedRevealJumpChip: {},
-  CompletedMatchStripScroll: {},
   CompletedObserveSectionRail: {},
   CompletedObserveHeaderHeight: {},
   // Pins: ReadPins hands the stored ids back through LoadedPins; a pin toggle

@@ -15,7 +15,7 @@ import {
   phoneStampCount,
 } from '../club-hero';
 import { historyStats, isTitleFinish, ordinal } from '../club-history';
-import { clubMatchStrip, clubMatchesIndex } from '../club-matches';
+import { clubMatchesIndex, clubMatchesSection } from '../club-matches';
 import {
   SOCIAL_LABELS,
   SOCIAL_NETWORKS,
@@ -808,7 +808,7 @@ export const view = (target: Club, model: Model, h: HtmlBuilder<Message>): Html 
     [...getStyleXAttributes(h, styles.dataBand)],
     [
       clubSectionIndex(index, model.activeClubSection, h),
-      ...clubMatchStrip(target, h),
+      ...clubMatchesSection(target, h),
       clubCompetitionsSection(clubActiveCompetitions(target), model, h),
       clubScorersSection(target, model, h),
       clubHistorySection(target, model, h),
