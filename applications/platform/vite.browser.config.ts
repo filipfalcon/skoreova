@@ -15,13 +15,7 @@ import { imagePresets } from './src/image-presets';
 // step by hand: StyleX and imagetools because the views import their output, foldkit because the
 // identity branding must match what a build produces.
 export default defineConfig({
-  // A fixed build ID: the hydration tests render through the server entry and hydrate the result,
-  // both halves refuse to run without one, and a test run is one build.
-  plugins: [
-    stylex.rollup(),
-    imagetools({ defaultDirectives: imagePresets }),
-    ...foldkit({ buildId: 'test' }),
-  ],
+  plugins: [stylex.rollup(), imagetools({ defaultDirectives: imagePresets }), ...foldkit()],
   optimizeDeps: {
     // The plugin's per-module transform injects the foldkit/brand import, so the optimizer's crawl never sees it. Left undeclared, a cold cache discovers it mid-run and the re-optimization's full-page reload tears down the running suite.
     include: ['foldkit/brand'],

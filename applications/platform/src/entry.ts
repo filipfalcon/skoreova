@@ -19,5 +19,6 @@ const application = Runtime.makeApplication({
 // adopts that DOM instead of rebuilding it. The build id is what makes that
 // safe — hydration compares it against the one the server stamped and refuses
 // a page from another deployment rather than adopting markup whose shape it
-// only appears to share.
-Runtime.hydrate(application, { buildId: import.meta.env.FOLDKIT_BUILD_ID });
+// only appears to share. The Foldkit plugin compiles one id into both bundles
+// of a build, so neither entry passes it.
+Runtime.hydrate(application);

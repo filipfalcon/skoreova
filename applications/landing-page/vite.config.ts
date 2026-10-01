@@ -30,18 +30,6 @@ const INLINE_ENTRIES: ReadonlyArray<{ entry: string; after?: string }> = [
 // Alchemy sets this marker around the vite runs it drives.
 const isUnderAlchemy = process.env['ALCHEMY_CLOUDFLARE_VITE_INJECTED'] === '1';
 
-// The public deployment ID must match in the client bundle and server HTML.
-// Vite can evaluate this config once per environment. The Foldkit plugin's
-// buildId contract explicitly supports memoizing a local fallback in the
-// environment so those evaluations share one value. Independent build
-// processes must receive the same deployment-supplied FOLDKIT_BUILD_ID.
-// Keep the local fallback fresh per process; a constant production ID would
-// let hydration adopt a page from a different build.
-// `||=` rather than `??=`: the plugin treats an empty FOLDKIT_BUILD_ID as
-// absent, so an empty value must take the fallback too, or the build would
-// compile no ID and every hydratable render would fail.
-const BUILD_ID = (process.env['FOLDKIT_BUILD_ID'] ||= `local-${Date.now().toString(36)}`);
-
 const placeholderFor = (entry: string): string => `<!-- @inline ${entry} -->`;
 
 const bundleEntry = async (root: string, entry: string): Promise<string> => {
@@ -264,7 +252,6 @@ export default defineConfig({
       // the plugin detects: it leaves page requests to the Worker, which
       // renders through this same entry.
       ssr: { serverEntry: '/src/entry.server.ts' },
-      buildId: BUILD_ID,
     }),
     inlineConsent(import.meta.dirname),
     inlineStylesheet(),
@@ -272,6 +259,14 @@ export default defineConfig({
     preloadFonts(),
     pinAlchemyDevPort(5273),
   ],
+  environments: {
+    // Under `alchemy dev` the Worker's `ssr` environment pre-bundles its dependencies, and a
+    // pre-bundled foldkit never passes through the Foldkit plugin's transform, which is what compiles
+    // the hydration build ID into the framework. That copy has no ID and every render fails with
+    // MissingBuildId. The plugin excludes foldkit from the client's pre-bundling only, so the `ssr`
+    // environment needs the same exclusion here.
+    ssr: { optimizeDeps: { exclude: ['foldkit'] } },
+  },
   optimizeDeps: {
     entries: ['src/entry.ts'],
     // The plugin's per-module transform injects the foldkit/brand import, so the optimizer's crawl never sees it. Left undeclared, the first page load on a cold cache (fresh install, changed lockfile) discovers it, re-optimizes, and reloads the page. The browser test suite declares it separately in vite.browser.config.ts, which does not inherit this file.
@@ -281,8 +276,6 @@ export default defineConfig({
     name: 'landing-page',
     // Compiled modules persist in node_modules/.vitest-cache between runs; recompiling them was most of this project's time. Set per project, because a project named by its config file does not inherit the root's test options.
     fsModuleCache: true,
-    // Hydratable server tests require a build ID, supplied through env because Vitest constructs import.meta.env itself.
-    env: { FOLDKIT_BUILD_ID: 'test' },
     include: ['src/**/*.test.ts'],
     exclude: ['src/**/*.browser.test.ts'],
     // src/analytics/gtag.test.ts reads and assigns window.dataLayer.

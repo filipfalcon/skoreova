@@ -53,7 +53,6 @@ export const expectHydrationAdopts = async (path: string): Promise<void> => {
         container: root,
         routing,
       }),
-      { buildId: import.meta.env.FOLDKIT_BUILD_ID },
     );
     await vi.waitUntil(() => document.querySelector('[data-foldkit-build]') === null);
   } finally {

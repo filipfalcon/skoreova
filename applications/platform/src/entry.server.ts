@@ -32,7 +32,6 @@ export const renderPage = (request: Request): Promise<Server.EntryResult> =>
         { routing, init, view },
         {
           url: request.url,
-          buildId: import.meta.env.FOLDKIT_BUILD_ID,
         },
       );
 
