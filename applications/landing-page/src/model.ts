@@ -25,6 +25,12 @@ export const Model = Schema.Struct({
   // scroll is locked while the overlay is up, so it cannot go stale.
   activeSection: Schema.Option(Schema.String),
   mapLeague: MapLeague,
+  // True between an in-app link click and the URL change it causes. Foldkit's
+  // onUrlChange reports a link's push and a back/forward traversal alike, so
+  // this is what tells ChangedUrl to land the reader on a link's target
+  // (scroll to its fragment or the top, then move focus there) while a
+  // traversal keeps the browser's own scroll restoration.
+  isLandingLink: Schema.Boolean,
   // The league filter's own state. It owns keyboard focus; the committed
   // league stays in `mapLeague` above and is handed back as a view input.
   mapLeagueGroup: RadioGroup.Model,

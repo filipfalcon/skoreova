@@ -11,7 +11,7 @@ import { AppRoute, urlToAppRoute } from './route';
 import type { Model, RevealState } from './model';
 import { Message } from './message';
 import { MAP_LEAGUE_GROUP_ID, MapLeagueRadioGroup } from './radio-groups';
-import { detectActiveSection, focusMenuToggle, load, navigate } from './command';
+import { detectActiveSection, focusMenuToggle, landOnLink, load, navigate } from './command';
 
 // The app entry: init, the update reducer, and the re-exports that keep the
 // public surface (Model, messages, subscriptions, view) at ./main.
@@ -37,6 +37,7 @@ const initialModel: Model = {
   isMenuOpen: false,
   activeSection: Option.none(),
   mapLeague: 'All',
+  isLandingLink: false,
   mapLeagueGroup: RadioGroup.init({ id: MAP_LEAGUE_GROUP_ID }),
   mapClub: Option.none(),
   isMapAreaImperial: true,
@@ -102,22 +103,26 @@ export const update = (model: Model, message: Message) =>
     DetectedActiveSection: ({ section }) => ({
       model: modifyFields(model, { activeSection: () => section }),
     }),
-    // In-app links (club pins, menu anchors, back links) apply their route
-    // immediately and push the URL; external links load normally. Any
-    // in-app navigation also closes the menu.
+    // In-app links (club pins, menu anchors, back links) only push the URL;
+    // the URL change that follows applies the route. External links load
+    // normally.
     ClickedLink: ({ request }) =>
       UrlRequest.match<Update.Return<Model, Message>>(request, {
         Internal: ({ url }) => ({
-          model: applyRoute(model, urlToAppRoute(url)),
-          commands: [navigate(urlToString(url), model.prefersReducedMotion)],
+          model: modifyFields(model, { isLandingLink: () => true }),
+          commands: [navigate(urlToString(url))],
         }),
         External: ({ href }) => ({ model, commands: [load(href)] }),
       }),
-    // Browser back/forward — the menu closes too.
+    // Every URL change — a link's push or a back/forward traversal — applies
+    // the route here, which also closes the menu. Only a link's lands the
+    // reader on its target; a traversal keeps the browser's scroll restoration.
     ChangedUrl: ({ url }) => ({
-      model: applyRoute(model, urlToAppRoute(url)),
+      model: modifyFields(applyRoute(model, urlToAppRoute(url)), { isLandingLink: () => false }),
+      commands: model.isLandingLink ? [landOnLink(url.hash, model.prefersReducedMotion)] : [],
     }),
     CompletedNavigate: () => ({ model }),
+    CompletedLandOnLink: () => ({ model }),
     CompletedLoad: () => ({ model }),
     GotMapLeagueGroupMessage: ({ message }) =>
       Update.foldChild({

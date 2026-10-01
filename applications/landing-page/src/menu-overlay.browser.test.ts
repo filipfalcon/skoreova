@@ -88,6 +88,18 @@ test('choosing a menu item also closes and hides the overlay', async () => {
   await expect.poll(overlayVisibility, { timeout: 2000 }).toBe('hidden');
 });
 
+// Choosing a section lands the reader on it: focus leaves the link in the
+// overlay that just closed and moves to the section the link named.
+test('choosing a menu item moves focus to its section', async () => {
+  await page.getByRole('button', { name: 'Menu', exact: true, expanded: false }).click();
+  await expect.poll(overlayVisibility).toBe('visible');
+
+  const link = page.getByRole('link', { name: 'Battling through', exact: true });
+  const fragment = link.element().getAttribute('href')?.split('#')[1];
+  await link.click();
+  await expect.poll(() => document.activeElement?.id).toBe(fragment);
+});
+
 // The keyboard contract for a full-screen overlay: while it’s open the page
 // behind it is inert (Tab stays inside the overlay), Escape closes it, and
 // focus lands back on the toggle that opened it.

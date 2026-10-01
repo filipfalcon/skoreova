@@ -5,7 +5,16 @@ import { fromString } from 'foldkit/url';
 import { expect, test } from 'vite-plus/test';
 
 import { landingModel, menuOpenModel } from './main.fixtures';
-import { DetectActiveSection, FocusMenuToggle, Load, Message, Navigate, update } from './main';
+import { AppRoute } from './route';
+import {
+  DetectActiveSection,
+  FocusMenuToggle,
+  LandOnLink,
+  Load,
+  Message,
+  Navigate,
+  update,
+} from './main';
 
 const url = (path: string) => Option.getOrThrow(fromString(`https://skoreova.example${path}`));
 
@@ -165,44 +174,62 @@ test('the reveal fold enters, keeps drawn state, drops stale drawn reports, and 
   );
 });
 
-test('an internal link applies the route and pushes it', () => {
+// A link only pushes its URL; the URL change it causes applies the route,
+// once, and lands the reader on the link's target.
+test('an internal link pushes its URL, and the change it causes applies the route and lands', () => {
   Story.story(
     update,
-    Story.given(menuOpenModel),
-    Story.message(Message.ClickedLink({ request: UrlRequest.Internal({ url: url('/') }) })),
+    Story.given({ ...menuOpenModel, mapClub: Option.some('sparta-praha') }),
+    Story.message(
+      Message.ClickedLink({ request: UrlRequest.Internal({ url: url('/#competitions') }) }),
+    ),
     Story.model((model) => {
-      // Navigating always closes the menu and any open club card.
-      expect(model.isMenuOpen).toBe(false);
+      expect(model.isLandingLink).toBe(true);
+      expect(model.isMenuOpen).toBe(true);
     }),
     Story.Command.expectExact(Navigate),
     Story.Command.resolve(Navigate, Message.CompletedNavigate()),
+    Story.message(Message.ChangedUrl({ url: url('/#competitions') })),
+    Story.model((model) => {
+      // Navigating always closes the menu and any open club card.
+      expect(model.isMenuOpen).toBe(false);
+      expect(model.mapClub).toEqual(Option.none());
+      expect(model.isLandingLink).toBe(false);
+    }),
+    Story.Command.expectExact(
+      LandOnLink({ fragment: Option.some('competitions'), reduceMotion: false }),
+    ),
+    Story.Command.resolve(LandOnLink, Message.CompletedLandOnLink()),
   );
 });
 
-test('the policy link routes to the policy page and back', () => {
+test('the policy link routes to the policy page and lands at its top', () => {
   Story.story(
     update,
     Story.given(landingModel),
     Story.message(Message.ClickedLink({ request: UrlRequest.Internal({ url: url('/policy') }) })),
+    Story.Command.resolve(Navigate, Message.CompletedNavigate()),
+    Story.message(Message.ChangedUrl({ url: url('/policy') })),
     Story.model((model) => {
       expect(model.route._tag).toBe('Policy');
     }),
-    Story.Command.resolve(Navigate, Message.CompletedNavigate()),
-    Story.message(Message.ChangedUrl({ url: url('/') })),
-    Story.model((model) => {
-      expect(model.route._tag).toBe('Home');
-    }),
+    Story.Command.expectExact(LandOnLink({ fragment: Option.none(), reduceMotion: false })),
+    Story.Command.resolve(LandOnLink, Message.CompletedLandOnLink()),
   );
 });
 
-test('browser back/forward re-applies the route', () => {
+// A traversal arrives with no link behind it, so the browser's own scroll
+// restoration stands.
+test('browser back/forward applies the route without landing', () => {
   Story.story(
     update,
-    Story.given(menuOpenModel),
+    Story.given({ ...menuOpenModel, route: AppRoute.Policy() }),
     Story.message(Message.ChangedUrl({ url: url('/') })),
     Story.model((model) => {
+      expect(model.route._tag).toBe('Home');
       expect(model.isMenuOpen).toBe(false);
     }),
+    Story.Command.expectNone(),
   );
 });
 

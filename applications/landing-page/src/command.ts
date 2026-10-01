@@ -1,8 +1,8 @@
-// The landing page commands: navigation, the menu toggle's focus, and the
-// active-section probe.
+// The landing page commands: navigation and landing on a link's target, the
+// menu toggle's focus, and the active-section probe.
 
 import { Array, Effect, Option, Schema, pipe } from 'effect';
-import { Command, Dom } from 'foldkit';
+import { Command, Dom, Render } from 'foldkit';
 import { load as loadUrl, pushUrl } from 'foldkit/navigation';
 
 import { Message } from './message';
@@ -82,45 +82,45 @@ const animateScrollTo = (target: HTMLElement, reduceMotion: boolean): void => {
   window.requestAnimationFrame(step);
 };
 
-// Pushes the URL, then either scrolls to the fragment’s element (see
-// animateScrollTo) or jumps to the top (entering a page mid-scroll would
-// be disorienting). No wait for the scroll lock to release first: the lock
-// (Dom.lockScroll) keeps the page’s real scroll position, so window.scrollY
-// is truthful even mid-lock and the trip animates from where the reader
-// actually sits — the old position:fixed trick zeroed scrollY, which is why
-// this used to poll `body.style.position` before measuring. A fragment’s
-// element can lag the command by a render: a section link followed from the
-// policy page targets landing markup the route swap has not painted yet, so
-// a missing target is retried across a few frames before giving up (the
-// give-up keeps `#cookie-settings` — markup the banner owns, no element —
-// a scroll no-op, as it always was).
+// Pushes a link's URL. The runtime reports the change as ChangedUrl, which
+// applies the route and then lands the reader (LandOnLink below).
 export const Navigate = Command.define('Navigate', {
-  args: { url: Schema.String, reduceMotion: Schema.Boolean },
+  args: { url: Schema.String },
   messages: [Message.CompletedNavigate],
-  execute: ({ url, reduceMotion }) =>
-    pushUrl(url).pipe(
-      Effect.andThen(
-        Effect.sync(() => {
-          const fragment = url.split('#')[1];
-          if (fragment === undefined) {
-            window.scrollTo(0, 0);
-            return;
-          }
-          const scrollWhenRendered = (attemptsLeft: number): void => {
-            const target = document.getElementById(fragment);
-            if (target) {
-              animateScrollTo(target, reduceMotion);
-              return;
-            }
-            if (attemptsLeft > 0) {
-              window.requestAnimationFrame(() => scrollWhenRendered(attemptsLeft - 1));
-            }
-          };
-          scrollWhenRendered(10);
-        }),
-      ),
-      Effect.as(Message.CompletedNavigate()),
-    ),
+  execute: ({ url }) => pushUrl(url).pipe(Effect.as(Message.CompletedNavigate())),
+});
+
+// Lands the reader where a link pointed, once the route it changed has
+// rendered: on the fragment's element (see animateScrollTo), with focus moved
+// there so the keyboard and screen readers continue from the section rather
+// than from a link inside the overlay that just closed; or at the top of a new
+// page, where entering mid-scroll would be disorienting. The fragment's
+// element can be markup the route change itself brings in (a section link
+// followed from the policy page), so the landing waits for the commit. No
+// wait for the menu's scroll lock to release: the lock keeps the page's real
+// scroll position, so window.scrollY is truthful and the trip animates from
+// where the reader actually sits.
+export const LandOnLink = Command.define('LandOnLink', {
+  args: { fragment: Schema.Option(Schema.String), reduceMotion: Schema.Boolean },
+  messages: [Message.CompletedLandOnLink],
+  execute: ({ fragment, reduceMotion }) =>
+    Effect.gen(function* () {
+      yield* Render.afterCommit;
+      if (Option.isNone(fragment)) {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        return Message.CompletedLandOnLink();
+      }
+      const target = document.getElementById(fragment.value);
+      if (target === null) {
+        return Message.CompletedLandOnLink();
+      }
+      animateScrollTo(target, reduceMotion);
+      yield* Dom.focus(`#${CSS.escape(fragment.value)}`, {
+        preventScroll: true,
+        makeFocusable: true,
+      }).pipe(Effect.ignore);
+      return Message.CompletedLandOnLink();
+    }),
 });
 
 export const Load = Command.define('Load', {
@@ -174,8 +174,12 @@ export const DetectActiveSection = Command.define('DetectActiveSection', {
 // dispatches intent (`navigate(url, …)`), while the definitions keep their
 // PascalCase identities for Story matchers (`Story.Command.resolve(Navigate…)`).
 
-export const navigate = (url: string, reduceMotion: boolean): Command.Command<Message> =>
-  Navigate({ url, reduceMotion });
+export const navigate = (url: string): Command.Command<Message> => Navigate({ url });
+
+export const landOnLink = (
+  fragment: Option.Option<string>,
+  reduceMotion: boolean,
+): Command.Command<Message> => LandOnLink({ fragment, reduceMotion });
 
 export const load = (href: string): Command.Command<Message> => Load({ href });
 

@@ -11,6 +11,7 @@ export const landingModel = Model.make({
   isMenuOpen: false,
   activeSection: Option.none(),
   mapLeague: 'All',
+  isLandingLink: false,
   mapLeagueGroup: RadioGroup.init({ id: MAP_LEAGUE_GROUP_ID }),
   mapClub: Option.none(),
   isMapAreaImperial: true,
