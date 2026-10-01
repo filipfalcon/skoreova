@@ -141,9 +141,9 @@ const shellView = (model: Model, h: HtmlBuilder<Message>): Html =>
 // The canonical is built from the ROUTE rather than the request, so it drops
 // the query string: campaign and referral parameters arrive on shared links
 // and name the same document, and folding them onto one URL is the difference
-// between one page and an unbounded family of copies. It is stated rather than
-// left to the runtime's current-URL default because a server render has to put
-// the right URL in the markup a crawler reads before any app boots.
+// between one page and an unbounded family of copies. The view states it
+// because Foldkit writes only what a view supplies: the server render puts it
+// in the markup a crawler reads, and each client-side route change moves it.
 export const view = (model: Model, h: HtmlBuilder<Message>): Document => ({
   title: documentTitle(model.route),
   canonical: `${SITE_ORIGIN}${routePath(model.route)}`,

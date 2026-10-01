@@ -2,10 +2,11 @@ import { createKeyedLazy } from 'foldkit/html';
 import type { Document, Html, HtmlBuilder } from 'foldkit/html';
 
 import { footerView, headerView, menuOverlayView } from './components';
-import { documentTitle } from './document-title';
+import { SITE_ORIGIN, documentTitle } from './document-title';
 import type { Message } from './message';
 import type { Model } from './model';
 import { MountMotion, ObserveReveals } from './motion';
+import { routePath } from './route';
 import {
   Champions,
   Clubs,
@@ -73,11 +74,15 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
   const isPolicy = model.route._tag === 'Policy';
   const rootKey = `motion-${model.prefersReducedMotion}-${isPolicy ? 'policy' : 'landing'}`;
   return {
-    // `canonical` and `ogUrl` are left off HERE and set in entry.server.ts,
-    // which has the request path this route was parsed from and can drop the
-    // query string. Omitting them would default both to the request URL with
-    // the query kept — one page per tracking parameter.
     title: documentTitle(model.route),
+    // Built from the ROUTE rather than the request, so the query string drops:
+    // campaign and referral parameters arrive on shared links and name the same
+    // document, and folding them onto one URL is the difference between one
+    // page and a family of copies. The view states them because Foldkit only
+    // writes what a view supplies, and a client-side swap to the policy page
+    // would otherwise keep the landing page's URL.
+    canonical: `${SITE_ORIGIN}${routePath(model.route)}`,
+    ogUrl: `${SITE_ORIGIN}${routePath(model.route)}`,
     // American English, the language every string in this app is written in; the runtime writes it after the first render, so what a crawler reads is whatever the served document already carried.
     lang: 'en-US',
     // The root is keyed on the reduced-motion flag: flipping the OS setting

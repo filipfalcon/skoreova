@@ -2,7 +2,6 @@ import { Effect, Option } from 'effect';
 import { Server } from 'foldkit/experimental';
 import { fromString } from 'foldkit/url';
 
-import { SITE_ORIGIN } from './document-title';
 import { init, routing, view } from './main';
 import { urlToAppRoute } from './route';
 
@@ -36,24 +35,12 @@ export const renderPage = (request: Request): Promise<Server.EntryResult> =>
         },
       );
 
-      // The canonical drops the query string: campaign and referral parameters
-      // arrive on shared links and name the same document, so folding them onto
-      // one URL is the difference between one page and an unbounded family of
-      // copies. The render would otherwise default both fields to the request
-      // URL with the query KEPT — this is the explicit override its own docs
-      // ask for. Set here rather than in the view because the view knows the
-      // route, not the path that produced it.
-      const canonical = `${SITE_ORIGIN}${new URL(request.url).pathname}`;
-
       // An unknown path still renders the app's own landing screen, but it says
       // so in the status line instead of answering 200 for a page that is not
       // there.
       const parsed = fromString(request.url);
       const isNotFound = Option.isSome(parsed) && urlToAppRoute(parsed.value)._tag === 'NotFound';
 
-      return Server.Rendered(
-        { ...application, canonical, ogUrl: canonical },
-        isNotFound ? { status: 404 } : undefined,
-      );
+      return Server.Rendered(application, isNotFound ? { status: 404 } : undefined);
     }),
   );
