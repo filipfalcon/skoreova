@@ -23,6 +23,7 @@ import {
   ObserveTrendingScroll,
   RevealJumpChip,
   ScrollMatchStripToNext,
+  WritePins,
 } from './command';
 import { Message } from './message';
 import { clubArchive, clubs, scorersFor, standingsFor } from './data';
@@ -112,7 +113,14 @@ describe('view', () => {
       // The stat boards are the half of the page that an account buys.
       Scene.expect(Scene.text('Goals')).toExist(),
       // The same tiles, but pinnable now that there is somewhere to pin them.
-      Scene.expect(Scene.role('button', { name: 'Pin Sierra Pennock to Her Game' })).toExist(),
+      Scene.expect(
+        Scene.role('button', { name: 'Pin Sierra Pennock to Her Game', pressed: false }),
+      ).toExist(),
+      Scene.click(Scene.role('button', { name: 'Pin Sierra Pennock to Her Game' })),
+      Scene.Command.resolve(WritePins, Message.CompletedWritePins()),
+      Scene.expect(
+        Scene.role('button', { name: 'Pin Sierra Pennock to Her Game', pressed: true }),
+      ).toExist(),
     );
   });
 
@@ -234,24 +242,17 @@ describe('view', () => {
   // blocked half is what has broken elsewhere in this repo — a state announced
   // through an attribute the markup never carried, or styled through a selector
   // that never matched. On matchday 1 "Previous round" must be announced as
-  // disabled while its live twin beside it is not. The old class assertion
-  // (`text-ink/20`) died with Tailwind: StyleX class names are hashed, so the
-  // blocked LOOK is carried by the disjoint style pair in the view and the
-  // testable contract is Ui.Button's data-disabled stamp — the same attribute
-  // the blocked styling keys off, so a missing stamp fails here before it
-  // fails on screen.
+  // disabled while its live twin beside it is not. The blocked LOOK is the
+  // StyleX style the view picks from the same flag; StyleX class names are
+  // hashed, so the testable contract is the disabled state assistive tech is
+  // given.
   test('a blocked round arrow announces itself, its live twin does not', () => {
     Scene.scene(
       { update, view },
       Scene.given(competitionFirstRoundModel),
       ...acknowledgeShell,
-      Scene.expect(Scene.role('button', { name: 'Previous round' })).toHaveAttr(
-        'aria-disabled',
-        'true',
-      ),
-      Scene.expect(Scene.role('button', { name: 'Previous round' })).toHaveAttr('data-disabled'),
-      Scene.expect(Scene.role('button', { name: 'Next round' })).not.toHaveAttr('aria-disabled'),
-      Scene.expect(Scene.role('button', { name: 'Next round' })).not.toHaveAttr('data-disabled'),
+      Scene.expect(Scene.role('button', { name: 'Previous round', disabled: true })).toExist(),
+      Scene.expect(Scene.role('button', { name: 'Next round', disabled: false })).toExist(),
     );
   });
 
@@ -397,6 +398,19 @@ describe('view', () => {
     );
   });
 
+  // Follow is a toggle: one name in both states, with aria-pressed carrying
+  // which state it is in.
+  test('following a club presses the Follow button without renaming it', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(clubProfileModel),
+      ...acknowledgeStrip,
+      Scene.expect(Scene.role('button', { name: 'Follow Sparta', pressed: false })).toExist(),
+      Scene.click(Scene.role('button', { name: 'Follow Sparta' })),
+      Scene.expect(Scene.role('button', { name: 'Follow Sparta', pressed: true })).toExist(),
+    );
+  });
+
   // Scorers and history fold like the standings: a podium and the headline
   // counts first, the whole list on the heading control.
   test('top scorers and history open on their heading controls', () => {
@@ -418,10 +432,9 @@ describe('view', () => {
         Scene.click(Scene.role('button', { name: `All ${scorers} scorers` })),
         Scene.expectAll(Scene.all.role('listitem')).toHaveCount(scorers),
         // Open, the control keeps its name and reports the state instead.
-        Scene.expect(Scene.role('button', { name: `All ${scorers} scorers` })).toHaveAttr(
-          'aria-expanded',
-          'true',
-        ),
+        Scene.expect(
+          Scene.role('button', { name: `All ${scorers} scorers`, expanded: true }),
+        ).toExist(),
       ),
       Scene.inside(
         Scene.role('region', { name: 'History' }),
@@ -435,10 +448,9 @@ describe('view', () => {
         Scene.click(Scene.role('button', { name: `All ${seasons} seasons` })),
         Scene.expectAll(Scene.all.role('listitem')).toHaveCount(seasons),
         // Open, the control keeps its name and reports the state instead.
-        Scene.expect(Scene.role('button', { name: `All ${seasons} seasons` })).toHaveAttr(
-          'aria-expanded',
-          'true',
-        ),
+        Scene.expect(
+          Scene.role('button', { name: `All ${seasons} seasons`, expanded: true }),
+        ).toExist(),
       ),
     );
   });
