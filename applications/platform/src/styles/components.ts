@@ -10,14 +10,16 @@ import { spacing, tokens, type } from '../tokens.stylex';
 // one optical weight.
 const ICON_SIZE = '24px';
 
-// The chrome material: how opaque its ink is, and what it does to the page behind it. 0.76 is as
-// translucent as the chrome gets while everything on it still clears AA over the brightest page that
-// can pass underneath, pure white: paper text 9.5:1, the muted labels 4.7:1, and the pink active
-// icon and underline 3.1:1 (non-text, 3:1). At 0.75 the pink fell to 2.998:1 over white. Over plain
-// paper the same figures are 10.0, 5.0 and 3.3; over a pink chip 14.8, 7.4 and 4.9. The active nav
-// label is paper rather than pink because pink TEXT needs 4.5:1, which takes 0.87 over white,
-// and 0.9 already read as solid; the pink icon and underline carry the active state instead.
-const CHROME_INK_OPACITY = 0.76;
+// The chrome material: how opaque its ink is, and what it does to the page behind it. 0.82 keeps the
+// chrome reading as black over the paper page, beside the solid black it shows at the top of a
+// profile, while the blurred page under it still shows through as a soft wash of colour; at 0.75 it
+// resolved over paper to a warm mid-charcoal. Over the brightest page that can pass underneath, pure
+// white, everything on it clears AA: paper text 11.8:1, the muted labels 5.9:1, and the pink active
+// icon and underline 3.9:1 (non-text, 3:1); the floor for that pink is 0.76. Over plain paper the
+// same figures are 12.3, 6.2 and 4.1; over a pink chip 15.7, 7.9 and 5.2. The active nav label is
+// paper rather than pink because pink TEXT needs 4.5:1, which takes 0.87 over white, and 0.9 already
+// read as solid; the pink icon and underline carry the active state instead.
+const CHROME_INK_OPACITY = 0.82;
 const CHROME_BACKDROP = 'blur(24px) saturate(180%)';
 
 // A profile identity line's name size, which its back arrow is set against.
@@ -173,7 +175,7 @@ export const styles = stylex.create({
   navIconActive: {
     color: tokens.pink,
   },
-  // At rest a tab is the muted grey (4.7:1 at worst on the translucent chrome; see
+  // At rest a tab is the muted grey (5.9:1 at worst on the translucent chrome; see
   // CHROME_INK_OPACITY); pressed it brightens toward paper, and hovered it takes the accent.
   navLinkRest: {
     borderColor: 'transparent',
