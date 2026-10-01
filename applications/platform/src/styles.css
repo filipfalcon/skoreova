@@ -382,7 +382,14 @@ body {
 }
 
 /* Each screen slides up a touch as it mounts — keyed per route in the view,
-   so switching sections replays it. */
+   so switching sections replays it.
+
+   Filled backwards, never forwards: the from-state holds until the slide
+   starts, and once it ends the screen returns to its own styles, which equal
+   the last keyframe. An animation held past its end keeps the screen an
+   animated layer, and Chromium then cuts the backdrop of everything pinned
+   inside it: the profile identity bar's blur stopped sampling the page
+   scrolling under it, leaving that content legible through the chrome. */
 @keyframes screen-in {
   from {
     opacity: 0;
@@ -395,7 +402,7 @@ body {
 }
 
 .screen {
-  animation: screen-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: screen-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 /* Chart bars grow from the baseline, staggered via --bar-delay. */
