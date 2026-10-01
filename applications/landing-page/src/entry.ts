@@ -158,6 +158,10 @@ const application = Runtime.makeApplication({
   container: document.getElementById('root'),
   routing,
   crash: { report: reportCrash, view: crashView },
+  // The dev reload restore above waits for the fonts and the full document
+  // height; Foldkit's own restores right after the first render, before the
+  // late layout lands. Two restorers would fight, so Foldkit's stands down.
+  preserveScroll: false,
   devTools: { Message },
 });
 
