@@ -768,11 +768,7 @@ const leagueMatchesPanel = (
     return Button.view(
       {
         isDisabled: blocked,
-        ...(blocked
-          ? {}
-          : {
-              onClick: Message.SelectedCompetitionRound({ slug: competition.slug, round: target }),
-            }),
+        onClick: Message.SelectedCompetitionRound({ slug: competition.slug, round: target }),
         toView: ({ button }) =>
           h.button(
             [
