@@ -7,7 +7,7 @@ import clsx from 'clsx';
 import { inertHtml as ih } from 'foldkit/html';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
-import { homeRouter } from './route';
+import { homeRouter, policyRouter } from './route';
 import type { Model } from './model';
 import { Message } from './message';
 import { menuEntries, platformUrl, socialChannels } from './data';
@@ -483,7 +483,7 @@ export const footerView = (isMenuOpen: boolean, h: HtmlBuilder<Message>): Html =
           ),
           h.a(
             [
-              h.Href('/policy'),
+              h.Href(policyRouter()),
               h.Class(
                 'underline decoration-pink decoration-2 underline-offset-4 transition-colors duration-300 hover:text-paper',
               ),

@@ -2,6 +2,7 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { container } from '../components';
 import type { Message } from '../message';
+import { homeRouter } from '../route';
 
 // One entry per measurement tool, in plain words. The claims mirror what the
 // code actually does — analytics/gtag.ts loads Google Analytics behind the
@@ -58,7 +59,7 @@ export const view = (h: HtmlBuilder<Message>): Html =>
             [
               h.a(
                 [
-                  h.Href('/'),
+                  h.Href(homeRouter()),
                   h.Class(
                     'display inline-block bg-ink px-6 py-3 text-xl tracking-[0.08em] text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink',
                   ),
