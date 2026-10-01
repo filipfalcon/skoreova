@@ -82,7 +82,6 @@ export default defineConfig({
     // Compiled modules persist in node_modules/.vitest-cache between runs; recompiling them was most of this project's time. Set per project, because a project named by its config file does not inherit the root's test options.
     fsModuleCache: true,
     include: ['src/**/*.test.ts'],
-    setupFiles: ['./src/vitest-setup.ts'],
     // Inlining foldkit and @foldkit/ui keeps component rendering on the same runtime instance as Scene.
     server: { deps: { inline: ['foldkit', '@foldkit/ui', 'echarts'] } },
   },

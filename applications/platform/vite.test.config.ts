@@ -15,7 +15,6 @@ export default defineConfig({
     include: ['src/**/*.test.ts'],
     // Browser-mode tests run in vite.browser.config.ts.
     exclude: ['src/**/*.browser.test.ts'],
-    setupFiles: ['./src/vitest-setup.ts'],
     // Inlining foldkit and @foldkit/ui keeps component rendering on the same runtime instance as Scene.
     server: { deps: { inline: ['foldkit', '@foldkit/ui'] } },
   },

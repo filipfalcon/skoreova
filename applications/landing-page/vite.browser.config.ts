@@ -32,7 +32,6 @@ export default defineConfig({
   test: {
     name: 'landing-page-browser',
     include: ['src/**/*.browser.test.ts'],
-    setupFiles: ['./src/vitest-setup.ts'],
     browser: {
       enabled: true,
       provider: playwright(),
