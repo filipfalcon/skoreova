@@ -1,8 +1,9 @@
+import { RadioGroup } from '@foldkit/ui';
 import { Option } from 'effect';
 import { Scene } from 'foldkit';
 import { describe, test } from 'vite-plus/test';
 
-import { landingModel, menuOpenModel } from './main.fixtures';
+import { landingModel, menuOpenModel, secondLeagueMapModel } from './main.fixtures';
 import { DetectActiveSection, Message, SetScrollLock, update, view } from './main';
 import { MountMotion, ObserveHeroPastHeader, ObserveReveals } from './motion';
 
@@ -39,6 +40,22 @@ describe('view', () => {
       ...acknowledgeMounts,
       Scene.expect(Scene.role('radio', { name: 'All clubs' })).toExist(),
       Scene.expect(Scene.label('Toggle between metric and imperial area')).toExist(),
+    );
+  });
+
+  // The league radio group commits through its Selected OutMessage, and the
+  // commit also closes an open club card: the pin behind it may be filtered away.
+  test('picking a league switches the filter and closes the open club card', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(secondLeagueMapModel),
+      ...acknowledgeMounts,
+      Scene.expect(Scene.selector('[data-selected="true"]')).toExist(),
+      Scene.click(Scene.role('radio', { name: 'First League' })),
+      // Picking an option moves focus to it, a Command the group issues and the parent wraps.
+      Scene.Command.resolve(RadioGroup.FocusOption, RadioGroup.Message.CompletedFocusOption()),
+      Scene.expect(Scene.role('radio', { name: 'First League', checked: true })).toExist(),
+      Scene.expect(Scene.selector('[data-selected="true"]')).not.toExist(),
     );
   });
 

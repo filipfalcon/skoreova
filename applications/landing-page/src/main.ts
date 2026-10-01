@@ -117,9 +117,6 @@ export const update = (model: Model, message: Message) =>
     CompletedNavigate: () => ({ model }),
     CompletedLoad: () => ({ model }),
     CompletedSetScrollLock: () => ({ model }),
-    SelectedMapLeague: ({ league }) => ({
-      model: modifyFields(model, { mapLeague: () => league, mapClub: () => Option.none() }),
-    }),
     GotMapLeagueGroupMessage: ({ message }) =>
       Update.foldChild({
         update: MapLeagueRadioGroup.update,

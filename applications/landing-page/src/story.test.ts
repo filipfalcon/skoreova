@@ -4,7 +4,7 @@ import { UrlRequest } from 'foldkit/navigation';
 import { fromString } from 'foldkit/url';
 import { expect, test } from 'vite-plus/test';
 
-import { landingModel, menuOpenModel, secondLeagueMapModel } from './main.fixtures';
+import { landingModel, menuOpenModel } from './main.fixtures';
 import { DetectActiveSection, Load, Message, Navigate, SetScrollLock, update } from './main';
 
 const url = (path: string) => Option.getOrThrow(fromString(`https://skoreova.example${path}`));
@@ -54,19 +54,6 @@ test('ClosedMenu closes the overlay and releases the lock', () => {
       expect(model.isMenuOpen).toBe(false);
     }),
     Story.Command.resolve(SetScrollLock, Message.CompletedSetScrollLock()),
-  );
-});
-
-test('selecting a map league switches the filter and closes any open club card', () => {
-  Story.story(
-    update,
-    Story.given(secondLeagueMapModel),
-    Story.message(Message.SelectedMapLeague({ league: 'First' })),
-    Story.model((model) => {
-      expect(model.mapLeague).toBe('First');
-      expect(model.mapClub).toEqual(Option.none());
-    }),
-    Story.Command.expectNone(),
   );
 });
 

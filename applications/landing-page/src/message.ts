@@ -4,8 +4,6 @@ import { defineMessageUnion } from 'foldkit/message';
 import { UrlRequest } from 'foldkit/navigation';
 import { Url } from 'foldkit/url';
 
-import { MapLeague } from './model';
-
 export const Message = defineMessageUnion({
   ToggledMenu: {},
   // Sent by every anchor inside the overlay: close the menu and let navigation
@@ -24,7 +22,6 @@ export const Message = defineMessageUnion({
   CompletedNavigate: {},
   CompletedLoad: {},
   CompletedSetScrollLock: {},
-  SelectedMapLeague: { league: MapLeague },
   // The league filter is a Submodel, so its Messages arrive wrapped. The
   // COMMITTED league does not travel this way — it arrives as a `Selected`
   // OutMessage and lands in `mapLeague`.
