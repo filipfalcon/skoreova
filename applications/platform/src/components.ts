@@ -12,7 +12,7 @@ import type { Attribute, Html, HtmlBuilder } from 'foldkit/html';
 import type { ResponsiveImage } from './domain/entities';
 import type { Model, Screen } from './model';
 import { Message } from './message';
-import { JUMP_ROW_ID, ObserveSectionRail, jumpChipId } from './command';
+import { JUMP_ROW_ID, ObserveHeaderHeight, ObserveSectionRail, jumpChipId } from './command';
 import { type NavEntry, navEntries, screenOf, screenTitles } from './data';
 import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
 import type { StyleXStyle } from './stylexAttributes';
@@ -350,7 +350,7 @@ export const profileIdentityLine = (
 
 export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.header(
-    [...getStyleXAttributes(h, styles.chrome, styles.header)],
+    [h.OnMount(ObserveHeaderHeight()), ...getStyleXAttributes(h, styles.chrome, styles.header)],
     [
       h.nav(
         [...getStyleXAttributes(h, styles.sectionRail)],

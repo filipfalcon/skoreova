@@ -1,7 +1,7 @@
 // Platform subscriptions: the trending countdown and the OS reduced-motion
 // preference it defers to.
 
-import { Duration, Effect, Schedule, Schema, Stream } from 'effect';
+import { Duration, Schedule, Schema, Stream } from 'effect';
 import { Subscription } from 'foldkit';
 
 import type { Model } from './model';
@@ -82,44 +82,6 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
           Stream.map((anchor) => Message.ScrolledClubPage({ anchor })),
         );
       },
-    },
-  ),
-  // Keeps `--header-height` equal to the fixed header's rendered height, now and on every resize of it: a label that wraps on another font engine, a rotation, a font arriving late. Everything the shell hangs under the header reads the variable, directly or through `--profile-offset`: the spacer, the pinned jump row and the section anchors the scroll-spy reads, so they move with the header instead of assuming its design height. It emits no Messages — it is the sanctioned "maintain a DOM effect for as long as the app runs" kind of Subscription. The header exists once the first render has run, and the frame callback waits for it.
-  headerHeight: entry(
-    {},
-    {
-      modelToDependencies: () => ({}),
-      dependenciesToStream: () =>
-        Stream.callback<never>((_queue) =>
-          Effect.gen(function* () {
-            yield* Effect.acquireRelease(
-              Effect.sync(() => {
-                const observer = new ResizeObserver((entries) => {
-                  const height = entries[0]?.borderBoxSize[0]?.blockSize;
-                  if (height !== undefined) {
-                    document.documentElement.style.setProperty('--header-height', `${height}px`);
-                  }
-                });
-                let frame = 0;
-                const attach = (): void => {
-                  const header = document.querySelector('header');
-                  if (header === null) {
-                    frame = window.requestAnimationFrame(attach);
-                    return;
-                  }
-                  observer.observe(header);
-                };
-                attach();
-                return () => {
-                  window.cancelAnimationFrame(frame);
-                  observer.disconnect();
-                };
-              }),
-              (teardown) => Effect.sync(teardown),
-            );
-            return yield* Effect.never;
-          }),
-        ),
     },
   ),
   // Follows the OS-level `prefers-reduced-motion` setting: the CURRENT value

@@ -18,6 +18,7 @@ import {
 } from './main.fixtures';
 import { update, view } from './main';
 import {
+  ObserveHeaderHeight,
   ObserveSectionRail,
   ObserveTrendingScroll,
   RevealJumpChip,
@@ -34,16 +35,24 @@ const url = (path: string) => Option.getOrThrow(fromString(`https://skoreova.exa
 // The club every profile scene opens on.
 const sparta = clubs.find((club) => club.slug === 'sparta-praha')!;
 
+// Every scene renders the shell, whose header keeps `--header-height` current
+// through a Mount; Scene requires it acknowledged.
+const acknowledgeShell = [
+  Scene.Mount.resolve(ObserveHeaderHeight, Message.CompletedObserveHeaderHeight()),
+];
+
 // Every '/' scene renders the trending track, whose scroll observer is a
 // Mount; Scene requires each rendered Mount acknowledged. Index 0 mirrors the
 // boot Model — the observer's real measuring needs a browser and never runs
 // here.
 const acknowledgeMounts = [
+  ...acknowledgeShell,
   Scene.Mount.resolve(ObserveTrendingScroll, Message.ScrolledTrending({ index: 0 })),
 ];
 
 // Every club profile scene renders the match strip, whose opening scroll is a Mount; Scene requires it acknowledged.
 const acknowledgeStrip = [
+  ...acknowledgeShell,
   Scene.Mount.resolve(ObserveSectionRail, Message.CompletedObserveSectionRail()),
   Scene.Mount.resolve(ScrollMatchStripToNext, Message.CompletedMatchStripScroll()),
 ];
@@ -235,6 +244,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(competitionFirstRoundModel),
+      ...acknowledgeShell,
       Scene.expect(Scene.role('button', { name: 'Previous round' })).toHaveAttr(
         'aria-disabled',
         'true',
@@ -479,6 +489,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given({ ...welcomeModel, route: urlToAppRoute(url('/matches')) }),
+      ...acknowledgeShell,
       Scene.expect(Scene.role('heading', { name: 'First League' })).toExist(),
       Scene.expect(Scene.role('heading', { name: 'Second League' })).toExist(),
       Scene.expect(Scene.role('link', { name: 'All clubs' })).not.toExist(),
@@ -486,6 +497,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given({ ...welcomeModel, route: AppRoute.Matches({ club: 'sparta-praha' }) }),
+      ...acknowledgeShell,
       Scene.expect(
         Scene.text('Sparta Praha, round by round — refreshed after every matchday.'),
       ).toExist(),
@@ -499,6 +511,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubsModel),
+      ...acknowledgeShell,
       Scene.expect(Scene.label('Search clubs')).toExist(),
     );
   });
@@ -510,6 +523,7 @@ describe('view', () => {
     Scene.scene(
       { update, view },
       Scene.given(clubsModel),
+      ...acknowledgeShell,
       // Each card carries its crest, so the alt text is the grid’s identity.
       Scene.expect(Scene.altText('Sparta Praha crest')).toExist(),
       Scene.type(Scene.label('Search clubs'), 'slovacko'),

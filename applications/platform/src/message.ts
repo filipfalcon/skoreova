@@ -48,6 +48,7 @@ export const Message = defineMessageUnion({
   CompletedRevealJumpChip: {},
   CompletedMatchStripScroll: {},
   CompletedObserveSectionRail: {},
+  CompletedObserveHeaderHeight: {},
   // Pins: ReadPins hands the stored ids back through LoadedPins; a pin toggle
   // updates the model and mirrors it out through WritePins, whose completion
   // is CompletedWritePins (nothing to fold back in — the write is fire-and-forget).

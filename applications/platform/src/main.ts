@@ -300,6 +300,7 @@ export const update = (model: Model, message: Message) =>
     CompletedRevealJumpChip: () => ({ model }),
     CompletedMatchStripScroll: () => ({ model }),
     CompletedObserveSectionRail: () => ({ model }),
+    CompletedObserveHeaderHeight: () => ({ model }),
     LoadedPins: ({ ids }) => ({ model: modifyFields(model, { pinned: () => ids }) }),
     ToggledPin: ({ id }) => {
       const pinned = toggleEntry(model.pinned, id);

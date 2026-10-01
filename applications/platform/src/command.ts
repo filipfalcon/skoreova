@@ -233,6 +233,38 @@ export const ScrollMatchStripToNext = Mount.define('ScrollMatchStripToNext', {
 });
 
 /**
+ * Keeps `--header-height` equal to the fixed header's rendered height for as long as the header is
+ * mounted.
+ *
+ * Everything the shell hangs under the header reads the variable, directly or through
+ * `--profile-offset`: the spacer, the pinned jump row and the section anchors the scroll-spy reads.
+ * They move with the header — a label that wraps on another font engine, a rotation, a font
+ * arriving late — instead of assuming its design height. Taking the header away hands the variable
+ * back to the stylesheet's default.
+ */
+export const ObserveHeaderHeight = Mount.define('ObserveHeaderHeight', {
+  messages: [Message.CompletedObserveHeaderHeight],
+  execute: ({ element }) =>
+    Effect.acquireRelease(
+      Effect.sync(() => {
+        const root = document.documentElement;
+        const observer = new ResizeObserver((entries) => {
+          const height = entries[0]?.borderBoxSize[0]?.blockSize;
+          if (height !== undefined) {
+            root.style.setProperty('--header-height', `${height}px`);
+          }
+        });
+        observer.observe(element, { box: 'border-box' });
+        return () => {
+          observer.disconnect();
+          root.style.removeProperty('--header-height');
+        };
+      }),
+      (teardown) => Effect.sync(teardown),
+    ).pipe(Effect.as(Message.CompletedObserveHeaderHeight())),
+});
+
+/**
  * Measures the section rail for anchor clearance throughout its mounted lifetime.
  */
 export const ObserveSectionRail = Mount.define('ObserveSectionRail', {
