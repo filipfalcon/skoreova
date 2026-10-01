@@ -1,8 +1,10 @@
 import '@fontsource/anton/400.css';
 import '@fontsource-variable/archivo/index.css';
+import { Option } from 'effect';
 import { Runtime } from 'foldkit';
 
 import { isMeasurementOff } from '#analytics/config';
+import { crashView } from './crash';
 import { Message, Model, init, routing, subscriptions, update, view } from './main';
 
 // Error monitoring ONLY — no tracing, no replay, no PII beyond Sentry’s
@@ -20,6 +22,14 @@ import { Message, Model, init, routing, subscriptions, update, view } from './ma
 // anything thrown, so a crash during boot — the report worth the most —
 // is replayed into the SDK instead of lost. The cap only guards against
 // an error loop filling memory before the SDK takes over.
+//
+// Those listeners never see a crash inside the app: Foldkit catches what
+// escapes update, view or a Command, stops the runtime and hands the error
+// to `crash.report` below without rethrowing it. So the loaded SDK is also
+// kept as a promise, which the reporter chains onto — a crash before the
+// SDK arrives waits for it, and the runtime has stopped, so there is only
+// ever one.
+type SentrySdk = typeof import('@sentry/browser');
 const pendingErrors: Array<unknown> = [];
 const bufferError = (event: ErrorEvent): void => {
   if (pendingErrors.length < 20) pendingErrors.push(event.error ?? event.message);
@@ -27,30 +37,50 @@ const bufferError = (event: ErrorEvent): void => {
 const bufferRejection = (event: PromiseRejectionEvent): void => {
   if (pendingErrors.length < 20) pendingErrors.push(event.reason);
 };
-if (!isMeasurementOff()) {
-  window.addEventListener('error', bufferError);
-  window.addEventListener('unhandledrejection', bufferRejection);
-  const startSentry = (): void => {
-    import('@sentry/browser')
-      .then((Sentry) => {
-        Sentry.init({
-          dsn: 'https://e4a8e88469481b1b99170df7523983b9@o4511717331107840.ingest.de.sentry.io/4511717341790288',
-        });
-        window.removeEventListener('error', bufferError);
-        window.removeEventListener('unhandledrejection', bufferRejection);
-        for (const error of pendingErrors) Sentry.captureException(error);
-        pendingErrors.length = 0;
-      })
-      // Monitoring is best effort — a failed chunk load must not surface as a page error of its own.
-      .catch(() => {});
-  };
-  // The timeout bounds the wait on pages that never go idle (the marquee and drift animations run forever); Safari has no requestIdleCallback, so it takes the plain timer.
-  if (typeof window.requestIdleCallback === 'function') {
-    window.requestIdleCallback(startSentry, { timeout: 5000 });
-  } else {
-    window.setTimeout(startSentry, 2000);
-  }
-}
+const loadSentry = (): Promise<SentrySdk> =>
+  new Promise((resolve, reject) => {
+    window.addEventListener('error', bufferError);
+    window.addEventListener('unhandledrejection', bufferRejection);
+    const startSentry = (): void => {
+      import('@sentry/browser')
+        .then((Sentry) => {
+          Sentry.init({
+            dsn: 'https://e4a8e88469481b1b99170df7523983b9@o4511717331107840.ingest.de.sentry.io/4511717341790288',
+          });
+          window.removeEventListener('error', bufferError);
+          window.removeEventListener('unhandledrejection', bufferRejection);
+          for (const error of pendingErrors) Sentry.captureException(error);
+          pendingErrors.length = 0;
+          resolve(Sentry);
+        })
+        .catch(reject);
+    };
+    // The timeout bounds the wait on pages that never go idle (the marquee and drift animations run forever); Safari has no requestIdleCallback, so it takes the plain timer.
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(startSentry, { timeout: 5000 });
+    } else {
+      window.setTimeout(startSentry, 2000);
+    }
+  });
+const sentry = isMeasurementOff() ? undefined : loadSentry();
+// Monitoring is best effort — a failed chunk load must not surface as a page error of its own.
+void sentry?.catch(() => {});
+
+// The Message being handled names what the page was doing when it broke;
+// a crash in the first render has none. The Model stays out of the report:
+// it is mostly scroll state, and the policy page promises nothing more than
+// the error and that moment.
+const reportCrash = ({ error, message }: Runtime.CrashContext<Model, Message>): void => {
+  void sentry?.then(
+    (Sentry) =>
+      Sentry.captureException(error, {
+        tags: {
+          message: Option.match(message, { onNone: () => 'init', onSome: ({ _tag }) => _tag }),
+        },
+      }),
+    () => {},
+  );
+};
 
 // DEV ONLY: every edit is a full page reload (the Foldkit plugin can’t
 // hot-swap an Elm-style runtime — its handleHotUpdate always sends
@@ -127,6 +157,7 @@ const application = Runtime.makeApplication({
   subscriptions,
   container: document.getElementById('root'),
   routing,
+  crash: { report: reportCrash, view: crashView },
   devTools: { Message },
 });
 
