@@ -149,13 +149,13 @@ interface CountUp {
   grouped: boolean;
   // The exact string this system last wrote, and the number it showed. When
   // the element’s text differs from `lastText`, the MODEL rewrote it (league
-  // filter) — the rAF loop catches that and counts from `current` to the new
-  // value instead of letting it snap.
+  // filter), and cancelCountUp settles on the new value rather than on the
+  // stale target.
   lastText: string;
   current: number;
   // Snapshot of `data-recount` (the view stamps filter state + fresh target
-  // there); when it changes, the rAF loop spins the counter — even to the
-  // SAME value. Undefined for count-ups the model never rewrites.
+  // there); when it changes, the recount observer spins the counter — even to
+  // the SAME value. Undefined for count-ups the model never rewrites.
   lastRecount: string | undefined;
   timeout: number;
   frame: number;
@@ -178,7 +178,7 @@ interface MarqueeTrack {
 // state and the VIEW renders `.is-in`/`.is-drawn` (see revealClass in
 // components.ts). The count-up/scramble text animations still start
 // imperatively from the same observer callbacks (they are rAF work, not
-// state), and the recount watcher runs its own small loop here. Never
+// state), and the recount watcher observes its attribute here. Never
 // installed under reduced motion: the view force-reveals everything and
 // the numbers rest on their final values.
 // The viewport from which 'replay' reveal groups keep their simultaneous formation.
@@ -556,24 +556,28 @@ const setUpReveals = (
   // couldn’t: the spin fires even when the VALUE stays the same (every
   // recount should visibly spin), and it can’t lose a change to an
   // in-flight animation frame overwriting the text node right after
-  // Foldkit patches it (the counter then froze on a stale value). Its own
-  // small rAF loop — the per-frame choreography lives in MountMotion, and
-  // this watcher belongs with the count-ups it drives.
-  let recountFrame = 0;
-  const recountTick = (): void => {
-    for (const countUp of countUps.values()) {
-      const recount = countUp.element.dataset['recount'];
-      if (recount !== undefined && recount !== countUp.lastRecount) {
+  // Foldkit patches it (the counter then froze on a stale value). A
+  // MutationObserver hears the patch's attribute write as it lands, so
+  // nothing polls between filter changes and the page can go idle.
+  const recounts = new MutationObserver((records) => {
+    for (const record of records) {
+      const countUp =
+        record.target instanceof HTMLElement ? countUps.get(record.target) : undefined;
+      const recount = countUp?.element.dataset['recount'];
+      if (countUp !== undefined && recount !== undefined && recount !== countUp.lastRecount) {
         countUp.lastRecount = recount;
         countUp.target = Number(recount.split('|')[0] ?? '0');
         window.clearTimeout(countUp.timeout);
         animateCount(countUp, countUp.current, 700);
       }
     }
-    recountFrame = window.requestAnimationFrame(recountTick);
-  };
-  recountFrame = window.requestAnimationFrame(recountTick);
-  cleanups.push(() => window.cancelAnimationFrame(recountFrame));
+  });
+  for (const countUp of countUps.values()) {
+    if (countUp.lastRecount !== undefined) {
+      recounts.observe(countUp.element, { attributeFilter: ['data-recount'] });
+    }
+  }
+  cleanups.push(() => recounts.disconnect());
 
   // ----- Reveals -----------------------------------------------------------
 
