@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@effect/platform-browser": "4.0.0-rc.117",
-    "@foldkit/devtools": "0.164.0",
     "@foldkit/ui": "0.164.0",
     "@fontsource-variable/archivo": "5.2.8",
     "@fontsource/anton": "5.2.7",
@@ -24,6 +23,7 @@
     "foldkit": "0.164.0"
   },
   "devDependencies": {
+    "@foldkit/devtools": "0.164.0",
     "@foldkit/vite-plugin": "0.25.0",
     "@tailwindcss/vite": "4.3.3",
     "@types/gtag.js": "0.0.20",
