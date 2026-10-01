@@ -10,8 +10,14 @@ import { spacing, tokens, type } from '../tokens.stylex';
 // one optical weight.
 const ICON_SIZE = '24px';
 
-// The chrome material: how opaque its ink is, and what it does to the page behind it. At 0.9 the pink active nav label holds 5.1:1 and the muted labels 7.8:1 over paper and pink passing underneath; at 0.8 the pink label fell to 3.8:1, under AA for its size.
-const CHROME_INK_OPACITY = 0.9;
+// The chrome material: how opaque its ink is, and what it does to the page behind it. 0.76 is as
+// translucent as the chrome gets while everything on it still clears AA over the brightest page that
+// can pass underneath, pure white: paper text 9.5:1, the muted labels 4.7:1, and the pink active
+// icon and underline 3.1:1 (non-text, 3:1). At 0.75 the pink fell to 2.998:1 over white. Over plain
+// paper the same figures are 10.0, 5.0 and 3.3; over a pink chip 14.8, 7.4 and 4.9. The active nav
+// label is paper rather than pink because pink TEXT needs 4.5:1, which takes 0.87 over white,
+// and 0.9 already read as solid; the pink icon and underline carry the active state instead.
+const CHROME_INK_OPACITY = 0.76;
 const CHROME_BACKDROP = 'blur(24px) saturate(180%)';
 
 // A profile identity line's name size, which its back arrow is set against.
@@ -158,12 +164,17 @@ export const styles = stylex.create({
     transitionDuration: '0.15s',
     transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   },
+  // Active, the label is paper and the pink moves to the marks around it: the icon and the underline
+  // are non-text and hold 3:1 on the translucent chrome, where pink text would not hold 4.5:1.
   navLinkActive: {
     borderColor: tokens.pink,
+    color: tokens.paper,
+  },
+  navIconActive: {
     color: tokens.pink,
   },
-  // At rest a tab is the muted grey (8.5:1 on the black bar); pressed it
-  // brightens toward paper, and hovered it takes the accent.
+  // At rest a tab is the muted grey (4.7:1 at worst on the translucent chrome; see
+  // CHROME_INK_OPACITY); pressed it brightens toward paper, and hovered it takes the accent.
   navLinkRest: {
     borderColor: 'transparent',
     color: {

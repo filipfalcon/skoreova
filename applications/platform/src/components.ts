@@ -172,8 +172,8 @@ export const sparkline = (values: ReadonlyArray<number>, h: HtmlBuilder<Message>
 // PLACEHOLDER line art: the final icon set replaces these paths. One weight
 // for all five — a 1.5 stroke on a 24-unit grid — so no tab's mark is
 // heavier than its neighbours'. Stroke is currentColor, so the tab's own
-// accent and hover colors reach it.
-export const navIcon = (screen: Screen, h: HtmlBuilder<Message>): Html => {
+// accent and hover colors reach it; an active tab's icon takes the pink its paper label does not.
+export const navIcon = (screen: Screen, isActive: boolean, h: HtmlBuilder<Message>): Html => {
   const paths: Partial<Record<Screen, string>> = {
     // Crest/shield — clubs.
     Clubs: 'M12 3 L20 6 V12 C20 17 16.5 20 12 21.5 C7.5 20 4 17 4 12 V6 Z',
@@ -194,7 +194,7 @@ export const navIcon = (screen: Screen, h: HtmlBuilder<Message>): Html => {
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
       h.ViewBox('0 0 24 24'),
-      ...getStyleXAttributes(h, styles.navIcon),
+      ...getStyleXAttributes(h, styles.navIcon, isActive && styles.navIconActive),
       h.AriaHidden(true),
       h.Fill('none'),
       h.Stroke('currentColor'),
@@ -218,7 +218,7 @@ export const desktopNavLink = (model: Model, entry: NavEntry, h: HtmlBuilder<Mes
     ],
     [
       // Every tab is the same shape and the same weight of mark, the brand section included.
-      navIcon(entry.screen, h),
+      navIcon(entry.screen, active, h),
       // Two spans rather than one, because the swap is a change of words and CSS can only choose between elements.
       h.span(
         [...getStyleXAttributes(h, styles.navLabel, styles.navLabelPhone)],
