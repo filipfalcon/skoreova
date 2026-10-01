@@ -228,11 +228,11 @@ const preloadFonts = (): Plugin => ({
   },
 });
 
-// The Foldkit plugin runs in tests too, without its DevTools MCP port — see
-// `devToolsMcpPort` below for why a test run opens no relay. The plugin brands view-function identity, and that IS the differ's
-// second axis: an identity mismatch replaces a node where a bare tag match would
-// have patched it. Dropping the plugin wholesale left these tests diffing on tag
-// and position alone while production diffed on identity too.
+// The Foldkit plugin runs in tests too. It brands view-function identity, and
+// that IS the differ's second axis: an identity mismatch replaces a node where a
+// bare tag match would have patched it. Dropping the plugin wholesale left these
+// tests diffing on tag and position alone while production diffed on identity
+// too.
 
 // Pins the inner dev server's port under `alchemy dev` (web 5273, platform
 // 5274, studio 5275). Alchemy starts each app's vite with an inline
@@ -248,15 +248,6 @@ const pinAlchemyDevPort = (port: number): Plugin => ({
   config: () => (isUnderAlchemy ? { server: { port, strictPort: true } } : {}),
 });
 
-// The DevTools MCP relay is a LISTENING SOCKET, and this config is a test
-// project as well as the app's — Vitest runs it directly. Started under a test
-// run it outlives the run (an open handle keeps the process alive, holding the
-// port until it is killed by hand) and it collides with a dev server already
-// bound to the same port. The relay is for a dev session, so a test run has no
-// use for one. The platform avoids this a different way, with a sidecar test
-// config that never names a port.
-const devToolsMcpPort = process.env['VITEST'] === undefined ? 9989 : undefined;
-
 export default defineConfig({
   // IPv4 loopback, explicitly: under `alchemy dev` all three apps' inner
   // vite servers race for ports, and a dual-stack bind lets two of them
@@ -264,11 +255,9 @@ export default defineConfig({
   // one app’s traffic to another. On one family the collision is real and
   // vite increments to a free port instead.
   server: { host: '127.0.0.1' },
-  // Studio claims 9988 — each app needs its own DevTools MCP port.
   plugins: [
     ...tailwindcss(),
     ...foldkit({
-      devToolsMcpPort,
       // A plain `vp dev` renders through the same entry the Worker calls, so
       // a hydration mismatch shows up while editing rather than after a
       // deploy. Under `alchemy dev` the `ssr` environment is workerd's, which

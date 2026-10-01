@@ -3,18 +3,11 @@ import tailwindcss from '@tailwindcss/vite';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite-plus';
 
-// The Foldkit plugin runs everywhere — dev, build, and tests — with its
-// DevTools MCP port in all three. Tests used to get a portless plugin: the relay
-// hung its shutdown off `server.httpServer`, which is null when Vite runs as
-// middleware, so it outlived the run and every suite paid Vitest's ten-second
-// close timeout, and a restarted dev server hit EADDRINUSE against the server it
-// was replacing. @foldkit/vite-plugin 0.11.2 shuts the relay down in middleware
-// mode and retries the bind while the port hands over.
-//
-// Keeping the plugin under test was never optional, only its port: the plugin
-// brands view-function identity, and that IS the differ's second axis. Without
-// it the tests diffed on tag and position while production diffed on identity
-// too — the one difference a view test cannot see.
+// The Foldkit plugin runs everywhere — dev, build, and tests. Keeping it under
+// test is not optional: the plugin brands view-function identity, and that IS
+// the differ's second axis. Without it the tests diffed on tag and position
+// while production diffed on identity too — the one difference a view test
+// cannot see.
 
 // Both factories return ARRAYS of plugins and are spread rather than nested.
 // Vite flattens either form, so this is purely for the type checker: a nested
@@ -36,17 +29,8 @@ const pinAlchemyDevPort = (port: number): Plugin => ({
       : {},
 });
 
-// The DevTools MCP relay is a LISTENING SOCKET, and this config is a test
-// project as well as the app's — Vitest runs it directly. Started under a test
-// run it outlives the run (an open handle keeps the process alive, holding the
-// port until it is killed by hand) and it collides with a dev server already
-// bound to the same port. The relay is for a dev session, so a test run has no
-// use for one. The platform avoids this a different way, with a sidecar test
-// config that never names a port.
-const devToolsMcpPort = process.env['VITEST'] === undefined ? 9988 : undefined;
-
 export default defineConfig({
-  plugins: [...tailwindcss(), ...foldkit({ devToolsMcpPort }), pinAlchemyDevPort(5275)],
+  plugins: [...tailwindcss(), ...foldkit(), pinAlchemyDevPort(5275)],
   optimizeDeps: {
     entries: ['src/entry.ts'],
     // The plugin's per-module transform injects the foldkit/brand import, so the optimizer's crawl never sees it. Left undeclared, the first page load on a cold cache (fresh install, changed lockfile) discovers it, re-optimizes, and reloads the page.

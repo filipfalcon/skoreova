@@ -44,12 +44,10 @@ export default defineConfig({
   // one app’s traffic to another. On one family the collision is real and
   // vite increments to a free port instead.
   server: { host: '127.0.0.1' },
-  // Studio claims 9988, web 9989 — each app needs its own DevTools MCP port.
   plugins: [
     stylex.vite(),
     imagetools({ defaultDirectives: imagePresets }),
     ...foldkit({
-      devToolsMcpPort: 9990,
       // A plain `vp dev` renders through the same entry the Worker calls, so
       // a hydration mismatch shows up while editing rather than after a
       // deploy. Under `alchemy dev` the `ssr` environment is workerd's, which
