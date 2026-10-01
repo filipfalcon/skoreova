@@ -216,6 +216,34 @@ export const followQueries = (
   };
 };
 
+/**
+ * Runs `setUp` while the view is live and tears it down while it is paused. Under DevTools time
+ * travel the renderer shows a historical view while the live app keeps running; motion driving that
+ * view would animate a page the reader is inspecting, and reveal reports would describe it to the
+ * live Model. Starts live, the state every Mount begins in.
+ *
+ * @param setUp Builds the behavior and returns its teardown.
+ */
+export const whileLive = (
+  setUp: () => () => void,
+): { readonly follow: (viewState: Mount.ViewState) => void; readonly stop: () => void } => {
+  let tearDown: (() => void) | undefined = setUp();
+  return {
+    follow: (viewState) => {
+      if (viewState === 'Live' && tearDown === undefined) {
+        tearDown = setUp();
+      } else if (viewState === 'Paused' && tearDown !== undefined) {
+        tearDown();
+        tearDown = undefined;
+      }
+    },
+    stop: () => {
+      tearDown?.();
+      tearDown = undefined;
+    },
+  };
+};
+
 const setUpReveals = (
   root: HTMLElement,
   isDesktopViewport: boolean,
@@ -1276,7 +1304,7 @@ const setUpMotion = (root: HTMLElement, reduceMotion: boolean): (() => void) => 
 
 export const MountMotion = Mount.define('MountMotion', {
   messages: [Message.CompletedMountMotion, Message.FailedMountMotion],
-  execute: ({ element }) =>
+  execute: ({ element, viewStateChanges }) =>
     Effect.gen(function* () {
       if (!(element instanceof HTMLElement)) {
         return Message.FailedMountMotion({ reason: 'Motion host is not an HTMLElement.' });
@@ -1286,12 +1314,21 @@ export const MountMotion = Mount.define('MountMotion', {
       return yield* Effect.acquireRelease(
         Effect.try({
           try: () =>
-            followQueries([reducedMotion], () => setUpMotion(element, reducedMotion.matches)),
+            whileLive(() =>
+              followQueries([reducedMotion], () => setUpMotion(element, reducedMotion.matches)),
+            ),
           catch: (error) =>
             error instanceof Error ? error : new Error(`Failed to set up motion: ${error}`),
         }),
-        (tearDown) => Effect.sync(tearDown),
+        (motion) => Effect.sync(motion.stop),
       ).pipe(
+        Effect.tap((motion) =>
+          Effect.forkScoped(
+            Stream.runForEach(viewStateChanges, (viewState) =>
+              Effect.sync(() => motion.follow(viewState)),
+            ),
+          ),
+        ),
         Effect.map(() => Message.CompletedMountMotion()),
         Effect.catch((error) =>
           Effect.succeed(Message.FailedMountMotion({ reason: error.message })),
@@ -1312,26 +1349,32 @@ export const MountMotion = Mount.define('MountMotion', {
 // observers, for the reasons given at REDUCED_MOTION_QUERY.
 export const ObserveReveals = Mount.defineStream('ObserveReveals', {
   messages: [Message.ChangedReveals],
-  execute: ({ element }) =>
+  execute: ({ element, viewStateChanges }) =>
     Stream.callback<typeof Message.ChangedReveals.Type>((queue) =>
       Effect.gen(function* () {
-        yield* Effect.acquireRelease(
-          Effect.sync(() => {
-            if (!(element instanceof HTMLElement)) {
-              return (): void => {};
-            }
-            const emit = (message: typeof Message.ChangedReveals.Type): void => {
-              Queue.offerUnsafe(queue, message);
-            };
-            const reducedMotion = window.matchMedia(REDUCED_MOTION_QUERY);
-            const desktop = window.matchMedia(DESKTOP_VIEWPORT_QUERY);
-            return followQueries([reducedMotion, desktop], () =>
-              reducedMotion.matches ? (): void => {} : setUpReveals(element, desktop.matches, emit),
-            );
-          }),
-          (teardown) => Effect.sync(teardown),
+        if (!(element instanceof HTMLElement)) {
+          return yield* Effect.never;
+        }
+        const emit = (message: typeof Message.ChangedReveals.Type): void => {
+          Queue.offerUnsafe(queue, message);
+        };
+        const reducedMotion = window.matchMedia(REDUCED_MOTION_QUERY);
+        const desktop = window.matchMedia(DESKTOP_VIEWPORT_QUERY);
+        const reveals = yield* Effect.acquireRelease(
+          Effect.sync(() =>
+            whileLive(() =>
+              followQueries([reducedMotion, desktop], () =>
+                reducedMotion.matches
+                  ? (): void => {}
+                  : setUpReveals(element, desktop.matches, emit),
+              ),
+            ),
+          ),
+          (observers) => Effect.sync(observers.stop),
         );
-        return yield* Effect.never;
+        return yield* Stream.runForEach(viewStateChanges, (viewState) =>
+          Effect.sync(() => reveals.follow(viewState)),
+        );
       }),
     ),
 });
