@@ -141,6 +141,27 @@ test('a jump to a section of the same profile keeps the top-scorers scope', () =
   );
 });
 
+// A trending tile is a link: the click takes the board away under the pointer
+// before any mouseleave can release the hold. Leaving the page releases it,
+// so the countdown runs again on the way back, from the track's first tile.
+test('leaving the home page releases the trending hold and rewinds the track', () => {
+  Story.story(
+    update,
+    Story.given(welcomeModel),
+    Story.message(Message.AdvancedTrending()),
+    Story.Command.resolve(ScrollTrending, Message.CompletedScrollTrending()),
+    Story.message(Message.HeldTrending({ isHeld: true })),
+    Story.message(Message.ChangedUrl({ url: url('/clubs/sparta-praha') })),
+    Story.Command.resolve(ScrollToTop, Message.CompletedScrollToTop()),
+    Story.message(Message.ChangedUrl({ url: url('/') })),
+    Story.model((model) => {
+      expect(model.isTrendingHeld).toBe(false);
+      expect(model.trendingIndex).toBe(0);
+    }),
+    Story.Command.resolve(ScrollToTop, Message.CompletedScrollToTop()),
+  );
+});
+
 test('following a club adds the slug, following again removes it, and each says so', () => {
   Story.story(
     update,

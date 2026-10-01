@@ -105,6 +105,12 @@ const initialModel: Model = {
 // set on the page they are still on survives it: the sections they opened,
 // the competition tab, the top-scorers scope. Opening a profile resets the
 // scope; other routes leave it alone.
+//
+// The trending board's hold and lead tile reset on leaving the page too. Its
+// tiles are links, so a click removes the board under the pointer before any
+// mouseleave can release the hold; carried back to `/`, the hold would keep
+// the countdown stopped, and the index would point past the fresh track's
+// first tile.
 const applyRoute = (model: Model, route: AppRoute): Model => {
   const isSamePage = routePath(route) === routePath(model.route);
   return modifyFields(model, {
@@ -117,6 +123,8 @@ const applyRoute = (model: Model, route: AppRoute): Model => {
     expandedClubSections: (current) => (isSamePage ? current : []),
     activeClubSection: (current) => (isSamePage ? current : Option.none()),
     competitionTab: (current) => (isSamePage ? current : 'League'),
+    trendingIndex: (current) => (isSamePage ? current : 0),
+    isTrendingHeld: (current) => isSamePage && current,
     isFeedEditing: () => false,
     isWidgetCatalogOpen: () => false,
     isWidgetAddRefused: () => false,
