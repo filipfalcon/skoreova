@@ -70,6 +70,28 @@ describe('view', () => {
       ),
       Scene.expect(Scene.role('button', { name: 'Menu' })).toHaveAttr('aria-expanded', 'true'),
       Scene.expect(Scene.role('link', { name: 'On the rise' })).toExist(),
+      // At the hero there is no section to mark.
+      Scene.expectAll(Scene.all.role('link', { current: 'location' })).toHaveCount(0),
+    );
+  });
+
+  // The open menu marks the section the reader was in, so they can see where they are before they
+  // jump elsewhere. The browser test proves the detection; this proves what the mark lands on.
+  test('the open menu marks the section the reader was in', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(landingModel),
+      ...acknowledgeMounts,
+      Scene.click(Scene.role('button', { name: 'Menu' })),
+      Scene.Command.resolve(SetScrollLock, Message.CompletedSetScrollLock()),
+      Scene.Command.resolve(
+        DetectActiveSection,
+        Message.DetectedActiveSection({ section: Option.some('across-the-lands') }),
+      ),
+      Scene.expect(
+        Scene.role('link', { name: /^Across the lands/, current: 'location' }),
+      ).toExist(),
+      Scene.expectAll(Scene.all.role('link', { current: 'location' })).toHaveCount(1),
     );
   });
 });

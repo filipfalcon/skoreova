@@ -17,7 +17,12 @@ import {
   widgetCatalogModel,
 } from './main.fixtures';
 import { update, view } from './main';
-import { ObserveSectionRail, ObserveTrendingScroll, ScrollMatchStripToNext } from './command';
+import {
+  ObserveSectionRail,
+  ObserveTrendingScroll,
+  RevealJumpChip,
+  ScrollMatchStripToNext,
+} from './command';
 import { Message } from './message';
 import { clubArchive, clubs, scorersFor, standingsFor } from './data';
 import { AppRoute, urlToAppRoute } from './route';
@@ -401,6 +406,22 @@ describe('view', () => {
           'true',
         ),
       ),
+    );
+  });
+
+  // The jump row follows the reader: the chip of the section in view is marked current, and only
+  // that one. The scroll spy is a Subscription, so the scene feeds its Message directly.
+  test('the jump row marks the section in view', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(clubProfileModel),
+      ...acknowledgeStrip,
+      // Nothing is marked before the reader scrolls into a section.
+      Scene.expectAll(Scene.all.role('link', { current: true })).toHaveCount(0),
+      Scene.Subscription.emit(Message.ScrolledClubPage({ anchor: 'history' })),
+      Scene.Command.resolve(RevealJumpChip, Message.CompletedRevealJumpChip()),
+      Scene.expect(Scene.role('link', { name: 'History', current: true })).toExist(),
+      Scene.expectAll(Scene.all.role('link', { current: true })).toHaveCount(1),
     );
   });
 
