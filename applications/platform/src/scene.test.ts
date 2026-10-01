@@ -120,6 +120,24 @@ describe('view', () => {
     );
   });
 
+  // The invitation is a disclosure over the catalog: pressing it opens the
+  // list beneath, and while open the button names that list as what it controls.
+  test('the widget invitation opens the catalog it controls', () => {
+    Scene.scene(
+      { update, view },
+      Scene.given(welcomeModel),
+      ...acknowledgeMounts,
+      Scene.expect(Scene.role('button', { name: 'Add a widget', expanded: false })).toExist(),
+      Scene.expect(Scene.selector('#widget-catalog-panel')).not.toExist(),
+      Scene.click(Scene.role('button', { name: 'Add a widget' })),
+      Scene.expect(Scene.role('button', { name: 'Add a widget', expanded: true })).toHaveAttr(
+        'aria-controls',
+        'widget-catalog-panel',
+      ),
+      Scene.expect(Scene.selector('ul#widget-catalog-panel')).toExist(),
+    );
+  });
+
   test('a pick that would overfill a signed-out feed is refused out loud', () => {
     Scene.scene(
       { update, view },

@@ -1,6 +1,6 @@
 import { Array, Number, Option } from 'effect';
-import { Button, Input } from '@foldkit/ui';
-import type { Html, HtmlBuilder } from 'foldkit/html';
+import { Button, Disclosure, Input } from '@foldkit/ui';
+import type { Attribute, Html, HtmlBuilder } from 'foldkit/html';
 
 import banikOstravaLogo from '../assets/clubs/BanikOstrava.png?emblem';
 import slaviaPrahaLogo from '../assets/clubs/SlaviaPraha.png?emblem';
@@ -533,19 +533,26 @@ const feedEmpty = (h: HtmlBuilder<Message>): Html =>
 // opens unfolds without pushing the blocks around (user call — it led the
 // frame before).
 const addWidgetInvitation = (model: Model, h: HtmlBuilder<Message>): Html =>
-  Button.view(
+  Disclosure.view(
     {
-      onClick: Message.ToggledWidgetCatalog(),
-      toView: ({ button }) =>
-        h.button(
+      id: 'widget-catalog',
+      isOpen: model.isWidgetCatalogOpen,
+      onToggle: (isOpen) => Message.ToggledWidgetCatalog({ isOpen }),
+      toView: ({ button, panel }) =>
+        h.div(
+          [],
           [
-            ...button,
-            h.AriaExpanded(model.isWidgetCatalogOpen),
-            ...getStyleXAttributes(h, shared.display, styles.feedAddWidget),
+            h.button(
+              [...button, ...getStyleXAttributes(h, shared.display, styles.feedAddWidget)],
+              // One label in both states: aria-expanded carries whether the catalog is open, and
+              // the catalog unfolding beneath it is what shows it.
+              ['Add a widget'],
+            ),
+            ...(model.isWidgetAddRefused ? [feedRefusal(h)] : []),
+            // Rendered only while open, so the button's aria-controls, which the disclosure
+            // sets only while open, always names an element that exists.
+            ...(model.isWidgetCatalogOpen ? [widgetCatalogList(panel, h)] : []),
           ],
-          // One label in both states: aria-expanded carries whether the catalog is open, and the
-          // catalog unfolding beneath it is what shows it.
-          ['Add a widget'],
         ),
     },
     h,
@@ -589,9 +596,12 @@ const catalogEntry = (kind: WidgetKind, h: HtmlBuilder<Message>): Html =>
 // THE CATALOG — every widget that exists, not only the ones this feed is
 // carrying. It is a list so assistive tech can count the offer and step
 // through it.
-const widgetCatalogList = (h: HtmlBuilder<Message>): Html =>
+const widgetCatalogList = (
+  panel: ReadonlyArray<Attribute<Message>>,
+  h: HtmlBuilder<Message>,
+): Html =>
   h.ul(
-    [...getStyleXAttributes(h, styles.catalog)],
+    [...panel, ...getStyleXAttributes(h, styles.catalog)],
     widgetCatalog.map((kind) => catalogEntry(kind, h)),
   );
 
@@ -764,12 +774,7 @@ const feedSection = (model: Model, h: HtmlBuilder<Message>): Html => {
       ),
       h.div(
         [...getStyleXAttributes(h, styles.feedFrame)],
-        [
-          ...(blocks.length === 0 ? [feedEmpty(h)] : blocks),
-          addWidgetInvitation(model, h),
-          ...(model.isWidgetAddRefused ? [feedRefusal(h)] : []),
-          ...(model.isWidgetCatalogOpen ? [widgetCatalogList(h)] : []),
-        ],
+        [...(blocks.length === 0 ? [feedEmpty(h)] : blocks), addWidgetInvitation(model, h)],
       ),
     ],
   );

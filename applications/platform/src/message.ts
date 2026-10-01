@@ -67,7 +67,7 @@ export const Message = defineMessageUnion({
   RestoredFeedLabel: { key: Schema.String },
   // The catalog under the invitation, and the pick it exists to carry. Adding
   // names a kind, since the block that results does not exist yet to have a key.
-  ToggledWidgetCatalog: {},
+  ToggledWidgetCatalog: { isOpen: Schema.Boolean },
   AddedFeedBlock: { kind: Schema.String },
   // The toast stack is a Submodel: its timers and animations arrive wrapped and fold back into its own Model.
   GotToastMessage: { message: AppToast.Message },

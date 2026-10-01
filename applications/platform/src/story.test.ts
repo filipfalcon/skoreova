@@ -386,7 +386,7 @@ test('a signed-out feed carries three widgets and refuses a fourth', () => {
     }),
     // Shutting the catalog clears the refusal, so it never greets a reader who
     // comes back to open it again.
-    Story.message(Message.ToggledWidgetCatalog()),
+    Story.message(Message.ToggledWidgetCatalog({ isOpen: false })),
     Story.model((model) => {
       expect(model.isWidgetAddRefused).toBe(false);
     }),

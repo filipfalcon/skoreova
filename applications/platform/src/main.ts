@@ -314,9 +314,9 @@ export const update = (model: Model, message: Message) =>
     ToggledFeedEditing: () => ({
       model: modifyFields(model, { isFeedEditing: (editing) => !editing }),
     }),
-    ToggledWidgetCatalog: () => ({
+    ToggledWidgetCatalog: ({ isOpen }) => ({
       model: modifyFields(model, {
-        isWidgetCatalogOpen: (open) => !open,
+        isWidgetCatalogOpen: () => isOpen,
         isWidgetAddRefused: () => false,
       }),
     }),
