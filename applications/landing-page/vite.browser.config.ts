@@ -32,6 +32,12 @@ export default defineConfig({
   test: {
     name: 'landing-page-browser',
     include: ['src/**/*.browser.test.ts'],
+    // One file at a time. Every file mounts the whole landing page, whose
+    // motion runs on every frame for as long as the page is open (the marquee
+    // drifts at rest), and the assertions read painted geometry and wait on
+    // renders. Files run side by side in two engines starved one another until
+    // Playwright's role lookups over the page timed out.
+    fileParallelism: false,
     browser: {
       enabled: true,
       provider: playwright(),
