@@ -46,26 +46,28 @@ const smoothWheelScroll: Stream.Stream<never> = Stream.callback<never>((_queue) 
           }
           const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
           target = Math.max(0, Math.min(max, target + event.deltaY * scale));
-          settled = false;
+          if (settled) {
+            settled = false;
+            frame = window.requestAnimationFrame(step);
+          }
         };
 
+        // Frames run only while the viewport glides toward the target; a
+        // settled page schedules none, so it can go idle between wheel turns.
         const step = (): void => {
-          if (!settled) {
-            current += (target - current) * 0.14;
-            if (Math.abs(current - target) < 0.5) {
-              current = target;
-              settled = true;
-            }
-            // `behavior: 'instant'` matters — the page has CSS scroll-behavior:
-            // smooth, which would turn every per-frame scrollTo into its own
-            // competing animation.
-            window.scrollTo({ top: current, behavior: 'instant' });
+          current += (target - current) * 0.14;
+          if (Math.abs(current - target) < 0.5) {
+            current = target;
+            settled = true;
           }
-          frame = window.requestAnimationFrame(step);
+          // `behavior: 'instant'` matters — the page has CSS scroll-behavior:
+          // smooth, which would turn every per-frame scrollTo into its own
+          // competing animation.
+          window.scrollTo({ top: current, behavior: 'instant' });
+          if (!settled) frame = window.requestAnimationFrame(step);
         };
 
         window.addEventListener('wheel', onWheel, { passive: false });
-        frame = window.requestAnimationFrame(step);
         return () => {
           window.removeEventListener('wheel', onWheel);
           window.cancelAnimationFrame(frame);
