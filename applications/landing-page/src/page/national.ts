@@ -216,7 +216,7 @@ const nationalIdCard = (
 
 export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.section(
-    [h.Id('roar-as-one'), h.Class('relative bg-pink py-16 text-ink md:py-24')],
+    [h.Id('roar-as-one'), h.Class('on-pink-ground relative bg-pink py-16 text-ink md:py-24')],
     [
       // The flag-bearer lioness — third of the mascot doodles, the
       // knight’s (01) and the lands scout’s (03) anatomy: anchored to the

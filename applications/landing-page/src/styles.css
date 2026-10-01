@@ -118,6 +118,13 @@ body {
   outline-offset: 3px;
 }
 
+/* On a pink ground the offset floats the pink ring over pink, where it
+   vanishes, so anything focused inside one draws its ring in ink. A pink
+   element on ink or paper is unaffected: its ring floats over that. */
+.on-pink-ground :focus-visible {
+  outline-color: var(--color-ink);
+}
+
 /* ------------------------------------------------------------------ */
 /* Display type — Anton needs tighter leading than any Tailwind step  */
 /* ------------------------------------------------------------------ */
