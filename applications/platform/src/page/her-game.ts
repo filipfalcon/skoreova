@@ -1,4 +1,4 @@
-import { Array, Number, Option } from 'effect';
+import { Array, Match, Number, Option } from 'effect';
 import { Button, Disclosure, Input } from '@foldkit/ui';
 import type { Attribute, Html, HtmlBuilder } from 'foldkit/html';
 
@@ -732,22 +732,14 @@ const feedBlockFrame = (
 // standalone label, whose heading is the whole of it, and any kind a future
 // catalog stops offering. Pins stand down here: the feed is drawn by the
 // signed-out landing, the same surface that hides them on the trending tiles.
-const widgetBody = (
-  model: Model,
-  block: FeedBlock,
-  h: HtmlBuilder<Message>,
-): ReadonlyArray<Html> => {
-  switch (block.kind) {
-    case FEED_FEATURED_MATCHES:
-      return [matchTrack(invitationSlots(thisWeek(), h), h, true)];
-    case FEED_TOP_SCORERS:
-      return [statGrid('goals', goals, model, false, h)];
-    case FEED_ATTENDANCE:
-      return [statGrid('attendance', attendance, model, false, h)];
-    default:
-      return [];
-  }
-};
+const widgetBody = (model: Model, block: FeedBlock, h: HtmlBuilder<Message>): ReadonlyArray<Html> =>
+  Match.value(block.kind).pipe(
+    Match.withReturnType<ReadonlyArray<Html>>(),
+    Match.when(FEED_FEATURED_MATCHES, () => [matchTrack(invitationSlots(thisWeek(), h), h, true)]),
+    Match.when(FEED_TOP_SCORERS, () => [statGrid('goals', goals, model, false, h)]),
+    Match.when(FEED_ATTENDANCE, () => [statGrid('attendance', attendance, model, false, h)]),
+    Match.orElse(() => []),
+  );
 
 // The feed draws what it carries, in the order it carries it, so a block that
 // leaves takes its slot with it. A kind the catalog no longer offers draws
