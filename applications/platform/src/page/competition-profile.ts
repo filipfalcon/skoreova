@@ -853,22 +853,19 @@ const editionRadioGroup = (
       toView: ({ group, options }) =>
         h.div(
           [...group, ...getStyleXAttributes(h, styles.editionGroup)],
-          options.map((option) => {
-            // Checked derives from the model because StyleX has no attribute
-            // selectors (the component still stamps data-checked).
-            const checked = option.value === openLabel;
-            return h.div(
+          options.map((option) =>
+            h.div(
               [
                 ...option.option,
                 ...getStyleXAttributes(
                   h,
                   styles.editionOption,
-                  checked ? styles.editionChecked : styles.editionRest,
+                  option.isSelected ? styles.editionChecked : styles.editionRest,
                 ),
               ],
               [option.value],
-            );
-          }),
+            ),
+          ),
         ),
     },
   });

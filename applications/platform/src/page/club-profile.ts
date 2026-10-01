@@ -33,7 +33,7 @@ import {
 import type { ClubSectionEntry } from '../components';
 import { clubAllTimeStats, clubArchive, clubCupRun, standingsFor, scorersFor } from '../data';
 import { MATCHDAYS_PLAYED, leagueRoundCount } from '../schedule';
-import { Button } from '@foldkit/ui';
+import { Button, RadioGroup } from '@foldkit/ui';
 import type { AllTimeStats, ArchiveSeason, Club, CupTie, Scorer, StandingsRow } from '../data';
 import { Message } from '../message';
 import type { CompetitionKind, Model, ScorerScope } from '../model';
@@ -191,14 +191,9 @@ const clubActiveCompetitions = (target: Club): ReadonlyArray<ActiveCompetition> 
   return [league, ...cup, ...continental];
 };
 
-// The competition picker — the scope picker's grammar, over the competitions this club is actually in. A single-select group, so a real radiogroup.
-// The one chip row both single-select groups on the profile draw: the group's attributes on the row, each option's on its chip, the selected one in ink. Checked derives from the Model because StyleX has no attribute selectors (the component still stamps data-checked).
-type ViewAttribute = Parameters<HtmlBuilder<Message>['div']>[0][number];
-
+// The one chip row both single-select groups on the profile draw: the group's attributes on the row, each option's on its chip, the selected one in ink. The selected chip is styled from the option's own `isSelected`, which the group derives from the selected value it was given.
 const chipRow = <Value extends string>(
-  group: ReadonlyArray<ViewAttribute>,
-  options: ReadonlyArray<{ readonly value: Value; readonly option: ReadonlyArray<ViewAttribute> }>,
-  selected: Value,
+  { group, options }: RadioGroup.RenderInfo<Value>,
   labelOf: (value: Value) => string,
   h: HtmlBuilder<Message>,
 ): Html =>
@@ -211,7 +206,7 @@ const chipRow = <Value extends string>(
           ...getStyleXAttributes(
             h,
             styles.scopeOption,
-            option.value === selected ? styles.scopeChecked : styles.scopeRest,
+            option.isSelected ? styles.scopeChecked : styles.scopeRest,
           ),
         ],
         [labelOf(option.value)],
@@ -219,6 +214,7 @@ const chipRow = <Value extends string>(
     ),
   );
 
+// The competition picker — the scope picker's grammar, over the competitions this club is actually in. A single-select group, so a real radiogroup.
 const competitionRadioGroup = (
   competitions: ReadonlyArray<ActiveCompetition>,
   model: Model,
@@ -233,11 +229,9 @@ const competitionRadioGroup = (
       selectedValue: Option.some(model.competitionTab),
       options: competitions.map((competition) => competition.kind),
       ariaLabel: 'Competition',
-      toView: ({ group, options }) =>
+      toView: (renderInfo) =>
         chipRow(
-          group,
-          options,
-          model.competitionTab,
+          renderInfo,
           (kind) => competitions.find((competition) => competition.kind === kind)?.label ?? '',
           h,
         ),
@@ -290,8 +284,7 @@ const scopeRadioGroup = (model: Model, h: HtmlBuilder<Message>): Html =>
       selectedValue: Option.some(model.scorerScope),
       options: ['All', 'League', 'Cup'],
       ariaLabel: 'Top-scorers competition',
-      toView: ({ group, options }) =>
-        chipRow(group, options, model.scorerScope, (scope) => SCOPE_LABELS[scope], h),
+      toView: (renderInfo) => chipRow(renderInfo, (scope) => SCOPE_LABELS[scope], h),
     },
   });
 
