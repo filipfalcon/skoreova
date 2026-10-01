@@ -88,12 +88,19 @@ export const update = (model: Model, message: Message) =>
       model: modifyFields(model, { isMenuOpen: () => false }),
       commands: [setScrollLock(false)],
     }),
-    // Escape closes like ClosedMenu and additionally hands focus back to
-    // the toggle — the overlay it sat in is hidden now.
-    PressedMenuEscape: () => ({
-      model: modifyFields(model, { isMenuOpen: () => false }),
-      commands: [setScrollLock(false), focusMenuToggle()],
-    }),
+    // Escape closes whatever is up. The full-screen menu wins when open (it
+    // covers the page) and hands focus back to the toggle, like a native
+    // dialog returns focus to its opener — the overlay it sat in is hidden
+    // now. Otherwise an open club card closes.
+    PressedEscape: () => {
+      if (model.isMenuOpen) {
+        return {
+          model: modifyFields(model, { isMenuOpen: () => false }),
+          commands: [setScrollLock(false), focusMenuToggle()],
+        };
+      }
+      return { model: modifyFields(model, { mapClub: () => Option.none() }) };
+    },
     CompletedFocusMenuToggle: () => ({ model }),
     DetectedActiveSection: ({ section }) => ({
       model: modifyFields(model, { activeSection: () => section }),

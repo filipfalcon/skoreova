@@ -1,5 +1,5 @@
 // Landing page subscriptions: smooth wheel scrolling (a model-gated,
-// no-emission DOM effect) and Escape-to-close for the menu overlay.
+// no-emission DOM effect), Escape-to-close, and the reduced-motion preference.
 
 import { Effect, Option, Schema, Stream } from 'effect';
 import { Subscription } from 'foldkit';
@@ -76,32 +76,29 @@ const smoothWheelScroll: Stream.Stream<never> = Stream.callback<never>((_queue) 
   }),
 );
 
-// Escape closes whatever overlay is up — the standard keyboard contract.
-// The full-screen menu wins when open (it covers the page); otherwise an
-// open map club card closes. A document-level stream (not `OnKeyDown` on
-// the overlay) because focus usually sits on the header toggle right after
-// opening, so the overlay itself never sees the keydown. The subscription
-// only exists while something is dismissible; closing tears it down.
+// Escape is bound while something is dismissible — the menu overlay or the
+// map's club card. Bound on the document, not as `OnKeyDown` on the overlay,
+// because focus usually sits on the header toggle right after opening, so the
+// overlay itself never sees the keydown. The binding reports the fact; update
+// decides what it closes.
 export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
-  escapeDismiss: entry(
-    { isMenuOpen: Schema.Boolean, hasMapClub: Schema.Boolean },
+  escape: entry(
+    { isDismissible: Schema.Boolean },
     {
       modelToDependencies: (model) => ({
-        isMenuOpen: model.isMenuOpen,
-        hasMapClub: Option.isSome(model.mapClub),
+        isDismissible: model.isMenuOpen || Option.isSome(model.mapClub),
       }),
-      dependenciesToStream: ({ isMenuOpen, hasMapClub }) =>
-        isMenuOpen || hasMapClub
-          ? Stream.fromEventListener<KeyboardEvent>(document, 'keydown').pipe(
-              Stream.filter((event) => event.key === 'Escape'),
-              // Just the Message — the menu path’s focus hand-back to the
-              // toggle runs as a Command from the update handler
-              // (FocusMenuToggle), not as a DOM side effect in the stream.
-              Stream.map(() =>
-                isMenuOpen ? Message.PressedMenuEscape() : Message.ClosedMapClub(),
-              ),
-            )
-          : Stream.empty,
+      dependenciesToStream: ({ isDismissible }) =>
+        Subscription.keyBindings<Message>({
+          bindings: [
+            {
+              keys: 'Escape',
+              isEnabled: isDismissible,
+              whileTyping: 'Allow',
+              mapEvent: () => Message.PressedEscape(),
+            },
+          ],
+        }),
     },
   ),
   // Smooth wheel scrolling runs while the menu is closed and motion is

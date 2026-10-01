@@ -9,10 +9,9 @@ export const Message = defineMessageUnion({
   // Sent by every anchor inside the overlay: close the menu and let navigation
   // take care of the rest.
   ClosedMenu: {},
-  // Escape pressed while the overlay is open — closes it AND returns focus to
-  // the toggle (via the FocusMenuToggle Command), like a native dialog hands
-  // focus back to its opener.
-  PressedMenuEscape: {},
+  // Escape pressed while something is dismissible. What it closes is
+  // update's decision: the menu overlay when open, else the map's club card.
+  PressedEscape: {},
   CompletedFocusMenuToggle: {},
   // Reports which landing section the viewport is in (None at the hero) — see
   // DetectActiveSection.

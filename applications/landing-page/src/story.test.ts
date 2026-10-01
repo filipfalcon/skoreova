@@ -5,7 +5,15 @@ import { fromString } from 'foldkit/url';
 import { expect, test } from 'vite-plus/test';
 
 import { landingModel, menuOpenModel } from './main.fixtures';
-import { DetectActiveSection, Load, Message, Navigate, SetScrollLock, update } from './main';
+import {
+  DetectActiveSection,
+  FocusMenuToggle,
+  Load,
+  Message,
+  Navigate,
+  SetScrollLock,
+  update,
+} from './main';
 
 const url = (path: string) => Option.getOrThrow(fromString(`https://skoreova.example${path}`));
 
@@ -54,6 +62,38 @@ test('ClosedMenu closes the overlay and releases the lock', () => {
       expect(model.isMenuOpen).toBe(false);
     }),
     Story.Command.resolve(SetScrollLock, Message.CompletedSetScrollLock()),
+  );
+});
+
+// Escape is one factual Message; update decides what it closes. The menu
+// wins while open and hands focus back to its toggle; otherwise the club card
+// closes.
+test('Escape closes the open menu and returns focus to its toggle', () => {
+  Story.story(
+    update,
+    Story.given({ ...menuOpenModel, mapClub: Option.some('sparta-praha') }),
+    Story.message(Message.PressedEscape()),
+    Story.model((model) => {
+      expect(model.isMenuOpen).toBe(false);
+      expect(model.mapClub).toEqual(Option.some('sparta-praha'));
+    }),
+    Story.Command.expectHas(FocusMenuToggle),
+    Story.Command.resolveAll(
+      [SetScrollLock, Message.CompletedSetScrollLock()],
+      [FocusMenuToggle, Message.CompletedFocusMenuToggle()],
+    ),
+  );
+});
+
+test('Escape with the menu closed closes the club card', () => {
+  Story.story(
+    update,
+    Story.given({ ...landingModel, mapClub: Option.some('sparta-praha') }),
+    Story.message(Message.PressedEscape()),
+    Story.model((model) => {
+      expect(model.mapClub).toEqual(Option.none());
+    }),
+    Story.Command.expectNone(),
   );
 });
 
