@@ -46,6 +46,7 @@ import {
 } from './route';
 import { SITE_ORIGIN } from './site';
 import { renderPage } from './entry.server';
+import { BASE_HEADERS, answerNonReadMethod } from './http';
 import { tickerQuotes } from './ticker';
 
 export const TICKER_KEY = 'ticker:clubs';
@@ -154,35 +155,49 @@ const shell = (env: Env, url: URL): Promise<string> =>
 // permanent redirect to the page the shell becomes, keeping any query. The
 // ASSETS binding above reads the file directly and never passes through here.
 const templateRedirect = (url: URL): Response =>
-  Response.redirect(new URL(`/${url.search}`, url.origin).href, 301);
+  new Response(null, {
+    status: 301,
+    headers: { ...BASE_HEADERS, location: new URL(`/${url.search}`, url.origin).href },
+  });
+
+// A Worker-owned read: the body for GET, the same headers and no body for HEAD.
+const readResponse = (
+  request: Request,
+  body: string,
+  headers: Readonly<Record<string, string>>,
+): Response =>
+  new Response(request.method === 'HEAD' ? null : body, {
+    headers: { ...BASE_HEADERS, ...headers },
+  });
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === TEMPLATE_PATH) {
-      return templateRedirect(url);
+      return answerNonReadMethod(request.method) ?? templateRedirect(url);
     }
     if (url.pathname === '/api/ticker') {
+      const answered = answerNonReadMethod(request.method);
+      if (answered !== undefined) return answered;
       // Before the first cron fire the key is empty — serve the base data
       // (unjittered) instead of a 404, so the endpoint is always usable.
       const stored = await env.TICKER.get(TICKER_KEY);
       const body = stored ?? JSON.stringify({ updatedAt: null, clubs: BASE });
-      return new Response(body, {
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          // The data changes once a day — an hour of edge cache keeps KV
-          // reads flat under traffic while staying fresh after the cron.
-          'Cache-Control': 'public, max-age=3600',
-        },
+      return readResponse(request, body, {
+        'Content-Type': 'application/json; charset=utf-8',
+        // The data changes once a day — an hour of edge cache keeps KV
+        // reads flat under traffic while staying fresh after the cron.
+        'Cache-Control': 'public, max-age=3600',
       });
     }
     if (url.pathname === '/sitemap.xml') {
-      return new Response(sitemapDocument(), {
-        headers: {
+      return (
+        answerNonReadMethod(request.method) ??
+        readResponse(request, sitemapDocument(), {
           'Content-Type': 'application/xml; charset=utf-8',
           'Cache-Control': 'public, max-age=3600',
-        },
-      });
+        })
+      );
     }
     // Everything that is not a file and not this Worker's own endpoints is
     // Foldkit's fetch handler: it refuses a method the `Request` constructor

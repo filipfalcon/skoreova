@@ -2,6 +2,7 @@ import { Effect } from 'effect';
 import { Server } from 'foldkit/experimental';
 
 import { init, routing, view } from './main';
+import { BASE_HEADERS, answerNonReadMethod } from './http';
 import { urlToAppRoute } from './route';
 import { fromString } from 'foldkit/url';
 import { Option } from 'effect';
@@ -28,6 +29,13 @@ import { Option } from 'effect';
 export const renderPage = (request: Request): Promise<Server.EntryResult> =>
   Effect.runPromise(
     Effect.gen(function* () {
+      // Pages are read-only. The entry answers OPTIONS and refuses other
+      // methods itself, so the dev server and the Worker agree on them.
+      const answered = answerNonReadMethod(request.method);
+      if (answered !== undefined) {
+        return Server.Responded(answered);
+      }
+
       const application = yield* Server.renderToString(
         { routing, init, view },
         {
@@ -41,6 +49,9 @@ export const renderPage = (request: Request): Promise<Server.EntryResult> =>
       const parsed = fromString(request.url);
       const isNotFound = Option.isSome(parsed) && urlToAppRoute(parsed.value)._tag === 'NotFound';
 
-      return Server.Rendered(application, isNotFound ? { status: 404 } : undefined);
+      return Server.Rendered(application, {
+        ...(isNotFound ? { status: 404 } : {}),
+        headers: BASE_HEADERS,
+      });
     }),
   );
