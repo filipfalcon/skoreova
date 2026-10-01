@@ -283,7 +283,10 @@ describe('view', () => {
         Scene.expect(Scene.text('22 league titles')).toExist(),
         Scene.expect(Scene.text('9 domestic doubles')).toExist(),
         Scene.expect(Scene.text('11 cup wins')).toExist(),
-        Scene.expect(Scene.text('8 Champions League seasons')).not.toExist(),
+        // Three stamps at most: the fourth honour, the Champions League seasons, is dropped whatever
+        // its count.
+        Scene.expectAll(Scene.all.role('listitem')).toHaveCount(3),
+        Scene.expect(Scene.text(/Champions League/)).not.toExist(),
         Scene.expect(Scene.role('button')).not.toExist(),
         Scene.expect(Scene.selector('[aria-live]')).not.toExist(),
       ),
@@ -297,7 +300,8 @@ describe('view', () => {
         Scene.role('list', { name: 'Achievements' }),
         Scene.expect(Scene.text('1 promotion')).toExist(),
       ),
-      Scene.expect(Scene.text('Second League · 2025/26')).not.toExist(),
+      // The league-and-season stamp that once stood in for missing honours stays gone, in any season.
+      Scene.expect(Scene.text(/^Second League · \d{4}\/\d{2}$/)).not.toExist(),
     );
   });
 
