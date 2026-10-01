@@ -128,19 +128,10 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
   // it cannot carry a personal setting — and this corrects it as the runtime
   // subscribes, before any frame the reader could act on. The landing page
   // runs the same subscription for the same reason.
-  reducedMotion: entry(
-    {},
-    {
-      modelToDependencies: () => ({}),
-      dependenciesToStream: () => {
-        const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-        return Stream.concat(
-          Stream.make(Message.ChangedReducedMotion({ reduce: query.matches })),
-          Stream.fromEventListener<MediaQueryListEvent>(query, 'change').pipe(
-            Stream.map((event) => Message.ChangedReducedMotion({ reduce: event.matches })),
-          ),
-        );
-      },
-    },
+  reducedMotion: Subscription.persistent(
+    Subscription.fromMediaQuery({
+      query: '(prefers-reduced-motion: reduce)',
+      mapMatches: (reduce) => Message.ChangedReducedMotion({ reduce }),
+    }),
   ),
 }));

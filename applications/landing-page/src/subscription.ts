@@ -128,19 +128,10 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
   // they arrived. Reading the query here keeps the answer per-visitor: the
   // served Model says `false` and this corrects it as the runtime subscribes,
   // before any frame the user could act on.
-  reducedMotion: entry(
-    {},
-    {
-      modelToDependencies: () => ({}),
-      dependenciesToStream: () => {
-        const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-        return Stream.concat(
-          Stream.make(Message.ChangedReducedMotion({ reduce: query.matches })),
-          Stream.fromEventListener<MediaQueryListEvent>(query, 'change').pipe(
-            Stream.map((event) => Message.ChangedReducedMotion({ reduce: event.matches })),
-          ),
-        );
-      },
-    },
+  reducedMotion: Subscription.persistent(
+    Subscription.fromMediaQuery({
+      query: '(prefers-reduced-motion: reduce)',
+      mapMatches: (reduce) => Message.ChangedReducedMotion({ reduce }),
+    }),
   ),
 }));
