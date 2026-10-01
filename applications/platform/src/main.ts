@@ -18,6 +18,7 @@ import {
   isLabelBlock,
   limitFor,
 } from './model';
+import type { FeedBlock } from './model';
 import { Message } from './message';
 import {
   Load,
@@ -161,6 +162,13 @@ const toggleEntry = (entries: ReadonlyArray<string>, entry: string): ReadonlyArr
   Array.contains(entries, entry)
     ? Array.filter(entries, (candidate) => candidate !== entry)
     : Array.append(entries, entry);
+
+// Gives the block with this key the heading `toLabel` derives for it, and
+// leaves every other block as it is.
+const relabelFeedBlock = (key: string, toLabel: (block: FeedBlock) => Option.Option<string>) =>
+  Array.map((block: FeedBlock) =>
+    block.key === key ? modifyFields(block, { label: () => toLabel(block) }) : block,
+  );
 
 export const update = (model: Model, message: Message) =>
   Message.match<Update.Return<Model, Message>>(message, {
@@ -349,14 +357,11 @@ export const update = (model: Model, message: Message) =>
         ? { model: modifyFields(model, { isWidgetAddRefused: () => true }) }
         : {
             model: modifyFields(model, {
-              feedBlocks: (blocks) => [
-                ...blocks,
-                {
-                  kind,
-                  key: feedKey(model.nextFeedKey),
-                  label: Option.some(widget.defaultLabel),
-                },
-              ],
+              feedBlocks: Array.append({
+                kind,
+                key: feedKey(model.nextFeedKey),
+                label: Option.some(widget.defaultLabel),
+              }),
               nextFeedKey: (sequence) => sequence + 1,
             }),
           };
@@ -368,20 +373,16 @@ export const update = (model: Model, message: Message) =>
     }),
     RenamedFeedLabel: ({ key, text }) => ({
       model: modifyFields(model, {
-        feedBlocks: (blocks) =>
-          blocks.map((block) =>
-            block.key === key ? { ...block, label: Option.some(text) } : block,
-          ),
+        feedBlocks: relabelFeedBlock(key, () => Option.some(text)),
       }),
     }),
     // A standalone heading IS its block, so taking its label away would
     // leave a block that draws nothing. Only the block itself can go.
     RemovedFeedLabel: ({ key }) => ({
       model: modifyFields(model, {
-        feedBlocks: (blocks) =>
-          blocks.map((block) =>
-            block.key === key && !isLabelBlock(block) ? { ...block, label: Option.none() } : block,
-          ),
+        feedBlocks: relabelFeedBlock(key, (block) =>
+          isLabelBlock(block) ? block.label : Option.none(),
+        ),
       }),
     }),
     // A heading put back arrives as the one its kind ships with, not as the
@@ -389,12 +390,9 @@ export const update = (model: Model, message: Message) =>
     // guessing at it would be inventing their words for them.
     RestoredFeedLabel: ({ key }) => ({
       model: modifyFields(model, {
-        feedBlocks: (blocks) =>
-          blocks.map((block) =>
-            block.key === key
-              ? { ...block, label: Option.some(widgetKind(block.kind)?.defaultLabel ?? '') }
-              : block,
-          ),
+        feedBlocks: relabelFeedBlock(key, (block) =>
+          Option.some(widgetKind(block.kind)?.defaultLabel ?? ''),
+        ),
       }),
     }),
   });
