@@ -568,42 +568,49 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                   id: 'area-unit',
                   isChecked: model.isMapAreaImperial,
                   onToggle: (isImperial) => Message.ToggledAreaUnit({ isImperial }),
-                  toView: ({ button }) =>
-                    h.button(
+                  // The switch is named by its own label group, kept for
+                  // assistive tech only: the figure is what the sentence shows.
+                  toView: ({ button, label }) =>
+                    h.span(
+                      [],
                       [
-                        ...button,
-                        h.Class(
-                          // justify-items-start + underline ON THE VARIANTS, not
-                          // the button: the cell is as wide as the wider variant,
-                          // and a centered short variant with a full-width
-                          // underline floated mid-sentence instead of reading as
-                          // plain text. clip-path, NOT overflow-hidden, hides the
-                          // rolling figure — a non-visible overflow moves an
-                          // inline box’s baseline to its bottom edge and the
-                          // number would sink out of the sentence’s line.
-                          'area-swap inline-grid cursor-help justify-items-start whitespace-nowrap select-none [clip-path:inset(0)]',
-                        ),
-                        h.AriaLabel('Imperial units'),
-                      ],
-                      [
-                        h.span(
+                        h.span([...label, h.Class('sr-only')], ['Imperial units']),
+                        h.button(
                           [
+                            ...button,
                             h.Class(
-                              // The odometer poses: metric parks ABOVE the clip,
-                              // imperial BELOW — toggling rolls one out and the
-                              // other through in the same direction.
-                              `area-metric col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'invisible -translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`,
+                              // justify-items-start + underline ON THE VARIANTS, not
+                              // the button: the cell is as wide as the wider variant,
+                              // and a centered short variant with a full-width
+                              // underline floated mid-sentence instead of reading as
+                              // plain text. clip-path, NOT overflow-hidden, hides the
+                              // rolling figure — a non-visible overflow moves an
+                              // inline box’s baseline to its bottom edge and the
+                              // number would sink out of the sentence’s line.
+                              'area-swap inline-grid cursor-help justify-items-start whitespace-nowrap select-none [clip-path:inset(0)]',
                             ),
                           ],
-                          ['78,871 km².'],
-                        ),
-                        h.span(
                           [
-                            h.Class(
-                              `area-imperial col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'translate-y-0 opacity-100' : 'invisible translate-y-full opacity-0'}`,
+                            h.span(
+                              [
+                                h.Class(
+                                  // The odometer poses: metric parks ABOVE the clip,
+                                  // imperial BELOW — toggling rolls one out and the
+                                  // other through in the same direction.
+                                  `area-metric col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'invisible -translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`,
+                                ),
+                              ],
+                              ['78,871 km².'],
+                            ),
+                            h.span(
+                              [
+                                h.Class(
+                                  `area-imperial col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'translate-y-0 opacity-100' : 'invisible translate-y-full opacity-0'}`,
+                                ),
+                              ],
+                              ['30,452 sq mi.'],
                             ),
                           ],
-                          ['30,452 sq mi.'],
                         ),
                       ],
                     ),

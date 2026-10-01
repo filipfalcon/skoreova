@@ -39,7 +39,12 @@ describe('view', () => {
       Scene.given(landingModel),
       ...acknowledgeMounts,
       Scene.expect(Scene.role('radio', { name: 'All clubs' })).toExist(),
-      Scene.expect(Scene.role('switch', { name: 'Imperial units', checked: true })).toExist(),
+      Scene.expect(Scene.role('switch', { name: 'Imperial units', checked: true })).toHaveAttr(
+        'aria-labelledby',
+        'area-unit-label',
+      ),
+      // The switch is named by reference, so the element it names must exist.
+      Scene.expect(Scene.selector('#area-unit-label')).toHaveText('Imperial units'),
       Scene.expect(Scene.text('30,452 sq mi.')).toExist(),
     );
   });
