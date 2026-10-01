@@ -285,7 +285,7 @@ describe('view', () => {
         Scene.expect(Scene.text('9 domestic doubles')).toExist(),
         Scene.expect(Scene.text('11 cup wins')).toExist(),
         Scene.expect(Scene.text('8 Champions League seasons')).not.toExist(),
-        Scene.expect(Scene.selector('button')).not.toExist(),
+        Scene.expect(Scene.role('button')).not.toExist(),
         Scene.expect(Scene.selector('[aria-live]')).not.toExist(),
       ),
     );
@@ -309,14 +309,17 @@ describe('view', () => {
       { update, view },
       Scene.given(clubProfileModel),
       ...acknowledgeStrip,
-      Scene.expect(Scene.selector('figure blockquote')).toHaveText(
-        'Our most successful club: reigning champions, Europa Cup semifinalists, then domestic double winners.',
+      // The caption names the figure, so finding it by that name is the signature check.
+      Scene.inside(
+        Scene.role('figure', { name: /Commentary/ }),
+        Scene.expect(Scene.role('blockquote')).toHaveText(
+          'Our most successful club: reigning champions, Europa Cup semifinalists, then domestic double winners.',
+        ),
+        Scene.expectAll(Scene.all.role('button')).toHaveCount(0),
+        Scene.expectAll(Scene.all.selector('[aria-expanded]')).toHaveCount(0),
       ),
-      Scene.expect(Scene.selector('figure figcaption')).toContainText('Commentary'),
       Scene.expect(Scene.role('button', { name: 'Read more' })).not.toExist(),
       Scene.expect(Scene.role('button', { name: 'Read less' })).not.toExist(),
-      Scene.expectAll(Scene.all.selector('figure button')).toHaveCount(0),
-      Scene.expectAll(Scene.all.selector('figure [aria-expanded]')).toHaveCount(0),
     );
   });
 
