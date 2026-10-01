@@ -46,6 +46,9 @@
      only and measures 2:1 on cream — invisible where the page is light.
      This is ink at 60% resolved against paper, which clears AA at 4.9:1. */
   --color-muted-ink: #696764;
+  /* A rule on INK: paper at 12% resolved against ink, 1.3:1 — a drawn line
+     inside a dark panel that does not read as a box edge. */
+  --color-ink-rule: #292726;
   /* The floor of the hero's bottom zone. The scrim ramps ink → this, so the
      field under the headline reads as a surface rather than a dead flat. */
   --color-ink-lift: #141414;

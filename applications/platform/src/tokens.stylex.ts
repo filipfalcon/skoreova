@@ -30,6 +30,8 @@ export const tokens = stylex.defineVars({
   // than each site mixing its own percentage of paper.
   muted: 'var(--color-muted)',
   mutedInk: 'var(--color-muted-ink)',
+  // A rule drawn inside an ink panel.
+  inkRule: 'var(--color-ink-rule)',
   inkLift: 'var(--color-ink-lift)',
   formWin: 'var(--color-form-win)',
   formDraw: 'var(--color-form-draw)',
