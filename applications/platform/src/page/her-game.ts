@@ -694,7 +694,9 @@ const feedBlockFrame = (
   h: HtmlBuilder<Message>,
 ): Html =>
   h.div(
-    [],
+    // Keyed by the block's instance key, not its position: unpinning a block
+    // must remove that block's elements, not patch the next block into them.
+    [h.Key(block.key)],
     [
       ...(model.isFeedEditing
         ? [
