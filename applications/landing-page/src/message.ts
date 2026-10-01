@@ -20,7 +20,6 @@ export const Message = defineMessageUnion({
   ChangedUrl: { url: Url },
   CompletedNavigate: {},
   CompletedLoad: {},
-  CompletedSetScrollLock: {},
   // The league filter is a Submodel, so its Messages arrive wrapped. The
   // COMMITTED league does not travel this way — it arrives as a `Selected`
   // OutMessage and lands in `mapLeague`.

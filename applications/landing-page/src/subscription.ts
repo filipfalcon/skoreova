@@ -1,8 +1,9 @@
 // Landing page subscriptions: smooth wheel scrolling (a model-gated,
-// no-emission DOM effect), Escape-to-close, and the reduced-motion preference.
+// no-emission DOM effect), the menu's scroll lock, Escape-to-close, and the
+// reduced-motion preference.
 
 import { Effect, Option, Schema, Stream } from 'effect';
-import { Subscription } from 'foldkit';
+import { Dom, Subscription } from 'foldkit';
 
 import type { Model } from './model';
 import { Message } from './message';
@@ -99,6 +100,27 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
             },
           ],
         }),
+    },
+  ),
+  // The page behind the open menu overlay stays put. Held for exactly as long
+  // as the menu is open: the lock is acquired when the entry starts and
+  // released when the menu closes, whichever Message closed it. Dom.lockScroll
+  // locks with `overflow: hidden` (compensating the scrollbar width, so nothing
+  // shifts), pins iOS touch scrolling, and reference-counts nested locks. The
+  // page keeps its real scroll position, so DetectActiveSection and a menu
+  // link's fragment scroll measure true while the lock is up. It emits nothing.
+  scrollLock: entry(
+    { isMenuOpen: Schema.Boolean },
+    {
+      modelToDependencies: (model) => ({ isMenuOpen: model.isMenuOpen }),
+      dependenciesToStream: ({ isMenuOpen }) =>
+        isMenuOpen
+          ? Stream.callback<never>(() =>
+              Effect.acquireRelease(Dom.lockScroll, () => Dom.unlockScroll).pipe(
+                Effect.andThen(Effect.never),
+              ),
+            )
+          : Stream.empty,
     },
   ),
   // Smooth wheel scrolling runs while the menu is closed and motion is

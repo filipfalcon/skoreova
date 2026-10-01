@@ -69,6 +69,17 @@ test('opening reveals the overlay, closing hides it again', async () => {
   await expect.poll(overlayVisibility, { timeout: 2000 }).toBe('hidden');
 });
 
+// The page behind the overlay is locked for as long as the menu is open,
+// and released however the menu closes.
+test('the page scroll is locked while the menu is open', async () => {
+  const pageOverflow = (): string => document.documentElement.style.overflow;
+  await page.getByRole('button', { name: 'Menu', exact: true, expanded: false }).click();
+  await expect.poll(pageOverflow).toBe('hidden');
+
+  await page.getByRole('button', { name: 'Menu', exact: true, expanded: true }).click();
+  await expect.poll(pageOverflow).toBe('');
+});
+
 test('choosing a menu item also closes and hides the overlay', async () => {
   await page.getByRole('button', { name: 'Menu', exact: true, expanded: false }).click();
   await expect.poll(overlayVisibility).toBe('visible');

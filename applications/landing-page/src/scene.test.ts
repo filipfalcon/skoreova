@@ -4,7 +4,7 @@ import { Scene } from 'foldkit';
 import { describe, test } from 'vite-plus/test';
 
 import { landingModel, menuOpenModel, secondLeagueMapModel } from './main.fixtures';
-import { DetectActiveSection, Message, SetScrollLock, update, view } from './main';
+import { DetectActiveSection, Message, update, view } from './main';
 import { MountMotion, ObserveHeroPastHeader, ObserveReveals } from './motion';
 
 // The landing view mounts three decorative controllers — the motion loop on
@@ -79,8 +79,7 @@ describe('view', () => {
       Scene.given(landingModel),
       ...acknowledgeMounts,
       Scene.click(Scene.role('button', { name: 'Menu' })),
-      // Opening locks the page scroll and asks which section the reader is in.
-      Scene.Command.resolve(SetScrollLock, Message.CompletedSetScrollLock()),
+      // Opening asks which section the reader is in; the scroll lock is a Subscription.
       Scene.Command.resolve(
         DetectActiveSection,
         Message.DetectedActiveSection({ section: Option.none() }),
@@ -100,7 +99,6 @@ describe('view', () => {
       Scene.given(landingModel),
       ...acknowledgeMounts,
       Scene.click(Scene.role('button', { name: 'Menu' })),
-      Scene.Command.resolve(SetScrollLock, Message.CompletedSetScrollLock()),
       Scene.Command.resolve(
         DetectActiveSection,
         Message.DetectedActiveSection({ section: Option.some('across-the-lands') }),

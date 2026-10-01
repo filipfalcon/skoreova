@@ -1,4 +1,4 @@
-// The landing page commands: navigation, the scroll lock, and the
+// The landing page commands: navigation, the menu toggle's focus, and the
 // active-section probe.
 
 import { Array, Effect, Option, Schema, pipe } from 'effect';
@@ -129,20 +129,6 @@ export const Load = Command.define('Load', {
   execute: ({ href }) => loadUrl(href).pipe(Effect.as(Message.CompletedLoad())),
 });
 
-// Locks/unlocks page scrolling while the menu overlay is open. Delegates to
-// Foldkit’s Dom.lockScroll/unlockScroll: they lock via `overflow: hidden`
-// (with scrollbar-width compensation, so nothing shifts), intercept iOS
-// `touchmove` so touch scrolling is pinned too, and reference-count nested
-// locks. Crucially the page keeps its real scroll position — there is no
-// position:fixed offset zeroing window.scrollY — so measurements taken while
-// the lock is up (Navigate’s fragment scroll, DetectActiveSection) read true.
-export const SetScrollLock = Command.define('SetScrollLock', {
-  args: { locked: Schema.Boolean },
-  messages: [Message.CompletedSetScrollLock],
-  execute: ({ locked }) =>
-    (locked ? Dom.lockScroll : Dom.unlockScroll).pipe(Effect.as(Message.CompletedSetScrollLock())),
-});
-
 // Returns focus to the header’s menu toggle after Escape closes the overlay
 // — the native-dialog contract (focus returns to the opener), done as a
 // Command rather than a side effect inside the subscription’s stream. A
@@ -192,9 +178,6 @@ export const navigate = (url: string, reduceMotion: boolean): Command.Command<Me
   Navigate({ url, reduceMotion });
 
 export const load = (href: string): Command.Command<Message> => Load({ href });
-
-export const setScrollLock = (locked: boolean): Command.Command<Message> =>
-  SetScrollLock({ locked });
 
 export const detectActiveSection = (): Command.Command<Message> => DetectActiveSection();
 

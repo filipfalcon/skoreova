@@ -11,7 +11,7 @@ import { AppRoute, urlToAppRoute } from './route';
 import type { Model, RevealState } from './model';
 import { Message } from './message';
 import { MAP_LEAGUE_GROUP_ID, MapLeagueRadioGroup } from './radio-groups';
-import { detectActiveSection, focusMenuToggle, load, navigate, setScrollLock } from './command';
+import { detectActiveSection, focusMenuToggle, load, navigate } from './command';
 
 // The app entry: init, the update reducer, and the re-exports that keep the
 // public surface (Model, messages, subscriptions, view) at ./main.
@@ -79,14 +79,11 @@ export const update = (model: Model, message: Message) =>
           isMenuOpen: () => isMenuOpen,
           activeSection: (s) => (isMenuOpen ? Option.none() : s),
         }),
-        commands: isMenuOpen
-          ? [setScrollLock(true), detectActiveSection()]
-          : [setScrollLock(false)],
+        commands: isMenuOpen ? [detectActiveSection()] : [],
       };
     },
     ClosedMenu: () => ({
       model: modifyFields(model, { isMenuOpen: () => false }),
-      commands: [setScrollLock(false)],
     }),
     // Escape closes whatever is up. The full-screen menu wins when open (it
     // covers the page) and hands focus back to the toggle, like a native
@@ -96,7 +93,7 @@ export const update = (model: Model, message: Message) =>
       if (model.isMenuOpen) {
         return {
           model: modifyFields(model, { isMenuOpen: () => false }),
-          commands: [setScrollLock(false), focusMenuToggle()],
+          commands: [focusMenuToggle()],
         };
       }
       return { model: modifyFields(model, { mapClub: () => Option.none() }) };
@@ -107,23 +104,21 @@ export const update = (model: Model, message: Message) =>
     }),
     // In-app links (club pins, menu anchors, back links) apply their route
     // immediately and push the URL; external links load normally. Any
-    // in-app navigation also closes the menu, so release the scroll lock.
+    // in-app navigation also closes the menu.
     ClickedLink: ({ request }) =>
       UrlRequest.match<Update.Return<Model, Message>>(request, {
         Internal: ({ url }) => ({
           model: applyRoute(model, urlToAppRoute(url)),
-          commands: [navigate(urlToString(url), model.prefersReducedMotion), setScrollLock(false)],
+          commands: [navigate(urlToString(url), model.prefersReducedMotion)],
         }),
         External: ({ href }) => ({ model, commands: [load(href)] }),
       }),
-    // Browser back/forward — also releases the lock (the menu closes).
+    // Browser back/forward — the menu closes too.
     ChangedUrl: ({ url }) => ({
       model: applyRoute(model, urlToAppRoute(url)),
-      commands: [setScrollLock(false)],
     }),
     CompletedNavigate: () => ({ model }),
     CompletedLoad: () => ({ model }),
-    CompletedSetScrollLock: () => ({ model }),
     GotMapLeagueGroupMessage: ({ message }) =>
       Update.foldChild({
         update: MapLeagueRadioGroup.update,
