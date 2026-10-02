@@ -60,25 +60,27 @@ python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
 
 **Tokens.**
 
-| Token         | Value                                       | Source                                                                                                                                       |
-| ------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Family        | `'Archivo', 'Archivo Fallback', sans-serif` | the one typeface, then its metric-matched fallback                                                                                           |
-| Body cut      | width 100%, weight 400                      | Archivo's Normal width and Regular weight                                                                                                    |
-| Bold          | 700                                         | CSS bold; WCAG 1.4.3's bold for large-scale text                                                                                             |
-| Display cut   | width 75%, weight 700                       | OpenType/CSS Condensed and Bold, where the font's ranges end                                                                                 |
-| Caps tracking | 0.05em                                      | capitals letterspaced 5–10% of the type size (Bringhurst), the lower bound; mixed case is not tracked                                        |
-| Data numerals | `tabular-nums`                              | scores, tables and times align in columns                                                                                                    |
-| Cap height    | 0.686em                                     | Archivo's OS/2 cap height, 686 of 1000 units, held by both cuts; a mark beside capitals (an arrow, an icon) stands this tall on the baseline |
+| Token         | Value                                       | Source                                                                                                                                                                                                                                                 |
+| ------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Family        | `'Archivo', 'Archivo Fallback', sans-serif` | the one typeface, then its metric-matched fallback                                                                                                                                                                                                     |
+| Body cut      | width 100%, weight 400                      | Archivo's Normal width and Regular weight                                                                                                                                                                                                              |
+| Bold          | 700                                         | CSS bold; WCAG 1.4.3's bold for large-scale text                                                                                                                                                                                                       |
+| Display cut   | width 75%, weight 700                       | OpenType/CSS Condensed and Bold, where the font's ranges end                                                                                                                                                                                           |
+| Caps tracking | 0.05em                                      | capitals letterspaced 5–10% of the type size (Bringhurst), the lower bound; mixed case is not tracked                                                                                                                                                  |
+| Data numerals | `tabular-nums`                              | scores, tables and times align in columns                                                                                                                                                                                                              |
+| Cap height    | 0.686                                       | Archivo's OS/2 cap height, 686 of 1000 units, held by both cuts, as a share of the type size: a mark beside capitals (an arrow, an icon) stands 0.686em tall on the baseline, and type whose capitals must stand a given height is that height ÷ 0.686 |
 
 ## Color
 
-`src/color.stylex.ts` holds the color roles, the focus ring and the chrome; `src/color.test.ts` recomputes every role with Material 3's color utilities and asserts the contrast rules.
+`src/color.stylex.ts` holds the color roles, the brand colors, the focus ring and the chrome; `src/color.test.ts` recomputes every role with Material 3's color utilities and asserts the contrast rules.
 
 **Method.** Material 3's dynamic color: dark scheme, variant Fidelity, spec 2021, contrast level 0. Two sources: primary `#ff2f8e`, neutral `#f3efe8` (the neutral palette takes its hue and chroma, the neutral-variant palette the same hue at chroma + 4, Material 3's own rule). No secondary or tertiary roles.
 
 **Contrast.** `on-surface` and `on-surface-variant` read at 4.5:1 or more on the surface and every surface container; `on-primary-container` at 4.5:1 or more on `primary-container`; `outline` at 3:1 or more on the surface (WCAG 1.4.11). `outline-variant` is decorative only.
 
 **Focus.** One ring for every control: primary, 2px (WCAG 2.4.13's minimum), offset by its own width so it always sits on the surface, where primary reads at 10.9:1.
+
+**Brand.** The logo is an asset, not interface, so the color roles do not apply to it: `brand` holds its own fixed colors, outside the dynamic-color algorithm. `logo-type`, the letters, is `on-surface`'s value; `logo-mark`, the period, is the brand pink `#ff2f8e` itself, the primary source before Fidelity shifts it. The logo keeps them in every state: it does not recolor on hover, and keyboard focus draws the standard ring. Pink stays in the interface for action and now only, without exceptions.
 
 **Chrome.** Over any content the translucent bar stays a surface of the palette: it fills with the surface at alpha 0.858 (0.8575 rounded up), the lowest at which, composited over pure white in sRGB, its tone (CIELAB L\*) does not exceed tone 22 of `surface-container-highest`, the lightest surface role. On-surface, on-surface-variant and primary then keep 4.5:1 over white as a consequence (9.6, 7.3 and 7.3:1). It blurs by space `m`, one body line, unsaturated; and ends in a 1px `outline-variant` rule.
 

@@ -146,10 +146,8 @@ describe('the fallback face', () => {
 });
 
 describe('the cap height', () => {
-  const em = (units: number): string => `${units / source.unitsPerEm}em`;
-
-  test('is the font’s own', () => {
-    expect(font['cap-height']).toBe(em(archivo.capHeight));
+  test('is the font’s own, as a share of the type size', () => {
+    expect(font['cap-height']).toBe(String(archivo.capHeight / archivo.unitsPerEm));
     expect(source.capHeight).toBe(archivo.capHeight);
   });
 

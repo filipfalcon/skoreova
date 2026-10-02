@@ -49,6 +49,22 @@ export const color = stylex.defineVars({
 });
 
 /**
+ * The logo's own colors, fixed, outside the dynamic-color algorithm.
+ *
+ * A logo is an asset, not interface, so the color roles above do not apply to it, and the rule that
+ * pink in the interface means action or now holds without exceptions. The letters take on-surface's
+ * value; the period is the brand pink itself, the primary source before Fidelity shifts it. The
+ * logo keeps these colors in every state: it does not recolor on hover, and keyboard focus draws
+ * the standard focus ring.
+ */
+export const brand = stylex.defineVars({
+  // The on-surface role's value, held fixed.
+  'logo-type': '#e6e2db',
+  // The brand pink, the primary source.
+  'logo-mark': '#ff2f8e',
+});
+
+/**
  * The focus ring every control draws: one ring, primary, floated one width clear of the control so
  * it always sits on the page's surface, where primary reads at 10.9:1.
  */

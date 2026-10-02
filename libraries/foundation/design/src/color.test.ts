@@ -10,7 +10,7 @@ import {
 } from '@material/material-color-utilities';
 import { describe, expect, test, vi } from 'vite-plus/test';
 
-import { chrome, color, focus } from './color.stylex';
+import { brand, chrome, color, focus } from './color.stylex';
 import { space } from './scale.stylex';
 
 // Unbuilt, `defineVars` hands back its own argument, so each var reads as the value the StyleX
@@ -125,6 +125,17 @@ describe('contrast', () => {
 
   test('outline reaches 3:1 on the surface (WCAG 1.4.11)', () => {
     expect(contrast(rgbOf(color.outline), rgbOf(color.surface))).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe('the brand colors', () => {
+  test('set the logo’s letters in on-surface’s value', () => {
+    expect(brand['logo-type']).toBe(color['on-surface']);
+  });
+
+  test('set its period in the primary source itself, not a scheme tone', () => {
+    expect(brand['logo-mark']).toBe(hexFromArgb(PRIMARY_SOURCE.toInt()));
+    expect(Object.values(color)).not.toContain(brand['logo-mark']);
   });
 });
 

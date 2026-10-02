@@ -7,6 +7,7 @@ import { describe, expect, test } from 'vite-plus/test';
 import {
   ARROW_GIVES_WAY_REM,
   CTA_GIVES_WAY_REM,
+  LABEL_ALONE_GIVES_WAY_REM,
   LABEL_GIVES_WAY_REM,
   LEAD_GIVES_WAY_REM,
 } from './header';
@@ -53,11 +54,14 @@ const space = (multiplier: number, viewport: number): number =>
   fluid(16 * multiplier, 20 * multiplier, viewport);
 const TOUCH_TARGET = 48;
 const HAIRLINE = 1;
+const ICON = 24;
+// The logo's size: its capitals an icon tall, at every width.
+const LOGO_SIZE = ICON / CAP_HEIGHT;
 
 const row = (viewport: number) => {
   const xs = space(0.75, viewport);
   const xs2 = space(0.5, viewport);
-  const wordmark = WORDMARK * step(2, viewport);
+  const wordmark = WORDMARK * LOGO_SIZE;
   const label = LABEL * step(-2, viewport) + 2 * xs2 + 2 * HAIRLINE;
   const shortCta = SHORT_CTA * step(0, viewport) + 2 * space(1, viewport);
   const longCta = shortCta + LEAD * step(0, viewport);
@@ -73,7 +77,9 @@ const row = (viewport: number) => {
 };
 
 // The content width at the narrowest viewport where a row fits.
-const fitsFrom = (key: 'withLabel' | 'withoutLabel' | 'shortCta' | 'noArrow'): number => {
+const fitsFrom = (
+  key: 'withLabel' | 'withoutLabel' | 'shortCta' | 'noArrow' | 'labelNoCta',
+): number => {
   for (let viewport = 320; viewport <= 1280; viewport += 0.01) {
     const widths = row(viewport);
     if (widths[key] <= widths.content) return widths.content;
@@ -89,11 +95,17 @@ describe('the header row', () => {
     expect(LEAD).toBeCloseTo(3.173, 3);
   });
 
+  test('sets the logo at the icon over the cap height, 180.5px wide at every width', () => {
+    expect(LOGO_SIZE / 16).toBeCloseTo(2.1866, 4);
+    expect(WORDMARK * LOGO_SIZE).toBeCloseTo(180.5, 1);
+  });
+
   test.each([
-    ['the label', LABEL_GIVES_WAY_REM, fitsFrom('withLabel'), 442.9],
-    ['the first word', LEAD_GIVES_WAY_REM, fitsFrom('withoutLabel'), 373.7],
-    ['the arrow', ARROW_GIVES_WAY_REM, fitsFrom('shortCta'), 316.8],
-    ['the CTA', CTA_GIVES_WAY_REM, fitsFrom('noArrow'), 296.3],
+    ['the label', LABEL_GIVES_WAY_REM, fitsFrom('withLabel'), 501.2],
+    ['the first word', LEAD_GIVES_WAY_REM, fitsFrom('withoutLabel'), 434.6],
+    ['the arrow', ARROW_GIVES_WAY_REM, fitsFrom('shortCta'), 379.6],
+    ['the CTA', CTA_GIVES_WAY_REM, fitsFrom('noArrow'), 359.8],
+    ['the label alone', LABEL_ALONE_GIVES_WAY_REM, fitsFrom('labelNoCta'), 296.9],
   ])(
     'gives %s way within a quarter rem above where the row stops fitting',
     (_name, rem, fits, stated) => {
@@ -103,26 +115,56 @@ describe('the header row', () => {
     },
   );
 
-  test('overflows at 320 without the arrow, 7.7px over, and fits with the CTA gone, 113.2px spare', () => {
-    const widths = row(320);
-    expect(widths.content).toBe(288);
-    expect(widths.content - widths.noArrow).toBeCloseTo(-7.7, 1);
-    expect(widths.noCta).toBeCloseTo(174.8, 1);
-    expect(widths.content - widths.noCta).toBeCloseTo(113.2, 1);
+  test('gives way in order: label, first word, arrow, CTA, then the label alone', () => {
+    const order = [
+      LABEL_GIVES_WAY_REM,
+      LEAD_GIVES_WAY_REM,
+      ARROW_GIVES_WAY_REM,
+      CTA_GIVES_WAY_REM,
+      LABEL_ALONE_GIVES_WAY_REM,
+    ];
+    for (const [index, rem] of order.slice(1).entries()) {
+      expect(rem).toBeLessThan(Number(order[index]));
+    }
   });
 
-  test('fits the label again once the CTA is gone: 235.1px of the 288px row at 320, 52.9px spare', () => {
-    const widths = row(320);
-    expect(widths.labelNoCta).toBeCloseTo(235.1, 1);
-    expect(widths.content - widths.labelNoCta).toBeCloseTo(52.9, 1);
+  // The row each state renders at a viewport, after give-way, and the width it leaves spare.
+  const spare = (viewport: number, ctaShown: boolean): number => {
+    const widths = row(viewport);
+    const rem = widths.content / 16;
+    const asked =
+      !ctaShown || rem <= CTA_GIVES_WAY_REM
+        ? rem <= LABEL_ALONE_GIVES_WAY_REM
+          ? widths.noCta
+          : widths.labelNoCta
+        : rem <= ARROW_GIVES_WAY_REM
+          ? widths.noArrow
+          : rem <= LEAD_GIVES_WAY_REM
+            ? widths.shortCta
+            : rem <= LABEL_GIVES_WAY_REM
+              ? widths.withoutLabel
+              : widths.withLabel;
+    return widths.content - asked;
+  };
+
+  test.each([
+    // Logo and menu: the label gave way.
+    [320, false, 51.5],
+    [320, true, 51.5],
+    // Logo, label and menu: the CTA, shown, gave way.
+    [360, false, 28.7],
+    [360, true, 28.7],
+    // Logo, label and menu; shown, logo, "Platform" with its arrow and menu.
+    [430, false, 94.2],
+    [430, true, 12.4],
+  ])('leaves room to spare at %ipx, CTA shown: %s, %fpx', (viewport, ctaShown, stated) => {
+    expect(spare(viewport, ctaShown)).toBeCloseTo(stated, 1);
   });
 
-  test('hides the label only between the CTA’s give-way width and its own', () => {
-    expect(CTA_GIVES_WAY_REM).toBeLessThan(LABEL_GIVES_WAY_REM);
-  });
-
-  test('gives the CTA way only below a 329px viewport', () => {
-    const viewport = 328.78;
-    expect(row(viewport).content).toBeCloseTo(fitsFrom('noArrow'), 1);
+  test('never overflows, CTA hidden or shown, at any width', () => {
+    for (let viewport = 320; viewport <= 1280; viewport += 0.5) {
+      expect(spare(viewport, false)).toBeGreaterThanOrEqual(0);
+      expect(spare(viewport, true)).toBeGreaterThanOrEqual(0);
+    }
   });
 });

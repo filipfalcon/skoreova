@@ -84,7 +84,7 @@ export const styles = stylex.create({
   // As tall as the capitals beside it, standing on their baseline.
   arrow: {
     display: 'inline-block',
-    height: font['cap-height'],
+    height: `calc(${font['cap-height']} * 1em)`,
     width: 'auto',
     verticalAlign: 'baseline',
   },
