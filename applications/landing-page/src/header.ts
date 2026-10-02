@@ -17,23 +17,14 @@ import { homeRouter } from './route';
 import { getStyleXAttributes } from './stylex-attributes';
 
 /**
- * The row content width, in rem, below which the stage label gives way to a showing CTA.
+ * The row content width, in rem, below which the CTA's first word gives way.
  *
  * Each give-way width is where the row's token sum meets the row's content width, at the default
  * text size, with Archivo's advances (caps tracking included) measured from the font. The sum is
- * logo + gap xs + label + gap 2xs + CTA + gap xs + menu (touch target). The logo is 5.158em of its
- * fixed size (display cut), 180.5px at every width; the label 2.725em of step −2 (body cut) + 2 ×
- * 2xs + 2px of border; the short CTA 5.965em of step 0 (display cut, arrow included) + 2 × s, the
- * long one 3.173em of step 0 more. With the label the sum meets the row at 501.2px (a 544px
- * viewport), so the label gives way below 504px while there is a CTA beside it.
- */
-export const LABEL_GIVES_WAY_REM = 31.5;
-
-/**
- * The row content width, in rem, below which the CTA's first word gives way.
- *
- * Without the label the long CTA meets the row at 434.6px (a 474px viewport), so the first word
- * gives way below 436px.
+ * logo + gap 2xs + CTA + gap xs + menu (touch target). The logo is 5.158em of its fixed size
+ * (display cut), 180.5px at every width; the short CTA 5.965em of step 0 (display cut, arrow
+ * included) + 2 × s, the long one 3.173em of step 0 more. The long CTA meets the row at 434.6px (a
+ * 474px viewport), so the first word gives way below 436px.
  */
 export const LEAD_GIVES_WAY_REM = 27.25;
 
@@ -51,22 +42,11 @@ export const ARROW_GIVES_WAY_REM = 23.75;
  *
  * Without its arrow the CTA meets the row at 359.8px (a 395px viewport), so it gives way below
  * 360px: viewports up to 395px, most phones held upright. The menu carries the same platform link.
+ * The row then asks logo + gap 2xs + menu: 236.5px of the 288px row at 320, 51.5px spare, so the
+ * logo and the menu fit at every width.
  */
 export const CTA_GIVES_WAY_REM = 22.5;
 
-/**
- * The row content width, in rem, below which the stage label gives way with no CTA beside it.
- *
- * Without a CTA the row asks logo + gap xs + label + gap 2xs + menu, which meets the row at 296.9px
- * (a 329px viewport), so the label gives way below 300px. The row then asks logo + gap 2xs + menu:
- * 236.5px of the 288px row at 320, 51.5px spare.
- */
-export const LABEL_ALONE_GIVES_WAY_REM = 18.75;
-
-// Beside a showing CTA the label's room runs out between the CTA's give-way width and its own: below
-// the CTA's the CTA is gone and the label fits again, until its room runs out alone.
-const NO_ROOM_FOR_LABEL = `@container (${CTA_GIVES_WAY_REM}rem < width <= ${LABEL_GIVES_WAY_REM}rem)`;
-const NO_ROOM_FOR_LABEL_ALONE = `@container (max-width: ${LABEL_ALONE_GIVES_WAY_REM}rem)`;
 const NO_ROOM_FOR_LEAD = `@container (max-width: ${LEAD_GIVES_WAY_REM}rem)`;
 const NO_ROOM_FOR_ARROW = `@container (max-width: ${ARROW_GIVES_WAY_REM}rem)`;
 const NO_ROOM_FOR_CTA = `@container (max-width: ${CTA_GIVES_WAY_REM}rem)`;
@@ -178,12 +158,6 @@ export const styles = stylex.create({
     textDecoration: 'none',
     ...FOCUS_RING,
   },
-  identity: {
-    display: 'flex',
-    alignItems: 'center',
-    columnGap: space.xs,
-    minWidth: 0,
-  },
   // The logo, a brand asset: its own fixed colors in every state, and its capitals as tall as an
   // icon, so it stands as tall as the menu glyph. Its size is the icon over the cap height, 1.5rem ÷
   // 0.686 = 2.1866rem (34.99px), fixed at every width like the rest of the bar; its one line is a
@@ -203,38 +177,6 @@ export const styles = stylex.create({
   },
   period: {
     color: brand['logo-mark'],
-  },
-  // A status, not a control: a sibling of the logo's link, so it takes neither its hit area nor its
-  // focus ring.
-  stage: {
-    display: { default: 'inline-block', [NO_ROOM_FOR_LABEL_ALONE]: 'none' },
-    flexShrink: 0,
-    // A hairline.
-    borderWidth: '1px',
-    borderStyle: 'solid',
-    borderColor: color['on-surface-variant'],
-    // The tracking trails the last letter too, so the right padding gives it back to keep the word
-    // optically centred in its box.
-    paddingBlock: space['3xs'],
-    paddingLeft: space['2xs'],
-    paddingRight: `calc(${space['2xs']} - ${font['caps-tracking']})`,
-    ...BODY_CUT,
-    fontSize: type['step--2'],
-    lineHeight: leading['step--2'],
-    letterSpacing: font['caps-tracking'],
-    textTransform: 'uppercase',
-    whiteSpace: 'nowrap',
-    color: color['on-surface-variant'],
-    userSelect: 'none',
-  },
-  // Beside a showing CTA, the label gives way first, and comes back once the CTA itself has given
-  // way, until its room runs out alone.
-  stageBesideCta: {
-    display: {
-      default: 'inline-block',
-      [NO_ROOM_FOR_LABEL]: 'none',
-      [NO_ROOM_FOR_LABEL_ALONE]: 'none',
-    },
   },
   actions: {
     position: 'relative',
@@ -277,7 +219,7 @@ export const styles = stylex.create({
   // Hidden while the hero, with its own CTA, is on screen. A real `visibility: hidden`, so the link
   // leaves the tab order and the accessibility tree rather than lurking invisibly in both. It also
   // leaves the row's flow, centred where it shows, one actions gap from the menu button, so the
-  // hidden link takes no room from the wordmark and its label.
+  // hidden link takes no room from the logo.
   ctaHidden: {
     position: 'absolute',
     insetBlock: 0,
@@ -310,7 +252,7 @@ export const styles = stylex.create({
     transform: 'none',
     transition: ctaTransition(ENTERING, '0s'),
   },
-  // The first word gives way after the label.
+  // The first word gives way first.
   ctaLead: {
     display: { default: 'inline', [NO_ROOM_FOR_LEAD]: 'none' },
     whiteSpace: 'pre',
@@ -351,31 +293,16 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
             [h.Href(`#${MAIN_CONTENT_ID}`), ...getStyleXAttributes(h, styles.skipLink)],
             ['Skip to content'],
           ),
-          h.div(
-            [...getStyleXAttributes(h, styles.identity)],
+          h.a(
+            // Plain `/` — a soft in-app reset to the landing page top (the
+            // Navigate command scrolls to 0 when there’s no fragment), not a
+            // `#top` anchor smooth-scroll.
             [
-              h.a(
-                // Plain `/` — a soft in-app reset to the landing page top (the
-                // Navigate command scrolls to 0 when there’s no fragment), not a
-                // `#top` anchor smooth-scroll.
-                [
-                  h.Href(homeRouter()),
-                  h.AriaLabel('Skóreová, home'),
-                  ...getStyleXAttributes(h, styles.wordmark),
-                ],
-                ['Skóreová', h.span([...getStyleXAttributes(h, styles.period)], ['.'])],
-              ),
-              h.span(
-                [
-                  ...getStyleXAttributes(
-                    h,
-                    styles.stage,
-                    model.heroPastHeader && styles.stageBesideCta,
-                  ),
-                ],
-                ['Beta'],
-              ),
+              h.Href(homeRouter()),
+              h.AriaLabel('Skóreová, home'),
+              ...getStyleXAttributes(h, styles.wordmark),
             ],
+            ['Skóreová', h.span([...getStyleXAttributes(h, styles.period)], ['.'])],
           ),
           h.div(
             [...getStyleXAttributes(h, styles.actions)],

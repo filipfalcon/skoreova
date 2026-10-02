@@ -4,13 +4,7 @@ import { createRequire } from 'node:module';
 import { create, type Font } from 'fontkit';
 import { describe, expect, test } from 'vite-plus/test';
 
-import {
-  ARROW_GIVES_WAY_REM,
-  CTA_GIVES_WAY_REM,
-  LABEL_ALONE_GIVES_WAY_REM,
-  LABEL_GIVES_WAY_REM,
-  LEAD_GIVES_WAY_REM,
-} from './header';
+import { ARROW_GIVES_WAY_REM, CTA_GIVES_WAY_REM, LEAD_GIVES_WAY_REM } from './header';
 
 // The header row's give-way widths, recomputed from Archivo's advances at the cuts the header sets
 // its text in, and from the scale's tokens.
@@ -21,7 +15,6 @@ if (!('variationAxes' in loaded)) throw new Error('the Archivo source is a colle
 const archivo: Font = loaded;
 
 const DISPLAY_CUT = { wght: 700, wdth: 75 };
-const BODY_CUT = { wght: 400, wdth: 100 };
 const CAPS_TRACKING = 0.05;
 
 // A string's advance in em, kerned, with the tracking every character carries, the last included.
@@ -32,14 +25,12 @@ const advance = (text: string, cut: Record<string, number>, tracking: number): n
   return kerned / instance.unitsPerEm + [...text].length * tracking;
 };
 
-// The drawn arrow beside a CTA's label: a 0.25em gap and a box of a 32 × 24 drawing as tall as the
+// The drawn arrow beside the CTA's words: a 0.25em gap and a box of a 32 × 24 drawing as tall as the
 // capitals.
 const CAP_HEIGHT = archivo.capHeight / archivo.unitsPerEm;
 const ARROW = 0.25 + (CAP_HEIGHT * 32) / 24;
 
 const WORDMARK = advance('SKÓREOVÁ.', DISPLAY_CUT, CAPS_TRACKING);
-// The label's right padding gives its trailing tracking back.
-const LABEL = advance('BETA', BODY_CUT, CAPS_TRACKING) - CAPS_TRACKING;
 const SHORT_CTA = advance('PLATFORM', DISPLAY_CUT, CAPS_TRACKING) + ARROW;
 const LEAD = advance('ENTER ', DISPLAY_CUT, CAPS_TRACKING);
 
@@ -53,7 +44,6 @@ const step = (n: number, viewport: number): number =>
 const space = (multiplier: number, viewport: number): number =>
   fluid(16 * multiplier, 20 * multiplier, viewport);
 const TOUCH_TARGET = 48;
-const HAIRLINE = 1;
 const ICON = 24;
 // The logo's size: its capitals an icon tall, at every width.
 const LOGO_SIZE = ICON / CAP_HEIGHT;
@@ -62,24 +52,19 @@ const row = (viewport: number) => {
   const xs = space(0.75, viewport);
   const xs2 = space(0.5, viewport);
   const wordmark = WORDMARK * LOGO_SIZE;
-  const label = LABEL * step(-2, viewport) + 2 * xs2 + 2 * HAIRLINE;
   const shortCta = SHORT_CTA * step(0, viewport) + 2 * space(1, viewport);
   const longCta = shortCta + LEAD * step(0, viewport);
   return {
     content: Math.min(viewport, 1280) - 2 * fluid(16, 40, viewport),
-    withLabel: wordmark + xs + label + xs2 + longCta + xs + TOUCH_TARGET,
-    withoutLabel: wordmark + xs2 + longCta + xs + TOUCH_TARGET,
+    longCta: wordmark + xs2 + longCta + xs + TOUCH_TARGET,
     shortCta: wordmark + xs2 + shortCta + xs + TOUCH_TARGET,
     noArrow: wordmark + xs2 + shortCta - ARROW * step(0, viewport) + xs + TOUCH_TARGET,
     noCta: wordmark + xs2 + TOUCH_TARGET,
-    labelNoCta: wordmark + xs + label + xs2 + TOUCH_TARGET,
   };
 };
 
 // The content width at the narrowest viewport where a row fits.
-const fitsFrom = (
-  key: 'withLabel' | 'withoutLabel' | 'shortCta' | 'noArrow' | 'labelNoCta',
-): number => {
+const fitsFrom = (key: 'longCta' | 'shortCta' | 'noArrow' | 'noCta'): number => {
   for (let viewport = 320; viewport <= 1280; viewport += 0.01) {
     const widths = row(viewport);
     if (widths[key] <= widths.content) return widths.content;
@@ -90,7 +75,6 @@ const fitsFrom = (
 describe('the header row', () => {
   test('measures the advances its comments state', () => {
     expect(WORDMARK).toBeCloseTo(5.158, 3);
-    expect(LABEL).toBeCloseTo(2.725, 3);
     expect(SHORT_CTA).toBeCloseTo(5.965, 3);
     expect(LEAD).toBeCloseTo(3.173, 3);
   });
@@ -101,11 +85,9 @@ describe('the header row', () => {
   });
 
   test.each([
-    ['the label', LABEL_GIVES_WAY_REM, fitsFrom('withLabel'), 501.2],
-    ['the first word', LEAD_GIVES_WAY_REM, fitsFrom('withoutLabel'), 434.6],
+    ['the first word', LEAD_GIVES_WAY_REM, fitsFrom('longCta'), 434.6],
     ['the arrow', ARROW_GIVES_WAY_REM, fitsFrom('shortCta'), 379.6],
     ['the CTA', CTA_GIVES_WAY_REM, fitsFrom('noArrow'), 359.8],
-    ['the label alone', LABEL_ALONE_GIVES_WAY_REM, fitsFrom('labelNoCta'), 296.9],
   ])(
     'gives %s way within a quarter rem above where the row stops fitting',
     (_name, rem, fits, stated) => {
@@ -115,17 +97,14 @@ describe('the header row', () => {
     },
   );
 
-  test('gives way in order: label, first word, arrow, CTA, then the label alone', () => {
-    const order = [
-      LABEL_GIVES_WAY_REM,
-      LEAD_GIVES_WAY_REM,
-      ARROW_GIVES_WAY_REM,
-      CTA_GIVES_WAY_REM,
-      LABEL_ALONE_GIVES_WAY_REM,
-    ];
-    for (const [index, rem] of order.slice(1).entries()) {
-      expect(rem).toBeLessThan(Number(order[index]));
-    }
+  test('gives way in order: first word, arrow, CTA', () => {
+    expect(LEAD_GIVES_WAY_REM).toBeGreaterThan(ARROW_GIVES_WAY_REM);
+    expect(ARROW_GIVES_WAY_REM).toBeGreaterThan(CTA_GIVES_WAY_REM);
+  });
+
+  test('fits the logo and the menu at every width: 236.5px of the 288px row at 320', () => {
+    expect(fitsFrom('noCta')).toBe(288);
+    expect(row(320).noCta).toBeCloseTo(236.5, 1);
   });
 
   // The row each state renders at a viewport, after give-way, and the width it leaves spare.
@@ -134,28 +113,23 @@ describe('the header row', () => {
     const rem = widths.content / 16;
     const asked =
       !ctaShown || rem <= CTA_GIVES_WAY_REM
-        ? rem <= LABEL_ALONE_GIVES_WAY_REM
-          ? widths.noCta
-          : widths.labelNoCta
+        ? widths.noCta
         : rem <= ARROW_GIVES_WAY_REM
           ? widths.noArrow
           : rem <= LEAD_GIVES_WAY_REM
             ? widths.shortCta
-            : rem <= LABEL_GIVES_WAY_REM
-              ? widths.withoutLabel
-              : widths.withLabel;
+            : widths.longCta;
     return widths.content - asked;
   };
 
   test.each([
-    // Logo and menu: the label gave way.
+    // Logo and menu; shown, the CTA gave way.
     [320, false, 51.5],
     [320, true, 51.5],
-    // Logo, label and menu: the CTA, shown, gave way.
-    [360, false, 28.7],
-    [360, true, 28.7],
-    // Logo, label and menu; shown, logo, "Platform" with its arrow and menu.
-    [430, false, 94.2],
+    [360, false, 89.5],
+    [360, true, 89.5],
+    // Logo and menu; shown, logo, "Platform" with its arrow, and menu.
+    [430, false, 155.8],
     [430, true, 12.4],
   ])('leaves room to spare at %ipx, CTA shown: %s, %fpx', (viewport, ctaShown, stated) => {
     expect(spare(viewport, ctaShown)).toBeCloseTo(stated, 1);
