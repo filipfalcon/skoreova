@@ -8,6 +8,7 @@ import { toString as urlToString } from 'foldkit/url';
 import type { Url } from 'foldkit/url';
 
 import { AppRoute, urlToAppRoute } from './route';
+import { logoVariants } from './data';
 import type { Model, RevealState } from './model';
 import { Message } from './message';
 import { MAP_LEAGUE_GROUP_ID, MapLeagueRadioGroup } from './radio-groups';
@@ -44,6 +45,8 @@ const initialModel: Model = {
   heroPastHeader: false,
   prefersReducedMotion: false,
   reveals: {},
+  idleState: 'Active',
+  logoVariant: Option.none(),
 };
 
 // Applies a parsed URL to the model — used for the initial load, our own
@@ -155,6 +158,34 @@ export const update = (model: Model, message: Message) =>
     // the header CTA renders off this flag.
     DetectedHeroPastHeader: ({ past }) => ({
       model: modifyFields(model, { heroPastHeader: () => past }),
+    }),
+    // A minute without activity shows the logo's next variant: the first in
+    // the list, then each in turn, cycling. One per idle period: only an
+    // active reader can go idle.
+    BecameIdle: () =>
+      model.idleState === 'Active'
+        ? {
+            model: modifyFields(model, {
+              idleState: () => 'Showing' as const,
+              logoVariant: (variant) =>
+                Option.some(
+                  Option.match(variant, {
+                    onNone: () => 0,
+                    onSome: (index) => (index + 1) % logoVariants.length,
+                  }),
+                ),
+            }),
+          }
+        : { model },
+    // The variant ran its time; the logo stays itself until activity starts
+    // the next idle period.
+    EndedIdleVariant: () =>
+      model.idleState === 'Showing'
+        ? { model: modifyFields(model, { idleState: () => 'Spent' as const }) }
+        : { model },
+    // Activity ends a showing variant at once, and starts the next idle period.
+    ResumedActivity: () => ({
+      model: modifyFields(model, { idleState: () => 'Active' as const }),
     }),
     // The OS setting, on subscribe and on every flip. The view force-reveals
     // everything while it is set, and the wheel subscription follows it. The

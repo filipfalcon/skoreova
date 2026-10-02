@@ -1,13 +1,28 @@
 // Landing page subscriptions: smooth wheel scrolling (a model-gated,
-// no-emission DOM effect), the menu's scroll lock, Escape-to-close, and the
-// reduced-motion preference.
+// no-emission DOM effect), the menu's scroll lock, Escape-to-close, the
+// logo's idle cycle, and the reduced-motion preference.
 
-import { Effect, Option, Schema, Stream } from 'effect';
+import { Duration, Effect, Option, Schema, Stream } from 'effect';
 import { Dom, Subscription } from 'foldkit';
 
 import type { Model } from './model';
 import { Message } from './message';
+import { IdleState } from './model';
 import { REDUCED_MOTION_QUERY } from './motion';
+
+// The reader's activity: scrolling (anywhere, the menu overlay's own scroller
+// included, so captured), the wheel, the pointer, and the keyboard. Built on
+// subscribe, as the document exists only in the browser.
+const ACTIVITY_EVENTS = ['scroll', 'wheel', 'pointermove', 'pointerdown', 'keydown'] as const;
+const activity = (): Stream.Stream<Event> =>
+  ACTIVITY_EVENTS.map((type) =>
+    Stream.fromEventListener<Event>(document, type, { passive: true, capture: true }),
+  ).reduce((merged, next) => Stream.merge(merged, next));
+
+// A minute without activity makes the reader idle.
+const IDLE_AFTER = Duration.seconds(60);
+// The logo's variant shows for 3 seconds: self-updating content that ends within WCAG 2.2.2's 5.
+const VARIANT_FOR = Duration.seconds(3);
 
 // SUBSCRIPTIONS
 
@@ -138,6 +153,38 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
       }),
       dependenciesToStream: ({ isMenuOpen, prefersReducedMotion }) =>
         isMenuOpen || prefersReducedMotion ? Stream.empty : smoothWheelScroll,
+    },
+  ),
+  // The logo's idle cycle, one stream per state. Active: a minute after the
+  // last activity (or the start), the reader is idle. Showing: the variant ends
+  // after its 3 seconds, or at once on activity. Spent: the first activity
+  // starts the next idle period, so a reader who stays idle sees one variant.
+  idle: entry(
+    { idleState: IdleState },
+    {
+      modelToDependencies: (model) => ({ idleState: model.idleState }),
+      dependenciesToStream: ({ idleState }) => {
+        switch (idleState) {
+          case 'Active':
+            return Stream.concat(Stream.make(undefined), activity()).pipe(
+              Stream.debounce(IDLE_AFTER),
+              Stream.take(1),
+              Stream.map(() => Message.BecameIdle()),
+            );
+          case 'Showing':
+            return Stream.merge(
+              Stream.fromEffect(Effect.sleep(VARIANT_FOR)).pipe(
+                Stream.map(() => Message.EndedIdleVariant()),
+              ),
+              activity().pipe(Stream.map(() => Message.ResumedActivity())),
+            ).pipe(Stream.take(1));
+          case 'Spent':
+            return activity().pipe(
+              Stream.take(1),
+              Stream.map(() => Message.ResumedActivity()),
+            );
+        }
+      },
     },
   ),
   // Follows the OS-level `prefers-reduced-motion` setting: the CURRENT value on

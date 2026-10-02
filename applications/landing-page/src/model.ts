@@ -15,6 +15,12 @@ export type RevealState = typeof RevealState.Type;
 export const MapLeague = Schema.Literals(['All', 'First', 'Second']);
 export type MapLeague = typeof MapLeague.Type;
 
+// Where the reader is in the logo's idle cycle: Active while they use the page,
+// Showing while the logo shows a variant, Spent once it has, until activity
+// starts the next idle period.
+export const IdleState = Schema.Literals(['Active', 'Showing', 'Spent']);
+export type IdleState = typeof IdleState.Type;
+
 export const Model = Schema.Struct({
   // Which page is on screen — the landing at `/`, the cookie policy at
   // `/policy`. Unknown paths carry NotFound and render the landing.
@@ -63,5 +69,10 @@ export const Model = Schema.Struct({
   // the class strings again — the old "reveal targets' classes must stay
   // static forever" invariant is gone.
   reveals: Schema.Record(Schema.String, RevealState),
+  // The logo's idle easter egg (see logoVariants in data.ts): the cycle's
+  // state, fed by the idle subscription, and the index of the variant the
+  // current or last idle period showed (None before the first).
+  idleState: IdleState,
+  logoVariant: Schema.Option(Schema.Number),
 });
 export type Model = typeof Model.Type;

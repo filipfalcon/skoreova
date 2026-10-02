@@ -152,6 +152,27 @@ export const menuEntries: ReadonlyArray<MenuEntry> = [
   { label: 'Follow', target: '/#follow' },
 ];
 
+// LOGO VARIANTS — the logo's idle easter egg. After a minute without activity
+// the logo shows one of these for 3 seconds, in this order, one per idle
+// period. Each keeps the logo's own first and last letters and swaps the middle
+// for a word; the word is set in the brand pink. A variant is allowed only if it
+// renders no wider than the logo itself (header-fit.test.ts), so the bar never
+// shifts. Written in the logo's own case; the logo sets it in capitals.
+export interface LogoVariant {
+  // The logo's leading letters, kept.
+  readonly start: string;
+  // The word in the middle, in the brand pink.
+  readonly word: string;
+  // The logo's trailing letters, kept.
+  readonly end: string;
+}
+
+export const logoVariants: readonly [LogoVariant, ...ReadonlyArray<LogoVariant>] = [
+  { start: 'Sk', word: 'Slay', end: 'vá' },
+  { start: 'S', word: 'Periodt', end: 'á' },
+  { start: 'Sk', word: 'Queen', end: 'á' },
+];
+
 // Platform links deliberately open in the SAME tab — the platform is our own
 // product, so the jump is a continuation, not a departure. Only third-party
 // links (socials, UEFA, competition sites) get target=_blank + noopener.

@@ -5,10 +5,11 @@ import { duration, easing } from '@skoreova/design/motion.stylex';
 import { grid, layout, leading, space, type } from '@skoreova/design/scale.stylex';
 import { Button } from '@foldkit/ui';
 import * as stylex from '@stylexjs/stylex';
+import { Option } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { platformArrow, styles as arrowStyles } from './arrow';
-import { platformUrl } from './data';
+import { logoVariants, platformUrl } from './data';
 import { MAIN_CONTENT_ID } from './main-content';
 import { menuGlyph } from './menu-glyph';
 import { glyph } from './menu-glyph.stylex';
@@ -165,6 +166,7 @@ export const styles = stylex.create({
   // 0.686 = 1.8222rem (29.15px), fixed at every width like the rest of the bar. Its one line is a
   // touch target tall.
   wordmark: {
+    position: 'relative',
     display: 'inline-flex',
     alignItems: 'center',
     minHeight: HIT,
@@ -178,6 +180,43 @@ export const styles = stylex.create({
     ...FOCUS_RING,
   },
   period: {
+    color: brand['logo-mark'],
+  },
+  // The idle easter egg (logoVariants in data.ts): the logo's own letters give way to a variant
+  // drawn over them, so the link keeps its box and the bar never shifts. The swap is a state
+  // change, instant under reduced motion.
+  letters: {
+    transition: { default: `opacity ${STATE_CHANGE}`, [REDUCED_MOTION]: 'none' },
+  },
+  lettersAway: {
+    opacity: 0,
+  },
+  // Hidden once it has faded, out of find-in-page and selection like the letters it stands in for.
+  variant: {
+    position: 'absolute',
+    insetBlock: 0,
+    left: 0,
+    display: 'flex',
+    alignItems: 'center',
+    whiteSpace: 'nowrap',
+    pointerEvents: 'none',
+    opacity: 0,
+    visibility: 'hidden',
+    transition: {
+      default: `opacity ${STATE_CHANGE}, visibility 0s ${easing.linear} ${duration.short4}`,
+      [REDUCED_MOTION]: 'none',
+    },
+  },
+  variantShown: {
+    opacity: 1,
+    visibility: 'visible',
+    transition: {
+      default: `opacity ${STATE_CHANGE}, visibility 0s ${easing.linear} 0s`,
+      [REDUCED_MOTION]: 'none',
+    },
+  },
+  // The variant's word, in the brand pink.
+  variantWord: {
     color: brand['logo-mark'],
   },
   actions: {
@@ -284,8 +323,10 @@ export const styles = stylex.create({
   },
 });
 
-export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
-  h.header(
+export const headerView = (model: Model, h: HtmlBuilder<Message>): Html => {
+  // The variant the current or last idle period showed, drawn faded out until one shows.
+  const variant = logoVariants[Option.getOrElse(model.logoVariant, () => 0)] ?? logoVariants[0];
+  return h.header(
     [...getStyleXAttributes(h, styles.bar)],
     [
       h.div(
@@ -304,7 +345,34 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
               h.AriaLabel('Skóreová, home'),
               ...getStyleXAttributes(h, styles.wordmark),
             ],
-            ['Skóreová', h.span([...getStyleXAttributes(h, styles.period)], ['.'])],
+            [
+              h.span(
+                [
+                  ...getStyleXAttributes(
+                    h,
+                    styles.letters,
+                    model.idleState === 'Showing' && styles.lettersAway,
+                  ),
+                ],
+                ['Skóreová', h.span([...getStyleXAttributes(h, styles.period)], ['.'])],
+              ),
+              // Decoration over the letters: the link keeps its name, and nothing is announced.
+              h.span(
+                [
+                  h.AriaHidden(true),
+                  ...getStyleXAttributes(
+                    h,
+                    styles.variant,
+                    model.idleState === 'Showing' && styles.variantShown,
+                  ),
+                ],
+                [
+                  variant.start,
+                  h.span([...getStyleXAttributes(h, styles.variantWord)], [variant.word]),
+                  variant.end,
+                ],
+              ),
+            ],
           ),
           h.div(
             [...getStyleXAttributes(h, styles.actions)],
@@ -362,3 +430,4 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
       ),
     ],
   );
+};

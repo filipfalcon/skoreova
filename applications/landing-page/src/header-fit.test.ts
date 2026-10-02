@@ -5,6 +5,7 @@ import { create, type Font } from 'fontkit';
 import { describe, expect, test } from 'vite-plus/test';
 
 import { ARROW_GIVES_WAY_REM, CTA_GIVES_WAY_REM, LEAD_GIVES_WAY_REM } from './header';
+import { logoVariants } from './data';
 import { MENU_GLYPH_HEIGHT, MENU_GLYPH_WIDTH } from './menu-glyph';
 
 // The header row's give-way widths, recomputed from Archivo's advances at the cuts the header sets
@@ -90,6 +91,47 @@ describe('the logo’s period, SKÓREOVÁ | .', () => {
   test('substitutes nothing across the split', () => {
     const ids = (text: string): ReadonlyArray<number> => run(text).glyphs.map((glyph) => glyph.id);
     expect(ids('SKÓREOVÁ.')).toEqual([...ids('SKÓREOVÁ'), ...ids('.')]);
+  });
+});
+
+// The logo's idle variants draw over the logo's own letters, so each must render no wider than the
+// logo itself. Measured per piece, as they render: the variant's word is an element of its own, and
+// WebKit shapes each inline element apart, so no kerning joins the pieces.
+describe('the logo’s idle variants', () => {
+  const pieces = (...texts: ReadonlyArray<string>): number =>
+    texts.reduce(
+      (total, text) => total + advance(text.toUpperCase(), DISPLAY_CUT, CAPS_TRACKING),
+      0,
+    );
+  const logoWidth = pieces('Skóreová', '.') * LOGO_SIZE;
+
+  test.each(logoVariants.map((variant) => [variant.word, variant] as const))(
+    '%s keeps the logo’s own first and last letters',
+    (_word, variant) => {
+      expect('Skóreová'.startsWith(variant.start)).toBe(true);
+      expect('Skóreová'.endsWith(variant.end)).toBe(true);
+    },
+  );
+
+  test.each([
+    ['Slay', 134.18],
+    ['Periodt', 148.99],
+    ['Queen', 142.94],
+  ])('%s renders %fpx wide, within the logo’s 150.39px', (word, stated) => {
+    const variant = logoVariants.find((candidate) => candidate.word === word);
+    if (variant === undefined) throw new Error(`no ${word} variant`);
+    const width = pieces(variant.start, variant.word, variant.end) * LOGO_SIZE;
+    expect(logoWidth).toBeCloseTo(150.39, 2);
+    expect(width).toBeCloseTo(stated, 2);
+    expect(width).toBeLessThanOrEqual(logoWidth);
+  });
+
+  test('every variant fits', () => {
+    for (const variant of logoVariants) {
+      expect(pieces(variant.start, variant.word, variant.end) * LOGO_SIZE).toBeLessThanOrEqual(
+        logoWidth,
+      );
+    }
   });
 });
 

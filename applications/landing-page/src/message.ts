@@ -45,6 +45,11 @@ export const Message = defineMessageUnion({
   // rest), and which must stand fully DRAWN — a pen that finished its lap
   // (transitionend) or a downward-only pen re-entered from below. See
   // ObserveReveals in motion.ts.
+  // The idle subscription's reports: a minute passed with no scroll, pointer
+  // or key activity; the logo's variant ran its 3 seconds; activity came back.
+  BecameIdle: {},
+  EndedIdleVariant: {},
+  ResumedActivity: {},
   ChangedReveals: {
     revealed: Schema.Array(Schema.String),
     concealed: Schema.Array(Schema.String),
