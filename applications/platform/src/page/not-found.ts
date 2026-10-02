@@ -2,7 +2,7 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import type { Message } from '../message';
 import { welcomeRouter } from '../route';
-import { getStyleXAttributes } from '../stylexAttributes';
+import { getStyleXAttributes } from '../stylex-attributes';
 import { styles } from '../styles/not-found';
 import { shared } from '../styles/shared';
 

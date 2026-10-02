@@ -10,7 +10,7 @@ import { container } from './container';
 import { menuEntries, platformUrl, socialChannels } from './data';
 import { Message } from './message';
 import type { Model } from './model';
-import { getStyleXAttributesWith } from './stylexAttributes';
+import { getStyleXAttributesWith } from './stylex-attributes';
 
 const REDUCED_MOTION = '@media (prefers-reduced-motion: reduce)';
 

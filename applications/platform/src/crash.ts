@@ -3,7 +3,7 @@ import type { Document, HtmlBuilder } from 'foldkit/html';
 
 import type { Message } from './message';
 import type { Model } from './model';
-import { getStyleXAttributes } from './stylexAttributes';
+import { getStyleXAttributes } from './stylex-attributes';
 import { styles as crashStyles } from './styles/crash';
 import { styles as notFoundStyles } from './styles/not-found';
 import { shared } from './styles/shared';

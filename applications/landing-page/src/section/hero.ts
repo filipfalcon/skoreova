@@ -6,7 +6,7 @@ import { platformArrow, styles as arrowStyles } from '../arrow';
 import { platformUrl } from '../data';
 import type { Message } from '../message';
 import { ObserveHeroPastHeader } from '../motion';
-import { getStyleXAttributesWith } from '../stylexAttributes';
+import { getStyleXAttributesWith } from '../stylex-attributes';
 
 // ONE continuous size curve across every width — no breakpoint tiers, so
 // the lockup never steps when the viewport crosses a boundary. Three legs:

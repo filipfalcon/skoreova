@@ -14,8 +14,8 @@ import type { Model, Screen } from './model';
 import { Message } from './message';
 import { JUMP_ROW_ID, ObserveHeaderHeight, ObserveSectionRail, jumpChipId } from './command';
 import { type NavEntry, navEntries, screenOf, screenTitles } from './data';
-import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
-import type { StyleXStyle } from './stylexAttributes';
+import { getStyleXAttributes, getStyleXAttributesWith } from './stylex-attributes';
+import type { StyleXStyle } from './stylex-attributes';
 import { IDENTITY_CREST_SIZE, styles } from './styles/components';
 import { shared } from './styles/shared';
 

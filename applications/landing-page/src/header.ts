@@ -14,7 +14,7 @@ import { menuGlyph } from './menu-glyph';
 import { Message } from './message';
 import type { Model } from './model';
 import { homeRouter } from './route';
-import { getStyleXAttributes } from './stylexAttributes';
+import { getStyleXAttributes } from './stylex-attributes';
 
 /**
  * The row content width, in rem, below which the stage label gives way to a showing CTA.

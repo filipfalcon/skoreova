@@ -5,8 +5,8 @@ import { clubs } from './data';
 import type { StandingsRow } from './data';
 import type { Message } from './message';
 import { clubRouter } from './route';
-import { getStyleXAttributes } from './stylexAttributes';
-import type { StyleXStyle } from './stylexAttributes';
+import { getStyleXAttributes } from './stylex-attributes';
+import type { StyleXStyle } from './stylex-attributes';
 import { shared } from './styles/shared';
 import { styles } from './styles/standings';
 

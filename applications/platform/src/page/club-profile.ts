@@ -54,7 +54,7 @@ import {
   SCOPE_GROUP_ID,
   ScopeRadioGroup,
 } from '../radio-groups';
-import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
+import { getStyleXAttributes, getStyleXAttributesWith } from '../stylex-attributes';
 import { CREST_SIZES, HERO_ART_SIZES, WATERMARK_SIZES, styles } from '../styles/club-profile';
 import { shared } from '../styles/shared';
 

@@ -4,7 +4,7 @@ import * as stylex from '@stylexjs/stylex';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import type { Message } from './message';
-import { type StyleXStyle, getStyleXAttributes } from './stylexAttributes';
+import { type StyleXStyle, getStyleXAttributes } from './stylex-attributes';
 
 /**
  * The menu glyph's drawing, in its own units: three bars of `MENU_GLYPH_BAR` across a box of

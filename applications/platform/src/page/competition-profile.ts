@@ -30,8 +30,8 @@ import {
 } from '../schedule';
 import type { SeasonShape } from '../schedule';
 import { EDITION_GROUP_ID, EditionRadioGroup } from '../radio-groups';
-import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
-import type { StyleXStyle } from '../stylexAttributes';
+import { getStyleXAttributes, getStyleXAttributesWith } from '../stylex-attributes';
+import type { StyleXStyle } from '../stylex-attributes';
 import { HERO_ART_SIZES, STANDINGS_CREST_SIZE, styles } from '../styles/competition-profile';
 import { shared } from '../styles/shared';
 

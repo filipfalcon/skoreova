@@ -12,7 +12,7 @@ import { Message } from './message';
 import type { Model } from './model';
 import { competitionRouter } from './route';
 import { MATCHDAYS_PLAYED } from './schedule';
-import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
+import { getStyleXAttributes, getStyleXAttributesWith } from './stylex-attributes';
 import { styles as componentStyles } from './styles/components';
 import { shared } from './styles/shared';
 import { styles } from './styles/stat-tiles';

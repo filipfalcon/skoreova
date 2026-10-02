@@ -40,7 +40,7 @@ import {
   trendingTile,
 } from '../stat-tiles';
 import type { StatEntry } from '../stat-tiles';
-import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
+import { getStyleXAttributes, getStyleXAttributesWith } from '../stylex-attributes';
 import { shared } from '../styles/shared';
 import {
   CREST_RAIL_SIZE,

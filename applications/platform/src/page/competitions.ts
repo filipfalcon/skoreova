@@ -5,7 +5,7 @@ import { competitions } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';
 import { competitionRouter } from '../route';
-import { getStyleXAttributes } from '../stylexAttributes';
+import { getStyleXAttributes } from '../stylex-attributes';
 import { BADGE_SIZE, styles } from '../styles/competitions';
 import { shared } from '../styles/shared';
 

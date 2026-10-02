@@ -15,7 +15,7 @@ import {
   mockScore,
   roundDay,
 } from './schedule';
-import { getStyleXAttributes } from './stylexAttributes';
+import { getStyleXAttributes } from './stylex-attributes';
 import { shared } from './styles/shared';
 import { CREST_SIZES, styles } from './styles/club-matches';
 

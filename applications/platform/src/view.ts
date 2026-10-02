@@ -34,7 +34,7 @@ import {
   Officials,
   Players,
 } from './page';
-import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
+import { getStyleXAttributes, getStyleXAttributesWith } from './stylex-attributes';
 import { styles } from './styles/view';
 
 // The toast stack's list is drawn by the library, which takes a class name rather than attributes; this is the compiled class of the stack's styles.

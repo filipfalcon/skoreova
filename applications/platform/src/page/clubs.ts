@@ -9,8 +9,8 @@ import { Message } from '../message';
 import type { Model } from '../model';
 import { clubRouter } from '../route';
 import { clubEurope } from '../standings';
-import { getStyleXAttributes, getStyleXAttributesWith } from '../stylexAttributes';
-import type { StyleXStyle } from '../stylexAttributes';
+import { getStyleXAttributes, getStyleXAttributesWith } from '../stylex-attributes';
+import type { StyleXStyle } from '../stylex-attributes';
 import { ARTWORK_LOGO_SIZES, GRID_CREST_SIZE, styles } from '../styles/clubs';
 import { shared } from '../styles/shared';
 

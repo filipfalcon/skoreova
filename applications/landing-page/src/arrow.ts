@@ -4,7 +4,7 @@ import * as stylex from '@stylexjs/stylex';
 import { inertHtml as ih } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
 
-import { type StyleXStyle, getStyleXAttributesWith } from './stylexAttributes';
+import { type StyleXStyle, getStyleXAttributesWith } from './stylex-attributes';
 
 // Space 3xs's share of step 0, a quarter, applied to the text's own size: the gap before an arrow
 // that follows text, and the distance a platform arrow nudges.

@@ -7,7 +7,7 @@ import type { Message } from '../message';
 import type { Model } from '../model';
 import { matchesRouter } from '../route';
 import { MATCHDAYS_PLAYED, fixtureSeed, leagueRounds, mockScore, roundDay } from '../schedule';
-import { getStyleXAttributes } from '../stylexAttributes';
+import { getStyleXAttributes } from '../stylex-attributes';
 import { styles as panelStyles } from '../styles/competition-profile';
 import { styles } from '../styles/matches';
 import { shared } from '../styles/shared';

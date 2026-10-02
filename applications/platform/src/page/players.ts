@@ -4,7 +4,7 @@ import { screenHeader } from '../components';
 import { players } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';
-import { getStyleXAttributes } from '../stylexAttributes';
+import { getStyleXAttributes } from '../stylex-attributes';
 import { styles } from '../styles/players';
 import { shared } from '../styles/shared';
 

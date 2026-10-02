@@ -6,8 +6,8 @@ import type { Match, MatchState } from './data';
 import type { Message } from './message';
 import { matchesRouter } from './route';
 import { responsiveSource } from './components';
-import { getStyleXAttributes } from './stylexAttributes';
-import type { StyleXStyle } from './stylexAttributes';
+import { getStyleXAttributes } from './stylex-attributes';
+import type { StyleXStyle } from './stylex-attributes';
 import { shared } from './styles/shared';
 import { CREST_SIZE, compactSurface, styles } from './styles/match-card';
 
