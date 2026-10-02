@@ -82,3 +82,14 @@ describe('the font, compiled', () => {
     expect(css).toContain(`:${literal};`);
   });
 });
+
+describe('the color file, compiled', () => {
+  test.each([['color.stylex.ts', 3, ['#141310', 'rgba(20, 19, 16, 0.858)']]] as const)(
+    '%s emits its %i var groups and carries its literals',
+    (file, groups, literals) => {
+      const css = compiledCss(file);
+      expect(css.match(/:root, \.x[a-z0-9]+\{/g)).toHaveLength(groups);
+      for (const literal of literals) expect(css).toContain(`:${literal};`);
+    },
+  );
+});
