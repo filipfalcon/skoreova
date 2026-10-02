@@ -42,3 +42,29 @@ Every length is in `rem`, rounded to four decimals. No type step grows more than
 **Data tables.** A row pads its block by space `xs`, so a row of step 0 text, its line height plus two `xs`, equals space `xl` exactly: 3 × step 0, 48 → 60 px. Height comes from padding (or a minimum height), never a fixed height, so a row grows with its content.
 
 **Grid on narrow screens.** Blocks span multiples of three columns: twelve is four groups of three, Material 3's compact grid. Tables do not use the page grid.
+
+## Font
+
+Archivo is the language's one typeface, self-hosted under the SIL Open Font License (`fonts/source/OFL.txt`). `src/font/archivo.woff2` is one variable file, imported with its `@font-face` sheet as `@skoreova/design/font.css`; `src/font.stylex.ts` holds its tokens, and `src/font.test.ts` checks them against the font. The source it is built from is exported as `@skoreova/design/font-source.ttf`, for tests that measure the cuts.
+
+**Build.** `scripts/build-font.py` builds the file and the sheet from the pinned sources in `fonts/source/` (their commits and checksums are in the script), and the same sources build the same bytes:
+
+```
+python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
+.venv/bin/python scripts/build-font.py
+```
+
+- Axes limited to what the language uses: weight 400–700, width 75–100%.
+- Glyphs subset to Google Fonts' GF Latin Core, keeping kern, mark, mkmk, ccmp, locl and tnum, and rvrn, which swaps in the currency signs' heavier drawings from weight 500 up.
+- A fallback face over Arial (or Liberation Sans, which shares its advances), scaled to the body cut's average advance and carrying Archivo's ascent, descent and line gap, so the swap to the web font does not reflow a line. `font-size-adjust` is not used anywhere: matching the fallback's x-height instead (Arial at 101.44% rather than 98.61%) would widen fallback text by 2.9% and reflow lines on the swap.
+
+**Tokens.**
+
+| Token         | Value                                       | Source                                                                                                |
+| ------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Family        | `'Archivo', 'Archivo Fallback', sans-serif` | the one typeface, then its metric-matched fallback                                                    |
+| Body cut      | width 100%, weight 400                      | Archivo's Normal width and Regular weight                                                             |
+| Bold          | 700                                         | CSS bold; WCAG 1.4.3's bold for large-scale text                                                      |
+| Display cut   | width 75%, weight 700                       | OpenType/CSS Condensed and Bold, where the font's ranges end                                          |
+| Caps tracking | 0.05em                                      | capitals letterspaced 5–10% of the type size (Bringhurst), the lower bound; mixed case is not tracked |
+| Data numerals | `tabular-nums`                              | scores, tables and times align in columns                                                             |

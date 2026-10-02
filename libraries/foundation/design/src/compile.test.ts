@@ -66,3 +66,19 @@ describe('the scale, compiled', () => {
     expect(css).toContain(`:${literal};`);
   });
 });
+
+describe('the font, compiled', () => {
+  const css = compiledCss('font.stylex.ts');
+
+  test('emits its one var group', () => {
+    expect(css.match(/:root, \.x[a-z0-9]+\{/g)).toHaveLength(1);
+  });
+
+  test.each([
+    ['the family', "'Archivo', 'Archivo Fallback', sans-serif"],
+    ['the display width', '75%'],
+    ['the caps tracking', '0.05em'],
+  ])('carries %s as its literal', (_name, literal) => {
+    expect(css).toContain(`:${literal};`);
+  });
+});

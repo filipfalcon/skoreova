@@ -28,3 +28,6 @@ coverage/
 
 # Vitest browser-mode failure screenshots
 __screenshots__/
+
+# Python virtual environments (libraries/foundation/design/scripts/build-font.py)
+.venv/
