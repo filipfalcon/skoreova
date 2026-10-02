@@ -1,4 +1,5 @@
 import { foldkit } from '@foldkit/vite-plugin';
+import stylex from '@stylexjs/unplugin';
 import tailwindcss from '@tailwindcss/vite';
 import type { Plugin } from 'vite';
 import { build } from 'vite';
@@ -34,6 +35,7 @@ const placeholderFor = (entry: string): string => `<!-- @inline ${entry} -->`;
 
 const bundleEntry = async (root: string, entry: string): Promise<string> => {
   const result = await build({
+    // No StyleX plugin, nor any other: the inlined entries are analytics modules that render nothing, so no stylex call is reachable from them.
     configFile: false,
     root,
     logLevel: 'error',
@@ -236,6 +238,20 @@ const pinAlchemyDevPort = (port: number): Plugin => ({
   config: () => (isUnderAlchemy ? { server: { port, strictPort: true } } : {}),
 });
 
+/**
+ * The StyleX options every config of this app passes, the browser-test one included.
+ *
+ * `useCSSLayers` with a prefix nests StyleX's priority layers under one `stylex` layer, which
+ * src/styles.css declares last, after Tailwind's; see the cascade note there. Without it StyleX
+ * emits unlayered rules, and an unlayered rule beats every layered Tailwind utility.
+ */
+export const stylexOptions = { useCSSLayers: { prefix: 'stylex' } } as const;
+
+// Vitest serves a test run from a Vite server with no HTTP server, and the Vite entry's CSS-update
+// timer is cleared only when an HTTP server closes, so it would outlive the run. The Rollup entry
+// carries the same transform without it, as on the platform.
+const isUnderVitest = process.env['VITEST'] !== undefined;
+
 export default defineConfig({
   // IPv4 loopback, explicitly: under `alchemy dev` all three apps' inner
   // vite servers race for ports, and a dual-stack bind lets two of them
@@ -244,6 +260,7 @@ export default defineConfig({
   // vite increments to a free port instead.
   server: { host: '127.0.0.1' },
   plugins: [
+    isUnderVitest ? stylex.rollup(stylexOptions) : stylex.vite(stylexOptions),
     ...tailwindcss(),
     ...foldkit({
       // A plain `vp dev` renders through the same entry the Worker calls, so

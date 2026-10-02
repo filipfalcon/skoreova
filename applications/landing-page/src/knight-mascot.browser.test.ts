@@ -53,7 +53,7 @@ beforeAll(async () => {
   await waitUntil(() => document.querySelector('#on-the-rise .idle-float') !== null);
 
   // Bring the section in with its top ~150px below the viewport top: clear of
-  // the fixed header (z-50), and high enough that the reveal observer fires.
+  // the fixed header, and high enough that the reveal observer fires.
   const section = document.querySelector<HTMLElement>('#on-the-rise');
   if (!section) throw new Error('on-the-rise section not rendered');
   window.scrollTo({ top: section.offsetTop - 150, behavior: 'instant' });

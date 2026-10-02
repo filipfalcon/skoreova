@@ -18,9 +18,7 @@ import './styles.css';
 // The class alone was not enough — the hidden state’s job is to keep the link
 // out of the tab order and out of the accessibility tree, and only a real
 // `visibility: hidden` does that. Opacity and pointer-events, which is what
-// this used to be, left an invisible focusable link on the hero. `display` is
-// deliberately NOT asserted: the CTA is desktop-only, so it is `none` at any
-// viewport the runner happens to use.
+// this used to be, left an invisible focusable link on the hero.
 
 const headerCta = (): HTMLElement => {
   const element = document.querySelector<HTMLElement>('.header-cta');

@@ -11,8 +11,15 @@ import { homeRouter, policyRouter } from './route';
 import type { Model } from './model';
 import { Message } from './message';
 import { menuEntries, platformUrl, socialChannels } from './data';
+import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
+import { styles as headerStyles } from './styles/header';
 
 export const container = 'mx-auto w-full max-w-7xl px-5 md:px-10';
+
+/**
+ * The id of the page's main content, which the header's skip link targets.
+ */
+export const MAIN_CONTENT_ID = 'content';
 
 // The classes a keyed reveal target renders, straight from the Model (fed
 // by the ObserveReveals mount in motion.ts). Under reduced motion every
@@ -183,16 +190,17 @@ export const menuGlyph = (open: boolean, h: HtmlBuilder<Message>): Html =>
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
       // Tight viewBox — the strokes' ink fills it edge to edge, so the CSS
-      // height IS the visible height. Sized against the wordmark: Anton’s
-      // caps sit at exactly 0.875em, and the toggle button carries the
-      // wordmark’s text size, so the glyph stands as tall as the SKÓREOVÁ
-      // letters — accents excluded, the lockup’s optical cap line.
+      // size IS the visible size.
       h.ViewBox('0 0 24 20'),
-      h.Class(clsx('menu-glyph h-[0.875em] w-auto', { 'is-open': open })),
+      ...getStyleXAttributesWith(
+        h,
+        clsx('menu-glyph', { 'is-open': open }),
+        headerStyles.menuGlyph,
+      ),
       h.Fill('none'),
       h.Stroke('currentColor'),
-      // 3.43 in-box renders as a 3px bar (3.43 × 0.875) — up from the drawn
-      // arrow’s 2.5px weight, closer to Anton’s heft.
+      // A 3.43px bar at the glyph's 24px width, up from the drawn arrow’s
+      // 2.5px weight, closer to Anton’s heft.
       h.StrokeWidth('3.43'),
       // Flat butt caps — the site’s whole graphic language is hard edges
       // (Anton, square chips, the drawn arrow); rounded line ends read soft.
@@ -207,16 +215,17 @@ export const menuGlyph = (open: boolean, h: HtmlBuilder<Message>): Html =>
 
 export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.header(
-    // Translucent ink + blur — the platform header’s device, mirrored here
-    // so the two apps read as one page (their headers are deliberate
-    // duplicates of each other).
-    [h.Class('fixed inset-x-0 top-0 z-50 bg-ink/90 text-paper backdrop-blur')],
+    [...getStyleXAttributes(h, headerStyles.bar)],
     [
       h.div(
-        [h.Class(`${container} flex h-14 items-center justify-between md:h-16`)],
+        [...getStyleXAttributes(h, headerStyles.row)],
         [
+          h.a(
+            [h.Href(`#${MAIN_CONTENT_ID}`), ...getStyleXAttributes(h, headerStyles.skipLink)],
+            ['Skip to content'],
+          ),
           h.div(
-            [h.Class('flex items-center')],
+            [...getStyleXAttributes(h, headerStyles.identity)],
             [
               h.a(
                 // Plain `/` — a soft in-app reset to the landing page top (the
@@ -224,57 +233,44 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
                 // `#top` anchor smooth-scroll.
                 [
                   h.Href(homeRouter()),
-                  h.Class(
-                    'display text-2xl tracking-wide text-paper transition-colors duration-300 hover:text-pink md:text-3xl',
-                  ),
+                  h.AriaLabel('Skóreová, home'),
+                  ...getStyleXAttributes(h, headerStyles.wordmark),
                 ],
-                ['Skóreová', h.span([h.Class('text-pink')], ['.'])],
+                ['Skóreová', h.span([...getStyleXAttributes(h, headerStyles.period)], ['.'])],
               ),
-              // The stage stamp — same pink-chip language as the AWAY chips.
-              // A sibling of the wordmark anchor, not a child: it’s a status
-              // label, so it must not be clickable or inherit the pink hover.
               h.span(
                 [
-                  h.Class(
-                    'font-body ml-2.5 text-[9px] leading-[1.9] tracking-[0.2em] whitespace-nowrap text-ink uppercase select-none md:ml-3 md:text-[10px]',
+                  ...getStyleXAttributes(
+                    h,
+                    headerStyles.stage,
+                    model.heroPastHeader && headerStyles.stageBesideCta,
                   ),
                 ],
-                [
-                  // The pink sits on an inner INLINE span with cloned decoration:
-                  // the stamp is ALWAYS two lines (matching the platform header’s
-                  // copy of it) and each line’s pink must hug its own text — a
-                  // blockified (flex-item) box would paint one rectangle as wide
-                  // as the longest line.
-                  h.span(
-                    [h.Class('box-decoration-clone bg-pink px-1.5 py-0.5')],
-                    ['Beta Version', h.br([]), 'Work in progress'],
-                  ),
-                ],
+                ['Beta'],
               ),
             ],
           ),
           h.div(
-            [h.Class('flex items-center gap-6 md:gap-8')],
+            [...getStyleXAttributes(h, headerStyles.actions)],
             [
-              // Persistent desktop CTA — hidden while the hero (with its own
-              // primary CTA) is on screen, sliding in once it scrolls away.
-              // `is-visible` rides `model.heroPastHeader`, which the hero
-              // observer feeds (see ObserveHeroPastHeader); rendering it from
-              // the Model means a header re-render can’t wipe it. Phone-hidden.
-              // The hidden state is a real `visibility: hidden` (see
-              // .header-cta in styles.css), so it leaves the tab order and the
-              // accessibility tree instead of lurking invisibly in both.
+              // Shown once the hero, which carries its own CTA, has scrolled under the bar:
+              // `is-visible` rides `model.heroPastHeader`, which the hero observer feeds (see
+              // ObserveHeroPastHeader), so a header re-render cannot wipe it.
               h.a(
                 [
                   h.Href(platformUrl),
-                  h.Class(
-                    clsx(
-                      'header-cta platform-beckon display hidden bg-pink px-4 py-1 text-lg tracking-[0.08em] text-ink hover:bg-paper active:bg-paper sm:inline-block',
-                      { 'is-visible': model.heroPastHeader },
-                    ),
+                  ...getStyleXAttributesWith(
+                    h,
+                    clsx('header-cta platform-beckon', { 'is-visible': model.heroPastHeader }),
+                    headerStyles.cta,
+                    model.heroPastHeader ? headerStyles.ctaShown : headerStyles.ctaHidden,
                   ),
                 ],
-                ['Enter platform', displayArrow],
+                [
+                  h.span([...getStyleXAttributes(h, headerStyles.ctaLead)], ['Enter ']),
+                  'Platform',
+                  h.span([...getStyleXAttributes(h, headerStyles.ctaArrow)], [displayArrow]),
+                ],
               ),
               Button.view(
                 {
@@ -290,15 +286,8 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
                         h.AriaLabel('Menu'),
                         h.AriaExpanded(model.isMenuOpen),
                         h.AriaControls('menu-overlay'),
-                        // The text size exists for the glyph alone (the button has
-                        // no text): menuGlyph is 0.875em tall, so tracking the
-                        // wordmark’s text-xl/2xl keeps the two the same height.
-                        h.Class(
-                          'display flex cursor-pointer items-center text-2xl text-paper transition-colors duration-300 hover:text-pink md:text-3xl',
-                        ),
+                        ...getStyleXAttributes(h, headerStyles.menuButton),
                       ],
-                      // The hamburger/X glyph on every breakpoint — the aria-label
-                      // carries the wording the icon dropped.
                       [menuGlyph(model.isMenuOpen, h)],
                     ),
                 },
@@ -323,11 +312,13 @@ export const menuOverlayView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.nav(
     [
       h.Id('menu-overlay'),
-      h.Class(
+      ...getStyleXAttributesWith(
+        h,
         clsx(
-          'menu-overlay fixed inset-0 z-40 flex flex-col overflow-y-auto bg-ink pt-14 md:pt-16',
+          'menu-overlay fixed inset-0 flex flex-col overflow-y-auto bg-ink pt-[calc(4rem+1px)]',
           { 'is-open': model.isMenuOpen },
         ),
+        headerStyles.menuOverlay,
       ),
       h.AriaHidden(!model.isMenuOpen),
       // The fall choreography (styles.css) lands the anchors bottom-up; the
@@ -451,7 +442,8 @@ export const menuOverlayView = (model: Model, h: HtmlBuilder<Message>): Html =>
 export const footerView = (isMenuOpen: boolean, h: HtmlBuilder<Message>): Html =>
   h.footer(
     [
-      h.Class('border-t border-paper/15 bg-ink py-10 text-paper'),
+      // Isolated like <main>, so its stacking stays within the content layer.
+      h.Class('isolate border-t border-paper/15 bg-ink py-10 text-paper'),
       // Same treatment as <main>: unreachable while the menu overlay is up.
       ...(isMenuOpen ? [h.Inert(true)] : []),
     ],

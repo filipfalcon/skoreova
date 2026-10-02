@@ -1,5 +1,6 @@
 import '@fontsource/anton/400.css';
 import '@fontsource-variable/archivo/index.css';
+import '@skoreova/design/font.css';
 import { Option } from 'effect';
 import { Runtime } from 'foldkit';
 

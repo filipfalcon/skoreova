@@ -1,5 +1,16 @@
 @import 'tailwindcss';
 
+/* THE CASCADE ORDER, declared once: Tailwind's layers (theme, then base with
+   its preflight reset, components, utilities), then StyleX. Layer order is
+   fixed by first declaration, so this statement, ahead of every rule, settles
+   it: a StyleX style beats any Tailwind class, whatever either's specificity.
+   StyleX nests its own priority layers under `stylex` (the `useCSSLayers`
+   prefix in vite.config.ts), and its output lands after this file: appended
+   to the same stylesheet in a build, in its own later link in dev. The rules
+   below that are deliberately UNLAYERED sit above every layer, StyleX's
+   included. */
+@layer theme, base, components, utilities, stylex;
+
 @theme {
   --color-ink: #0d0c0c;
   --color-paper: #f3efe8;
@@ -71,16 +82,10 @@
 /* Anchored sections stop below the fixed header instead of sliding under
    it — without this, fragment navigation decapitated each section’s first
    rows. Native jumps (initial load with a #hash) honor the property on
-   their own; animateScrollTo (command.ts) reads it explicitly. The values
-   mirror the header’s h-14/md:h-16. */
+   their own; animateScrollTo (command.ts) reads it explicitly. The value
+   is the header's height, 4rem at every width, and its 1px hairline. */
 section[id] {
-  scroll-margin-top: 3.5rem;
-}
-
-@media (min-width: 48rem) {
-  section[id] {
-    scroll-margin-top: 4rem;
-  }
+  scroll-margin-top: calc(4rem + 1px);
 }
 
 html {
@@ -108,21 +113,23 @@ body {
   color: var(--color-ink);
 }
 
-/* Keyboard focus gets a designed ring instead of the browser default —
-   the UA outline is nearly invisible on the ink sections. `:focus-visible`
-   only: mouse/touch interactions stay ring-free. The offset keeps the ring
-   legible even on pink elements by floating it over the surrounding
-   surface. */
-:focus-visible {
-  outline: 3px solid var(--color-pink);
-  outline-offset: 3px;
-}
+@layer base {
+  /* Keyboard focus gets a designed ring instead of the browser default —
+     the UA outline is nearly invisible on the ink sections. `:focus-visible`
+     only: mouse/touch interactions stay ring-free. The offset keeps the ring
+     legible even on pink elements by floating it over the surrounding
+     surface. A base default, so a component's own ring replaces it. */
+  :focus-visible {
+    outline: 3px solid var(--color-pink);
+    outline-offset: 3px;
+  }
 
-/* On a pink ground the offset floats the pink ring over pink, where it
-   vanishes, so anything focused inside one draws its ring in ink. A pink
-   element on ink or paper is unaffected: its ring floats over that. */
-.on-pink-ground :focus-visible {
-  outline-color: var(--color-ink);
+  /* On a pink ground the offset floats the pink ring over pink, where it
+     vanishes, so anything focused inside one draws its ring in ink. A pink
+     element on ink or paper is unaffected: its ring floats over that. */
+  .on-pink-ground :focus-visible {
+    outline-color: var(--color-ink);
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -734,43 +741,6 @@ body {
   animation-delay: var(--hero-delay, 1s);
 }
 
-/* Header platform CTA: hidden until the hero is scrolled past. The hero
-   observer (ObserveHeroPastHeader) feeds `model.heroPastHeader` and the view
-   renders `.is-visible` off it. Unlayered so the transition beats Tailwind’s,
-   and it carries the hover color change too since we dropped
-   `transition-colors` from the element. */
-/* Visibility rides the fade the same way the menu overlay’s does (delay =
-   the fade’s duration, so the slide-out is still seen, then hides). Opacity
-   and pointer-events alone left the invisible link in the TAB ORDER and in
-   the accessibility tree: on the hero, tabbing past the wordmark landed on
-   an "Enter platform" link nobody could see, and a screen reader read it out
-   while the hero’s own CTA sat right there. */
-.header-cta {
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-0.5rem);
-  pointer-events: none;
-  transition:
-    opacity 0.4s ease,
-    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 0.3s ease,
-    color 0.3s ease,
-    visibility 0s linear 0.4s;
-}
-
-.header-cta.is-visible {
-  opacity: 1;
-  visibility: visible;
-  transform: none;
-  pointer-events: auto;
-  transition:
-    opacity 0.4s ease,
-    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 0.3s ease,
-    color 0.3s ease,
-    visibility 0s linear 0s;
-}
-
 /* The "why care" mascot’s idle float — a slow, subtle bob upward so she feels
    alive without pulling focus. Runs on the inner image; the wrapper owns the
    reveal slide, so the two transforms never collide. Bobs UP into the empty
@@ -1205,8 +1175,8 @@ body {
    sits on screen for the entire scroll, so it should remind, not nag.
    Separate keyframes because stretching the 2s cycle would slow the knock
    itself down with it: here the knock keeps its ~0.9s and the remaining
-   80% of the cycle is stillness. Runs only while motion.ts actually shows
-   the CTA (.is-visible). */
+   80% of the cycle is stillness. Runs only while the header shows the CTA
+   (.is-visible). */
 @keyframes platform-beckon-rested {
   0%,
   20%,
@@ -1469,18 +1439,19 @@ body {
    hardcoded hex. Nothing here can flash unstyled: the banner ships with
    `hidden` and is only revealed by script seconds later. */
 /* On phones the banner is a full-width strip dropping in from under
-   the fixed header: pinned just below it (top = the header’s h-14) and
-   stacked UNDER it (z-index 40 < the header’s z-50), so the slide reads
+   the fixed header: pinned just below it (top = the header’s height and hairline) and
+   stacked UNDER it (the banner layer, below the bar's chrome), so the slide reads
    as emerging from beneath the bar. It also stamps `.has-cookie-banner`
    + `--cookie-banner-h` on <html> (see the script below) and the app’s
    hero photo yields by exactly that height — the shift lives in
    styles.css. From sm up it sits bottom-left as a card. */
 #cookie-consent {
   position: fixed;
-  /* Below the menu overlay (z-40) and the header (z-50): the menu must
-     cover the banner, and the banner slides out from under the bar. */
-  z-index: 30;
-  top: 3.5rem;
+  /* The banner layer of @skoreova/design's layer order: over the content,
+     under the menu overlay, which covers it while open, and under the bar it
+     slides out from beneath. */
+  z-index: 1;
+  top: calc(4rem + 1px);
   left: 0;
   width: 100%;
   padding: 0.875rem 1.25rem;

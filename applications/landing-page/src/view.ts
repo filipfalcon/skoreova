@@ -1,7 +1,7 @@
 import { createKeyedLazy } from 'foldkit/html';
 import type { Document, Html, HtmlBuilder } from 'foldkit/html';
 
-import { footerView, headerView, menuOverlayView } from './components';
+import { MAIN_CONTENT_ID, footerView, headerView, menuOverlayView } from './components';
 import { SITE_ORIGIN, documentTitle } from './document-title';
 import type { Message } from './message';
 import type { Model } from './model';
@@ -102,7 +102,14 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Document => {
         // added conditionally rather than set to `false` because `inert`
         // is a boolean attribute: its mere presence would disable the page.
         h.main(
-          [h.OnMount(MountMotion()), ...(model.isMenuOpen ? [h.Inert(true)] : [])],
+          [
+            h.Id(MAIN_CONTENT_ID),
+            // The content layer: its sections' z-indexes stack within it, never over the layers
+            // above (@skoreova/design's layer order).
+            h.Class('isolate'),
+            h.OnMount(MountMotion()),
+            ...(model.isMenuOpen ? [h.Inert(true)] : []),
+          ],
           isPolicy ? [Policy.view(h)] : landingSections(model, rootKey, h),
         ),
         footerView(model.isMenuOpen, h),

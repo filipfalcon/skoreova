@@ -1,7 +1,10 @@
 import { foldkit } from '@foldkit/vite-plugin';
+import stylex from '@stylexjs/unplugin';
 import tailwindcss from '@tailwindcss/vite';
 import { playwright } from 'vite-plus/test/browser-playwright';
 import { defineConfig } from 'vite-plus';
+
+import { stylexOptions } from './vite.config';
 
 // The half of web’s suite that a fake DOM cannot answer for: computed
 // visibility, painted geometry, stroke-dashoffset, IntersectionObserver on an
@@ -20,11 +23,13 @@ import { defineConfig } from 'vite-plus';
 // The plugins are repeated rather than imported from vite.config.ts on
 // purpose: `mergeConfig` concatenates arrays, so inheriting that config would
 // also inherit its `include` and hand this runner the pure tests as well. Keep
-// the two lists in step by hand — tailwind because the tests read real
-// stylesheet rules, foldkit because the identity branding must match what a
-// build produces.
+// the two lists in step by hand — StyleX through its Vite entry, the one that
+// serves the compiled rules to the page, because the tests read the header's
+// computed styles (its CSS-update timer stops with the runner's HTTP server);
+// tailwind because the tests read real stylesheet rules; foldkit because the
+// identity branding must match what a build produces.
 export default defineConfig({
-  plugins: [...tailwindcss(), ...foldkit()],
+  plugins: [stylex.vite(stylexOptions), ...tailwindcss(), ...foldkit()],
   optimizeDeps: {
     // The optimizer's initial crawl can only find imports that appear in source, and foldkit/brand arrives injected by the plugin's per-module transform instead. Left undeclared, a cold cache (fresh install, changed lockfile) discovers it mid-run and the re-optimization's full-page reload tears down the running suite. The devtools overlay's own imports are declared by the plugin itself since @foldkit/vite-plugin 0.20.1.
     include: ['foldkit/brand'],
