@@ -1,7 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-
-import { create, type Font } from 'fontkit';
+import { type Cut, DISPLAY_CUT, archivoAt } from '@skoreova/design/archivo';
 import { describe, expect, test } from 'vite-plus/test';
 
 import { ARROW_GIVES_WAY_REM, CTA_GIVES_WAY_REM, LEAD_GIVES_WAY_REM } from './header';
@@ -10,18 +7,12 @@ import { MENU_GLYPH_HEIGHT, MENU_GLYPH_WIDTH } from './menu-glyph';
 
 // The header row's give-way widths, recomputed from Archivo's advances at the cuts the header sets
 // its text in, and from the scale's tokens.
-const loaded = create(
-  readFileSync(createRequire(import.meta.url).resolve('@skoreova/design/font-source.ttf')),
-);
-if (!('variationAxes' in loaded)) throw new Error('the Archivo source is a collection');
-const archivo: Font = loaded;
-
-const DISPLAY_CUT = { wght: 700, wdth: 75 };
+const display = archivoAt(DISPLAY_CUT);
 const CAPS_TRACKING = 0.05;
 
 // A string's advance in em, kerned, with the tracking every character carries, the last included.
-const advance = (text: string, cut: Record<string, number>, tracking: number): number => {
-  const instance = archivo.getVariation(cut);
+const advance = (text: string, cut: Cut, tracking: number): number => {
+  const instance = cut === DISPLAY_CUT ? display : archivoAt(cut);
   const run = instance.layout(text);
   const kerned = run.positions.reduce((sum, position) => sum + position.xAdvance, 0);
   return kerned / instance.unitsPerEm + [...text].length * tracking;
@@ -29,7 +20,7 @@ const advance = (text: string, cut: Record<string, number>, tracking: number): n
 
 // The drawn arrow beside the CTA's words: a 0.25em gap and a box of a 32 × 24 drawing as tall as the
 // capitals.
-const CAP_HEIGHT = archivo.capHeight / archivo.unitsPerEm;
+const CAP_HEIGHT = display.capHeight / display.unitsPerEm;
 const ARROW = 0.25 + (CAP_HEIGHT * 32) / 24;
 
 const WORDMARK = advance('SKÓREOVÁ.', DISPLAY_CUT, CAPS_TRACKING);
@@ -79,7 +70,6 @@ const fitsFrom = (key: 'longCta' | 'shortCta' | 'noArrow' | 'noCta'): number => 
 // The logo's period is an element of its own, which engines may shape apart from the name: the split
 // is safe only where the font joins nothing across it.
 describe('the logo’s period, SKÓREOVÁ | .', () => {
-  const display = archivo.getVariation(DISPLAY_CUT);
   const run = (text: string) => display.layout(text);
 
   test('kerns nothing against the name', () => {

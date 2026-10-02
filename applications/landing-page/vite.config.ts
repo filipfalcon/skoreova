@@ -180,8 +180,9 @@ const preloadHero = (): Plugin => ({
   },
 });
 
-// The one variable file every line of the page is set in, the above-the-fold intro included.
-const PRELOADED_FONTS: ReadonlyArray<string> = ['archivo.woff2'];
+// Archivo's latin file, which every line of the page needs, the above-the-fold intro included. The
+// latin-ext file loads only where a page draws one of its characters.
+const PRELOADED_FONTS: ReadonlyArray<string> = ['archivo-latin.woff2'];
 
 // The @font-face rules travel inside the app's CSS, so the browser requests a font file only after rendered text needs its glyphs — behind the full bundle download, parse, and first render. A preload link starts the download at parse time, in parallel with the bundle, so the intro's faces are ready by first paint instead of swapping in mid-ignition on slow connections.
 const preloadFonts = (): Plugin => ({

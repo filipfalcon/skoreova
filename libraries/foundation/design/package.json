@@ -6,7 +6,7 @@
   "exports": {
     "./*.stylex": "./src/*.stylex.ts",
     "./font.css": "./src/font/archivo.css",
-    "./font-source.ttf": "./fonts/source/Archivo[wdth,wght].ttf"
+    "./archivo": "./src/archivo.ts"
   },
   "devDependencies": {
     "@babel/core": "7.29.7",

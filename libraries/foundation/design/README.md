@@ -46,27 +46,20 @@ Every length is in `rem`, rounded to four decimals. No type step grows more than
 
 ## Font
 
-Archivo is the language's one typeface, self-hosted under the SIL Open Font License (`fonts/source/OFL.txt`). `src/font/archivo.woff2` is one variable file, imported with its `@font-face` sheet as `@skoreova/design/font.css`; `src/font.stylex.ts` holds its tokens, and `src/font.test.ts` checks them against the font. The source it is built from is exported as `@skoreova/design/font-source.ttf`, for tests that measure the cuts.
+Archivo is the language's one typeface, self-hosted under the SIL Open Font License (`src/font/OFL.txt`). The files are Google Fonts' own, committed as served: one variable WOFF2 per subset, `src/font/archivo-latin.woff2` and `src/font/archivo-latin-ext.woff2`, each over the full axes (width 62–125%, weight 100–900). Nothing loads from Google at run time. `@skoreova/design/font.css` is their `@font-face` sheet; `src/font.stylex.ts` holds the tokens, and `src/font.test.ts` checks the sheet and the tokens against the files.
 
-**Build.** `scripts/build-font.py` builds the file and the sheet from the pinned sources in `fonts/source/` (their commits and checksums are in the script), and the same sources build the same bytes:
-
-```
-python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
-.venv/bin/python scripts/build-font.py
-```
-
-- Axes limited to what the language uses: weight 400–700, width 75–100%.
-- Glyphs subset to Google Fonts' GF Latin Core, keeping kern, mark, mkmk, ccmp, locl and tnum, and rvrn, which swaps in the currency signs' heavier drawings from weight 500 up.
-- A fallback face over Arial (or Liberation Sans, which shares its advances), scaled to the body cut's average advance and carrying Archivo's ascent, descent and line gap, so the swap to the web font does not reflow a line. `font-size-adjust` is not used anywhere: matching the fallback's x-height instead (Arial at 101.44% rather than 98.61%) would widen fallback text by 2.9% and reflow lines on the swap.
+- One face per subset, with Google's `unicode-range`: the browser fetches a subset's file only when the page draws a character in its range. The faces declare only the range the language uses, weight 400–700 and width 75–100%, and swap in.
+- Fallback faces stand in until Archivo arrives, each a system face scaled so a line sets as long as Archivo's, with Archivo's ascent, descent and line gap, so the swap does not reflow a line. The body cut's is Arial (or Liberation Sans), scaled to the body cut's average advance. The display cut's, in its own family, are a condensed bold system face where one is installed (Helvetica Neue Condensed Bold, then Arial Narrow Bold), then Arial Bold (or Liberation Sans Bold), each scaled to the display cut's average capital advance; the caps tracking is a share of the type size, which `size-adjust` leaves alone. `font-size-adjust` is not used anywhere: matching the fallback's x-height instead would widen fallback text and reflow lines on the swap.
+- `@skoreova/design/archivo` opens the files with `fontkit` at a cut, for tests that measure type, fallbacks and rows.
 
 **Tokens.**
 
 | Token         | Value                                       | Source                                                                                                                                                                                                                                                 |
 | ------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Family        | `'Archivo', 'Archivo Fallback', sans-serif` | the one typeface, then its metric-matched fallback                                                                                                                                                                                                     |
+| Family        | `'Archivo', 'Archivo Fallback', sans-serif` | the one typeface, then its metric-matched fallback; the display cut sets in `display-family`, Archivo then its own fallbacks                                                                                                                           |
 | Body cut      | width 100%, weight 400                      | Archivo's Normal width and Regular weight                                                                                                                                                                                                              |
 | Bold          | 700                                         | CSS bold; WCAG 1.4.3's bold for large-scale text                                                                                                                                                                                                       |
-| Display cut   | width 75%, weight 700                       | OpenType/CSS Condensed and Bold, where the font's ranges end                                                                                                                                                                                           |
+| Display cut   | width 75%, weight 700                       | OpenType/CSS Condensed and Bold                                                                                                                                                                                                                        |
 | Caps tracking | 0.05em                                      | capitals letterspaced 5–10% of the type size (Bringhurst), the lower bound; mixed case is not tracked                                                                                                                                                  |
 | Data numerals | `tabular-nums`                              | scores, tables and times align in columns                                                                                                                                                                                                              |
 | Cap height    | 0.686                                       | Archivo's OS/2 cap height, 686 of 1000 units, held by both cuts, as a share of the type size: a mark beside capitals (an arrow, an icon) stands 0.686em tall on the baseline, and type whose capitals must stand a given height is that height ÷ 0.686 |

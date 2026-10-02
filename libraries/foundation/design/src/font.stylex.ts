@@ -5,6 +5,10 @@ import * as stylex from '@stylexjs/stylex';
 // The language's one typeface: Archivo, self-hosted under the SIL Open Font License, then its
 // metric-matched fallback over the system sans.
 const FAMILY = "'Archivo', 'Archivo Fallback', sans-serif";
+// The display cut's own fallbacks, matched to its condensed bold capitals: a condensed bold system
+// face where one is installed, then Arial Bold.
+const DISPLAY_FAMILY =
+  "'Archivo', 'Archivo Display Fallback Condensed', 'Archivo Display Fallback Narrow', 'Archivo Display Fallback', sans-serif";
 // The body cut's width: Archivo's Normal width, the font's default instance.
 const BODY_WIDTH = '100%';
 // The body cut's weight: CSS normal, Archivo's Regular.
@@ -27,12 +31,14 @@ const CAP_HEIGHT = '0.686';
 /**
  * The typeface and its two cuts.
  *
- * Body text sets in the body cut, bold where it needs emphasis; display text in the display cut, in
+ * Body text sets in the body cut in `family`, bold where it needs emphasis; display text in the
+ * display cut in `display-family`, whose fallbacks stand in for that cut until Archivo arrives, in
  * capitals tracked by `caps-tracking`. Mixed case is not tracked. A mark set beside capitals (an
  * arrow, an icon) stands `cap-height` × 1em tall on the baseline, as tall as they are.
  */
 export const font = stylex.defineVars({
   family: FAMILY,
+  'display-family': DISPLAY_FAMILY,
   'body-width': BODY_WIDTH,
   'body-weight': BODY_WEIGHT,
   'bold-weight': BOLD_WEIGHT,
