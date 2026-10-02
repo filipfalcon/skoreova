@@ -80,3 +80,11 @@ python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
 **Focus.** One ring for every control: primary, 2px (WCAG 2.4.13's minimum), offset by its own width so it always sits on the surface, where primary reads at 10.9:1.
 
 **Chrome.** Over any content the translucent bar stays a surface of the palette: it fills with the surface at alpha 0.858 (0.8575 rounded up), the lowest at which, composited over pure white in sRGB, its tone (CIELAB L\*) does not exceed tone 22 of `surface-container-highest`, the lightest surface role. On-surface, on-surface-variant and primary then keep 4.5:1 over white as a consequence (9.6, 7.3 and 7.3:1). It blurs by space `m`, one body line, unsaturated; and ends in a 1px `outline-variant` rule.
+
+## Motion
+
+`src/motion.stylex.ts` holds Material 3's baseline durations (short1–4, medium1–4, long1–4 in 50ms steps; extra-long1–4 in 100ms steps) and easings, verbatim. A state change runs short4 on standard; an element entering runs medium4 on emphasized decelerate; an element leaving runs short4 on emphasized accelerate. Under `prefers-reduced-motion` transforms are dropped, while color and opacity transitions stay (WCAG 2.3.3).
+
+## Layers
+
+`src/layer.stylex.ts` names the stacking order in consecutive ordinals: content 0, banner 1 (the cookie notice, under the menu that covers it), overlay 2 (the menu, sliding out beneath the bar), chrome 3 (the bar), skip-link 4. Content isolates its own stacking, so no z-index inside it reaches the layers above.
