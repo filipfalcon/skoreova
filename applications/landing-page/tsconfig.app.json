@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "include": ["src/**/*.ts"],
-  "references": [],
+  "references": [{ "path": "../../libraries/foundation/design" }],
   "compilerOptions": {
     "outDir": "./tsbuild",
     "lib": ["esnext", "dom", "dom.iterable"],

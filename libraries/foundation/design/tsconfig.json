@@ -1,0 +1,9 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "include": ["src/**/*.ts"],
+  "references": [],
+  "compilerOptions": {
+    "outDir": "./tsbuild",
+    "types": ["node"]
+  }
+}

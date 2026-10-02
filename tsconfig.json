@@ -12,6 +12,9 @@
       "path": "./applications/platform"
     },
     {
+      "path": "./libraries/foundation/design"
+    },
+    {
       "path": "./tsconfig.tools.json"
     }
   ]

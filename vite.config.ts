@@ -211,6 +211,7 @@ export default defineConfig({
       'applications/studio/vite.config.ts',
       'applications/landing-page/vite.config.ts',
       'applications/landing-page/vite.browser.config.ts',
+      'libraries/foundation/design/vite.config.ts',
     ],
     coverage: {
       provider: 'v8',
