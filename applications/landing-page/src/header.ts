@@ -11,6 +11,7 @@ import { platformArrow, styles as arrowStyles } from './arrow';
 import { platformUrl } from './data';
 import { MAIN_CONTENT_ID } from './main-content';
 import { menuGlyph } from './menu-glyph';
+import { glyph } from './menu-glyph.stylex';
 import { Message } from './message';
 import type { Model } from './model';
 import { homeRouter } from './route';
@@ -22,30 +23,30 @@ import { getStyleXAttributes } from './stylex-attributes';
  * Each give-way width is where the row's token sum meets the row's content width, at the default
  * text size, with Archivo's advances (caps tracking included) measured from the font. The sum is
  * logo + gap 2xs + CTA + gap xs + menu (touch target). The logo is 5.158em of its fixed size
- * (display cut), 180.5px at every width; the short CTA 5.965em of step 0 (display cut, arrow
- * included) + 2 × s, the long one 3.173em of step 0 more. The long CTA meets the row at 434.6px (a
- * 474px viewport), so the first word gives way below 436px.
+ * (display cut), 150.4px at every width; the short CTA 5.965em of step 0 (display cut, arrow
+ * included) + 2 × s, the long one 3.173em of step 0 more. The long CTA meets the row at 402.8px (a
+ * 440px viewport), so the first word gives way below 404px.
  */
-export const LEAD_GIVES_WAY_REM = 27.25;
+export const LEAD_GIVES_WAY_REM = 25.25;
 
 /**
  * The row content width, in rem, below which the CTA's arrow gives way, leaving "Platform".
  *
- * The short CTA meets the row at 379.6px (a 416px viewport), so the arrow (1.165em of step 0) gives
- * way below 380px.
+ * The short CTA meets the row at 348.3px (a 383px viewport), so the arrow (1.165em of step 0) gives
+ * way below 352px.
  */
-export const ARROW_GIVES_WAY_REM = 23.75;
+export const ARROW_GIVES_WAY_REM = 22;
 
 /**
  * The row content width, in rem, below which the CTA gives way entirely, hidden as it is on the
  * hero.
  *
- * Without its arrow the CTA meets the row at 359.8px (a 395px viewport), so it gives way below
- * 360px: viewports up to 395px, most phones held upright. The menu carries the same platform link.
- * The row then asks logo + gap 2xs + menu: 236.5px of the 288px row at 320, 51.5px spare, so the
- * logo and the menu fit at every width.
+ * Without its arrow the CTA meets the row at 328.6px (a 362px viewport), so it gives way below
+ * 332px: viewports up to 362px, the narrowest phones. The menu carries the same platform link. The
+ * row then asks logo + gap 2xs + menu: 206.4px of the 288px row at 320, 81.6px spare, so the logo
+ * and the menu fit at every width.
  */
-export const CTA_GIVES_WAY_REM = 22.5;
+export const CTA_GIVES_WAY_REM = 20.75;
 
 const NO_ROOM_FOR_LEAD = `@container (max-width: ${LEAD_GIVES_WAY_REM}rem)`;
 const NO_ROOM_FOR_ARROW = `@container (max-width: ${ARROW_GIVES_WAY_REM}rem)`;
@@ -158,16 +159,17 @@ export const styles = stylex.create({
     textDecoration: 'none',
     ...FOCUS_RING,
   },
-  // The logo, a brand asset: its own fixed colors in every state, and its capitals as tall as an
-  // icon, so it stands as tall as the menu glyph. Its size is the icon over the cap height, 1.5rem ÷
-  // 0.686 = 2.1866rem (34.99px), fixed at every width like the rest of the bar; its one line is a
+  // The logo, a brand asset: its own fixed colors in every state, and its capitals as tall as the
+  // menu glyph's drawn bars. The glyph's 24 × 20 drawing takes its icon box's width, so it stands
+  // 1.5rem × 20 ÷ 24 = 1.25rem (20px) tall; the logo's size is that over the cap height, 1.25rem ÷
+  // 0.686 = 1.8222rem (29.15px), fixed at every width like the rest of the bar. Its one line is a
   // touch target tall.
   wordmark: {
     display: 'inline-flex',
     alignItems: 'center',
     minHeight: HIT,
     ...DISPLAY_CUT,
-    fontSize: `calc(${layout.icon} / ${font['cap-height']})`,
+    fontSize: `calc(${layout.icon} * ${glyph.height} / ${glyph.width} / ${font['cap-height']})`,
     lineHeight: HIT,
     textTransform: 'uppercase',
     whiteSpace: 'nowrap',

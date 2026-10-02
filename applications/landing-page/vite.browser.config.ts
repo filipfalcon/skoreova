@@ -37,6 +37,7 @@ export default defineConfig({
   test: {
     name: 'landing-page-browser',
     include: ['src/**/*.browser.test.ts'],
+    setupFiles: ['src/browser-test.setup.ts'],
     // One file at a time. Every file mounts the whole landing page, whose
     // motion runs on every frame for as long as the page is open (the marquee
     // drifts at rest), and the assertions read painted geometry and wait on

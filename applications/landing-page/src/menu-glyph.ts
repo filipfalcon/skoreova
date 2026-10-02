@@ -3,17 +3,18 @@ import { duration, easing } from '@skoreova/design/motion.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
+import { glyph } from './menu-glyph.stylex';
 import type { Message } from './message';
 import { type StyleXStyle, getStyleXAttributes } from './stylex-attributes';
 
 /**
- * The menu glyph's drawing, in its own units: three bars of `MENU_GLYPH_BAR` across a box of
- * `MENU_GLYPH_WIDTH` × `MENU_GLYPH_HEIGHT`, the outer two inked flush with its top and bottom
- * edges.
+ * The menu glyph's drawing, in its own units (menu-glyph.stylex.ts): three bars of `MENU_GLYPH_BAR`
+ * across a box of `MENU_GLYPH_WIDTH` × `MENU_GLYPH_HEIGHT`, the outer two inked flush with its top
+ * and bottom edges.
  */
-export const MENU_GLYPH_WIDTH = 24;
-export const MENU_GLYPH_HEIGHT = 20;
-export const MENU_GLYPH_BAR = 3.43;
+export const MENU_GLYPH_WIDTH = glyph.width;
+export const MENU_GLYPH_HEIGHT = glyph.height;
+export const MENU_GLYPH_BAR = glyph.bar;
 
 /**
  * The bars' rows: the outer two half a bar in from the edges, so their ink fills the box, and the
@@ -43,8 +44,14 @@ const ENTERING = `${duration.medium4} ${easing['emphasized-decelerate']}`;
 // An element leaving: short4 on emphasized accelerate.
 const LEAVING = `${duration.short4} ${easing['emphasized-accelerate']}`;
 
-// The outer bars' slide to the middle row: 10 − 1.715 = 8.285.
-const GLYPH_SLIDE = MENU_GLYPH_MIDDLE_ROW - MENU_GLYPH_TOP_ROW;
+// The styles below compute from the drawing's constants in CSS, where the compiler inlines them:
+// the bars' centres, half the width across and half a bar in from the top and bottom edges, and
+// the outer bars' slide to the middle row, (20 − 3.43) ÷ 2 = 8.285.
+const CENTRE_X = `calc(${glyph.width} * 1px / 2)`;
+const TOP_ROW = `calc(${glyph.bar} * 1px / 2)`;
+const BOTTOM_ROW = `calc((${glyph.height} - ${glyph.bar} / 2) * 1px)`;
+const SLIDE_DOWN = `calc((${glyph.height} - ${glyph.bar}) / 2 * 1px)`;
+const SLIDE_UP = `calc((${glyph.bar} - ${glyph.height}) / 2 * 1px)`;
 
 // The glyph's bars turn between the hamburger and the X: entering as the menu opens, leaving as it
 // closes. The middle bar's fade is a state change either way, and stays under reduced motion while
@@ -58,7 +65,8 @@ const glyphTransition = (motion: string) => ({
  * The menu toggle's glyph.
  */
 export const styles = stylex.create({
-  // An icon's box, centred in the touch target; the glyph's own 24 × 20 drawing sits centred in it.
+  // An icon's box, centred in the touch target; the glyph's own 24 × 20 drawing takes its width and
+  // sits centred in it, 1.5rem × 20 ÷ 24 = 1.25rem tall.
   glyph: {
     width: layout.icon,
     height: layout.icon,
@@ -69,10 +77,10 @@ export const styles = stylex.create({
   },
   // About their own centres.
   top: {
-    transformOrigin: `${MENU_GLYPH_WIDTH / 2}px ${MENU_GLYPH_TOP_ROW}px`,
+    transformOrigin: `${CENTRE_X} ${TOP_ROW}`,
   },
   bottom: {
-    transformOrigin: `${MENU_GLYPH_WIDTH / 2}px ${MENU_GLYPH_BOTTOM_ROW}px`,
+    transformOrigin: `${CENTRE_X} ${BOTTOM_ROW}`,
   },
   opening: {
     transition: glyphTransition(ENTERING),
@@ -83,13 +91,13 @@ export const styles = stylex.create({
   // Open, the outer bars slide to the middle row and swing onto the X's diagonals, and the middle
   // bar fades away.
   topOpen: {
-    transform: `translateY(${GLYPH_SLIDE}px) rotate(${MENU_GLYPH_ANGLE_DEG}deg)`,
+    transform: `translateY(${SLIDE_DOWN}) rotate(${MENU_GLYPH_ANGLE_DEG}deg)`,
   },
   middleOpen: {
     opacity: 0,
   },
   bottomOpen: {
-    transform: `translateY(${-GLYPH_SLIDE}px) rotate(${-MENU_GLYPH_ANGLE_DEG}deg)`,
+    transform: `translateY(${SLIDE_UP}) rotate(${-MENU_GLYPH_ANGLE_DEG}deg)`,
   },
 });
 

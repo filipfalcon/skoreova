@@ -53,10 +53,35 @@ test('the bar is exactly the header height, with no rule under it', () => {
   expect(getComputedStyle(bar).borderBottomWidth).toBe('0px');
 });
 
+test('sets the logo so its capitals stand as tall as the menu glyph’s drawn bars', () => {
+  const logo = element('header a[href="/"]');
+  // 20px of drawn glyph over Archivo's 0.686 cap height.
+  expect(Number.parseFloat(getComputedStyle(logo).fontSize)).toBeCloseTo(20 / 0.686, 1);
+  const glyph = element('#menu-toggle svg');
+  expect(glyph.getBoundingClientRect().width).toBe(24);
+});
+
+test('turns the glyph’s outer bars about their own centres', () => {
+  const [top, , bottom] = Array.from(element('#menu-toggle svg').querySelectorAll('line'));
+  if (!top || !bottom) throw new Error('the glyph’s bars are not rendered');
+  expect(getComputedStyle(top).transformOrigin).toBe('12px 1.715px');
+  expect(getComputedStyle(bottom).transformOrigin).toBe('12px 18.285px');
+});
+
 test('anchored sections stop at the header height', () => {
   expect(getComputedStyle(element('section[id]')).scrollMarginTop).toBe(`${HEADER_HEIGHT_PX}px`);
 });
 
 test('the menu’s list starts at the header height', () => {
   expect(getComputedStyle(element('#menu-overlay')).paddingTop).toBe(`${HEADER_HEIGHT_PX}px`);
+});
+
+test('keeps the row inside the viewport with the CTA shown', async () => {
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
+  const cta = element('header a[href^="https:"]');
+  await expect.poll(() => getComputedStyle(cta).visibility, { timeout: 3000 }).toBe('visible');
+  expect(element('#menu-toggle').getBoundingClientRect().right).toBeLessThanOrEqual(
+    window.innerWidth,
+  );
+  window.scrollTo({ top: 0, behavior: 'instant' });
 });

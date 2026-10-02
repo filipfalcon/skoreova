@@ -5,6 +5,7 @@ import { create, type Font } from 'fontkit';
 import { describe, expect, test } from 'vite-plus/test';
 
 import { ARROW_GIVES_WAY_REM, CTA_GIVES_WAY_REM, LEAD_GIVES_WAY_REM } from './header';
+import { MENU_GLYPH_HEIGHT, MENU_GLYPH_WIDTH } from './menu-glyph';
 
 // The header row's give-way widths, recomputed from Archivo's advances at the cuts the header sets
 // its text in, and from the scale's tokens.
@@ -45,8 +46,10 @@ const space = (multiplier: number, viewport: number): number =>
   fluid(16 * multiplier, 20 * multiplier, viewport);
 const TOUCH_TARGET = 48;
 const ICON = 24;
-// The logo's size: its capitals an icon tall, at every width.
-const LOGO_SIZE = ICON / CAP_HEIGHT;
+// The menu glyph's drawing takes its icon box's width, so it stands icon × height ÷ width tall.
+const GLYPH_DRAWN_HEIGHT = (ICON * MENU_GLYPH_HEIGHT) / MENU_GLYPH_WIDTH;
+// The logo's size: its capitals as tall as the glyph's drawn bars, at every width.
+const LOGO_SIZE = GLYPH_DRAWN_HEIGHT / CAP_HEIGHT;
 
 const row = (viewport: number) => {
   const xs = space(0.75, viewport);
@@ -79,15 +82,16 @@ describe('the header row', () => {
     expect(LEAD).toBeCloseTo(3.173, 3);
   });
 
-  test('sets the logo at the icon over the cap height, 180.5px wide at every width', () => {
-    expect(LOGO_SIZE / 16).toBeCloseTo(2.1866, 4);
-    expect(WORDMARK * LOGO_SIZE).toBeCloseTo(180.5, 1);
+  test('sets the logo at the glyph’s drawn height over the cap height, 150.4px wide', () => {
+    expect(GLYPH_DRAWN_HEIGHT).toBe(20);
+    expect(LOGO_SIZE / 16).toBeCloseTo(1.8222, 4);
+    expect(WORDMARK * LOGO_SIZE).toBeCloseTo(150.4, 1);
   });
 
   test.each([
-    ['the first word', LEAD_GIVES_WAY_REM, fitsFrom('longCta'), 434.6],
-    ['the arrow', ARROW_GIVES_WAY_REM, fitsFrom('shortCta'), 379.6],
-    ['the CTA', CTA_GIVES_WAY_REM, fitsFrom('noArrow'), 359.8],
+    ['the first word', LEAD_GIVES_WAY_REM, fitsFrom('longCta'), 402.8],
+    ['the arrow', ARROW_GIVES_WAY_REM, fitsFrom('shortCta'), 348.3],
+    ['the CTA', CTA_GIVES_WAY_REM, fitsFrom('noArrow'), 328.6],
   ])(
     'gives %s way within a quarter rem above where the row stops fitting',
     (_name, rem, fits, stated) => {
@@ -102,9 +106,9 @@ describe('the header row', () => {
     expect(ARROW_GIVES_WAY_REM).toBeGreaterThan(CTA_GIVES_WAY_REM);
   });
 
-  test('fits the logo and the menu at every width: 236.5px of the 288px row at 320', () => {
+  test('fits the logo and the menu at every width: 206.4px of the 288px row at 320', () => {
     expect(fitsFrom('noCta')).toBe(288);
-    expect(row(320).noCta).toBeCloseTo(236.5, 1);
+    expect(row(320).noCta).toBeCloseTo(206.4, 1);
   });
 
   // The row each state renders at a viewport, after give-way, and the width it leaves spare.
@@ -124,13 +128,18 @@ describe('the header row', () => {
 
   test.each([
     // Logo and menu; shown, the CTA gave way.
-    [320, false, 51.5],
-    [320, true, 51.5],
-    [360, false, 89.5],
-    [360, true, 89.5],
+    [320, false, 81.6],
+    [320, true, 81.6],
+    [360, false, 119.5],
+    [360, true, 119.5],
+    // Logo and menu; shown, logo, "Platform" without its arrow, and menu.
+    [375, false, 133.7],
+    [375, true, 11.2],
     // Logo and menu; shown, logo, "Platform" with its arrow, and menu.
-    [430, false, 155.8],
-    [430, true, 12.4],
+    [390, false, 148.0],
+    [390, true, 6.0],
+    [430, false, 185.9],
+    [430, true, 42.4],
   ])('leaves room to spare at %ipx, CTA shown: %s, %fpx', (viewport, ctaShown, stated) => {
     expect(spare(viewport, ctaShown)).toBeCloseTo(stated, 1);
   });
