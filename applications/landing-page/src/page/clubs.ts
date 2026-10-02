@@ -286,7 +286,7 @@ const clubPin = (model: Model, club: Club, h: HtmlBuilder<Message>): Html => {
                     h.AriaExpanded(selected),
                     h.Class(
                       clsx(
-                        'club-pin-chip absolute flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-[scale,box-shadow] delay-[250ms] duration-300 group-hover:scale-110 group-hover:delay-0 group-hover:duration-150 sm:h-14 sm:w-14 sm:p-2.5 md:h-16 md:w-16 md:p-3',
+                        'club-pin-chip absolute flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-paper p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-[scale,box-shadow] delay-[250ms] motion-reduce:transition-[box-shadow] duration-300 group-hover:scale-110 group-hover:delay-0 group-hover:duration-150 sm:h-14 sm:w-14 sm:p-2.5 md:h-16 md:w-16 md:p-3',
                         { 'scale-110 ring-2 ring-pink delay-0 md:ring-[3px]': selected },
                       ),
                     ),
@@ -358,7 +358,7 @@ const clubPin = (model: Model, club: Club, h: HtmlBuilder<Message>): Html => {
                         clsx(
                           'group/row relative isolate col-span-3 grid grid-cols-subgrid items-center gap-x-3 overflow-hidden py-1.5 pr-5 pl-[calc(var(--chip-r)+0.8rem)]',
                           bannerTeams.length > 1 ? 'md:py-2' : 'md:py-3',
-                          'before:absolute before:inset-y-0 before:right-0 before:left-0 before:-z-10 before:translate-y-[101%] before:bg-pink before:transition-transform before:duration-[450ms] before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-0',
+                          'before:absolute before:inset-y-0 before:right-0 before:left-0 before:-z-10 before:translate-y-[101%] before:bg-pink before:transition-transform motion-reduce:before:transition-none before:duration-[450ms] before:ease-[cubic-bezier(0.22,1,0.36,1)] hover:before:translate-y-0',
                           { 'border-t border-ink/10': index > 0 },
                         ),
                       ),
@@ -382,7 +382,7 @@ const clubPin = (model: Model, club: Club, h: HtmlBuilder<Message>): Html => {
                           h.span(
                             [
                               h.Class(
-                                'flex flex-col transition-transform duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/row:-translate-y-1/2',
+                                'flex flex-col transition-transform motion-reduce:transition-none duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/row:-translate-y-1/2',
                               ),
                             ],
                             [
@@ -597,7 +597,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                                   // The odometer poses: metric parks ABOVE the clip,
                                   // imperial BELOW — toggling rolls one out and the
                                   // other through in the same direction.
-                                  `area-metric col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'invisible -translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`,
+                                  `area-metric col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all motion-reduce:transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'invisible -translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`,
                                 ),
                               ],
                               ['78,871 km².'],
@@ -605,7 +605,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                             h.span(
                               [
                                 h.Class(
-                                  `area-imperial col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'translate-y-0 opacity-100' : 'invisible translate-y-full opacity-0'}`,
+                                  `area-imperial col-start-1 row-start-1 underline decoration-pink decoration-dotted decoration-2 underline-offset-4 transition-all motion-reduce:transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${model.isMapAreaImperial ? 'translate-y-0 opacity-100' : 'invisible translate-y-full opacity-0'}`,
                                 ),
                               ],
                               ['30,452 sq mi.'],

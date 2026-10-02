@@ -2,20 +2,18 @@ import { expect, test } from 'vite-plus/test';
 
 import './styles.css';
 
-// WHAT THIS GUARDS, and what it can’t. Four review rounds in a row found motion
-// still playing for someone who asked for none, every time because a reduced
-// motion rule named a selector and some state rule (`.is-in`, `.is-open`)
-// out-ranked it. The fix was to stop enumerating: one universal `!important`
-// rule that nothing can out-specify.
+// WHAT THIS GUARDS, and what it can’t. Under reduced motion the page removes
+// motion only: keyframe animations and smooth scrolling through one universal
+// `!important` backstop, and every transition that moves something through a
+// reduced-motion rule of its own selector, since a universal
+// `transition-property` override would pair properties with the wrong
+// durations. Color and opacity transitions stay (WCAG 2.3.3).
 //
 // This runner cannot emulate `prefers-reduced-motion` (the page API has no
 // `emulateMedia`), so nothing here proves how the page RENDERS for such a
-// reader. What it proves is that the blanket rule exists, is universal, is
-// important, and — the part an earlier version of this file got wrong — lives
-// in a REDUCE block. Matching on `includes('prefers-reduced-motion')` also
-// collected the `no-preference` blocks, so moving the blanket into one of those
-// (motion for the people who asked for none, stillness for everyone else: the
-// catastrophic inversion) would have passed green.
+// reader. What it proves is that the backstop exists, is universal, is
+// important, lives in a REDUCE block rather than a `no-preference` one, and
+// that every authored motion in the stylesheet is stopped there by name.
 const REDUCE_CONDITION = /prefers-reduced-motion:\s*reduce/;
 
 const reduceRules = (): ReadonlyArray<CSSStyleRule> => {
@@ -33,31 +31,101 @@ const reduceRules = (): ReadonlyArray<CSSStyleRule> => {
   return rules;
 };
 
-test('reduced motion is enforced by one universal rule, not a list of selectors', () => {
+test('a universal backstop removes keyframe motion and smooth scrolling, not transitions', () => {
   const universal = reduceRules().find((rule) => rule.selectorText.split(',')[0]?.trim() === '*');
 
-  expect(universal, 'the blanket * rule is gone, or is not in a reduce block').toBeDefined();
+  expect(universal, 'the backstop * rule is gone, or is not in a reduce block').toBeDefined();
   if (!universal) return;
 
-  // Every one of these has to be `!important`, or a state rule out-ranks it —
-  // which is exactly how the menu overlay kept sliding open and the platform
-  // CTA’s beckon kept looping after the block claimed to have stopped them.
-  // The DELAYS matter as much as the durations: a 0.4s visibility delay is
-  // still a wait imposed on someone who asked for none.
+  // `!important`, or a state rule out-ranks it — which is exactly how the
+  // menu overlay kept sliding open and the platform CTA’s beckon kept looping
+  // after the block claimed to have stopped them.
   for (const property of [
     'animation-duration',
     'animation-delay',
     'animation-iteration-count',
-    'transition-duration',
-    'transition-delay',
+    'scroll-behavior',
   ]) {
     expect(universal.style.getPropertyPriority(property), `${property} is not !important`).toBe(
       'important',
     );
   }
+
+  // Transitions keep their own timing, so color and opacity still change gently.
+  expect(universal.style.getPropertyValue('transition-duration')).toBe('');
+  expect(universal.style.getPropertyValue('transition-delay')).toBe('');
 });
 
-// The blanket overrides durations, not END STATES — so a `fill: both` animation
+// A transition of any of these properties moves something on screen.
+const MOTION = /\b(all|transform|translate|scale|rotate|top|right|bottom|left|inset)\b/;
+const NO_PREFERENCE = /prefers-reduced-motion:\s*no-preference/;
+
+// A selector list split at its top-level commas, leaving those inside `:not()` and `:is()` whole.
+const selectorsOf = (list: string): ReadonlyArray<string> => {
+  const selectors: Array<string> = [];
+  let depth = 0;
+  let current = '';
+  for (const char of list) {
+    if (char === '(') depth += 1;
+    if (char === ')') depth -= 1;
+    if (char === ',' && depth === 0) {
+      selectors.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  selectors.push(current.trim());
+  return selectors;
+};
+
+// Every authored rule that sets motion, outside reduced-motion and no-preference blocks. Tailwind's
+// generated utilities are left out, the markup answering those with `motion-reduce:` variants, and
+// so are StyleX's, which answer in a reduced-motion value of the same property, compiled to a class
+// of its own.
+const authoredMotion = (): ReadonlyArray<{
+  selector: string;
+  kind: 'transition' | 'animation';
+}> => {
+  const found: Array<{ selector: string; kind: 'transition' | 'animation' }> = [];
+  const walk = (rules: CSSRuleList): void => {
+    for (const rule of rules) {
+      if (rule instanceof CSSLayerBlockRule) {
+        if (rule.name !== 'utilities' && !rule.name.startsWith('stylex')) walk(rule.cssRules);
+      } else if (rule instanceof CSSMediaRule) {
+        if (!REDUCE_CONDITION.test(rule.conditionText) && !NO_PREFERENCE.test(rule.conditionText)) {
+          walk(rule.cssRules);
+        }
+      } else if (rule instanceof CSSStyleRule) {
+        const name = rule.style.animationName;
+        for (const selector of selectorsOf(rule.selectorText)) {
+          if (MOTION.test(rule.style.transitionProperty))
+            found.push({ selector, kind: 'transition' });
+          if (name !== '' && name !== 'none') found.push({ selector, kind: 'animation' });
+        }
+      }
+    }
+  };
+  for (const sheet of document.styleSheets) walk(sheet.cssRules);
+  return found;
+};
+
+test('every authored motion stops under reduced motion by its own selector', () => {
+  const stopped = (selector: string, kind: 'transition' | 'animation'): boolean =>
+    reduceRules().some(
+      (rule) =>
+        selectorsOf(rule.selectorText).includes(selector) &&
+        (kind === 'transition'
+          ? rule.style.transitionProperty !== '' && !MOTION.test(rule.style.transitionProperty)
+          : rule.style.animationName === 'none'),
+    );
+  const moving = authoredMotion().filter(({ selector, kind }) => !stopped(selector, kind));
+
+  expect(authoredMotion().length).toBeGreaterThan(0);
+  expect(moving, 'these keep moving under reduced motion').toEqual([]);
+});
+
+// The backstop overrides durations, not END STATES — so a `fill: both` animation
 // whose last keyframe isn’t its resting position parks there instantly. That is
 // a real regression this file exists to catch: the hero photo held a 1.5% crop.
 test('an animation whose final frame is not its resting state opts out by name', () => {
@@ -73,7 +141,7 @@ test('an animation whose final frame is not its resting state opts out by name',
 // for `animationend`.
 //
 // Be clear about what this does and does not catch. It is NOT protecting
-// against a hang — the blanket above sets 0.01ms rather than `none` precisely so
+// against a hang — the backstop above sets 0.01ms rather than `none` precisely so
 // animations still run and still fire their events, so losing this rule would
 // leave the banner closing correctly via the listener. What it protects is a
 // dependency that is invisible from both ends: nothing in index.html points at

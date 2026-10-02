@@ -868,8 +868,8 @@ body {
 /* Reduced motion: `.is-in` IS stamped — revealClass returns it immediately, so
    the reveal is instant rather than absent — which means the cycle would start.
    The `animation: none` below is what actually stops it, and it works where the
-   blanket rule can’t: the blanket overrides duration longhands, and `none` here
-   clears the animation-name the blanket never touches. The first-child rule
+   backstop rule can’t: the backstop overrides duration longhands, and `none`
+   here clears the animation-name the backstop never touches. The first-child rule
    then holds the tile on the first print. */
 @media (prefers-reduced-motion: reduce) {
   .photo-cycle.is-in > img {
@@ -1364,33 +1364,73 @@ body {
 }
 
 /* ------------------------------------------------------------------ */
-/* Reduced motion: show everything, animate nothing.                  */
+/* Reduced motion: show everything, move nothing.                     */
 /* ------------------------------------------------------------------ */
 
 @media (prefers-reduced-motion: reduce) {
-  /* THE BLANKET RULE, and it is deliberately `!important`. Four review rounds
-     in a row found motion still playing for someone who asked for none, and
-     every time the cause was the same: this block named a selector, and a
-     state rule elsewhere (`.is-in`, `.is-open`, a `:not()` chain) out-ranked
-     it. Enumerating selectors here is a race you re-lose every time a state
-     rule is added, because nothing fails when you forget one. A universal
-     near-zero duration cannot be out-specified, so new animations opt OUT by
-     default instead of opting in by omission.
-     Near-zero rather than `none`: an animation still runs, instantly, and
-     lands on its final frame — the statement’s pen-slash ends up drawn rather
-     than vanishing, which is what `animation: none` did to it. */
+  /* THE BACKSTOP: it removes motion only — keyframe animations and smooth
+     scrolling — and leaves transitions alone, so color and opacity still
+     change gently (WCAG 2.3.3 asks only that motion can be turned off). It is
+     `!important` because a state rule elsewhere (`.is-in`, `.is-open`, a
+     `:not()` chain) out-ranks any selector here. Near-zero rather than `none`:
+     an animation still runs, instantly, lands on its final frame and fires
+     its events. Transform transitions cannot be stripped here — a
+     `transition-property` override would pair the remaining properties with
+     the wrong durations, which follow the property list by position — so each
+     one stops below, by its own selector. */
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-delay: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    transition-delay: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 
-  html {
-    scroll-behavior: auto;
+  /* Every transition that moves something keeps only what does not move:
+     reveals keep their fade, the menu glyph its dimming middle bar; the
+     rest snap. */
+  [data-reveal],
+  [data-reveal].is-in,
+  [data-reveal='stamp'].is-in {
+    transition-property: opacity, visibility;
+  }
+
+  .menu-glyph line {
+    transition: opacity 0.25s ease;
+  }
+
+  .club-pin-banner-bar,
+  .map-stage:has(.club-pin:hover)
+    .club-pin:not(:hover):not([data-selected='true'])
+    .club-pin-banner-bar,
+  .club-pin:not(:hover):not([data-selected='true']):not(:focus-within)
+    .club-pin-banner-bar
+    a::before,
+  .menu-overlay,
+  .menu-overlay.is-open,
+  .menu-overlay .menu-item,
+  .platform-beckon svg,
+  .drawn-arrow:not(.platform-beckon .drawn-arrow),
+  .menu-anchor::before,
+  .social-row::before,
+  .match-row::before,
+  .collage-snap,
+  #top [data-parallax] {
+    transition: none;
+  }
+
+  /* Every keyframe animation stops by name, each at its resting state. */
+  .hero-line,
+  .hero-fade,
+  .idle-float,
+  .idle-float-lg,
+  .marquee-track,
+  [data-reveal='strike'].is-in,
+  .menu-overlay.is-open .menu-platform:not(:hover):not(:active) svg,
+  .hero-cta:not(:hover):not(:active) svg,
+  .header-cta.is-visible:not(:hover):not(:active) svg {
+    animation: none;
   }
 
   [data-reveal],
@@ -1410,19 +1450,13 @@ body {
     stroke-dashoffset: 0;
   }
 
-  /* Everything below the blanket rule sets a RESTING STATE, which duration
-     overrides can’t do on their own. Rules that only said `transition: none`
-     or `animation: none` are gone — the blanket covers those, and each one
-     that stayed was another selector to keep in sync (the menu overlay’s slide
-     and the CTA’s beckon both escaped exactly that way). */
-
-  /* THE BLANKET’S ONE BLIND SPOT: it overrides durations, not END STATES.
+  /* THE BACKSTOP’S BLIND SPOT: it overrides durations, not END STATES.
      `hero-photo` is `fill: both` and its final frame is deliberately mid-travel
      — scale(1.015), the hand-off point for the drift that follows — so running
      it instantly parks the photo there: a permanent 1.5% crop off
      `transform-origin: top center` for a reader who asked for no motion, with a
      full-viewport compositing layer held open behind it. The longhand
-     `animation-name` is what the blanket can’t reach, and using it here keeps
+     `animation-name` is what the backstop can’t reach, and using it here keeps
      the duration overrides visible rather than shadowed by a shorthand. */
   .hero-photo {
     animation-name: none;

@@ -89,16 +89,16 @@ const FOCUS_RING = {
   outlineOffset: { default: null, ':focus-visible': focus.offset },
 } as const;
 
-// The CTA's transitions: its fade and slide on the given motion, its colors as a state change, and
-// the visibility leg delayed by `visibilityDelay`.
-const ctaTransition = (motion: string, visibilityDelay: string): string =>
-  [
-    `opacity ${motion}`,
-    `transform ${motion}`,
-    `background-color ${STATE_CHANGE}`,
-    `color ${STATE_CHANGE}`,
-    `visibility 0s ${easing.linear} ${visibilityDelay}`,
-  ].join(', ');
+// The CTA's fade and colors, which stay under reduced motion: the fade on the given motion, the
+// colors as a state change, and the visibility leg delayed by `visibilityDelay`.
+const ctaStill = (motion: string, visibilityDelay: string): string =>
+  `opacity ${motion}, background-color ${STATE_CHANGE}, color ${STATE_CHANGE}, visibility 0s ${easing.linear} ${visibilityDelay}`;
+
+// The CTA's transitions: its slide on the same motion as the fade, dropped under reduced motion.
+const ctaTransition = (motion: string, visibilityDelay: string) => ({
+  default: `transform ${motion}, ${ctaStill(motion, visibilityDelay)}`,
+  [REDUCED_MOTION]: ctaStill(motion, visibilityDelay),
+});
 
 /**
  * The landing page's header bar.
