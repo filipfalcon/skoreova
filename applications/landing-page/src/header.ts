@@ -53,9 +53,9 @@ const NO_ROOM_FOR_LEAD = `@container (max-width: ${LEAD_GIVES_WAY_REM}rem)`;
 const NO_ROOM_FOR_ARROW = `@container (max-width: ${ARROW_GIVES_WAY_REM}rem)`;
 const NO_ROOM_FOR_CTA = `@container (max-width: ${CTA_GIVES_WAY_REM}rem)`;
 
-// Archivo's display cut, in capitals tracked at the caps tracking.
+// Archivo's display cut, in capitals tracked at the caps tracking, with the display cut's fallbacks.
 const DISPLAY_CUT = {
-  fontFamily: font.family,
+  fontFamily: font['display-family'],
   fontStretch: font['display-width'],
   fontWeight: font['display-weight'],
   letterSpacing: font['caps-tracking'],

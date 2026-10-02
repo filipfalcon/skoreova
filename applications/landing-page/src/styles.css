@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+/* Archivo's faces and their fallbacks, in the stylesheet the document's head links, so the
+   browser learns them with the HTML rather than after the module graph. */
+@import '@skoreova/design/font.css';
 
 /* THE CASCADE ORDER, declared once: Tailwind's layers (theme, then base with
    its preflight reset, components, utilities), then StyleX. Layer order is
@@ -16,8 +19,12 @@
   --color-paper: #f3efe8;
   --color-pink: #ff2f8e;
   /* Archivo, the design language's one typeface (@skoreova/design/font.css),
-     in both roles; the display role is its display cut, set by `.display`. */
-  --font-display: 'Archivo', 'Archivo Fallback', sans-serif;
+     in both roles; the display role is its display cut, set by `.display`,
+     with the display cut's own fallbacks (the design package's
+     display-family token). */
+  --font-display:
+    'Archivo', 'Archivo Display Fallback Condensed', 'Archivo Display Fallback Narrow',
+    'Archivo Display Fallback', sans-serif;
   --font-body: 'Archivo', 'Archivo Fallback', sans-serif;
 
   /* Fluid display scale. Each step is named after the Tailwind pair it

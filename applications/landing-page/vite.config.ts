@@ -184,33 +184,54 @@ const preloadHero = (): Plugin => ({
 // latin-ext file loads only where a page draws one of its characters.
 const PRELOADED_FONTS: ReadonlyArray<string> = ['archivo-latin.woff2'];
 
-// The @font-face rules travel inside the app's CSS, so the browser requests a font file only after rendered text needs its glyphs — behind the full bundle download, parse, and first render. A preload link starts the download at parse time, in parallel with the bundle, so the intro's faces are ready by first paint instead of swapping in mid-ignition on slow connections.
+// A preload link starts the font's download as the HTML is parsed, in parallel with the stylesheet and the bundle, so the intro's faces are ready by first paint instead of swapping in mid-ignition on slow connections. The URL is the one the stylesheet's own @font-face asks for, or the preload would not satisfy it and the file would download twice: in a build the hashed asset, in dev the URL the dev server rewrote the stylesheet's url() to.
 const preloadFonts = (): Plugin => ({
   name: 'skoreova:preload-fonts',
   transformIndexHtml: {
     order: 'post',
-    handler: (html, { bundle }) => {
-      // Only a build hashes assets; dev serves the source files the moment the stylesheet asks for them.
-      if (bundle === undefined) {
-        return html;
-      }
+    handler: async (html, { bundle, server }) => {
       if (!html.includes('</head>')) {
         throw new Error('preloadFonts: no </head> in index.html to inject the preloads before.');
       }
-      const links = PRELOADED_FONTS.map((font) => {
-        const matches = Object.values(bundle).filter(
-          (item) =>
-            item.type === 'asset' && item.originalFileNames.some((name) => name.endsWith(font)),
-        );
-        const asset = matches[0];
-        if (matches.length !== 1 || asset === undefined) {
-          throw new Error(
-            `preloadFonts: expected exactly one emitted asset for ${font}, found ${matches.length}.`,
-          );
-        }
-        // Font preloads fetch in CORS mode even same-origin; without `crossorigin` the preload's credential mode differs from the stylesheet's own request and the browser downloads the file twice.
-        return `  <link rel="preload" as="font" type="font/woff2" href="/${asset.fileName}" crossorigin>\n`;
-      });
+      const hrefs = await Promise.all(
+        PRELOADED_FONTS.map(async (font) => {
+          if (bundle !== undefined) {
+            const matches = Object.values(bundle).filter(
+              (item) =>
+                item.type === 'asset' && item.originalFileNames.some((name) => name.endsWith(font)),
+            );
+            const asset = matches[0];
+            if (matches.length !== 1 || asset === undefined) {
+              throw new Error(
+                `preloadFonts: expected exactly one emitted asset for ${font}, found ${matches.length}.`,
+              );
+            }
+            return `/${asset.fileName}`;
+          }
+          if (server === undefined) {
+            throw new Error('preloadFonts: neither a bundle nor a dev server to find the font in.');
+          }
+          const stylesheet = html.match(/<link href="(\/[^"]+\.css)" rel="stylesheet"/)?.[1];
+          if (stylesheet === undefined) {
+            throw new Error(
+              'preloadFonts: no stylesheet link in index.html to read the font URL from.',
+            );
+          }
+          // `?direct` asks for the stylesheet as CSS, as its link tag does, not as a JS module.
+          const served = await server.transformRequest(`${stylesheet}?direct`);
+          const href = served?.code.match(
+            new RegExp(`url\\(["']?([^"')]*/${font.replace('.', '\\.')})["']?\\)`),
+          )?.[1];
+          if (href === undefined) {
+            throw new Error(`preloadFonts: ${stylesheet} as served asks for no ${font}.`);
+          }
+          return href;
+        }),
+      );
+      // Font preloads fetch in CORS mode even same-origin; without `crossorigin` the preload's credential mode differs from the stylesheet's own request and the browser downloads the file twice.
+      const links = hrefs.map(
+        (href) => `  <link rel="preload" as="font" type="font/woff2" href="${href}" crossorigin>\n`,
+      );
       return html.replace('</head>', `${links.join('')}  </head>`);
     },
   },

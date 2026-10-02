@@ -1,4 +1,3 @@
-import '@skoreova/design/font.css';
 import { Option } from 'effect';
 import { Runtime } from 'foldkit';
 
