@@ -161,10 +161,13 @@ export const grid = stylex.defineVars({
  *
  * The header's block padding centres a touch target in the header's height, half the difference of
  * the two: fixed, since both are.
+ *
+ * The header's height keeps a literal name, `--layout-header-height`, so stylesheets outside StyleX
+ * (what the header covers: anchored sections, the cookie banner) can read it with `var()`.
  */
 export const layout = stylex.defineVars({
   measure: MEASURE,
-  'header-height': `${HEADER_HEIGHT_REM}rem`,
+  '--layout-header-height': `${HEADER_HEIGHT_REM}rem`,
   'touch-target': `${TOUCH_TARGET_REM}rem`,
   icon: `${ICON_REM}rem`,
   'header-padding-block': `${(HEADER_HEIGHT_REM - TOUCH_TARGET_REM) / 2}rem`,

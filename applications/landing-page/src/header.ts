@@ -127,20 +127,14 @@ const ctaTransition = (motion: string, visibilityDelay: string) => ({
  */
 export const styles = stylex.create({
   // The translucent chrome over a blur of the page under it, on the chrome layer, over the menu
-  // overlay that slides out from beneath it. The bar's box is the header height, the rule drawn
-  // under it, so a touch target centred in it leaves header-padding-block above and below.
+  // overlay that slides out from beneath it. The bar is exactly the header height, so a touch target
+  // centred in it leaves header-padding-block above and below.
   bar: {
     position: 'fixed',
     insetInline: 0,
     top: 0,
     zIndex: layer.chrome,
-    boxSizing: 'content-box',
-    height: layout['header-height'],
-    // The rule ends the blur in a hard edge: without it the bar's frosted ground and dark content
-    // scrolling under it meet in a smear with no line between them.
-    borderBottomWidth: chrome['rule-width'],
-    borderBottomStyle: 'solid',
-    borderBottomColor: chrome['rule-color'],
+    height: layout['--layout-header-height'],
     backgroundColor: chrome.fill,
     backdropFilter: chrome.blur,
     WebkitBackdropFilter: chrome.blur,

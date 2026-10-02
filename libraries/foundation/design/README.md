@@ -38,6 +38,7 @@ Every length is in `rem`, rounded to four decimals. No type step grows more than
 - Space: Utopia's multipliers of step 0 and its one-up pairs, plus `s-l`.
 - Grid: Utopia's defaults, twelve columns, gutter and gap `s-l`, container 80rem including the gutters.
 - Header block padding: (header height − touch target) / 2 = (4rem − 3rem) / 2 = 0.5rem, fixed like both axioms it comes from. Not space `2xs`, which is fluid and equals 8px only at 320.
+- The header height's var keeps a literal name, `--layout-header-height`, so stylesheets outside StyleX (anchored sections' scroll margin, the cookie banner) read it with `var()`.
 
 **Data tables.** A row pads its block by space `xs`, so a row of step 0 text, its line height plus two `xs`, equals space `xl` exactly: 3 × step 0, 48 → 60 px. Height comes from padding (or a minimum height), never a fixed height, so a row grows with its content.
 
@@ -82,7 +83,7 @@ python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
 
 **Brand.** The logo is an asset, not interface, so the color roles do not apply to it: `brand` holds its own fixed colors, outside the dynamic-color algorithm. `logo-type`, the letters, is `on-surface`'s value; `logo-mark`, the period, is the brand pink `#ff2f8e` itself, the primary source before Fidelity shifts it. The logo keeps them in every state: it does not recolor on hover, and keyboard focus draws the standard ring. Pink stays in the interface for action and now only, without exceptions.
 
-**Chrome.** Over any content the translucent bar stays a surface of the palette: it fills with the surface at alpha 0.858 (0.8575 rounded up), the lowest at which, composited over pure white in sRGB, its tone (CIELAB L\*) does not exceed tone 22 of `surface-container-highest`, the lightest surface role. On-surface, on-surface-variant and primary then keep 4.5:1 over white as a consequence (9.6, 7.3 and 7.3:1). It blurs by space `m`, one body line, unsaturated; and ends in a 1px `outline-variant` rule.
+**Chrome.** Over any content the translucent bar stays a surface of the palette: it fills with the surface at alpha 0.858 (0.8575 rounded up), the lowest at which, composited over pure white in sRGB, its tone (CIELAB L\*) does not exceed tone 22 of `surface-container-highest`, the lightest surface role. On-surface, on-surface-variant and primary then keep 4.5:1 over white as a consequence (9.6, 7.3 and 7.3:1). It blurs by space `m`, one body line, unsaturated, and is exactly the header height: no rule ends it.
 
 ## Motion
 

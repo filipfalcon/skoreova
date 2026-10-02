@@ -85,9 +85,9 @@
    it — without this, fragment navigation decapitated each section’s first
    rows. Native jumps (initial load with a #hash) honor the property on
    their own; animateScrollTo (command.ts) reads it explicitly. The value
-   is the header's height, 4rem at every width, and its 1px hairline. */
+   is the header's height, from @skoreova/design's layout tokens. */
 section[id] {
-  scroll-margin-top: calc(4rem + 1px);
+  scroll-margin-top: var(--layout-header-height);
 }
 
 html {
@@ -1356,7 +1356,7 @@ body {
    hardcoded hex. Nothing here can flash unstyled: the banner ships with
    `hidden` and is only revealed by script seconds later. */
 /* On phones the banner is a full-width strip dropping in from under
-   the fixed header: pinned just below it (top = the header’s height and hairline) and
+   the fixed header: pinned just below it (top = the header’s height) and
    stacked UNDER it (the banner layer, below the bar's chrome), so the slide reads
    as emerging from beneath the bar. It also stamps `.has-cookie-banner`
    + `--cookie-banner-h` on <html> (see the script below) and the app’s
@@ -1368,7 +1368,7 @@ body {
      under the menu overlay, which covers it while open, and under the bar it
      slides out from beneath. */
   z-index: 1;
-  top: calc(4rem + 1px);
+  top: var(--layout-header-height);
   left: 0;
   width: 100%;
   padding: 0.875rem 1.25rem;

@@ -131,7 +131,7 @@ describe('the layout measures', () => {
   test('are the fixed axioms', () => {
     expect(layout).toMatchObject({
       measure: '66ch',
-      'header-height': `${HEADER_HEIGHT_REM}rem`,
+      '--layout-header-height': `${HEADER_HEIGHT_REM}rem`,
       'touch-target': `${TOUCH_TARGET_REM}rem`,
       icon: `${ICON_REM}rem`,
     });

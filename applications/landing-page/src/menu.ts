@@ -1,5 +1,6 @@
 import { layer } from '@skoreova/design/layer.stylex';
 import { duration, easing } from '@skoreova/design/motion.stylex';
+import { layout } from '@skoreova/design/scale.stylex';
 import * as stylex from '@stylexjs/stylex';
 import { Option } from 'effect';
 import clsx from 'clsx';
@@ -33,6 +34,8 @@ export const styles = stylex.create({
   // The menu, on the overlay layer, beneath the bar it slides out from.
   overlay: {
     zIndex: layer.overlay,
+    // The list starts below the bar.
+    paddingTop: layout['--layout-header-height'],
   },
   opening: {
     transition: menuSlide(ENTERING, '0s'),
@@ -56,10 +59,9 @@ export const menuOverlayView = (model: Model, h: HtmlBuilder<Message>): Html =>
       h.Id('menu-overlay'),
       ...getStyleXAttributesWith(
         h,
-        clsx(
-          'menu-overlay fixed inset-0 flex flex-col overflow-y-auto bg-ink pt-[calc(4rem+1px)]',
-          { 'is-open': model.isMenuOpen },
-        ),
+        clsx('menu-overlay fixed inset-0 flex flex-col overflow-y-auto bg-ink', {
+          'is-open': model.isMenuOpen,
+        }),
         styles.overlay,
         model.isMenuOpen ? styles.opening : styles.closing,
       ),

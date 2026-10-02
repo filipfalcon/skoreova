@@ -186,9 +186,4 @@ describe('the chrome', () => {
   test('blurs by space m, unsaturated', () => {
     expect(chrome.blur).toBe(`blur(${space.m})`);
   });
-
-  test('ends in a 1px outline-variant rule', () => {
-    expect(chrome['rule-color']).toBe(color['outline-variant']);
-    expect(chrome['rule-width']).toBe('1px');
-  });
 });

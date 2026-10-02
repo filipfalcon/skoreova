@@ -84,12 +84,9 @@ export const focus = stylex.defineVars({
  * alpha at which, composited in sRGB over pure white, its tone (CIELAB L*) does not exceed tone 22
  * of `surface-container-highest`, the lightest surface role. That is 0.8575, rounded up. Every text
  * color the bar sets (on-surface, on-surface-variant, primary) then keeps 4.5:1 over white beneath
- * it. The blur is one body line, so text scrolling beneath is never legible. A rule in
- * `outline-variant` ends the bar.
+ * it. The blur is one body line, so text scrolling beneath is never legible.
  */
 export const chrome = stylex.defineVars({
   fill: 'rgba(20, 19, 16, 0.858)',
   blur: `blur(${space.m})`,
-  'rule-color': '#48473c',
-  'rule-width': '1px',
 });
