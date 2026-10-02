@@ -316,6 +316,9 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
               h.a(
                 [
                   h.Href(platformUrl),
+                  // Hidden, it is also inert: out of the focus order and the accessibility tree
+                  // whatever its styles do.
+                  ...(model.heroPastHeader ? [] : [h.Inert(true)]),
                   ...getStyleXAttributes(
                     h,
                     stylex.defaultMarker(),
