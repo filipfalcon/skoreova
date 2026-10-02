@@ -9,7 +9,7 @@ import { Option } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import { platformArrow, styles as arrowStyles } from './arrow';
-import { logoVariants, platformUrl } from './data';
+import { logoWords, platformUrl } from './data';
 import { MAIN_CONTENT_ID } from './main-content';
 import { menuGlyph } from './menu-glyph';
 import { glyph } from './menu-glyph.stylex';
@@ -182,9 +182,10 @@ export const styles = stylex.create({
   period: {
     color: brand['logo-mark'],
   },
-  // The idle easter egg (logoVariants in data.ts): the logo's own letters give way to a variant
-  // drawn over them, so the link keeps its box and the bar never shifts. The swap is a state
-  // change, instant under reduced motion.
+  // The idle easter egg (logoWords in data.ts): the logo's own letters give way to a variant drawn
+  // over them, out of flow, so the link keeps its box and the bar never shifts; a variant wider than
+  // the letters reaches right, into the row's free space, only where it fits (fittingLogoWords).
+  // The swap is a state change; the egg does not run under reduced motion at all.
   letters: {
     transition: { default: `opacity ${STATE_CHANGE}`, [REDUCED_MOTION]: 'none' },
   },
@@ -323,9 +324,30 @@ export const styles = stylex.create({
   },
 });
 
+/**
+ * The id of the header's logo link.
+ */
+export const LOGO_ID = 'logo';
+
+/**
+ * The logo words the header row has room for right now: each variant's rendered width against the
+ * room from the logo's left edge to the next item in the row, less the row's gap, so a shown
+ * variant moves neither the CTA nor the menu.
+ */
+export const fittingLogoWords = (): ReadonlyArray<number> => {
+  const logo = document.getElementById(LOGO_ID);
+  const next = logo?.nextElementSibling;
+  const row = logo?.parentElement;
+  if (!logo || !next || !row) return [];
+  const gap = Number.parseFloat(getComputedStyle(row).columnGap) || 0;
+  const room = next.getBoundingClientRect().left - gap - logo.getBoundingClientRect().left;
+  return Array.from(logo.querySelectorAll<HTMLElement>('[data-logo-word]')).flatMap((variant) =>
+    variant.getBoundingClientRect().width <= room ? [Number(variant.dataset['logoWord'])] : [],
+  );
+};
+
 export const headerView = (model: Model, h: HtmlBuilder<Message>): Html => {
-  // The variant the current or last idle period showed, drawn faded out until one shows.
-  const variant = logoVariants[Option.getOrElse(model.logoVariant, () => 0)] ?? logoVariants[0];
+  const isShowingWord = Option.isSome(model.shownLogoWord);
   return h.header(
     [...getStyleXAttributes(h, styles.bar)],
     [
@@ -341,6 +363,7 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html => {
             // Navigate command scrolls to 0 when there’s no fragment), not a
             // `#top` anchor smooth-scroll.
             [
+              h.Id(LOGO_ID),
               h.Href(homeRouter()),
               h.AriaLabel('Skóreová, home'),
               ...getStyleXAttributes(h, styles.wordmark),
@@ -348,29 +371,30 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html => {
             [
               h.span(
                 [
-                  ...getStyleXAttributes(
-                    h,
-                    styles.letters,
-                    model.idleState === 'Showing' && styles.lettersAway,
-                  ),
+                  h.DataAttribute('logo-letters', ''),
+                  ...getStyleXAttributes(h, styles.letters, isShowingWord && styles.lettersAway),
                 ],
                 ['Skóreová', h.span([...getStyleXAttributes(h, styles.period)], ['.'])],
               ),
-              // Decoration over the letters: the link keeps its name, and nothing is announced.
-              h.span(
-                [
-                  h.AriaHidden(true),
-                  ...getStyleXAttributes(
-                    h,
-                    styles.variant,
-                    model.idleState === 'Showing' && styles.variantShown,
-                  ),
-                ],
-                [
-                  variant.start,
-                  h.span([...getStyleXAttributes(h, styles.variantWord)], [variant.word]),
-                  variant.end,
-                ],
+              // Decoration over the letters, one per word, each drawn so it can be measured: the
+              // link keeps its name, and nothing is announced.
+              ...logoWords.map((word, index) =>
+                h.span(
+                  [
+                    h.AriaHidden(true),
+                    h.DataAttribute('logo-word', `${index}`),
+                    ...getStyleXAttributes(
+                      h,
+                      styles.variant,
+                      Option.contains(model.shownLogoWord, index) && styles.variantShown,
+                    ),
+                  ],
+                  [
+                    h.span([...getStyleXAttributes(h, styles.variantWord)], [word]),
+                    'ová',
+                    h.span([...getStyleXAttributes(h, styles.period)], ['.']),
+                  ],
+                ),
               ),
             ],
           ),

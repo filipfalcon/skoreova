@@ -8,7 +8,7 @@ import { toString as urlToString } from 'foldkit/url';
 import type { Url } from 'foldkit/url';
 
 import { AppRoute, urlToAppRoute } from './route';
-import { logoVariants } from './data';
+import { logoWords } from './data';
 import type { Model, RevealState } from './model';
 import { Message } from './message';
 import { MAP_LEAGUE_GROUP_ID, MapLeagueRadioGroup } from './radio-groups';
@@ -46,7 +46,8 @@ const initialModel: Model = {
   prefersReducedMotion: false,
   reveals: {},
   idleState: 'Active',
-  logoVariant: Option.none(),
+  shownLogoWord: Option.none(),
+  nextLogoWord: 0,
 };
 
 // Applies a parsed URL to the model — used for the initial load, our own
@@ -159,41 +160,60 @@ export const update = (model: Model, message: Message) =>
     DetectedHeroPastHeader: ({ past }) => ({
       model: modifyFields(model, { heroPastHeader: () => past }),
     }),
-    // A minute without activity shows the logo's next variant: the first in
-    // the list, then each in turn, cycling. One per idle period: only an
-    // active reader can go idle.
-    BecameIdle: () =>
-      model.idleState === 'Active'
+    // An idle turn shows the next word the header has room for, in the list's
+    // order from the one due, cycling; where none fits, the turn passes with
+    // the logo as it is. Only an idle reader between turns, or one just gone
+    // idle, takes a turn.
+    ReachedIdleTurn: ({ fitting }) => {
+      if (model.idleState === 'Turn') return { model };
+      const due = Array.findFirst(
+        Array.makeBy(
+          logoWords.length,
+          (offset) => (model.nextLogoWord + offset) % logoWords.length,
+        ),
+        (index) => Array.contains(fitting, index),
+      );
+      return {
+        model: modifyFields(model, {
+          idleState: () => 'Turn' as const,
+          shownLogoWord: () => due,
+          nextLogoWord: (next) =>
+            Option.match(due, {
+              onNone: () => next,
+              onSome: (index) => (index + 1) % logoWords.length,
+            }),
+        }),
+      };
+    },
+    // The turn's 3 seconds ran out: the logo is itself for the rest of it.
+    EndedIdleTurn: () =>
+      model.idleState === 'Turn'
         ? {
             model: modifyFields(model, {
-              idleState: () => 'Showing' as const,
-              logoVariant: (variant) =>
-                Option.some(
-                  Option.match(variant, {
-                    onNone: () => 0,
-                    onSome: (index) => (index + 1) % logoVariants.length,
-                  }),
-                ),
+              idleState: () => 'Resting' as const,
+              shownLogoWord: () => Option.none(),
             }),
           }
         : { model },
-    // The variant ran its time; the logo stays itself until activity starts
-    // the next idle period.
-    EndedIdleVariant: () =>
-      model.idleState === 'Showing'
-        ? { model: modifyFields(model, { idleState: () => 'Spent' as const }) }
-        : { model },
-    // Activity ends a showing variant at once, and starts the next idle period.
+    // Activity ends a showing word at once, and starts the idle count afresh.
     ResumedActivity: () => ({
-      model: modifyFields(model, { idleState: () => 'Active' as const }),
+      model: modifyFields(model, {
+        idleState: () => 'Active' as const,
+        shownLogoWord: () => Option.none(),
+      }),
     }),
     // The OS setting, on subscribe and on every flip. The view force-reveals
     // everything while it is set, and the wheel subscription follows it. The
     // motion mounts follow the query themselves; when motion comes back,
     // their rebuilt observers report every target's state afresh, so the
     // reveal record needs no reset here — a reset would race those reports.
+    // Reduced motion also stops the logo's easter egg, a showing word included.
     ChangedReducedMotion: ({ reduce }) => ({
-      model: modifyFields(model, { prefersReducedMotion: () => reduce }),
+      model: modifyFields(model, {
+        prefersReducedMotion: () => reduce,
+        idleState: (state) => (reduce ? ('Active' as const) : state),
+        shownLogoWord: (shown) => (reduce ? Option.none() : shown),
+      }),
     }),
     // The reveal observers' report, and the only message that moves a
     // target between reveal states. `revealed`

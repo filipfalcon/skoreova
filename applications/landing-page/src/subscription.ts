@@ -2,27 +2,56 @@
 // no-emission DOM effect), the menu's scroll lock, Escape-to-close, the
 // logo's idle cycle, and the reduced-motion preference.
 
-import { Duration, Effect, Option, Schema, Stream } from 'effect';
+import { Duration, Effect, Option, Schedule, Schema, Stream } from 'effect';
 import { Dom, Subscription } from 'foldkit';
 
 import type { Model } from './model';
 import { Message } from './message';
+import { fittingLogoWords } from './header';
 import { IdleState } from './model';
 import { REDUCED_MOTION_QUERY } from './motion';
 
 // The reader's activity: scrolling (anywhere, the menu overlay's own scroller
-// included, so captured), the wheel, the pointer, and the keyboard. Built on
-// subscribe, as the document exists only in the browser.
-const ACTIVITY_EVENTS = ['scroll', 'wheel', 'pointermove', 'pointerdown', 'keydown'] as const;
+// included, so captured), the wheel, the pointer, touch, the keyboard, and a
+// resize, which changes the header's room for a word. Built on subscribe, as
+// the document exists only in the browser.
+const ACTIVITY_EVENTS = [
+  'scroll',
+  'wheel',
+  'pointermove',
+  'pointerdown',
+  'touchstart',
+  'keydown',
+  'resize',
+] as const;
 const activity = (): Stream.Stream<Event> =>
   ACTIVITY_EVENTS.map((type) =>
-    Stream.fromEventListener<Event>(document, type, { passive: true, capture: true }),
+    Stream.fromEventListener<Event>(type === 'resize' ? window : document, type, {
+      passive: true,
+      capture: true,
+    }),
   ).reduce((merged, next) => Stream.merge(merged, next));
 
-// A minute without activity makes the reader idle.
-const IDLE_AFTER = Duration.seconds(60);
-// The logo's variant shows for 3 seconds: self-updating content that ends within WCAG 2.2.2's 5.
-const VARIANT_FOR = Duration.seconds(3);
+// Emits once the document has been visible for the given whole seconds, counted
+// in one-second ticks that a hidden document does not count: the idle cycle
+// pauses while the page is out of sight.
+const afterVisibleSeconds = (seconds: number): Stream.Stream<void> =>
+  Stream.fromSchedule(Schedule.spaced(Duration.seconds(1))).pipe(
+    Stream.filter(() => document.visibilityState === 'visible'),
+    Stream.drop(seconds - 1),
+    Stream.take(1),
+    Stream.map(() => undefined),
+  );
+
+// Half a minute without activity makes the reader idle; then a turn every 15
+// seconds: a word for 3 (self-updating content that stops within WCAG 2.2.2's
+// 5 seconds each time), the logo itself for 12.
+const IDLE_AFTER_SECONDS = 30;
+const TURN_SECONDS = 3;
+const REST_SECONDS = 12;
+
+// A turn reports the words the header has room for at that moment.
+const reachedTurn = (): Message => Message.ReachedIdleTurn({ fitting: fittingLogoWords() });
 
 // SUBSCRIPTIONS
 
@@ -155,34 +184,37 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
         isMenuOpen || prefersReducedMotion ? Stream.empty : smoothWheelScroll,
     },
   ),
-  // The logo's idle cycle, one stream per state. Active: a minute after the
-  // last activity (or the start), the reader is idle. Showing: the variant ends
-  // after its 3 seconds, or at once on activity. Spent: the first activity
-  // starts the next idle period, so a reader who stays idle sees one variant.
+  // The logo's idle cycle, one stream per state, none under reduced motion.
+  // Active: half a minute after the last activity (or the start), the first
+  // turn. Turn: its 3 seconds end it. Resting: 12 seconds on, the next turn.
+  // Activity ends a turn or a rest at once.
   idle: entry(
-    { idleState: IdleState },
+    { idleState: IdleState, prefersReducedMotion: Schema.Boolean },
     {
-      modelToDependencies: (model) => ({ idleState: model.idleState }),
-      dependenciesToStream: ({ idleState }) => {
+      modelToDependencies: (model) => ({
+        idleState: model.idleState,
+        prefersReducedMotion: model.prefersReducedMotion,
+      }),
+      dependenciesToStream: ({ idleState, prefersReducedMotion }) => {
+        if (prefersReducedMotion) return Stream.empty;
+        const resumed = activity().pipe(Stream.map(() => Message.ResumedActivity()));
         switch (idleState) {
           case 'Active':
             return Stream.concat(Stream.make(undefined), activity()).pipe(
-              Stream.debounce(IDLE_AFTER),
+              Stream.switchMap(() => afterVisibleSeconds(IDLE_AFTER_SECONDS)),
               Stream.take(1),
-              Stream.map(() => Message.BecameIdle()),
+              Stream.map(reachedTurn),
             );
-          case 'Showing':
+          case 'Turn':
             return Stream.merge(
-              Stream.fromEffect(Effect.sleep(VARIANT_FOR)).pipe(
-                Stream.map(() => Message.EndedIdleVariant()),
-              ),
-              activity().pipe(Stream.map(() => Message.ResumedActivity())),
+              afterVisibleSeconds(TURN_SECONDS).pipe(Stream.map(() => Message.EndedIdleTurn())),
+              resumed,
             ).pipe(Stream.take(1));
-          case 'Spent':
-            return activity().pipe(
-              Stream.take(1),
-              Stream.map(() => Message.ResumedActivity()),
-            );
+          case 'Resting':
+            return Stream.merge(
+              afterVisibleSeconds(REST_SECONDS).pipe(Stream.map(reachedTurn)),
+              resumed,
+            ).pipe(Stream.take(1));
         }
       },
     },

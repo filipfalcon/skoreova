@@ -2,7 +2,7 @@ import { type Cut, DISPLAY_CUT, archivoAt } from '@skoreova/design/archivo';
 import { describe, expect, test } from 'vite-plus/test';
 
 import { ARROW_GIVES_WAY_REM, CTA_GIVES_WAY_REM, LEAD_GIVES_WAY_REM } from './header';
-import { logoVariants } from './data';
+import { logoWords } from './data';
 import { MENU_GLYPH_HEIGHT, MENU_GLYPH_WIDTH } from './menu-glyph';
 
 // The header row's give-way widths, recomputed from Archivo's advances at the cuts the header sets
@@ -84,46 +84,20 @@ describe('the logo’s period, SKÓREOVÁ | .', () => {
   });
 });
 
-// The logo's idle variants draw over the logo's own letters, so each must render no wider than the
-// logo itself. Measured per piece, as they render: the variant's word is an element of its own, and
-// WebKit shapes each inline element apart, so no kerning joins the pieces.
-describe('the logo’s idle variants', () => {
-  const pieces = (...texts: ReadonlyArray<string>): number =>
-    texts.reduce(
-      (total, text) => total + advance(text.toUpperCase(), DISPLAY_CUT, CAPS_TRACKING),
-      0,
-    );
-  const logoWidth = pieces('Skóreová', '.') * LOGO_SIZE;
-
-  test.each(logoVariants.map((variant) => [variant.word, variant] as const))(
-    '%s keeps the logo’s own first and last letters',
-    (_word, variant) => {
-      expect('Skóreová'.startsWith(variant.start)).toBe(true);
-      expect('Skóreová'.endsWith(variant.end)).toBe(true);
-    },
-  );
-
-  test.each([
-    ['Slay', 134.18],
-    ['Periodt', 148.99],
-    ['Queen', 142.94],
-  ])('%s renders %fpx wide, within the logo’s 150.39px', (word, stated) => {
-    const variant = logoVariants.find((candidate) => candidate.word === word);
-    if (variant === undefined) throw new Error(`no ${word} variant`);
-    const width = pieces(variant.start, variant.word, variant.end) * LOGO_SIZE;
-    expect(logoWidth).toBeCloseTo(150.39, 2);
-    expect(width).toBeCloseTo(stated, 2);
-    expect(width).toBeLessThanOrEqual(logoWidth);
-  });
-
-  test('every variant fits', () => {
-    for (const variant of logoVariants) {
-      expect(pieces(variant.start, variant.word, variant.end) * LOGO_SIZE).toBeLessThanOrEqual(
-        logoWidth,
-      );
-    }
-  });
-});
+// The row each state renders at a viewport, after give-way, and the width it leaves spare.
+const spare = (viewport: number, ctaShown: boolean): number => {
+  const widths = row(viewport);
+  const rem = widths.content / 16;
+  const asked =
+    !ctaShown || rem <= CTA_GIVES_WAY_REM
+      ? widths.noCta
+      : rem <= ARROW_GIVES_WAY_REM
+        ? widths.noArrow
+        : rem <= LEAD_GIVES_WAY_REM
+          ? widths.shortCta
+          : widths.longCta;
+  return widths.content - asked;
+};
 
 describe('the header row', () => {
   test('measures the advances its comments state', () => {
@@ -161,21 +135,6 @@ describe('the header row', () => {
     expect(row(320).noCta).toBeCloseTo(206.4, 1);
   });
 
-  // The row each state renders at a viewport, after give-way, and the width it leaves spare.
-  const spare = (viewport: number, ctaShown: boolean): number => {
-    const widths = row(viewport);
-    const rem = widths.content / 16;
-    const asked =
-      !ctaShown || rem <= CTA_GIVES_WAY_REM
-        ? widths.noCta
-        : rem <= ARROW_GIVES_WAY_REM
-          ? widths.noArrow
-          : rem <= LEAD_GIVES_WAY_REM
-            ? widths.shortCta
-            : widths.longCta;
-    return widths.content - asked;
-  };
-
   test.each([
     // Logo and menu; shown, the CTA gave way.
     [320, false, 81.6],
@@ -199,5 +158,48 @@ describe('the header row', () => {
       expect(spare(viewport, false)).toBeGreaterThanOrEqual(0);
       expect(spare(viewport, true)).toBeGreaterThanOrEqual(0);
     }
+  });
+});
+
+// The logo's idle words take Skóre's place before the logo's own "ová.", drawn over the letters and
+// reaching right into the row's free space where wider: each shows only where the row has that
+// room, so nothing in the row moves. Measured per piece, as they render: the word is an element of
+// its own, and WebKit shapes each inline element apart.
+describe('the logo’s idle words', () => {
+  const pieces = (...texts: ReadonlyArray<string>): number =>
+    texts.reduce(
+      (total, text) => total + advance(text.toUpperCase(), DISPLAY_CUT, CAPS_TRACKING),
+      0,
+    ) * LOGO_SIZE;
+  const logo = pieces('Skóreová', '.');
+  // How much wider than the logo a word's variant renders.
+  const overLogo = (word: string): number => pieces(word, 'ová', '.') - logo;
+
+  test.each([
+    ['Slay', -23.3],
+    ['Periodt', 25.95],
+    ['Queen', 1.71],
+    ['Icon', -23.02],
+    ['Baddie', 9.56],
+  ])('%s renders %fpx wider than the logo', (word, stated) => {
+    expect(logoWords).toContain(word);
+    expect(overLogo(word)).toBeCloseTo(stated, 2);
+  });
+
+  // The words a turn can show at a viewport, with the CTA hidden or shown.
+  const fitting = (viewport: number, ctaShown: boolean): ReadonlyArray<string> =>
+    logoWords.filter((word) => overLogo(word) <= spare(viewport, ctaShown));
+
+  test.each([
+    [320, false, logoWords],
+    [320, true, logoWords],
+    [375, false, logoWords],
+    [375, true, ['Slay', 'Queen', 'Icon', 'Baddie']],
+    [390, false, logoWords],
+    [390, true, ['Slay', 'Queen', 'Icon']],
+    [430, false, logoWords],
+    [430, true, logoWords],
+  ])('at %ipx, CTA shown: %s, has room for %j', (viewport, ctaShown, words) => {
+    expect(fitting(viewport, ctaShown)).toEqual(words);
   });
 });

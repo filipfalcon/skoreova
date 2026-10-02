@@ -2,6 +2,8 @@ import { Runtime } from 'foldkit';
 import { beforeAll, expect, test } from 'vite-plus/test';
 import { page } from 'vite-plus/test/browser';
 
+import { logoWords } from './data';
+import { fittingLogoWords } from './header';
 import { Model, init, routing, update, view } from './main';
 import './styles.css';
 
@@ -109,7 +111,7 @@ const unsplitWidth = (logo: HTMLElement): number => {
 };
 
 test.each([
-  ['the header', 'header a[href="/"] > span:first-child'],
+  ['the header', 'header [data-logo-letters]'],
   ['the footer', 'footer .display'],
 ])('%s’s logo keeps its width across the period’s span', (_name, selector) => {
   const logo = element(selector);
@@ -117,7 +119,7 @@ test.each([
 });
 
 test.each([
-  ['the header', 'header a[href="/"] > span:first-child'],
+  ['the header', 'header [data-logo-letters]'],
   ['the footer', 'footer .display'],
 ])('%s’s logo is the name and its period, with nothing between them', (_name, selector) => {
   expect(element(selector).textContent).toBe('Skóreová.');
@@ -129,13 +131,18 @@ test('names the header’s logo link as the brand', async () => {
     .toBeInTheDocument();
 });
 
-// The idle variant is drawn over the logo's letters, out of flow: at rest it is hidden and the
-// link's box is the letters' own.
-test('keeps the idle variant hidden at rest and out of the logo’s box', () => {
+// The idle words are drawn over the logo's letters, out of flow: at rest every one is hidden, the
+// link's box is the letters' own, and with the CTA hidden the row has room for every word.
+test('keeps the idle words hidden at rest and out of the logo’s box', () => {
   const logo = element('header a[href="/"]');
-  const variant = element('header a[href="/"] > span[aria-hidden="true"]');
-  expect(getComputedStyle(variant).visibility).toBe('hidden');
-  expect(getComputedStyle(variant).position).toBe('absolute');
-  const letters = element('header a[href="/"] > span:first-child');
+  const words = Array.from(logo.querySelectorAll<HTMLElement>('[data-logo-word]'));
+  expect(words.length).toBe(logoWords.length);
+  for (const word of words) {
+    expect(getComputedStyle(word).visibility).toBe('hidden');
+    expect(getComputedStyle(word).position).toBe('absolute');
+    expect(word.getAttribute('aria-hidden')).toBe('true');
+  }
+  const letters = element('header [data-logo-letters]');
   expect(logo.getBoundingClientRect().width).toBeCloseTo(letters.getBoundingClientRect().width, 1);
+  expect(fittingLogoWords()).toEqual(logoWords.map((_word, index) => index));
 });

@@ -19,7 +19,8 @@ export const landingModel = Model.make({
   prefersReducedMotion: false,
   reveals: {},
   idleState: 'Active',
-  logoVariant: Option.none(),
+  shownLogoWord: Option.none(),
+  nextLogoWord: 0,
 });
 
 // The full-screen menu overlay open.

@@ -15,10 +15,10 @@ export type RevealState = typeof RevealState.Type;
 export const MapLeague = Schema.Literals(['All', 'First', 'Second']);
 export type MapLeague = typeof MapLeague.Type;
 
-// Where the reader is in the logo's idle cycle: Active while they use the page,
-// Showing while the logo shows a variant, Spent once it has, until activity
-// starts the next idle period.
-export const IdleState = Schema.Literals(['Active', 'Showing', 'Spent']);
+// Where the reader is in the logo's idle cycle: Active while they use the page;
+// once idle, a Turn of 3 seconds (a variant, where one fits) and then Resting
+// for 12, turn after turn, until activity makes them Active again.
+export const IdleState = Schema.Literals(['Active', 'Turn', 'Resting']);
 export type IdleState = typeof IdleState.Type;
 
 export const Model = Schema.Struct({
@@ -69,10 +69,11 @@ export const Model = Schema.Struct({
   // the class strings again — the old "reveal targets' classes must stay
   // static forever" invariant is gone.
   reveals: Schema.Record(Schema.String, RevealState),
-  // The logo's idle easter egg (see logoVariants in data.ts): the cycle's
-  // state, fed by the idle subscription, and the index of the variant the
-  // current or last idle period showed (None before the first).
+  // The logo's idle easter egg (see logoWords in data.ts): the cycle's state,
+  // fed by the idle subscription; the word the current turn shows (None
+  // between turns, or for a turn where none fits); and the word to try next.
   idleState: IdleState,
-  logoVariant: Schema.Option(Schema.Number),
+  shownLogoWord: Schema.Option(Schema.Number),
+  nextLogoWord: Schema.Number,
 });
 export type Model = typeof Model.Type;
