@@ -1,5 +1,6 @@
 import { Runtime } from 'foldkit';
 import { beforeAll, expect, test } from 'vite-plus/test';
+import { page } from 'vite-plus/test/browser';
 
 import { Model, init, routing, update, view } from './main';
 import './styles.css';
@@ -84,4 +85,46 @@ test('keeps the row inside the viewport with the CTA shown', async () => {
     window.innerWidth,
   );
   window.scrollTo({ top: 0, behavior: 'instant' });
+});
+
+// The logo's period is an element of its own, and its pink stops nothing from shaping the word as
+// one: its width as rendered against the same element holding the whole as one text node. The
+// logo is a flex container, whose items shape separately in every engine, and WebKit breaks shaping
+// at any inline element's boundary too; Archivo joins nothing across Á | . (header-fit.test.ts), so
+// the two widths match.
+const textWidth = (node: Node): number => {
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  return range.getBoundingClientRect().width;
+};
+
+const unsplitWidth = (logo: HTMLElement): number => {
+  const unsplit = logo.cloneNode(false);
+  if (!(unsplit instanceof HTMLElement)) throw new Error('the logo did not clone');
+  unsplit.textContent = logo.textContent;
+  logo.after(unsplit);
+  const width = textWidth(unsplit);
+  unsplit.remove();
+  return width;
+};
+
+test.each([
+  ['the header', 'header a[href="/"]'],
+  ['the footer', 'footer .display'],
+])('%s’s logo keeps its width across the period’s span', (_name, selector) => {
+  const logo = element(selector);
+  expect(Math.abs(textWidth(logo) - unsplitWidth(logo))).toBeLessThanOrEqual(0.1);
+});
+
+test.each([
+  ['the header', 'header a[href="/"]'],
+  ['the footer', 'footer .display'],
+])('%s’s logo is the name and its period, with nothing between them', (_name, selector) => {
+  expect(element(selector).textContent).toBe('Skóreová.');
+});
+
+test('names the header’s logo link as the brand', async () => {
+  await expect
+    .element(page.getByRole('link', { name: 'Skóreová, home', exact: true }))
+    .toBeInTheDocument();
 });

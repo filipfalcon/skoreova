@@ -75,6 +75,24 @@ const fitsFrom = (key: 'longCta' | 'shortCta' | 'noArrow' | 'noCta'): number => 
   throw new Error(`${key} never fits`);
 };
 
+// The logo's period is an element of its own, which engines may shape apart from the name: the split
+// is safe only where the font joins nothing across it.
+describe('the logo’s period, SKÓREOVÁ | .', () => {
+  const display = archivo.getVariation(DISPLAY_CUT);
+  const run = (text: string) => display.layout(text);
+
+  test('kerns nothing against the name', () => {
+    const advanceOf = (text: string): number =>
+      run(text).positions.reduce((total, position) => total + position.xAdvance, 0);
+    expect(advanceOf('SKÓREOVÁ.')).toBeCloseTo(advanceOf('SKÓREOVÁ') + advanceOf('.'), 6);
+  });
+
+  test('substitutes nothing across the split', () => {
+    const ids = (text: string): ReadonlyArray<number> => run(text).glyphs.map((glyph) => glyph.id);
+    expect(ids('SKÓREOVÁ.')).toEqual([...ids('SKÓREOVÁ'), ...ids('.')]);
+  });
+});
+
 describe('the header row', () => {
   test('measures the advances its comments state', () => {
     expect(WORDMARK).toBeCloseTo(5.158, 3);
