@@ -3,7 +3,18 @@ import { font } from '@skoreova/design/font.stylex';
 import { layer } from '@skoreova/design/layer.stylex';
 import { duration, easing } from '@skoreova/design/motion.stylex';
 import { grid, layout, leading, space, type } from '@skoreova/design/scale.stylex';
+import { Button } from '@foldkit/ui';
 import * as stylex from '@stylexjs/stylex';
+import type { Html, HtmlBuilder } from 'foldkit/html';
+
+import { platformArrow, styles as arrowStyles } from './arrow';
+import { platformUrl } from './data';
+import { MAIN_CONTENT_ID } from './main-content';
+import { menuGlyph } from './menu-glyph';
+import { Message } from './message';
+import type { Model } from './model';
+import { homeRouter } from './route';
+import { getStyleXAttributes } from './stylexAttributes';
 
 /**
  * The row content width, in rem, below which the stage label gives way to a showing CTA.
@@ -45,34 +56,6 @@ export const ARROW_GIVES_WAY_REM = 20;
  * 288px row at 320, 113.2px spare.
  */
 export const CTA_GIVES_WAY_REM = 18.75;
-
-/**
- * The menu glyph's drawing, in its own units: three bars of `MENU_GLYPH_BAR` across a box of
- * `MENU_GLYPH_WIDTH` × `MENU_GLYPH_HEIGHT`, the outer two inked flush with its top and bottom
- * edges.
- */
-export const MENU_GLYPH_WIDTH = 24;
-export const MENU_GLYPH_HEIGHT = 20;
-export const MENU_GLYPH_BAR = 3.43;
-
-/**
- * The bars' rows: the outer two half a bar in from the edges, so their ink fills the box, and the
- * middle one at its centre. 1.715, 10 and 18.285.
- */
-export const MENU_GLYPH_TOP_ROW = MENU_GLYPH_BAR / 2;
-export const MENU_GLYPH_MIDDLE_ROW = MENU_GLYPH_HEIGHT / 2;
-export const MENU_GLYPH_BOTTOM_ROW = MENU_GLYPH_HEIGHT - MENU_GLYPH_BAR / 2;
-
-/**
- * The angle, in degrees, the outer bars swing to as the glyph turns into an X.
- *
- * Each bar turns about its own centre, moved to the box's centre, so the X keeps the box's height:
- * a bar of length L and thickness t at angle θ inks a height of L sin θ + t cos θ (its butt caps
- * reach past the ends of its centre line by t/2 cos θ each), and that height equals the box's H. So
- * θ = asin(H / √(L² + t²)) − atan(t / L) = asin(20 / 24.2439) − atan(3.43 / 24) = 55.583° − 8.134°
- * = 47.45°, rounded to the hundredth.
- */
-export const MENU_GLYPH_ANGLE_DEG = 47.45;
 
 // The label's room runs out only between the CTA's own give-way width and its own: below the CTA's
 // the CTA is gone and the label fits again, 52.9px to spare at 320.
@@ -130,24 +113,6 @@ const ctaStill = (motion: string, visibilityDelay: string): string =>
 const ctaTransition = (motion: string, visibilityDelay: string) => ({
   default: `transform ${motion}, ${ctaStill(motion, visibilityDelay)}`,
   [REDUCED_MOTION]: ctaStill(motion, visibilityDelay),
-});
-
-// The outer bars' slide to the middle row: 10 − 1.715 = 8.285.
-const GLYPH_SLIDE = MENU_GLYPH_MIDDLE_ROW - MENU_GLYPH_TOP_ROW;
-
-// The glyph's bars turn between the hamburger and the X: entering as the menu opens, leaving as it
-// closes. The middle bar's fade is a state change either way, and stays under reduced motion while
-// the bars snap.
-const glyphTransition = (motion: string) => ({
-  default: `transform ${motion}, opacity ${STATE_CHANGE}`,
-  [REDUCED_MOTION]: `opacity ${STATE_CHANGE}`,
-});
-
-// The menu slides on the glyph's motion, so the two are one gesture, and is hidden once it has
-// left; it snaps under reduced motion.
-const menuSlide = (motion: string, visibilityDelay: string) => ({
-  default: `transform ${motion}, visibility 0s ${easing.linear} ${visibilityDelay}`,
-  [REDUCED_MOTION]: 'none',
 });
 
 /**
@@ -369,47 +334,95 @@ export const styles = stylex.create({
     transition: `color ${STATE_CHANGE}`,
     ...FOCUS_RING,
   },
-  // An icon's box, centred in the touch target; the glyph's own 24 × 20 drawing sits centred in it.
-  menuGlyph: {
-    width: layout.icon,
-    height: layout.icon,
-  },
-  // Every bar turns about a point of the glyph's own drawing.
-  menuGlyphBar: {
-    transformBox: 'view-box',
-  },
-  // About their own centres.
-  menuGlyphTop: {
-    transformOrigin: `${MENU_GLYPH_WIDTH / 2}px ${MENU_GLYPH_TOP_ROW}px`,
-  },
-  menuGlyphBottom: {
-    transformOrigin: `${MENU_GLYPH_WIDTH / 2}px ${MENU_GLYPH_BOTTOM_ROW}px`,
-  },
-  menuGlyphOpening: {
-    transition: glyphTransition(ENTERING),
-  },
-  menuGlyphClosing: {
-    transition: glyphTransition(LEAVING),
-  },
-  // Open, the outer bars slide to the middle row and swing onto the X's diagonals, and the middle
-  // bar fades away.
-  menuGlyphTopOpen: {
-    transform: `translateY(${GLYPH_SLIDE}px) rotate(${MENU_GLYPH_ANGLE_DEG}deg)`,
-  },
-  menuGlyphMiddleOpen: {
-    opacity: 0,
-  },
-  menuGlyphBottomOpen: {
-    transform: `translateY(${-GLYPH_SLIDE}px) rotate(${-MENU_GLYPH_ANGLE_DEG}deg)`,
-  },
-  // The menu, on the overlay layer, beneath the bar it slides out from.
-  menuOverlay: {
-    zIndex: layer.overlay,
-  },
-  menuOverlayOpening: {
-    transition: menuSlide(ENTERING, '0s'),
-  },
-  menuOverlayClosing: {
-    transition: menuSlide(LEAVING, duration.short4),
-  },
 });
+
+export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
+  h.header(
+    [...getStyleXAttributes(h, styles.bar)],
+    [
+      h.div(
+        [...getStyleXAttributes(h, styles.row)],
+        [
+          h.a(
+            [h.Href(`#${MAIN_CONTENT_ID}`), ...getStyleXAttributes(h, styles.skipLink)],
+            ['Skip to content'],
+          ),
+          h.div(
+            [...getStyleXAttributes(h, styles.identity)],
+            [
+              h.a(
+                // Plain `/` — a soft in-app reset to the landing page top (the
+                // Navigate command scrolls to 0 when there’s no fragment), not a
+                // `#top` anchor smooth-scroll.
+                [
+                  h.Href(homeRouter()),
+                  h.AriaLabel('Skóreová, home'),
+                  ...getStyleXAttributes(h, styles.wordmark),
+                ],
+                ['Skóreová', h.span([...getStyleXAttributes(h, styles.period)], ['.'])],
+              ),
+              h.span(
+                [
+                  ...getStyleXAttributes(
+                    h,
+                    styles.stage,
+                    model.heroPastHeader && styles.stageBesideCta,
+                  ),
+                ],
+                ['Beta'],
+              ),
+            ],
+          ),
+          h.div(
+            [...getStyleXAttributes(h, styles.actions)],
+            [
+              // Shown once the hero, which carries its own CTA, has scrolled under the bar: it
+              // rides `model.heroPastHeader`, which the hero observer feeds (see
+              // ObserveHeroPastHeader), so a header re-render cannot wipe it. Each showing knocks
+              // the arrow anew.
+              h.a(
+                [
+                  h.Href(platformUrl),
+                  ...getStyleXAttributes(
+                    h,
+                    stylex.defaultMarker(),
+                    styles.cta,
+                    model.heroPastHeader ? styles.ctaShown : styles.ctaHidden,
+                  ),
+                ],
+                [
+                  h.span([...getStyleXAttributes(h, styles.ctaLead)], ['Enter ']),
+                  'Platform',
+                  h.span(
+                    [...getStyleXAttributes(h, styles.ctaArrow)],
+                    [platformArrow(model.heroPastHeader && arrowStyles.knockOnHeaderEntry)],
+                  ),
+                ],
+              ),
+              Button.view(
+                {
+                  onClick: Message.ToggledMenu(),
+                  toView: ({ button }) =>
+                    h.button(
+                      [
+                        ...button,
+                        // The FocusMenuToggle Command returns focus here after
+                        // Escape closes the overlay.
+                        h.Id('menu-toggle'),
+                        // One name in both states; aria-expanded carries which.
+                        h.AriaLabel('Menu'),
+                        h.AriaExpanded(model.isMenuOpen),
+                        h.AriaControls('menu-overlay'),
+                        ...getStyleXAttributes(h, styles.menuButton),
+                      ],
+                      [menuGlyph(model.isMenuOpen, h)],
+                    ),
+                },
+                h,
+              ),
+            ],
+          ),
+        ],
+      ),
+    ],
+  );

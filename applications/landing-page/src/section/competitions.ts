@@ -3,7 +3,11 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 import duoImage from '../assets/duo.webp';
 import clsx from 'clsx';
 
-import { container, displayArrow, kicker, maskedLine, revealClass } from '../components';
+import { displayArrow } from '../arrow';
+import { container } from '../container';
+import { kicker } from '../kicker';
+import { maskedLine } from '../masked-line';
+import { revealClass } from '../reveal-class';
 import { competitions, platformUrl } from '../data';
 import type { Competition } from '../data';
 import type { Message } from '../message';

@@ -2,7 +2,9 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import clsx from 'clsx';
 
-import { container, maskedLine, revealClass } from '../components';
+import { container } from '../container';
+import { maskedLine } from '../masked-line';
+import { revealClass } from '../reveal-class';
 import type { Message } from '../message';
 import type { Model } from '../model';
 

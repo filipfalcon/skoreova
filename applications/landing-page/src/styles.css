@@ -272,7 +272,7 @@ body {
 /* Pin fans: on phones the map is a third of its desktop size but the rem
    offsets aren’t — full-length target lines dwarfed the country. Half reach
    below `md`, full reach above. Each geometry var has an optional `-phone`
-   variant (set inline per pin in page/clubs.ts): below `md` it wins over the
+   variant (set inline per pin in section/clubs.ts): below `md` it wins over the
    base value, which lets crowded cities collapse onto shared anchors and re-fan
    their crests into free space on small maps.
 
@@ -342,7 +342,7 @@ body {
      the rim perpendicular (radially). sin/cos of the fan angle project
      that extra radius along the line; downward fans fall out of the same
      math (cos flips negative). --chip-r mirrors the chip size classes in
-     page/clubs.ts: h-8 → sm:h-14 → md:h-16. */
+     section/clubs.ts: h-8 → sm:h-14 → md:h-16. */
   left: calc(var(--fx) * var(--fan-scale) + var(--chip-r) * sin(var(--fangle)));
   top: calc((var(--fy) * var(--fan-scale) + var(--chip-r) * cos(var(--fangle))) * -1);
   translate: -50% -50%;
@@ -518,7 +518,7 @@ body {
 /* The lands' INTERNAL borders don’t pen-draw: each land’s stroke wipes in
    top-to-bottom behind its own clip WHILE the outline pen runs its lap,
    timed (--border-delay/--border-duration, inline from LAND_BORDER_WIPES
-   in page/clubs.ts) so the front crosses the two points where that border meets
+   in section/clubs.ts) so the front crosses the two points where that border meets
    the outline at the exact moment the pen passes them — the strokes meet
    at the junctions. The front is LINEAR on purpose: the meeting math
    assumes constant speed. The paths opt out of the root’s inherited dash
@@ -534,7 +534,7 @@ body {
    holds transparent until the whole figure is drawn (`.is-drawn`, stamped
    when the outline pen closes its lap; the borders always finish
    mid-lap), then the lands fade in one after another, Bohemia → Moravia →
-   Silesia (--tint-delay, inline from page/clubs.ts; the pins wait for the LAST
+   Silesia (--tint-delay, inline from section/clubs.ts; the pins wait for the LAST
    fade before their own land-by-land entrance). The hold is unlayered on
    purpose so it outweighs the checked state’s Tailwind fill utility. The
    keyframes only pin the FROM — the fill lands on whatever the current
@@ -739,7 +739,7 @@ body {
 }
 
 /* The fade's duration is a custom property so the hero CTA's arrow, inside
-   it, can wait for its landing (knockOnHeroLanding in styles/arrow.ts). */
+   it, can wait for its landing (knockOnHeroLanding in arrow.ts). */
 .hero-fade {
   --hero-fade-duration: 0.7s;
   animation: hero-fade var(--hero-fade-duration) ease-out both;
@@ -1043,7 +1043,7 @@ body {
    hidden once the slide-out finishes (transition delay = the slide
    duration), so a fully-closed menu is not painted at all and can’t leave
    any residue behind. Both open and close animate, timed with the menu
-   glyph (menuOverlayOpening / menuOverlayClosing in styles/header.ts). */
+   glyph (the opening / closing styles in menu.ts). */
 .menu-overlay {
   transform: translateY(-100%);
   visibility: hidden;
@@ -1070,7 +1070,7 @@ body {
    with the click itself — the cascade falls WHILE the panel is still
    sliding in. The step and the base fall are custom properties so the
    Platform entry's arrow, the last to land, can wait for it
-   (knockOnMenuLanding in styles/arrow.ts). Closing plays no item motion:
+   (knockOnMenuLanding in arrow.ts). Closing plays no item motion:
    the panel leaves as one piece, and the reset back to the stacked pose
    runs at zero duration DELAYED past the slide-out, once the overlay is
    already off screen. */
@@ -1094,7 +1094,7 @@ body {
 /* The sitewide arrow contract: every drawn arrow inside a hovered link or
    button nudges along its direction — the "go on" gesture. The platform
    CTAs' arrows do not carry the class: they own their hover (platformArrow
-   in components.ts). Hover-gated for touch browsers. */
+   in arrow.ts). Hover-gated for touch browsers. */
 .drawn-arrow {
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }

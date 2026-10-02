@@ -3,14 +3,11 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 import rancovaImage from '../assets/rancova.webp';
 import clsx from 'clsx';
 
-import {
-  container,
-  displayArrow,
-  displayArrowSolo,
-  kicker,
-  maskedLine,
-  revealClass,
-} from '../components';
+import { displayArrow, displayArrowSolo } from '../arrow';
+import { container } from '../container';
+import { kicker } from '../kicker';
+import { maskedLine } from '../masked-line';
+import { revealClass } from '../reveal-class';
 import { haulMatches, platformUrl, starStats } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';

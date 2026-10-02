@@ -5,7 +5,7 @@ import { expect, test } from 'vite-plus/test';
 import { landingModel } from './main.fixtures';
 import { Message, update } from './main';
 import { ObserveHeroPastHeader } from './motion';
-import * as Hero from './page/hero';
+import * as Hero from './section/hero';
 
 // A canary for the BUILD PIPELINE, not for this app’s code. @foldkit/vite-plugin
 // stamps every view result with the identity of the function that produced it,
@@ -43,5 +43,5 @@ test('the vite plugin brands view results under test, as it does in a build', ()
     // browser, and this scene exists only to read the stamp off the render.
     Scene.Mount.resolve(ObserveHeroPastHeader, Message.DetectedHeroPastHeader({ past: false })),
   );
-  expect(identity).toBe('src/page/hero.ts#view');
+  expect(identity).toBe('src/section/hero.ts#view');
 });

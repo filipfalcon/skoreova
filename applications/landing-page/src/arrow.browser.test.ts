@@ -4,12 +4,12 @@ import { page } from 'vite-plus/test/browser';
 
 import { platformUrl } from './data';
 import { Model, init, routing, subscriptions, update, view } from './main';
-import { KNOCKS, KNOCK_MS, LONGEST_WAIT_MS } from './styles/arrow';
+import { KNOCKS, KNOCK_MS, LONGEST_WAIT_MS } from './arrow';
 import './styles.css';
 
 // The platform CTAs' arrows as the browser resolves their styles: the drawn arrow's size from the
 // type, and each knock's timing, its tokens and custom properties computed, against the arithmetic
-// styles/arrow.ts states for WCAG 2.2.2. This runner cannot emulate reduced motion, so the
+// arrow.ts states for WCAG 2.2.2. This runner cannot emulate reduced motion, so the
 // reduced-motion values are not asserted here.
 
 const arrowIn = (scope: string): SVGSVGElement => {

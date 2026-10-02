@@ -10,7 +10,7 @@ import { Message } from './message';
 // state is not: ObserveReveals only watches (IntersectionObserver) and
 // reports ChangedReveals Messages; the Model holds which keyed targets are
 // in, and the view renders `.is-in`/`.is-drawn` (revealClass in
-// components.ts) — the patcher owns those class strings again.
+// reveal-class.ts) — the patcher owns those class strings again.
 //
 // Subsystems (each marked by a data attribute in the view):
 // - [data-reveal]        in/out reveal state, replaying on every re-entry —
@@ -176,7 +176,7 @@ interface MarqueeTrack {
 // [data-reveal] target (through proxies where clipping demands it) and
 // REPORTING entries/exits as ChangedReveals Messages — the Model holds the
 // state and the VIEW renders `.is-in`/`.is-drawn` (see revealClass in
-// components.ts). The count-up/scramble text animations still start
+// reveal-class.ts). The count-up/scramble text animations still start
 // imperatively from the same observer callbacks (they are rAF work, not
 // state), and the recount watcher observes its attribute here. Never
 // installed under reduced motion: the view force-reveals everything and
@@ -550,7 +550,7 @@ const setUpReveals = (
   // ----- Model-driven recounts ---------------------------------------------
   // The land counters react to the league filter: the view stamps
   // `data-recount` with the fresh target FIRST and the filter state second
-  // (`${count}|${mapLeague}` in page/clubs.ts) — the order matters, because
+  // (`${count}|${mapLeague}` in section/clubs.ts) — the order matters, because
   // the split below reads field 0 as the number. Watching
   // that attribute instead of the text fixes two things text-diffing
   // couldn’t: the spin fires even when the VALUE stays the same (every
@@ -643,7 +643,7 @@ const setUpReveals = (
         if (!target.classList.contains('is-in')) return;
         // Only the root’s OWN dash transition ending counts — that is the
         // outline pen closing its lap, and the land borders' clip wipes
-        // are timed to finish mid-lap (see LAND_BORDER_WIPES in page/clubs.ts),
+        // are timed to finish mid-lap (see LAND_BORDER_WIPES in section/clubs.ts),
         // so the whole figure is drawn. Bubbling transitions from the
         // region paths (their clips, the tint) must not stamp early.
         if (event.target === target && event.propertyName === 'stroke-dashoffset') {

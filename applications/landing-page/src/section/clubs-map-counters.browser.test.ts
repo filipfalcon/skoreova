@@ -1,8 +1,8 @@
 import { Runtime } from 'foldkit';
 import { beforeAll, expect, test } from 'vite-plus/test';
 
-import { Model, init, routing, update, view } from './main';
-import './styles.css';
+import { Model, init, routing, update, view } from '../main';
+import '../styles.css';
 
 // The land counters above the map must REACT to the league filter — and
 // keep reacting after the count-up animation has touched their text nodes

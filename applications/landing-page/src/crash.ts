@@ -1,7 +1,7 @@
 import type { Runtime } from 'foldkit';
 import type { Document, HtmlBuilder } from 'foldkit/html';
 
-import { container } from './components';
+import { container } from './container';
 import type { Message } from './message';
 import type { Model } from './model';
 

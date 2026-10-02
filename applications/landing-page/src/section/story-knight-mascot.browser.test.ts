@@ -2,8 +2,8 @@ import { page } from 'vite-plus/test/browser';
 import { Runtime } from 'foldkit';
 import { afterAll, beforeAll, expect, test } from 'vite-plus/test';
 
-import { Model, init, routing, update, view } from './main';
-import './styles.css';
+import { Model, init, routing, update, view } from '../main';
+import '../styles.css';
 
 // Guards the "cut-off knight" saga: the mascot in the on-the-rise section must
 // be fully painted. Two distinct failure modes are pinned down separately:

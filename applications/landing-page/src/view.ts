@@ -1,11 +1,15 @@
 import { createKeyedLazy } from 'foldkit/html';
 import type { Document, Html, HtmlBuilder } from 'foldkit/html';
 
-import { MAIN_CONTENT_ID, footerView, headerView, menuOverlayView } from './components';
+import { footerView } from './footer';
+import { headerView } from './header';
+import { MAIN_CONTENT_ID } from './main-content';
+import { menuOverlayView } from './menu';
 import { SITE_ORIGIN, documentTitle } from './document-title';
 import type { Message } from './message';
 import type { Model } from './model';
 import { MountMotion, ObserveReveals } from './motion';
+import { Policy } from './page';
 import { routePath } from './route';
 import {
   Champions,
@@ -15,11 +19,10 @@ import {
   Hero,
   Marquee,
   National,
-  Policy,
   Star,
   Statement,
   Story,
-} from './page';
+} from './section';
 
 // MEMOIZED SECTIONS. Two of the landing sections take no Model at all, so
 // their markup is identical on every render — and this view re-runs on every

@@ -2,13 +2,13 @@ import { page } from 'vite-plus/test/browser';
 import { Runtime } from 'foldkit';
 import { afterAll, beforeAll, expect, test } from 'vite-plus/test';
 
-import { Model, init, routing, update, view } from './main';
-import './styles.css';
+import { Model, init, routing, update, view } from '../main';
+import '../styles.css';
 
 // Geometric guard for the map’s pin system: measures the real rendered
 // geometry (chips, dots, connector lines) and fails on ANY touching pair —
 // on the phone viewport and on desktop. The phone layout lives on
-// hand-tuned constants (PIN_ANCHOR_PHONE / PIN_ANGLE_PHONE in page/clubs.ts);
+// hand-tuned constants (PIN_ANCHOR_PHONE / PIN_ANGLE_PHONE in section/clubs.ts);
 // whenever those or the club coordinates change, this is what proves the
 // map stayed clean. Also guards that the phone draw-in actually animates
 // progressively (it must not pop in fully drawn).
@@ -68,7 +68,7 @@ const segmentToSegment = (a: Point, b: Point, c: Point, d: Point): number => {
 };
 
 // The pins REVEAL through an inner wrapper (the root keeps its z-index
-// transition; see clubPin in page/clubs.ts): until it intersects the viewport
+// transition; see clubPin in section/clubs.ts): until it intersects the viewport
 // the wrapper holds its entrance offset (translateY), so measuring at an
 // arbitrary scroll position compares settled pins against still-offset
 // ones and reports phantom overlaps. Center the map, wait for every pin’s

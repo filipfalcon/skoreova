@@ -1,11 +1,1 @@
-export * as Champions from './champions';
-export * as Clubs from './clubs';
-export * as Competitions from './competitions';
-export * as Follow from './follow';
-export * as Hero from './hero';
-export * as Marquee from './marquee';
-export * as National from './national';
 export * as Policy from './policy';
-export * as Star from './star';
-export * as Statement from './statement';
-export * as Story from './story';

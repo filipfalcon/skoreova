@@ -485,7 +485,7 @@ export interface Club {
 
 // The slugs stay literal (plain `as const`, validated by the `clubs`
 // assignment below) so ClubSlug is a closed union — Club.slug and the
-// pin-geometry maps in page/clubs.ts key on it, and a renamed slug fails
+// pin-geometry maps in section/clubs.ts key on it, and a renamed slug fails
 // the type check instead of silently dropping a pin. `clubs` itself is
 // the widened ReadonlyArray<Club>, so consumers read `parent` uniformly
 // as the optional field.

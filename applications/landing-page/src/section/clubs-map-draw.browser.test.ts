@@ -1,8 +1,8 @@
 import { Runtime } from 'foldkit';
 import { beforeAll, expect, test } from 'vite-plus/test';
 
-import { Model, init, routing, update, view } from './main';
-import './styles.css';
+import { Model, init, routing, update, view } from '../main';
+import '../styles.css';
 
 // Guards the map’s pen-stroke draw-in: after the clubs section scrolls into
 // view, the country outline AND the internal land borders must finish

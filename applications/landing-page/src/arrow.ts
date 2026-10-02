@@ -1,6 +1,10 @@
 import { font } from '@skoreova/design/font.stylex';
 import { duration, easing } from '@skoreova/design/motion.stylex';
 import * as stylex from '@stylexjs/stylex';
+import { inertHtml as ih } from 'foldkit/html';
+import type { Html } from 'foldkit/html';
+
+import { type StyleXStyle, getStyleXAttributesWith } from './stylexAttributes';
 
 // Space 3xs's share of step 0, a quarter, applied to the text's own size: the gap before an arrow
 // that follows text, and the distance a platform arrow nudges.
@@ -112,3 +116,68 @@ export const styles = stylex.create({
     'calc((var(--menu-count) - 1) * var(--menu-fall-step) + var(--menu-fall-base))',
   ),
 });
+
+// A chunky inline arrow for display-type CTAs. The text glyph "→" renders
+// hairline-thin beside the display cut and sits on the baseline instead of
+// the cap center. One filled silhouette rather than strokes — square line
+// caps left a nub poking past the head’s point. Its box stands on the
+// baseline as tall as the capitals (styles.arrow), so the shaft lands on
+// the optical center of the uppercase line.
+const drawnRightArrow = (hook: string, ...variants: ReadonlyArray<StyleXStyle>): Html =>
+  ih.svg(
+    [
+      ih.Xmlns('http://www.w3.org/2000/svg'),
+      ih.ViewBox('0 0 32 24'),
+      ...getStyleXAttributesWith(ih, hook, styles.arrow, ...variants),
+      ih.Fill('currentColor'),
+      ih.AriaHidden(true),
+    ],
+    [ih.path([ih.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')])],
+  );
+
+// `drawn-arrow` is the sitewide hover contract: any drawn arrow inside a
+// hovered link or button nudges right (styles.css). It follows text…
+export const displayArrow: Html = drawnRightArrow('drawn-arrow', styles.follows);
+// …or stands alone (the row-affordance chips) — no gap to carry.
+export const displayArrowSolo: Html = drawnRightArrow('drawn-arrow');
+
+/**
+ * The arrow of a platform CTA, which owns its hover instead of the sitewide contract: it knocks
+ * once its trigger fires, and pushes out while the CTA, marked with `stylex.defaultMarker()`, is
+ * hovered or pressed.
+ *
+ * @param knock The knock to play, or `false` while its trigger has not fired.
+ */
+export const platformArrow = (knock: StyleXStyle): Html =>
+  drawnRightArrow('', styles.follows, styles.platform, knock);
+
+// The EXTERNAL-link mark (↗), for destinations outside our world (uefa.com,
+// social profiles) — the drawn right arrow stays reserved for our own
+// navigation. Deliberately NOT the display arrow’s filled silhouette: this
+// mark only ever sits next to small body type (10–14px), so it’s a line
+// drawing in the text glyph’s register — a diagonal shaft and a simple
+// corner roof, stroked at the text’s own weight (3.5 in-box ≈ 1–1.3px at
+// those sizes). Butt caps, like the menu glyph — hard edges everywhere.
+// `drawn-arrow-external`: the hover contract nudges it along its own
+// diagonal (styles.css).
+export const drawnExternalArrow = (classes: string): Html =>
+  ih.svg(
+    [
+      ih.Xmlns('http://www.w3.org/2000/svg'),
+      ih.ViewBox('0 0 24 24'),
+      ih.Class(`drawn-arrow drawn-arrow-external ${classes}`),
+      ih.Fill('none'),
+      ih.Stroke('currentColor'),
+      // 3.1, not the computed 3.5 — a diagonal reads optically heavier than
+      // an upright stroke of the same width (checked against the type at 4×).
+      ih.StrokeWidth('3.1'),
+      ih.AriaHidden(true),
+    ],
+    [ih.path([ih.D('M2.5 21.5 L21.5 2.5 M10 2.5 H21.5 V14')])],
+  );
+// 0.72em — next to the small body type of receipts and handles the shaft
+// then matches the text’s own stroke weight, which is exactly the quiet
+// register these micro-links want.
+export const displayArrowExternal: Html = drawnExternalArrow(
+  'ml-[0.22em] inline-block h-[0.72em] w-auto',
+);

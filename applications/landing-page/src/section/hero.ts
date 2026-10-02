@@ -2,12 +2,11 @@ import * as stylex from '@stylexjs/stylex';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import heroImage from '../assets/hero.webp';
-import { platformArrow } from '../components';
+import { platformArrow, styles as arrowStyles } from '../arrow';
 import { platformUrl } from '../data';
 import type { Message } from '../message';
 import { ObserveHeroPastHeader } from '../motion';
 import { getStyleXAttributesWith } from '../stylexAttributes';
-import { styles as arrowStyles } from '../styles/arrow';
 
 // ONE continuous size curve across every width — no breakpoint tiers, so
 // the lockup never steps when the viewport crosses a boundary. Three legs:

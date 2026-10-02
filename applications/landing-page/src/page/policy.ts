@@ -1,6 +1,6 @@
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
-import { container } from '../components';
+import { container } from '../container';
 import type { Message } from '../message';
 import { homeRouter } from '../route';
 

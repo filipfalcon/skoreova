@@ -5,14 +5,11 @@ import championsSquadImage from '../assets/champions-squad.jpg';
 import championsTrophyImage from '../assets/champions-trophy.jpg';
 import domesticDoubleImage from '../assets/domestic-double.jpg';
 import spartaCrestImage from '../assets/sparta-praha.png';
-import {
-  container,
-  displayArrow,
-  displayArrowSolo,
-  kicker,
-  maskedLine,
-  revealClass,
-} from '../components';
+import { displayArrow, displayArrowSolo } from '../arrow';
+import { container } from '../container';
+import { kicker } from '../kicker';
+import { maskedLine } from '../masked-line';
+import { revealClass } from '../reveal-class';
 import { FIRST_LEAGUE, euroTies, honors, platformUrl, seasonCupRun, seasonRouts } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';

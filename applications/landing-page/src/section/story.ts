@@ -3,7 +3,11 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 import clsx from 'clsx';
 
 import knightImage from '../assets/knight-mascot.webp';
-import { container, displayArrowExternal, kicker, maskedLine, revealClass } from '../components';
+import { displayArrowExternal } from '../arrow';
+import { container } from '../container';
+import { kicker } from '../kicker';
+import { maskedLine } from '../masked-line';
+import { revealClass } from '../reveal-class';
 import { unstoppableProof, youthPhotos } from '../data';
 import type { Message } from '../message';
 import type { Model } from '../model';

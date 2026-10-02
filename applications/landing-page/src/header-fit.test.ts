@@ -9,7 +9,7 @@ import {
   CTA_GIVES_WAY_REM,
   LABEL_GIVES_WAY_REM,
   LEAD_GIVES_WAY_REM,
-} from './styles/header';
+} from './header';
 
 // The header row's give-way widths, recomputed from Archivo's advances at the cuts the header sets
 // its text in, and from the scale's tokens.

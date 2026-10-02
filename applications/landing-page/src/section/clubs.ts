@@ -4,14 +4,11 @@ import { Option } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import landsScoutImage from '../assets/lands-scout.webp';
-import {
-  container,
-  displayArrow,
-  displayArrowSolo,
-  kicker,
-  maskedLine,
-  revealClass,
-} from '../components';
+import { displayArrow, displayArrowSolo } from '../arrow';
+import { container } from '../container';
+import { kicker } from '../kicker';
+import { maskedLine } from '../masked-line';
+import { revealClass } from '../reveal-class';
 import { CZECHIA_PATH, CZECHIA_VIEW_BOX, CZECH_REGIONS } from '../czechia';
 import type { Land } from '../czechia';
 import { FIRST_LEAGUE, MAP_LEAGUE_LABELS, SECOND_LEAGUE, clubs, platformUrl } from '../data';

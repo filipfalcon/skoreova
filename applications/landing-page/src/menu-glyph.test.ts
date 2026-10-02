@@ -8,7 +8,7 @@ import {
   MENU_GLYPH_MIDDLE_ROW,
   MENU_GLYPH_TOP_ROW,
   MENU_GLYPH_WIDTH,
-} from './styles/header';
+} from './menu-glyph';
 
 // The menu glyph's poses, recomputed from its drawing.
 const radians = (degrees: number): number => (degrees * Math.PI) / 180;

@@ -11,7 +11,7 @@ export type RevealState = typeof RevealState.Type;
 
 // The map’s league filter. 'all' shows both flights; picking a league hides
 // the other one’s pins outright (display:none on a wrapper — see the pin
-// wrapper comment in page/clubs.ts).
+// wrapper comment in section/clubs.ts).
 export const MapLeague = Schema.Literals(['All', 'First', 'Second']);
 export type MapLeague = typeof MapLeague.Type;
 
@@ -59,7 +59,7 @@ export const Model = Schema.Struct({
   // The reveal system’s discrete state, keyed by each target’s
   // data-reveal-key: the observers (ObserveReveals in motion.ts) report
   // entries/exits as Messages, and the VIEW renders `.is-in`/`.is-drawn`
-  // from this record (see revealClass in components.ts). The patcher owns
+  // from this record (see reveal-class.ts). The patcher owns
   // the class strings again — the old "reveal targets' classes must stay
   // static forever" invariant is gone.
   reveals: Schema.Record(Schema.String, RevealState),
