@@ -60,14 +60,15 @@ python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
 
 **Tokens.**
 
-| Token         | Value                                       | Source                                                                                                |
-| ------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Family        | `'Archivo', 'Archivo Fallback', sans-serif` | the one typeface, then its metric-matched fallback                                                    |
-| Body cut      | width 100%, weight 400                      | Archivo's Normal width and Regular weight                                                             |
-| Bold          | 700                                         | CSS bold; WCAG 1.4.3's bold for large-scale text                                                      |
-| Display cut   | width 75%, weight 700                       | OpenType/CSS Condensed and Bold, where the font's ranges end                                          |
-| Caps tracking | 0.05em                                      | capitals letterspaced 5–10% of the type size (Bringhurst), the lower bound; mixed case is not tracked |
-| Data numerals | `tabular-nums`                              | scores, tables and times align in columns                                                             |
+| Token         | Value                                       | Source                                                                                                                                       |
+| ------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Family        | `'Archivo', 'Archivo Fallback', sans-serif` | the one typeface, then its metric-matched fallback                                                                                           |
+| Body cut      | width 100%, weight 400                      | Archivo's Normal width and Regular weight                                                                                                    |
+| Bold          | 700                                         | CSS bold; WCAG 1.4.3's bold for large-scale text                                                                                             |
+| Display cut   | width 75%, weight 700                       | OpenType/CSS Condensed and Bold, where the font's ranges end                                                                                 |
+| Caps tracking | 0.05em                                      | capitals letterspaced 5–10% of the type size (Bringhurst), the lower bound; mixed case is not tracked                                        |
+| Data numerals | `tabular-nums`                              | scores, tables and times align in columns                                                                                                    |
+| Cap height    | 0.686em                                     | Archivo's OS/2 cap height, 686 of 1000 units, held by both cuts; a mark beside capitals (an arrow, an icon) stands this tall on the baseline |
 
 ## Color
 

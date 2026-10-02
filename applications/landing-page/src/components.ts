@@ -2,6 +2,7 @@
 // glyphs, and the header / menu overlay / footer shell.
 
 import { Button } from '@foldkit/ui';
+import * as stylex from '@stylexjs/stylex';
 import { Option } from 'effect';
 import clsx from 'clsx';
 import { inertHtml as ih } from 'foldkit/html';
@@ -11,8 +12,17 @@ import { homeRouter, policyRouter } from './route';
 import type { Model } from './model';
 import { Message } from './message';
 import { menuEntries, platformUrl, socialChannels } from './data';
-import { getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
-import { styles as headerStyles } from './styles/header';
+import { type StyleXStyle, getStyleXAttributes, getStyleXAttributesWith } from './stylexAttributes';
+import { styles as arrowStyles } from './styles/arrow';
+import {
+  MENU_GLYPH_BAR,
+  MENU_GLYPH_BOTTOM_ROW,
+  MENU_GLYPH_HEIGHT,
+  MENU_GLYPH_MIDDLE_ROW,
+  MENU_GLYPH_TOP_ROW,
+  MENU_GLYPH_WIDTH,
+  styles as headerStyles,
+} from './styles/header';
 
 export const container = 'mx-auto w-full max-w-7xl px-5 md:px-10';
 
@@ -125,30 +135,38 @@ export const maskedLine = (
   );
 
 // A chunky inline arrow for display-type CTAs. The text glyph "→" renders
-// hairline-thin next to Anton and sits on the baseline instead of the cap
-// center. One filled silhouette rather than strokes — square line caps left
-// a nub poking past the head’s point. Sized in em so it scales with the
-// type: the box spans baseline to cap height (~0.72em in Anton), so the
-// shaft lands on the optical center of the uppercase line.
-export const drawnRightArrow = (classes: string): Html =>
+// hairline-thin beside the display cut and sits on the baseline instead of
+// the cap center. One filled silhouette rather than strokes — square line
+// caps left a nub poking past the head’s point. Its box stands on the
+// baseline as tall as the capitals (arrowStyles.arrow), so the shaft lands on
+// the optical center of the uppercase line.
+const drawnRightArrow = (hook: string, ...styles: ReadonlyArray<StyleXStyle>): Html =>
   ih.svg(
     [
       ih.Xmlns('http://www.w3.org/2000/svg'),
       ih.ViewBox('0 0 32 24'),
-      // `drawn-arrow` is the sitewide hover contract: any drawn arrow
-      // inside a hovered link or button nudges right (styles.css) — the
-      // platform-beckon arrows excluded there, they own their hover.
-      ih.Class(`drawn-arrow ${classes}`),
+      ...getStyleXAttributesWith(ih, hook, arrowStyles.arrow, ...styles),
       ih.Fill('currentColor'),
       ih.AriaHidden(true),
     ],
     [ih.path([ih.D('M0 9.6 H18 V3 L31 12 L18 21 V14.4 H0 Z')])],
   );
 
-// Follows text (the left margin is the word gap)…
-export const displayArrow: Html = drawnRightArrow('ml-[0.22em] inline-block h-[0.72em] w-auto');
+// `drawn-arrow` is the sitewide hover contract: any drawn arrow inside a
+// hovered link or button nudges right (styles.css). It follows text…
+export const displayArrow: Html = drawnRightArrow('drawn-arrow', arrowStyles.follows);
 // …or stands alone (the row-affordance chips) — no gap to carry.
-export const displayArrowSolo: Html = drawnRightArrow('inline-block h-[0.72em] w-auto');
+export const displayArrowSolo: Html = drawnRightArrow('drawn-arrow');
+
+/**
+ * The arrow of a platform CTA, which owns its hover instead of the sitewide contract: it knocks
+ * once its trigger fires, and pushes out while the CTA, marked with `stylex.defaultMarker()`, is
+ * hovered or pressed.
+ *
+ * @param knock The knock to play, or `false` while its trigger has not fired.
+ */
+export const platformArrow = (knock: StyleXStyle): Html =>
+  drawnRightArrow('', arrowStyles.follows, arrowStyles.platform, knock);
 
 // The EXTERNAL-link mark (↗), for destinations outside our world (uefa.com,
 // social profiles) — the drawn right arrow stays reserved for our own
@@ -174,44 +192,58 @@ export const drawnExternalArrow = (classes: string): Html =>
     ],
     [ih.path([ih.D('M2.5 21.5 L21.5 2.5 M10 2.5 H21.5 V14')])],
   );
-// Same 0.72em as the right arrow — next to the small body type of receipts
-// and handles the shaft then matches the text’s own stroke weight, which is
-// exactly the quiet register these micro-links want.
+// 0.72em — next to the small body type of receipts and handles the shaft
+// then matches the text’s own stroke weight, which is exactly the quiet
+// register these micro-links want.
 export const displayArrowExternal: Html = drawnExternalArrow(
   'ml-[0.22em] inline-block h-[0.72em] w-auto',
 );
 
 // The glyph shown inside the menu toggle — a hamburger when closed, an X
 // when open. The three bars persist across the toggle; the morph between
-// the two poses is CSS (menu-glyph / is-open in styles.css), so a state
-// flip animates instead of swapping geometry.
-export const menuGlyph = (open: boolean, h: HtmlBuilder<Message>): Html =>
-  h.svg(
+// the two poses is StyleX (the menuGlyph styles in styles/header.ts), so a
+// state flip animates instead of swapping geometry.
+export const menuGlyph = (open: boolean, h: HtmlBuilder<Message>): Html => {
+  const bar = (row: number, ...styles: ReadonlyArray<StyleXStyle>): Html =>
+    h.line([
+      ...getStyleXAttributes(
+        h,
+        headerStyles.menuGlyphBar,
+        open ? headerStyles.menuGlyphOpening : headerStyles.menuGlyphClosing,
+        ...styles,
+      ),
+      h.X1('0'),
+      h.Y1(`${row}`),
+      h.X2(`${MENU_GLYPH_WIDTH}`),
+      h.Y2(`${row}`),
+    ]);
+  return h.svg(
     [
       h.Xmlns('http://www.w3.org/2000/svg'),
       // Tight viewBox — the strokes' ink fills it edge to edge, so the CSS
       // size IS the visible size.
-      h.ViewBox('0 0 24 20'),
-      ...getStyleXAttributesWith(
-        h,
-        clsx('menu-glyph', { 'is-open': open }),
-        headerStyles.menuGlyph,
-      ),
+      h.ViewBox(`0 0 ${MENU_GLYPH_WIDTH} ${MENU_GLYPH_HEIGHT}`),
+      ...getStyleXAttributes(h, headerStyles.menuGlyph),
       h.Fill('none'),
       h.Stroke('currentColor'),
       // A 3.43px bar at the glyph's 24px width, up from the drawn arrow’s
-      // 2.5px weight, closer to Anton’s heft.
-      h.StrokeWidth('3.43'),
+      // 2.5px weight.
+      h.StrokeWidth(`${MENU_GLYPH_BAR}`),
       // Flat butt caps — the site’s whole graphic language is hard edges
-      // (Anton, square chips, the drawn arrow); rounded line ends read soft.
+      // (square chips, the drawn arrow); rounded line ends read soft.
       h.AriaHidden(true),
     ],
     [
-      h.line([h.Class('menu-glyph-top'), h.X1('0'), h.Y1('1.715'), h.X2('24'), h.Y2('1.715')]),
-      h.line([h.Class('menu-glyph-mid'), h.X1('0'), h.Y1('10'), h.X2('24'), h.Y2('10')]),
-      h.line([h.Class('menu-glyph-bottom'), h.X1('0'), h.Y1('18.285'), h.X2('24'), h.Y2('18.285')]),
+      bar(MENU_GLYPH_TOP_ROW, headerStyles.menuGlyphTop, open && headerStyles.menuGlyphTopOpen),
+      bar(MENU_GLYPH_MIDDLE_ROW, open && headerStyles.menuGlyphMiddleOpen),
+      bar(
+        MENU_GLYPH_BOTTOM_ROW,
+        headerStyles.menuGlyphBottom,
+        open && headerStyles.menuGlyphBottomOpen,
+      ),
     ],
   );
+};
 
 export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
   h.header(
@@ -253,15 +285,16 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
           h.div(
             [...getStyleXAttributes(h, headerStyles.actions)],
             [
-              // Shown once the hero, which carries its own CTA, has scrolled under the bar:
-              // `is-visible` rides `model.heroPastHeader`, which the hero observer feeds (see
-              // ObserveHeroPastHeader), so a header re-render cannot wipe it.
+              // Shown once the hero, which carries its own CTA, has scrolled under the bar: it
+              // rides `model.heroPastHeader`, which the hero observer feeds (see
+              // ObserveHeroPastHeader), so a header re-render cannot wipe it. Each showing knocks
+              // the arrow anew.
               h.a(
                 [
                   h.Href(platformUrl),
-                  ...getStyleXAttributesWith(
+                  ...getStyleXAttributes(
                     h,
-                    clsx('header-cta platform-beckon', { 'is-visible': model.heroPastHeader }),
+                    stylex.defaultMarker(),
                     headerStyles.cta,
                     model.heroPastHeader ? headerStyles.ctaShown : headerStyles.ctaHidden,
                   ),
@@ -269,7 +302,10 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html =>
                 [
                   h.span([...getStyleXAttributes(h, headerStyles.ctaLead)], ['Enter ']),
                   'Platform',
-                  h.span([...getStyleXAttributes(h, headerStyles.ctaArrow)], [displayArrow]),
+                  h.span(
+                    [...getStyleXAttributes(h, headerStyles.ctaArrow)],
+                    [platformArrow(model.heroPastHeader && arrowStyles.knockOnHeaderEntry)],
+                  ),
                 ],
               ),
               Button.view(
@@ -319,6 +355,7 @@ export const menuOverlayView = (model: Model, h: HtmlBuilder<Message>): Html =>
           { 'is-open': model.isMenuOpen },
         ),
         headerStyles.menuOverlay,
+        model.isMenuOpen ? headerStyles.menuOverlayOpening : headerStyles.menuOverlayClosing,
       ),
       h.AriaHidden(!model.isMenuOpen),
       // The fall choreography (styles.css) lands the anchors bottom-up; the
@@ -342,14 +379,16 @@ export const menuOverlayView = (model: Model, h: HtmlBuilder<Message>): Html =>
                   // the section anchors (hover flips the type to ink — the
                   // header CTA’s language); active:text-paper stays as the
                   // tap feedback on touch, where the hover-gated bar never
-                  // runs. The arrow beckons (menu-platform-beckon). Margin/
+                  // runs. The arrow knocks on each opening. Margin/
                   // padding pair = the underlay’s left breathing room,
                   // matching the section anchors.
-                  h.Class(
-                    'menu-platform platform-beckon menu-anchor -ml-3 display block pt-2 pb-3.5 pl-3 text-fluid-menu-platform text-pink transition-colors duration-300 active:text-paper md:-ml-5 md:pt-3 md:pb-5 md:pl-5',
+                  ...getStyleXAttributesWith(
+                    h,
+                    'menu-anchor -ml-3 display block pt-2 pb-3.5 pl-3 text-fluid-menu-platform text-pink transition-colors duration-300 active:text-paper md:-ml-5 md:pt-3 md:pb-5 md:pl-5',
+                    stylex.defaultMarker(),
                   ),
                 ],
-                ['Platform', displayArrow],
+                ['Platform', platformArrow(model.isMenuOpen && arrowStyles.knockOnMenuLanding)],
               ),
             ],
           ),

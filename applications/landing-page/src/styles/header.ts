@@ -12,8 +12,8 @@ import * as stylex from '@stylexjs/stylex';
  * text size, with Archivo's advances (caps tracking included) measured from the font. The sum is
  * wordmark (5.158em of step 2, display cut) + gap xs + label + gap 2xs + CTA + gap xs + menu (touch
  * target); the label is 2.725em of step −2 (body cut) + 2 × 2xs + 2px of border; the short CTA is
- * 5.980em of step 0 (display cut, arrow included) + 2 × s, the long one 3.173em of step 0 more.
- * With the label the sum meets the row at 443.2px (a 483px viewport), so the label gives way below
+ * 5.965em of step 0 (display cut, arrow included) + 2 × s, the long one 3.173em of step 0 more.
+ * With the label the sum meets the row at 442.9px (a 483px viewport), so the label gives way below
  * 444px — while there is a CTA beside it. Without one the row asks wordmark + gap xs + label + gap
  * 2xs + menu: 235.1px of the 288px row at 320, so the label fits in every other state.
  */
@@ -22,7 +22,7 @@ export const LABEL_GIVES_WAY_REM = 27.75;
 /**
  * The row content width, in rem, below which the CTA's first word gives way.
  *
- * Without the label the long CTA meets the row at 374.0px (a 410px viewport), so the first word
+ * Without the label the long CTA meets the row at 373.7px (a 410px viewport), so the first word
  * gives way below 376px.
  */
 export const LEAD_GIVES_WAY_REM = 23.5;
@@ -30,7 +30,7 @@ export const LEAD_GIVES_WAY_REM = 23.5;
 /**
  * The row content width, in rem, below which the CTA's arrow gives way, leaving "Platform".
  *
- * The short CTA meets the row at 317.1px (a 351px viewport), so the arrow (1.18em of step 0) gives
+ * The short CTA meets the row at 316.8px (a 350px viewport), so the arrow (1.165em of step 0) gives
  * way below 320px. Without it the row still asks 295.7px of the 288px row at 320, 7.7px over.
  */
 export const ARROW_GIVES_WAY_REM = 20;
@@ -45,6 +45,34 @@ export const ARROW_GIVES_WAY_REM = 20;
  * 288px row at 320, 113.2px spare.
  */
 export const CTA_GIVES_WAY_REM = 18.75;
+
+/**
+ * The menu glyph's drawing, in its own units: three bars of `MENU_GLYPH_BAR` across a box of
+ * `MENU_GLYPH_WIDTH` × `MENU_GLYPH_HEIGHT`, the outer two inked flush with its top and bottom
+ * edges.
+ */
+export const MENU_GLYPH_WIDTH = 24;
+export const MENU_GLYPH_HEIGHT = 20;
+export const MENU_GLYPH_BAR = 3.43;
+
+/**
+ * The bars' rows: the outer two half a bar in from the edges, so their ink fills the box, and the
+ * middle one at its centre. 1.715, 10 and 18.285.
+ */
+export const MENU_GLYPH_TOP_ROW = MENU_GLYPH_BAR / 2;
+export const MENU_GLYPH_MIDDLE_ROW = MENU_GLYPH_HEIGHT / 2;
+export const MENU_GLYPH_BOTTOM_ROW = MENU_GLYPH_HEIGHT - MENU_GLYPH_BAR / 2;
+
+/**
+ * The angle, in degrees, the outer bars swing to as the glyph turns into an X.
+ *
+ * Each bar turns about its own centre, moved to the box's centre, so the X keeps the box's height:
+ * a bar of length L and thickness t at angle θ inks a height of L sin θ + t cos θ (its butt caps
+ * reach past the ends of its centre line by t/2 cos θ each), and that height equals the box's H. So
+ * θ = asin(H / √(L² + t²)) − atan(t / L) = asin(20 / 24.2439) − atan(3.43 / 24) = 55.583° − 8.134°
+ * = 47.45°, rounded to the hundredth.
+ */
+export const MENU_GLYPH_ANGLE_DEG = 47.45;
 
 // The label's room runs out only between the CTA's own give-way width and its own: below the CTA's
 // the CTA is gone and the label fits again, 52.9px to spare at 320.
@@ -75,6 +103,10 @@ const HIT = layout['touch-target'];
 
 // A state change: Material 3's short4 on the standard easing.
 const STATE_CHANGE = `${duration.short4} ${easing.standard}`;
+// An element entering: medium4 on emphasized decelerate.
+const ENTERING = `${duration.medium4} ${easing['emphasized-decelerate']}`;
+// An element leaving: short4 on emphasized accelerate.
+const LEAVING = `${duration.short4} ${easing['emphasized-accelerate']}`;
 
 // The page grid's gutter, plus the safe-area inset so a phone held landscape keeps the row clear
 // of the notch.
@@ -98,6 +130,24 @@ const ctaStill = (motion: string, visibilityDelay: string): string =>
 const ctaTransition = (motion: string, visibilityDelay: string) => ({
   default: `transform ${motion}, ${ctaStill(motion, visibilityDelay)}`,
   [REDUCED_MOTION]: ctaStill(motion, visibilityDelay),
+});
+
+// The outer bars' slide to the middle row: 10 − 1.715 = 8.285.
+const GLYPH_SLIDE = MENU_GLYPH_MIDDLE_ROW - MENU_GLYPH_TOP_ROW;
+
+// The glyph's bars turn between the hamburger and the X: entering as the menu opens, leaving as it
+// closes. The middle bar's fade is a state change either way, and stays under reduced motion while
+// the bars snap.
+const glyphTransition = (motion: string) => ({
+  default: `transform ${motion}, opacity ${STATE_CHANGE}`,
+  [REDUCED_MOTION]: `opacity ${STATE_CHANGE}`,
+});
+
+// The menu slides on the glyph's motion, so the two are one gesture, and is hidden once it has
+// left; it snaps under reduced motion.
+const menuSlide = (motion: string, visibilityDelay: string) => ({
+  default: `transform ${motion}, visibility 0s ${easing.linear} ${visibilityDelay}`,
+  [REDUCED_MOTION]: 'none',
 });
 
 /**
@@ -274,10 +324,7 @@ export const styles = stylex.create({
       [REDUCED_MOTION]: 'none',
     },
     // Leaving: Material 3's short4 on emphasized accelerate, hidden once it has faded.
-    transition: ctaTransition(
-      `${duration.short4} ${easing['emphasized-accelerate']}`,
-      duration.short4,
-    ),
+    transition: ctaTransition(LEAVING, duration.short4),
   },
   // Entering: Material 3's medium4 on emphasized decelerate, visible at once. Where the row has no
   // room for it even bare, it takes its hidden state's place: invisible, out of the tab order and
@@ -292,16 +339,17 @@ export const styles = stylex.create({
     height: { default: 'auto', [NO_ROOM_FOR_CTA]: 'fit-content' },
     marginBlock: { default: 0, [NO_ROOM_FOR_CTA]: 'auto' },
     transform: 'none',
-    transition: ctaTransition(`${duration.medium4} ${easing['emphasized-decelerate']}`, '0s'),
+    transition: ctaTransition(ENTERING, '0s'),
   },
   // The first word gives way after the label.
   ctaLead: {
     display: { default: 'inline', [NO_ROOM_FOR_LEAD]: 'none' },
     whiteSpace: 'pre',
   },
-  // The arrow gives way last, leaving "Platform".
+  // The arrow gives way last, leaving "Platform". A block, as the CTA's other items are made, of
+  // one line of its type, so the arrow stands on the baseline the words do.
   ctaArrow: {
-    display: { default: 'inline-flex', [NO_ROOM_FOR_ARROW]: 'none' },
+    display: { default: 'block', [NO_ROOM_FOR_ARROW]: 'none' },
   },
   menuButton: {
     display: 'flex',
@@ -326,8 +374,42 @@ export const styles = stylex.create({
     width: layout.icon,
     height: layout.icon,
   },
+  // Every bar turns about a point of the glyph's own drawing.
+  menuGlyphBar: {
+    transformBox: 'view-box',
+  },
+  // About their own centres.
+  menuGlyphTop: {
+    transformOrigin: `${MENU_GLYPH_WIDTH / 2}px ${MENU_GLYPH_TOP_ROW}px`,
+  },
+  menuGlyphBottom: {
+    transformOrigin: `${MENU_GLYPH_WIDTH / 2}px ${MENU_GLYPH_BOTTOM_ROW}px`,
+  },
+  menuGlyphOpening: {
+    transition: glyphTransition(ENTERING),
+  },
+  menuGlyphClosing: {
+    transition: glyphTransition(LEAVING),
+  },
+  // Open, the outer bars slide to the middle row and swing onto the X's diagonals, and the middle
+  // bar fades away.
+  menuGlyphTopOpen: {
+    transform: `translateY(${GLYPH_SLIDE}px) rotate(${MENU_GLYPH_ANGLE_DEG}deg)`,
+  },
+  menuGlyphMiddleOpen: {
+    opacity: 0,
+  },
+  menuGlyphBottomOpen: {
+    transform: `translateY(${-GLYPH_SLIDE}px) rotate(${-MENU_GLYPH_ANGLE_DEG}deg)`,
+  },
   // The menu, on the overlay layer, beneath the bar it slides out from.
   menuOverlay: {
     zIndex: layer.overlay,
+  },
+  menuOverlayOpening: {
+    transition: menuSlide(ENTERING, '0s'),
+  },
+  menuOverlayClosing: {
+    transition: menuSlide(LEAVING, duration.short4),
   },
 });

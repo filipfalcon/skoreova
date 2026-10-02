@@ -738,8 +738,11 @@ body {
   animation-delay: var(--hero-delay, 0.2s);
 }
 
+/* The fade's duration is a custom property so the hero CTA's arrow, inside
+   it, can wait for its landing (knockOnHeroLanding in styles/arrow.ts). */
 .hero-fade {
-  animation: hero-fade 0.7s ease-out both;
+  --hero-fade-duration: 0.7s;
+  animation: hero-fade var(--hero-fade-duration) ease-out both;
   animation-delay: var(--hero-delay, 1s);
 }
 
@@ -1039,22 +1042,17 @@ body {
    clears. The transform moves it off-screen, and `visibility` flips to
    hidden once the slide-out finishes (transition delay = the slide
    duration), so a fully-closed menu is not painted at all and can’t leave
-   any residue behind. Both open and close animate. */
+   any residue behind. Both open and close animate, timed with the menu
+   glyph (menuOverlayOpening / menuOverlayClosing in styles/header.ts). */
 .menu-overlay {
   transform: translateY(-100%);
   visibility: hidden;
-  transition:
-    transform 0.6s cubic-bezier(0.76, 0, 0.24, 1),
-    visibility 0s linear 0.6s;
   pointer-events: none;
 }
 
 .menu-overlay.is-open {
   transform: translateY(0);
   visibility: visible;
-  transition:
-    transform 0.6s cubic-bezier(0.76, 0, 0.24, 1),
-    visibility 0s linear 0s;
   pointer-events: auto;
 }
 
@@ -1070,11 +1068,17 @@ body {
    the fall distance — the 0.08s delay step outpaces the 0.05s duration
    step, so touchdowns run strictly last-to-first. The first release goes
    with the click itself — the cascade falls WHILE the panel is still
-   sliding in, and the deepest anchor touches down before the panel
-   finishes arriving. Closing plays
-   no item motion: the panel leaves as one piece, and the reset back to
-   the stacked pose runs at zero duration DELAYED past the slide (0.6s),
-   once the overlay is already off screen. */
+   sliding in. The step and the base fall are custom properties so the
+   Platform entry's arrow, the last to land, can wait for it
+   (knockOnMenuLanding in styles/arrow.ts). Closing plays no item motion:
+   the panel leaves as one piece, and the reset back to the stacked pose
+   runs at zero duration DELAYED past the slide-out, once the overlay is
+   already off screen. */
+.menu-overlay {
+  --menu-fall-step: 0.08s;
+  --menu-fall-base: 0.28s;
+}
+
 .menu-overlay .menu-item {
   transform: translateY(calc((var(--menu-index, 0) + 1) * -100% - 3.5rem));
   transition: transform 0s linear 0.6s;
@@ -1083,130 +1087,20 @@ body {
 .menu-overlay.is-open .menu-item {
   transform: none;
   transition-timing-function: cubic-bezier(0.32, 0, 0.67, 0);
-  transition-duration: calc(0.28s + var(--menu-index, 0) * 0.05s);
-  transition-delay: calc((var(--menu-count, 1) - 1 - var(--menu-index, 0)) * 0.08s);
-}
-
-/* The menu toggle's hamburger ⇄ X morph: the outer bars swing about their
-   own centers onto the X's diagonals while sliding to the middle row
-   (8.285 = the outer rows' distance to center), and the middle bar dims
-   away. 47.73° = atan(17.6/16): at that slope the butt caps' perpendicular
-   overhang carries the swung bars' ink across the full 0–20 box — the same
-   cap line the resting bars hold. The overlay's easing curve, so glyph and
-   panel move as one gesture. */
-.menu-glyph line {
-  transform-box: view-box;
-  transition:
-    transform 0.4s cubic-bezier(0.76, 0, 0.24, 1),
-    opacity 0.25s ease;
-}
-
-.menu-glyph .menu-glyph-top {
-  transform-origin: 12px 1.715px;
-}
-
-.menu-glyph .menu-glyph-bottom {
-  transform-origin: 12px 18.285px;
-}
-
-.menu-glyph.is-open .menu-glyph-top {
-  transform: translateY(8.285px) rotate(47.73deg);
-}
-
-.menu-glyph.is-open .menu-glyph-mid {
-  opacity: 0;
-}
-
-.menu-glyph.is-open .menu-glyph-bottom {
-  transform: translateY(-8.285px) rotate(-47.73deg);
-}
-
-/* Platform CTAs sell the click through their arrow: a double nudge to the
-   right — "go on" — knocking on repeat, and a held push once the pointer
-   commits (hover). The word itself stays planted; the invitation is the
-   gesture. `.platform-beckon` marks the CTA anchor; each usage site scopes
-   WHEN the knock runs (below), because an off-screen or hidden arrow
-   shouldn’t tick an animation. */
-@keyframes platform-beckon {
-  0%,
-  48%,
-  100% {
-    transform: none;
-  }
-  12%,
-  36% {
-    transform: translateX(0.16em);
-  }
-  24% {
-    transform: none;
-  }
-}
-
-.platform-beckon svg {
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.platform-beckon:hover svg,
-.platform-beckon:active svg {
-  animation: none;
-  transform: translateX(0.14em);
-}
-
-/* The knock assignments below gate themselves on :not(:hover):not(:active)
-   — without it they OUTRANK the .platform-beckon:hover pause above (the
-   menu/header scopes carry more specificity), the animation keeps running
-   through the hover, and its mostly-resting keyframes override the held
-   push. "Knock only while nobody is pointing at you" said in the selector. */
-
-/* The menu’s arrow knocks only while the overlay is up; its delay waits
-   out the panel’s 0.6s slide, so the first knock lands right after the
-   menu finishes arriving. */
-.menu-overlay.is-open .menu-platform:not(:hover):not(:active) svg {
-  animation: platform-beckon 2s ease-in-out 0.7s infinite;
-}
-
-/* The hero’s arrow starts once its own fade-in has landed (--hero-delay
-   1.3s + the fade). */
-.hero-cta:not(:hover):not(:active) svg {
-  animation: platform-beckon 2s ease-in-out 2.2s infinite;
-}
-
-/* The header’s arrow knocks at the same speed but rests much longer — it
-   sits on screen for the entire scroll, so it should remind, not nag.
-   Separate keyframes because stretching the 2s cycle would slow the knock
-   itself down with it: here the knock keeps its ~0.9s and the remaining
-   80% of the cycle is stillness. Runs only while the header shows the CTA
-   (.is-visible). */
-@keyframes platform-beckon-rested {
-  0%,
-  20%,
-  100% {
-    transform: none;
-  }
-  5%,
-  15% {
-    transform: translateX(0.16em);
-  }
-  10% {
-    transform: none;
-  }
-}
-
-.header-cta.is-visible:not(:hover):not(:active) svg {
-  animation: platform-beckon-rested 4.4s ease-in-out 1s infinite;
+  transition-duration: calc(var(--menu-fall-base) + var(--menu-index, 0) * 0.05s);
+  transition-delay: calc((var(--menu-count, 1) - 1 - var(--menu-index, 0)) * var(--menu-fall-step));
 }
 
 /* The sitewide arrow contract: every drawn arrow inside a hovered link or
-   button nudges along its direction — the "go on" gesture. Platform-beckon
-   arrows are EXCLUDED: they own their hover (same push, plus pausing the
-   knock animation — see .platform-beckon above). Hover-gated for touch
-   browsers. */
-.drawn-arrow:not(.platform-beckon .drawn-arrow) {
+   button nudges along its direction — the "go on" gesture. The platform
+   CTAs' arrows do not carry the class: they own their hover (platformArrow
+   in components.ts). Hover-gated for touch browsers. */
+.drawn-arrow {
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (hover: hover) {
-  :is(a, button):hover .drawn-arrow:not(.platform-beckon .drawn-arrow, .drawn-arrow-external) {
+  :is(a, button):hover .drawn-arrow:not(.drawn-arrow-external) {
     transform: translateX(0.14em);
   }
 
@@ -1388,16 +1282,11 @@ body {
   }
 
   /* Every transition that moves something keeps only what does not move:
-     reveals keep their fade, the menu glyph its dimming middle bar; the
-     rest snap. */
+     reveals keep their fade; the rest snap. */
   [data-reveal],
   [data-reveal].is-in,
   [data-reveal='stamp'].is-in {
     transition-property: opacity, visibility;
-  }
-
-  .menu-glyph line {
-    transition: opacity 0.25s ease;
   }
 
   .club-pin-banner-bar,
@@ -1407,11 +1296,8 @@ body {
   .club-pin:not(:hover):not([data-selected='true']):not(:focus-within)
     .club-pin-banner-bar
     a::before,
-  .menu-overlay,
-  .menu-overlay.is-open,
   .menu-overlay .menu-item,
-  .platform-beckon svg,
-  .drawn-arrow:not(.platform-beckon .drawn-arrow),
+  .drawn-arrow,
   .menu-anchor::before,
   .social-row::before,
   .match-row::before,
@@ -1426,10 +1312,7 @@ body {
   .idle-float,
   .idle-float-lg,
   .marquee-track,
-  [data-reveal='strike'].is-in,
-  .menu-overlay.is-open .menu-platform:not(:hover):not(:active) svg,
-  .hero-cta:not(:hover):not(:active) svg,
-  .header-cta.is-visible:not(:hover):not(:active) svg {
+  [data-reveal='strike'].is-in {
     animation: none;
   }
 

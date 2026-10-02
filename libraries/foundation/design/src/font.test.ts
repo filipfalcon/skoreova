@@ -145,6 +145,28 @@ describe('the fallback face', () => {
   });
 });
 
+describe('the cap height', () => {
+  const em = (units: number): string => `${units / source.unitsPerEm}em`;
+
+  test('is the font’s own', () => {
+    expect(font['cap-height']).toBe(em(archivo.capHeight));
+    expect(source.capHeight).toBe(archivo.capHeight);
+  });
+
+  // The display cut's capitals interpolate to 687 units, a thousandth of an em over the stated 686.
+  test.each([
+    ['body', BODY_CUT],
+    ['display', { wght: 700, wdth: 75 }],
+  ])('is the height of the %s cut’s flat capitals, to a unit', (_name, cut) => {
+    const instance = source.getVariation(cut);
+    for (const char of 'EHIT') {
+      const { minY, maxY } = instance.glyphForCodePoint(Number(char.codePointAt(0))).bbox;
+      expect(minY).toBe(0);
+      expect(Math.abs(maxY - archivo.capHeight)).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
 describe('caps tracking', () => {
   test('is the lower bound of 5 to 10% of the type size', () => {
     expect(font['caps-tracking']).toBe('0.05em');

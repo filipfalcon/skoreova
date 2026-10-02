@@ -31,8 +31,10 @@ const advance = (text: string, cut: Record<string, number>, tracking: number): n
   return kerned / instance.unitsPerEm + [...text].length * tracking;
 };
 
-// The drawn arrow beside a CTA's label: a 0.22em gap and a 0.72em-tall box of a 32 × 24 drawing.
-const ARROW = 0.22 + (0.72 * 32) / 24;
+// The drawn arrow beside a CTA's label: a 0.25em gap and a box of a 32 × 24 drawing as tall as the
+// capitals.
+const CAP_HEIGHT = archivo.capHeight / archivo.unitsPerEm;
+const ARROW = 0.25 + (CAP_HEIGHT * 32) / 24;
 
 const WORDMARK = advance('SKÓREOVÁ.', DISPLAY_CUT, CAPS_TRACKING);
 // The label's right padding gives its trailing tracking back.
@@ -83,14 +85,14 @@ describe('the header row', () => {
   test('measures the advances its comments state', () => {
     expect(WORDMARK).toBeCloseTo(5.158, 3);
     expect(LABEL).toBeCloseTo(2.725, 3);
-    expect(SHORT_CTA).toBeCloseTo(5.98, 3);
+    expect(SHORT_CTA).toBeCloseTo(5.965, 3);
     expect(LEAD).toBeCloseTo(3.173, 3);
   });
 
   test.each([
-    ['the label', LABEL_GIVES_WAY_REM, fitsFrom('withLabel'), 443.2],
-    ['the first word', LEAD_GIVES_WAY_REM, fitsFrom('withoutLabel'), 374.0],
-    ['the arrow', ARROW_GIVES_WAY_REM, fitsFrom('shortCta'), 317.1],
+    ['the label', LABEL_GIVES_WAY_REM, fitsFrom('withLabel'), 442.9],
+    ['the first word', LEAD_GIVES_WAY_REM, fitsFrom('withoutLabel'), 373.7],
+    ['the arrow', ARROW_GIVES_WAY_REM, fitsFrom('shortCta'), 316.8],
     ['the CTA', CTA_GIVES_WAY_REM, fitsFrom('noArrow'), 296.3],
   ])(
     'gives %s way within a quarter rem above where the row stops fitting',

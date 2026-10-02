@@ -1,10 +1,13 @@
+import * as stylex from '@stylexjs/stylex';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
 import heroImage from '../assets/hero.webp';
-import { displayArrow } from '../components';
+import { platformArrow } from '../components';
 import { platformUrl } from '../data';
 import type { Message } from '../message';
 import { ObserveHeroPastHeader } from '../motion';
+import { getStyleXAttributesWith } from '../stylexAttributes';
+import { styles as arrowStyles } from '../styles/arrow';
 
 // ONE continuous size curve across every width — no breakpoint tiers, so
 // the lockup never steps when the viewport crosses a boundary. Three legs:
@@ -182,13 +185,15 @@ export const view = (h: HtmlBuilder<Message>): Html =>
               h.a(
                 [
                   h.Href(platformUrl),
-                  h.Class(
-                    'hero-cta platform-beckon display bg-pink px-10 py-4 text-2xl text-ink transition-colors duration-300 active:bg-paper md:px-9 md:hover:bg-paper',
+                  ...getStyleXAttributesWith(
+                    h,
+                    'display bg-pink px-10 py-4 text-2xl text-ink transition-colors duration-300 active:bg-paper md:px-9 md:hover:bg-paper',
+                    stylex.defaultMarker(),
                   ),
                 ],
-                // The same drawn arrow as the menu’s Platform entry — the
-                // text glyph "→" reads hairline-thin next to Anton.
-                ['Enter platform', displayArrow],
+                // The same drawn arrow as the menu’s Platform entry, which
+                // knocks once the CTA has landed.
+                ['Enter platform', platformArrow(arrowStyles.knockOnHeroLanding)],
               ),
             ],
           ),

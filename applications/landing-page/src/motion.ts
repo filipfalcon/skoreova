@@ -1011,8 +1011,8 @@ const setUpMotion = (root: HTMLElement, reduceMotion: boolean): (() => void) => 
   // rAF loop below, re-asserting an `.is-visible` class every frame because a
   // header re-render (opening the menu flips the toggle’s aria) kept wiping
   // it. It now lives in the Model: ObserveHeroPastHeader watches the hero and
-  // reports when it slips under the header, and the view renders the class —
-  // so nothing here has to fight the vdom for it.
+  // reports when it slips under the header, and the view renders its shown
+  // style from that — so nothing here has to fight the vdom for it.
 
   if (reduceMotion) {
     return () => {

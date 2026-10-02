@@ -19,12 +19,15 @@ const DISPLAY_WEIGHT = '700';
 const CAPS_TRACKING = '0.05em';
 // Data (scores, tables, times) sets its figures to one width, so columns of them align.
 const DATA_NUMERALS = 'tabular-nums';
+// The capitals' height: Archivo's OS/2 cap height, 686 of its 1000 units, which both cuts hold.
+const CAP_HEIGHT = '0.686em';
 
 /**
  * The typeface and its two cuts.
  *
  * Body text sets in the body cut, bold where it needs emphasis; display text in the display cut, in
- * capitals tracked by `caps-tracking`. Mixed case is not tracked.
+ * capitals tracked by `caps-tracking`. Mixed case is not tracked. A mark set beside capitals (an
+ * arrow, an icon) stands `cap-height` tall on the baseline, as tall as they are.
  */
 export const font = stylex.defineVars({
   family: FAMILY,
@@ -35,4 +38,5 @@ export const font = stylex.defineVars({
   'display-weight': DISPLAY_WEIGHT,
   'caps-tracking': CAPS_TRACKING,
   'data-numerals': DATA_NUMERALS,
+  'cap-height': CAP_HEIGHT,
 });
