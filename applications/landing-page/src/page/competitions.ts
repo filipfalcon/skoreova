@@ -211,7 +211,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                       // Paper text like the section’s card labels (large
                       // display type — the pairing is AA at this size only).
                       h.Class(
-                        'display inline-block bg-pink px-8 py-4 text-xl tracking-[0.04em] text-paper transition-colors duration-300 hover:bg-paper hover:text-ink active:bg-paper active:text-ink md:text-2xl md:tracking-[0.08em]',
+                        'display inline-block bg-pink px-8 py-4 text-xl text-paper transition-colors duration-300 hover:bg-paper hover:text-ink active:bg-paper active:text-ink md:text-2xl',
                       ),
                     ],
                     ['Discover all competitions', displayArrow],

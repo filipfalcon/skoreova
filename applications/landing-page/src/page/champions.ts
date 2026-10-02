@@ -142,7 +142,7 @@ const singleMatchRow = (
                     h.span(
                       [
                         h.Class(
-                          'display hidden shrink-0 bg-pink px-3 py-1.5 text-center text-sm tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper xl:block',
+                          'display hidden shrink-0 bg-pink px-3 py-1.5 text-center text-sm text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper xl:block',
                         ),
                       ],
                       [`Penalties ${match.pens}`],
@@ -194,7 +194,7 @@ const singleMatchRow = (
                 h.span(
                   [
                     h.Class(
-                      'display w-full bg-pink py-1.5 text-center text-xs tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper sm:text-sm md:py-2 md:text-base lg:text-sm xl:hidden',
+                      'display w-full bg-pink py-1.5 text-center text-xs text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper sm:text-sm md:py-2 md:text-base lg:text-sm xl:hidden',
                     ),
                   ],
                   [`Penalties ${match.pens}`],
@@ -448,7 +448,7 @@ const seasonReceiptsGrid = (model: Model, h: HtmlBuilder<Message>): Html =>
                                     // pink stamp flips to ink on the
                                     // row hover’s pink fill.
                                     clsx(
-                                      'display hidden w-24 shrink-0 py-1.5 text-center text-sm tracking-[0.15em] transition-colors duration-300 xl:block',
+                                      'display hidden w-24 shrink-0 py-1.5 text-center text-sm transition-colors duration-300 xl:block',
                                       tie.through
                                         ? 'bg-pink text-ink group-hover:bg-ink group-hover:text-paper'
                                         : 'bg-ink text-paper',
@@ -540,7 +540,7 @@ const seasonReceiptsGrid = (model: Model, h: HtmlBuilder<Message>): Html =>
                         [
                           h.Class(
                             clsx(
-                              'display mt-3 block py-1.5 text-center text-xs tracking-[0.15em] transition-colors duration-300 sm:text-sm md:py-2 md:text-base lg:text-sm xl:hidden',
+                              'display mt-3 block py-1.5 text-center text-xs transition-colors duration-300 sm:text-sm md:py-2 md:text-base lg:text-sm xl:hidden',
                               tie.through
                                 ? 'bg-pink text-ink group-hover:bg-ink group-hover:text-paper'
                                 : 'bg-ink text-paper',
@@ -765,7 +765,7 @@ const honorsBoard = (model: Model, h: HtmlBuilder<Message>): Html =>
               // content around them animates, same as everywhere.
               h.Href(platformUrl),
               h.Class(
-                'display mt-10 inline-block bg-ink px-8 py-4 text-xl tracking-[0.08em] text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink lg:text-2xl',
+                'display mt-10 inline-block bg-ink px-8 py-4 text-xl text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink lg:text-2xl',
               ),
             ],
             ['Discover other records', displayArrow],
@@ -1059,7 +1059,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                         // than riding mt-auto down to the head’s floor —
                         // parked down there it read as a stray button, not
                         // as the crest’s call to action.
-                        'display pointer-events-auto relative left-1/2 hidden w-max min-w-full -translate-x-1/2 bg-pink px-8 py-4 text-center whitespace-nowrap tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-ink hover:text-paper active:bg-ink active:text-paper lg:block lg:text-2xl',
+                        'display pointer-events-auto relative left-1/2 hidden w-max min-w-full -translate-x-1/2 bg-pink px-8 py-4 text-center whitespace-nowrap text-ink transition-colors duration-300 hover:bg-ink hover:text-paper active:bg-ink active:text-paper lg:block lg:text-2xl',
                       ),
                     ],
                     ['Explore Sparta', displayArrow],
@@ -1164,7 +1164,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                     [
                       h.Href(`${platformUrl}/clubs/sparta-praha`),
                       h.Class(
-                        'display inline-block bg-pink px-8 py-4 text-xl tracking-[0.08em] text-ink transition-colors duration-300 active:bg-ink active:text-paper',
+                        'display inline-block bg-pink px-8 py-4 text-xl text-ink transition-colors duration-300 active:bg-ink active:text-paper',
                       ),
                     ],
                     ['Explore Sparta', displayArrow],
@@ -1197,11 +1197,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
               // announces that last season’s statistics follow.
               h.h3([h.Class('display text-fluid-4xl-6xl')], ['Season 2025/2026.']),
               h.span(
-                [
-                  h.Class(
-                    'display mt-2 block text-xl tracking-wide text-pink uppercase md:mt-0 md:text-2xl',
-                  ),
-                ],
+                [h.Class('display mt-2 block text-xl text-pink uppercase md:mt-0 md:text-2xl')],
                 ['The receipts'],
               ),
             ],
@@ -1234,11 +1230,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
             [
               h.h3([h.Class('display text-fluid-4xl-6xl')], ['All time.']),
               h.span(
-                [
-                  h.Class(
-                    'display mt-2 block text-xl tracking-wide text-pink uppercase md:mt-0 md:text-2xl',
-                  ),
-                ],
+                [h.Class('display mt-2 block text-xl text-pink uppercase md:mt-0 md:text-2xl')],
                 ['The honors board'],
               ),
             ],

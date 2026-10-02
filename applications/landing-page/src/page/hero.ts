@@ -121,8 +121,8 @@ export const view = (h: HtmlBuilder<Message>): Html =>
               ),
             ],
             [
-              h.div(
-                [h.Class(`${heroMask} text-paper`)],
+              h.span(
+                [h.Class(`${heroMask} block text-paper`)],
                 [
                   h.span(
                     [h.Class('hero-line display block'), h.Style({ '--hero-delay': '0.15s' })],
@@ -137,8 +137,8 @@ export const view = (h: HtmlBuilder<Message>): Html =>
               // layer so it’s cheap and doesn’t re-rasterize the glow); the
               // inner carries the neon tubes + glow filter and is NOT promoted
               // — WebKit renders a big drop-shadow badly on a forced layer.
-              h.div(
-                [h.Class(heroText)],
+              h.span(
+                [h.Class(`${heroText} block`)],
                 [
                   h.span(
                     [h.Class('hero-neon display block'), h.Style({ '--hero-delay': '0.25s' })],
@@ -159,8 +159,8 @@ export const view = (h: HtmlBuilder<Message>): Html =>
                   ),
                 ],
               ),
-              h.div(
-                [h.Class(`${heroMask} text-paper`)],
+              h.span(
+                [h.Class(`${heroMask} block text-paper`)],
                 [
                   h.span(
                     [h.Class('hero-line display block'), h.Style({ '--hero-delay': '0.3s' })],
@@ -183,7 +183,7 @@ export const view = (h: HtmlBuilder<Message>): Html =>
                 [
                   h.Href(platformUrl),
                   h.Class(
-                    'hero-cta platform-beckon display bg-pink px-10 py-4 text-2xl tracking-[0.08em] text-ink transition-colors duration-300 active:bg-paper md:px-9 md:hover:bg-paper',
+                    'hero-cta platform-beckon display bg-pink px-10 py-4 text-2xl text-ink transition-colors duration-300 active:bg-paper md:px-9 md:hover:bg-paper',
                   ),
                 ],
                 // The same drawn arrow as the menu’s Platform entry — the

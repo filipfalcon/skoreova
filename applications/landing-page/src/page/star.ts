@@ -197,7 +197,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                             // the md band (the photo column eats the rest), so the
                             // upsizing waits for lg across this whole section.
                             clsx(
-                              'display block w-full bg-paper px-4 py-1.5 text-center text-base tracking-[0.2em] text-ink lg:inline-block lg:w-auto lg:bg-pink lg:px-5 lg:py-2 lg:text-left lg:text-xl',
+                              'display block w-full bg-paper px-4 py-1.5 text-center text-base text-ink lg:inline-block lg:w-auto lg:bg-pink lg:px-5 lg:py-2 lg:text-left lg:text-xl',
                               revealClass(model, 'star-scorer-chip'),
                             ),
                           ),
@@ -351,7 +351,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                                   h.span(
                                     [
                                       h.Class(
-                                        'display shrink-0 bg-pink px-3 py-1.5 text-center text-xs tracking-[0.15em] text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper lg:text-sm',
+                                        'display shrink-0 bg-pink px-3 py-1.5 text-center text-xs text-ink uppercase transition-colors duration-300 group-hover:bg-ink group-hover:text-paper lg:text-sm',
                                       ),
                                     ],
                                     [`${haul.goals} goals`],
@@ -405,7 +405,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                             [
                               h.Href(`${platformUrl}/players`),
                               h.Class(
-                                'display inline-block bg-pink px-8 py-4 text-xl tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-paper active:bg-paper lg:text-2xl',
+                                'display inline-block bg-pink px-8 py-4 text-xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper lg:text-2xl',
                               ),
                               // No reveal — CTAs sit still while the content
                               // around them animates, same as everywhere.

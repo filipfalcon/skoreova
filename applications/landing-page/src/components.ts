@@ -63,7 +63,7 @@ export const kicker = (
           h.Href(target),
           h.Class(
             clsx(
-              'display inline-block px-4 py-2 text-fluid-xl-3xl tracking-[0.2em] transition-colors duration-300 md:px-5 md:py-3',
+              'display inline-block px-4 py-2 text-fluid-xl-3xl transition-colors duration-300 md:px-5 md:py-3',
               surface === 'ink' && 'bg-pink text-ink hover:bg-paper active:bg-paper',
               surface === 'paper' &&
                 'bg-pink text-ink hover:bg-ink hover:text-paper active:bg-ink active:text-paper',
@@ -346,7 +346,7 @@ export const menuOverlayView = (model: Model, h: HtmlBuilder<Message>): Html =>
                   // padding pair = the underlay’s left breathing room,
                   // matching the section anchors.
                   h.Class(
-                    'menu-platform platform-beckon menu-anchor -ml-3 display block pt-2 pb-3.5 pl-3 text-fluid-menu-platform tracking-wide text-pink transition-colors duration-300 active:text-paper md:-ml-5 md:pt-3 md:pb-5 md:pl-5',
+                    'menu-platform platform-beckon menu-anchor -ml-3 display block pt-2 pb-3.5 pl-3 text-fluid-menu-platform text-pink transition-colors duration-300 active:text-paper md:-ml-5 md:pt-3 md:pb-5 md:pl-5',
                   ),
                 ],
                 ['Platform', displayArrow],
@@ -383,7 +383,7 @@ export const menuOverlayView = (model: Model, h: HtmlBuilder<Message>): Html =>
                     // starting flush on the first glyph; it eats into the
                     // container padding, so the resting alignment holds.
                     h.Class(
-                      'menu-anchor -ml-3 display block py-3.5 pl-3 text-fluid-4xl-8xl tracking-wide text-paper transition-colors duration-300 md:-ml-5 md:py-5 md:pl-5',
+                      'menu-anchor -ml-3 display block py-3.5 pl-3 text-fluid-4xl-8xl text-paper transition-colors duration-300 md:-ml-5 md:py-5 md:pl-5',
                     ),
                   ],
                   [entry.label, ...(active ? [h.span([h.Class('text-pink')], ['.'])] : [])],
@@ -458,7 +458,7 @@ export const footerView = (isMenuOpen: boolean, h: HtmlBuilder<Message>): Html =
         ],
         [
           h.span(
-            [h.Class('display text-base tracking-wide text-paper')],
+            [h.Class('display text-base text-paper')],
             ['Skóreová', h.span([h.Class('text-pink')], ['.'])],
           ),
           h.span([], ['CZECH WOSO UNLOCKED 🇨🇿']),

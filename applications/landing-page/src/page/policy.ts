@@ -36,11 +36,7 @@ export const view = (h: HtmlBuilder<Message>): Html =>
         [h.Class(container)],
         [
           h.p(
-            [
-              h.Class(
-                'display inline-block bg-ink px-4 py-2 text-fluid-xl-3xl tracking-[0.2em] text-paper',
-              ),
-            ],
+            [h.Class('display inline-block bg-ink px-4 py-2 text-fluid-xl-3xl text-paper')],
             ['Privacy'],
           ),
           h.h1([h.Class('display mt-8 text-fluid-3xl-6xl md:mt-10')], ['Cookies, plainly.']),
@@ -61,7 +57,7 @@ export const view = (h: HtmlBuilder<Message>): Html =>
                 [
                   h.Href(homeRouter()),
                   h.Class(
-                    'display inline-block bg-ink px-6 py-3 text-xl tracking-[0.08em] text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink',
+                    'display inline-block bg-ink px-6 py-3 text-xl text-paper transition-colors duration-300 hover:bg-pink hover:text-ink active:bg-pink active:text-ink',
                   ),
                 ],
                 ['Back to the game'],

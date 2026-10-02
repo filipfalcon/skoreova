@@ -29,11 +29,7 @@ export const crashView = (
         [h.Class(container)],
         [
           h.p(
-            [
-              h.Class(
-                'display inline-block bg-pink px-4 py-2 text-fluid-xl-3xl tracking-[0.2em] text-ink',
-              ),
-            ],
+            [h.Class('display inline-block bg-pink px-4 py-2 text-fluid-xl-3xl text-ink')],
             ['Skóreová'],
           ),
           h.h1([h.Class('display mt-8 text-fluid-3xl-6xl md:mt-10')], ['Something broke.']),
@@ -46,7 +42,7 @@ export const crashView = (
               h.Type('button'),
               h.Attribute('onclick', 'location.reload()'),
               h.Class(
-                'display mt-10 inline-block cursor-pointer bg-pink px-6 py-3 text-xl tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-paper active:bg-paper',
+                'display mt-10 inline-block cursor-pointer bg-pink px-6 py-3 text-xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper',
               ),
             ],
             ['Reload the page'],

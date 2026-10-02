@@ -437,7 +437,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                     [
                       h.h3([h.Class('display text-fluid-4xl-6xl')], ['The road to Brazil 2027.']),
                       h.span(
-                        [h.Class('display text-xl tracking-wide text-paper uppercase md:text-2xl')],
+                        [h.Class('display text-xl text-paper uppercase md:text-2xl')],
                         ['World Cup qualifiers — playoffs'],
                       ),
                     ],

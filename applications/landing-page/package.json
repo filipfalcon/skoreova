@@ -14,8 +14,6 @@
   "dependencies": {
     "@effect/platform-browser": "4.0.0-rc.117",
     "@foldkit/ui": "0.164.0",
-    "@fontsource-variable/archivo": "5.2.8",
-    "@fontsource/anton": "5.2.7",
     "@sentry/browser": "10.64.0",
     "@sentry/cloudflare": "10.64.0",
     "@skoreova/design": "0.0.0",

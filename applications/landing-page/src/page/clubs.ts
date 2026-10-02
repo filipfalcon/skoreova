@@ -884,7 +884,7 @@ export const view = (model: Model, h: HtmlBuilder<Message>): Html =>
                     [
                       h.Href(`${platformUrl}/clubs`),
                       h.Class(
-                        'display inline-block bg-pink px-8 py-4 text-xl tracking-[0.08em] text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
+                        'display inline-block bg-pink px-8 py-4 text-xl text-ink transition-colors duration-300 hover:bg-paper active:bg-paper md:text-2xl',
                       ),
                     ],
                     ['Discover all clubs', displayArrow],
