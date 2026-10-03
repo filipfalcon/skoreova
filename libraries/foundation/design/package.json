@@ -8,9 +8,7 @@
     "./font.css": "./src/font/archivo.css",
     "./archivo": "./src/archivo.ts",
     "./brand-font.css": "./src/font/anton.css",
-    "./anton": "./src/anton.ts",
-    "./anton-latin.woff2": "./src/font/anton-latin.woff2",
-    "./anton-latin-ext.woff2": "./src/font/anton-latin-ext.woff2"
+    "./anton": "./src/anton.ts"
   },
   "devDependencies": {
     "@babel/core": "7.29.7",

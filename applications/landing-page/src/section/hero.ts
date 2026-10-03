@@ -7,7 +7,6 @@ import heroImage from '../assets/hero.webp';
 import { platformArrow, styles as arrowStyles } from '../arrow';
 import { platformUrl } from '../data';
 import type { Message } from '../message';
-import { hero } from './hero.stylex';
 import { ObserveHeroPastHeader } from '../motion';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylex-attributes';
 
@@ -52,17 +51,17 @@ const styles = stylex.create({
     marginTop: { default: '36svh', [SHORT_WINDOW]: 'auto', [SM]: 'auto' },
     paddingInline: grid.gutter,
   },
-  // The smaller of two sizes. By width, the widest line fills the column: 100cqi ÷ 4.4399. By height, the lockup fits the hero, 100lvh − header height: three lines at the headline pitch, 1.27em each, space l to the CTA, the CTA's 4rem, space l below it and one line of the scroll cue at step −2, so a line may take (hero height − 2 × l − 4rem − the cue's leading) ÷ (3 × 1.27).
+  // The smaller of two sizes. By width, the widest line fills the column: 100cqi ÷ 4.4399. By height, the lockup fits the hero, 100lvh − header height: three lines at the size plus space 2xs each, space l to the CTA, the CTA's 4rem, space l below it and one line of the scroll cue at step −2, so 3 × (size + 2xs) = hero height − 2 × l − 4rem − the cue's leading, and size = (hero height − 2 × l − 4rem − the cue's leading − 3 × 2xs) ÷ 3.
   headline: {
-    fontSize: `min(calc(100cqi / ${HEADLINE_WIDEST_EM}), calc((${HERO_HEIGHT} - 2 * ${space.l} - ${CTA_HEIGHT} - ${leading['step--2']}) / (3 * ${hero['headline-pitch']})))`,
+    fontSize: `min(calc(100cqi / ${HEADLINE_WIDEST_EM}), calc((${HERO_HEIGHT} - 2 * ${space.l} - ${CTA_HEIGHT} - ${leading['step--2']} - 3 * ${space['2xs']}) / 3))`,
     textAlign: 'center',
     userSelect: 'none',
   },
-  // The brand face, its lines at the headline's own pitch.
+  // The brand face, its lines at the scale's leading rule, the size plus space 2xs. Anton's capitals ink no closer than 0.876em between adjacent lines of the headline, less than 1em and so less than the line height at any size: the lines never collide.
   line: {
     fontFamily: font['brand-family'],
     fontWeight: font['brand-weight'],
-    lineHeight: hero['headline-pitch'],
+    lineHeight: `calc(1em + ${space['2xs']})`,
   },
   cta: {
     display: 'flex',
