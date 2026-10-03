@@ -6,7 +6,8 @@
   "exports": {
     "./*.stylex": "./src/*.stylex.ts",
     "./font.css": "./src/font/archivo.css",
-    "./archivo": "./src/archivo.ts"
+    "./archivo": "./src/archivo.ts",
+    "./archivo-capitals": "./src/archivo-capitals.ts"
   },
   "devDependencies": {
     "@babel/core": "7.29.7",

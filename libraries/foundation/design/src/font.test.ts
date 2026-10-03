@@ -4,7 +4,15 @@ import { fileURLToPath } from 'node:url';
 import type { Font } from 'fontkit';
 import { describe, expect, test, vi } from 'vite-plus/test';
 
-import { ARCHIVO_FILES, BODY_CUT, DISPLAY_CUT, archivoAt, openArchivo } from './archivo';
+import {
+  ARCHIVO_FILES,
+  BODY_CUT,
+  DISPLAY_CUT,
+  MONUMENT_CUT,
+  archivoAt,
+  openArchivo,
+} from './archivo';
+import { ARCHIVO_CAPITALS } from './archivo-capitals';
 import { font } from './font.stylex';
 
 // Unbuilt, `defineVars` hands back its own argument, so each var reads as the value the StyleX
@@ -69,9 +77,11 @@ describe('the faces', () => {
     const face = rule(`archivo-${subset}.woff2`);
     expect(descriptor(face, 'font-family')).toBe("'Archivo'");
     expect(descriptor(face, 'font-weight')).toBe(
-      `${font['body-weight']} ${font['display-weight']}`,
+      `${font['body-weight']} ${font['monument-weight']}`,
     );
-    expect(descriptor(face, 'font-stretch')).toBe(`${font['display-width']} ${font['body-width']}`);
+    expect(descriptor(face, 'font-stretch')).toBe(
+      `${font['monument-width']} ${font['body-width']}`,
+    );
     expect(descriptor(face, 'font-display')).toBe('swap');
   });
 
@@ -146,19 +156,24 @@ const averageAdvance = (cut: Font, capitals: boolean): number => {
 // The system faces the fallbacks draw on, with their average advance by the same weighting, in em,
 // measured from each face's hmtx table: Arial 5.01 for running text (Liberation Sans shares its
 // advances), and for capitals Helvetica Neue Condensed Bold 22.0d2e1, Arial Narrow Bold 2.38.1x,
-// Arial Bold 5.01.2x (Liberation Sans Bold shares its advances).
+// Arial Bold 5.01.2x (Liberation Sans Bold shares its advances), Helvetica Neue Condensed Black
+// 22.0d2e1. Each with the cut it stands in for and the weight it is declared at.
 const FALLBACKS = [
-  ['Archivo Fallback', 0.44678, false],
-  ['Archivo Display Fallback Condensed', 0.47607, true],
-  ['Archivo Display Fallback Narrow', 0.50279, true],
-  ['Archivo Display Fallback', 0.61323, true],
+  ['Archivo Fallback', 0.44678, BODY_CUT, undefined],
+  ['Archivo Display Fallback Condensed', 0.47607, DISPLAY_CUT, '700'],
+  ['Archivo Display Fallback Narrow', 0.50279, DISPLAY_CUT, '700'],
+  ['Archivo Display Fallback', 0.61323, DISPLAY_CUT, '700'],
+  ['Archivo Monument Fallback Condensed', 0.48589, MONUMENT_CUT, '900'],
+  ['Archivo Monument Fallback Narrow', 0.50279, MONUMENT_CUT, '900'],
+  ['Archivo Monument Fallback', 0.61323, MONUMENT_CUT, '900'],
 ] as const;
 
 describe('the fallback faces', () => {
   test.each(FALLBACKS)(
     '%s matches its cut’s average advance and carries Archivo’s vertical metrics',
-    (family, systemAdvance, capitals) => {
-      const cut = archivoAt(capitals ? DISPLAY_CUT : BODY_CUT);
+    (family, systemAdvance, standsInFor) => {
+      const capitals = standsInFor !== BODY_CUT;
+      const cut = archivoAt(standsInFor);
       const face = rule(`'${family}';`);
       const sizeAdjust = averageAdvance(cut, capitals) / systemAdvance;
       const em = (units: number): number => units / cut.unitsPerEm;
@@ -169,9 +184,12 @@ describe('the fallback faces', () => {
     },
   );
 
-  test('stand in for the display cut in bold, so none is drawn bolder by synthesis', () => {
-    for (const [family, , capitals] of FALLBACKS) {
-      if (capitals) expect(descriptor(rule(`'${family}';`), 'font-weight')).toBe('700');
+  test('stand in at their cut’s weight, so none is drawn bolder by synthesis', () => {
+    for (const [family, , standsInFor, weight] of FALLBACKS) {
+      if (weight !== undefined) {
+        expect(descriptor(rule(`'${family}';`), 'font-weight')).toBe(weight);
+        expect(weight).toBe(String(standsInFor.wght));
+      }
     }
   });
 
@@ -179,6 +197,9 @@ describe('the fallback faces', () => {
     expect(font.family).toBe("'Archivo', 'Archivo Fallback', sans-serif");
     expect(font['display-family']).toBe(
       "'Archivo', 'Archivo Display Fallback Condensed', 'Archivo Display Fallback Narrow', 'Archivo Display Fallback', sans-serif",
+    );
+    expect(font['monument-family']).toBe(
+      "'Archivo', 'Archivo Monument Fallback Condensed', 'Archivo Monument Fallback Narrow', 'Archivo Monument Fallback', sans-serif",
     );
   });
 });
@@ -193,6 +214,10 @@ describe('the cuts', () => {
       wght: Number(font['display-weight']),
       wdth: Number.parseFloat(font['display-width']),
     });
+    expect(MONUMENT_CUT).toEqual({
+      wght: Number(font['monument-weight']),
+      wdth: Number.parseFloat(font['monument-width']),
+    });
     expect(font['bold-weight']).toBe('700');
     expect(font['data-numerals']).toBe('tabular-nums');
   });
@@ -203,17 +228,25 @@ describe('the cap height', () => {
     expect(font['cap-height']).toBe(String(archivo.capHeight / archivo.unitsPerEm));
   });
 
-  // The display cut's capitals interpolate to 687 units, a thousandth of an em over the stated 686.
-  test.each([
-    ['body', BODY_CUT],
-    ['display', DISPLAY_CUT],
-  ])('is the height of the %s cut’s flat capitals, to a unit', (_name, cut) => {
-    const instance = archivoAt(cut);
+  // Outlines read from a WOFF2 file stay at its default instance (see archivoAt), so this checks the default instance's flat capitals; a varied cut's are measured in the browser.
+  test('is the height of the default instance’s flat capitals, to a unit', () => {
     for (const char of 'EHIT') {
-      const { minY, maxY } = instance.glyphForCodePoint(Number(char.codePointAt(0))).bbox;
+      const { minY, maxY } = archivo.glyphForCodePoint(Number(char.codePointAt(0))).bbox;
       expect(minY).toBe(0);
       expect(Math.abs(maxY - archivo.capHeight)).toBeLessThanOrEqual(1);
     }
+  });
+});
+
+describe('the capitals', () => {
+  // Their list, for the browser test that measures the caps leading; the character maps are unvaried data.
+  test('are every capital the files draw', () => {
+    const drawn = [...new Set(SUBSETS.flatMap((subset) => openArchivo(subset).characterSet))]
+      .filter((codePoint) => /\p{Lu}/u.test(String.fromCodePoint(codePoint)))
+      .sort((a, b) => a - b)
+      .map((codePoint) => String.fromCodePoint(codePoint))
+      .join('');
+    expect(ARCHIVO_CAPITALS).toBe(drawn);
   });
 });
 

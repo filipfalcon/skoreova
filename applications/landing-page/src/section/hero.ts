@@ -1,3 +1,4 @@
+import { font } from '@skoreova/design/font.stylex';
 import { grid, layout, leading, space, type } from '@skoreova/design/scale.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { Html, HtmlBuilder } from 'foldkit/html';
@@ -12,8 +13,8 @@ import { getStyleXAttributes, getStyleXAttributesWith } from '../stylex-attribut
 // The headline's three lines, as written; the display cut sets them in capitals.
 const HEADLINE_LINES = ['Discover', 'Her game', 'In Czechia'] as const;
 
-// The widest headline line's advance, in em, at the display cut with caps tracking: "In Czechia", 5.0953em, against "Discover" at 4.5913em and "Her game" at 4.6705em.
-const HEADLINE_WIDEST_EM = 5.0953;
+// The widest headline line's advance, in em, at the monument cut with caps tracking: "In Czechia", 4.6788em, against "Discover" at 4.1900em and "Her game" at 4.2601em.
+const HEADLINE_WIDEST_EM = 4.6788;
 
 const HEADER_HEIGHT = layout['--layout-header-height'];
 const HERO_HEIGHT = `calc(100lvh - ${HEADER_HEIGHT})`;
@@ -48,15 +49,18 @@ const styles = stylex.create({
     marginTop: { default: '36svh', [SHORT_WINDOW]: 'auto', [SM]: 'auto' },
     paddingInline: grid.gutter,
   },
-  // The smaller of two sizes. By width, the widest line fills the column: 100cqi ÷ 5.0953. By height, the lockup fits the hero, 100lvh − header height: three lines of 1em + 2xs, space l to the CTA, the CTA's 4rem, space l below it and one line of the scroll cue at step −2, so a line may take (hero height − 2 × l − 4rem − the cue's leading − 3 × 2xs) ÷ 3.
+  // The smaller of two sizes. By width, the widest line fills the column: 100cqi ÷ 4.6788. By height, the lockup fits the hero, 100lvh − header height: three lines at the caps leading, 1.107em each, space l to the CTA, the CTA's 4rem, space l below it and one line of the scroll cue at step −2, so a line may take (hero height − 2 × l − 4rem − the cue's leading) ÷ (3 × 1.107).
   headline: {
-    fontSize: `min(calc(100cqi / ${HEADLINE_WIDEST_EM}), calc((${HERO_HEIGHT} - 2 * ${space.l} - ${CTA_HEIGHT} - ${leading['step--2']} - 3 * ${space['2xs']}) / 3))`,
+    fontSize: `min(calc(100cqi / ${HEADLINE_WIDEST_EM}), calc((${HERO_HEIGHT} - 2 * ${space.l} - ${CTA_HEIGHT} - ${leading['step--2']}) / (3 * ${font['caps-leading']})))`,
     textAlign: 'center',
     userSelect: 'none',
   },
-  // The leading rule: each line is its size plus 2xs.
+  // The monument cut, its lines at the caps leading.
   line: {
-    lineHeight: `calc(1em + ${space['2xs']})`,
+    fontFamily: font['monument-family'],
+    fontStretch: font['monument-width'],
+    fontWeight: font['monument-weight'],
+    lineHeight: font['caps-leading'],
   },
   cta: {
     display: 'flex',

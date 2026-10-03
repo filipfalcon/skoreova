@@ -25,6 +25,11 @@ export const BODY_CUT: Cut = { wght: 400, wdth: 100 };
  */
 export const DISPLAY_CUT: Cut = { wght: 700, wdth: 75 };
 
+/**
+ * The monument cut: Black, Extra Condensed.
+ */
+export const MONUMENT_CUT: Cut = { wght: 900, wdth: 62.5 };
+
 // The files' folder, from this module's own path: a bundler would turn `new URL(…, import.meta.url)`
 // into a served asset URL, where these need paths on disk.
 const FONT_FOLDER = join(dirname(fileURLToPath(import.meta.url)), 'font');
@@ -49,14 +54,18 @@ export const openArchivo = (subset: keyof typeof ARCHIVO_FILES = 'latin'): Font 
 };
 
 /**
- * Opens one of the files at a cut, with its glyphs' advances and outlines varied to it.
+ * Opens one of the files at a cut, with its glyphs' advances varied to it.
+ *
+ * Only the advances: they vary through the file's HVAR table, which fontkit reads correctly. Its
+ * outlines and their bounds stay at the default instance, since fontkit decodes a WOFF2 file's
+ * glyph table once, unvaried; a measure of a varied outline belongs to the browser.
  *
  * Fontkit's `getVariation` cannot instance a WOFF2 file: it rebuilds the font as a plain TrueType
  * font over the file's compressed stream. A font's constructor only records the variation
  * coordinates it is drawn at, and the WOFF2 font takes them as the TrueType one does, so a freshly
- * opened file given the coordinates before first use is that instance. The coordinates are the
- * axes' user values, clamped to the font's ranges, in the font's axis order, as `getVariation`
- * computes them.
+ * opened file given the coordinates before first use draws that instance's advances. The
+ * coordinates are the axes' user values, clamped to the font's ranges, in the font's axis order, as
+ * `getVariation` computes them.
  *
  * @param cut The cut's axis values.
  * @param subset The file's subset name.
