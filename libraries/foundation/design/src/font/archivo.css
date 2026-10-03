@@ -1,6 +1,6 @@
-/* Archivo, as Google Fonts serves it (SIL Open Font License 1.1, OFL.txt): one variable file per
+/* Archivo, as Google Fonts serves it (SIL Open Font License 1.1, archivo-OFL.txt): one variable file per
    subset, each over the full axes, wdth 62–125 and wght 100–900. The faces declare only the
-   range the language uses, weight 400–900 and width 62.5–100%. The browser fetches a subset's
+   range the language uses, weight 400–700 and width 75–100%. The browser fetches a subset's
    file only when the page draws a character in its range; the values below are checked against
    the files by src/font.test.ts. */
 
@@ -8,8 +8,8 @@
 @font-face {
   font-family: 'Archivo';
   font-style: normal;
-  font-weight: 400 900;
-  font-stretch: 62.5% 100%;
+  font-weight: 400 700;
+  font-stretch: 75% 100%;
   font-display: swap;
   src: url('./archivo-latin-ext.woff2') format('woff2');
   unicode-range:
@@ -22,8 +22,8 @@
 @font-face {
   font-family: 'Archivo';
   font-style: normal;
-  font-weight: 400 900;
-  font-stretch: 62.5% 100%;
+  font-weight: 400 700;
+  font-stretch: 75% 100%;
   font-display: swap;
   src: url('./archivo-latin.woff2') format('woff2');
   unicode-range:
@@ -79,39 +79,5 @@
   size-adjust: 78.63%;
   ascent-override: 111.66%;
   descent-override: 26.71%;
-  line-gap-override: 0%;
-}
-
-/* The monument cut, extra-condensed black capitals at headline size: Helvetica Neue Condensed Black
-   (macOS, iOS) first, then Arial Narrow Bold, then Arial Bold (or Liberation Sans Bold), each scaled
-   to the monument cut's average capital advance. Each is declared Black, so none is drawn bolder by
-   synthesis. */
-@font-face {
-  font-family: 'Archivo Monument Fallback Condensed';
-  font-weight: 900;
-  src: local('Helvetica Neue Condensed Black'), local('HelveticaNeue-CondensedBlack');
-  size-adjust: 89.49%;
-  ascent-override: 98.11%;
-  descent-override: 23.47%;
-  line-gap-override: 0%;
-}
-
-@font-face {
-  font-family: 'Archivo Monument Fallback Narrow';
-  font-weight: 900;
-  src: local('Arial Narrow Bold'), local('ArialNarrow-Bold');
-  size-adjust: 86.48%;
-  ascent-override: 101.52%;
-  descent-override: 24.28%;
-  line-gap-override: 0%;
-}
-
-@font-face {
-  font-family: 'Archivo Monument Fallback';
-  font-weight: 900;
-  src: local('Arial Bold'), local('Arial-BoldMT'), local('Liberation Sans Bold');
-  size-adjust: 70.91%;
-  ascent-override: 123.82%;
-  descent-override: 29.62%;
   line-gap-override: 0%;
 }

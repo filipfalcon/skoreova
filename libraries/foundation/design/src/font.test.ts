@@ -4,29 +4,26 @@ import { fileURLToPath } from 'node:url';
 import type { Font } from 'fontkit';
 import { describe, expect, test, vi } from 'vite-plus/test';
 
-import {
-  ARCHIVO_FILES,
-  BODY_CUT,
-  DISPLAY_CUT,
-  MONUMENT_CUT,
-  archivoAt,
-  openArchivo,
-} from './archivo';
-import { ARCHIVO_CAPITALS } from './archivo-capitals';
+import { openAnton } from './anton';
+import { ARCHIVO_FILES, BODY_CUT, DISPLAY_CUT, archivoAt, openArchivo } from './archivo';
 import { font } from './font.stylex';
 
 // Unbuilt, `defineVars` hands back its own argument, so each var reads as the value the StyleX
 // compiler evaluates for it.
 vi.mock('@stylexjs/stylex', () => ({ defineVars: <Vars>(vars: Vars): Vars => vars }));
 
-const CSS = readFileSync(fileURLToPath(new URL('./font/archivo.css', import.meta.url)), 'utf8');
+const sheet = (file: string): string =>
+  readFileSync(fileURLToPath(new URL(`./font/${file}`, import.meta.url)), 'utf8');
+const CSS = sheet('archivo.css');
+const BRAND_CSS = sheet('anton.css');
 
-// The rule that declares a family, or a subset's file.
-const rule = (marker: string): string => {
-  const at = CSS.indexOf(marker);
+// The rule in a sheet that declares a family, or a subset's file.
+const ruleIn = (css: string, marker: string): string => {
+  const at = css.indexOf(marker);
   if (at === -1) throw new Error(`no rule for ${marker}`);
-  return CSS.slice(CSS.lastIndexOf('@font-face', at), CSS.indexOf('}', at));
+  return css.slice(css.lastIndexOf('@font-face', at), css.indexOf('}', at));
 };
+const rule = (marker: string): string => ruleIn(CSS, marker);
 
 // A descriptor's value, as declared.
 const descriptor = (block: string, name: string): string => {
@@ -77,11 +74,9 @@ describe('the faces', () => {
     const face = rule(`archivo-${subset}.woff2`);
     expect(descriptor(face, 'font-family')).toBe("'Archivo'");
     expect(descriptor(face, 'font-weight')).toBe(
-      `${font['body-weight']} ${font['monument-weight']}`,
+      `${font['body-weight']} ${font['display-weight']}`,
     );
-    expect(descriptor(face, 'font-stretch')).toBe(
-      `${font['monument-width']} ${font['body-width']}`,
-    );
+    expect(descriptor(face, 'font-stretch')).toBe(`${font['display-width']} ${font['body-width']}`);
     expect(descriptor(face, 'font-display')).toBe('swap');
   });
 
@@ -156,16 +151,13 @@ const averageAdvance = (cut: Font, capitals: boolean): number => {
 // The system faces the fallbacks draw on, with their average advance by the same weighting, in em,
 // measured from each face's hmtx table: Arial 5.01 for running text (Liberation Sans shares its
 // advances), and for capitals Helvetica Neue Condensed Bold 22.0d2e1, Arial Narrow Bold 2.38.1x,
-// Arial Bold 5.01.2x (Liberation Sans Bold shares its advances), Helvetica Neue Condensed Black
-// 22.0d2e1. Each with the cut it stands in for and the weight it is declared at.
+// Arial Bold 5.01.2x (Liberation Sans Bold shares its advances). Each with the cut it stands in
+// for and the weight it is declared at.
 const FALLBACKS = [
   ['Archivo Fallback', 0.44678, BODY_CUT, undefined],
   ['Archivo Display Fallback Condensed', 0.47607, DISPLAY_CUT, '700'],
   ['Archivo Display Fallback Narrow', 0.50279, DISPLAY_CUT, '700'],
   ['Archivo Display Fallback', 0.61323, DISPLAY_CUT, '700'],
-  ['Archivo Monument Fallback Condensed', 0.48589, MONUMENT_CUT, '900'],
-  ['Archivo Monument Fallback Narrow', 0.50279, MONUMENT_CUT, '900'],
-  ['Archivo Monument Fallback', 0.61323, MONUMENT_CUT, '900'],
 ] as const;
 
 describe('the fallback faces', () => {
@@ -198,9 +190,6 @@ describe('the fallback faces', () => {
     expect(font['display-family']).toBe(
       "'Archivo', 'Archivo Display Fallback Condensed', 'Archivo Display Fallback Narrow', 'Archivo Display Fallback', sans-serif",
     );
-    expect(font['monument-family']).toBe(
-      "'Archivo', 'Archivo Monument Fallback Condensed', 'Archivo Monument Fallback Narrow', 'Archivo Monument Fallback', sans-serif",
-    );
   });
 });
 
@@ -214,10 +203,7 @@ describe('the cuts', () => {
       wght: Number(font['display-weight']),
       wdth: Number.parseFloat(font['display-width']),
     });
-    expect(MONUMENT_CUT).toEqual({
-      wght: Number(font['monument-weight']),
-      wdth: Number.parseFloat(font['monument-width']),
-    });
+
     expect(font['bold-weight']).toBe('700');
     expect(font['data-numerals']).toBe('tabular-nums');
   });
@@ -238,20 +224,64 @@ describe('the cap height', () => {
   });
 });
 
-describe('the capitals', () => {
-  // Their list, for the browser test that measures the caps leading; the character maps are unvaried data.
-  test('are every capital the files draw', () => {
-    const drawn = [...new Set(SUBSETS.flatMap((subset) => openArchivo(subset).characterSet))]
-      .filter((codePoint) => /\p{Lu}/u.test(String.fromCodePoint(codePoint)))
-      .sort((a, b) => a - b)
-      .map((codePoint) => String.fromCodePoint(codePoint))
-      .join('');
-    expect(ARCHIVO_CAPITALS).toBe(drawn);
-  });
-});
-
 describe('caps tracking', () => {
   test('is the lower bound of 5 to 10% of the type size', () => {
     expect(font['caps-tracking']).toBe('0.05em');
+  });
+});
+
+// The brand face's system fallbacks, with their average capital advance by the same weighting, in
+// em, from each face's hmtx table: Impact 5.00x, Arial Narrow Bold 2.38.1x, Arial Bold 5.01.2x
+// (Liberation Sans Bold shares its advances).
+const BRAND_FALLBACKS = [
+  ['Anton Fallback Impact', 0.44768],
+  ['Anton Fallback Narrow', 0.50279],
+  ['Anton Fallback', 0.61323],
+] as const;
+
+describe('the brand face', () => {
+  const anton = openAnton();
+
+  test.each(SUBSETS)('%s is Anton, a static font', (subset) => {
+    const file = openAnton(subset);
+    expect(file.familyName).toBe('Anton');
+    expect(file.variationAxes).toEqual({});
+  });
+
+  test.each(SUBSETS)('%s declares Anton’s one weight, swap and Archivo’s range', (subset) => {
+    const face = ruleIn(BRAND_CSS, `anton-${subset}.woff2`);
+    expect(descriptor(face, 'font-family')).toBe("'Anton'");
+    expect(descriptor(face, 'font-weight')).toBe(font['brand-weight']);
+    expect(descriptor(face, 'font-display')).toBe('swap');
+    expect(descriptor(face, 'unicode-range')).toBe(
+      descriptor(rule(`archivo-${subset}.woff2`), 'unicode-range'),
+    );
+  });
+
+  test('covers the Czech alphabet', () => {
+    const drawn = new Set(SUBSETS.flatMap((subset) => openAnton(subset).characterSet));
+    for (const char of 'áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ') {
+      expect(drawn.has(Number(char.codePointAt(0)))).toBe(true);
+    }
+  });
+
+  test.each(BRAND_FALLBACKS)(
+    '%s matches Anton’s average capital advance and carries its vertical metrics',
+    (family, systemAdvance) => {
+      const face = ruleIn(BRAND_CSS, `'${family}';`);
+      const sizeAdjust = averageAdvance(anton, true) / systemAdvance;
+      const em = (units: number): number => units / anton.unitsPerEm;
+      expect(descriptor(face, 'size-adjust')).toBe(asPercent(sizeAdjust));
+      expect(descriptor(face, 'ascent-override')).toBe(asPercent(em(anton.ascent) / sizeAdjust));
+      expect(descriptor(face, 'descent-override')).toBe(asPercent(em(-anton.descent) / sizeAdjust));
+      expect(descriptor(face, 'line-gap-override')).toBe(asPercent(em(anton.lineGap) / sizeAdjust));
+      expect(descriptor(face, 'font-weight')).toBe(font['brand-weight']);
+    },
+  );
+
+  test('follows Anton with its fallbacks in the brand family', () => {
+    expect(font['brand-family']).toBe(
+      "'Anton', 'Anton Fallback Impact', 'Anton Fallback Narrow', 'Anton Fallback', sans-serif",
+    );
   });
 });

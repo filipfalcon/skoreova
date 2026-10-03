@@ -12,12 +12,12 @@ import { ObserveHeroPastHeader } from '../motion';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylex-attributes';
 
 /**
- * The headline's three lines, as written; the monument cut sets them in capitals.
+ * The headline's three lines, as written; the brand face sets them in capitals.
  */
 export const HEADLINE_LINES = ['Discover', 'Her game', 'In Czechia'] as const;
 
-// The widest headline line's advance, in em, at the monument cut with caps tracking: "In Czechia", 4.6788em, against "Discover" at 4.1900em and "Her game" at 4.2601em.
-const HEADLINE_WIDEST_EM = 4.6788;
+// The widest headline line's advance, in em, in the brand face with caps tracking: "In Czechia", 4.4399em, against "Discover" at 3.8990em and "Her game" at 4.1495em.
+const HEADLINE_WIDEST_EM = 4.4399;
 
 const HEADER_HEIGHT = layout['--layout-header-height'];
 const HERO_HEIGHT = `calc(100lvh - ${HEADER_HEIGHT})`;
@@ -52,17 +52,16 @@ const styles = stylex.create({
     marginTop: { default: '36svh', [SHORT_WINDOW]: 'auto', [SM]: 'auto' },
     paddingInline: grid.gutter,
   },
-  // The smaller of two sizes. By width, the widest line fills the column: 100cqi ÷ 4.6788. By height, the lockup fits the hero, 100lvh − header height: three lines at the headline pitch, 0.82em each, space l to the CTA, the CTA's 4rem, space l below it and one line of the scroll cue at step −2, so a line may take (hero height − 2 × l − 4rem − the cue's leading) ÷ (3 × 0.82).
+  // The smaller of two sizes. By width, the widest line fills the column: 100cqi ÷ 4.4399. By height, the lockup fits the hero, 100lvh − header height: three lines at the headline pitch, 0.981em each, space l to the CTA, the CTA's 4rem, space l below it and one line of the scroll cue at step −2, so a line may take (hero height − 2 × l − 4rem − the cue's leading) ÷ (3 × 0.981).
   headline: {
     fontSize: `min(calc(100cqi / ${HEADLINE_WIDEST_EM}), calc((${HERO_HEIGHT} - 2 * ${space.l} - ${CTA_HEIGHT} - ${leading['step--2']}) / (3 * ${hero['headline-pitch']})))`,
     textAlign: 'center',
     userSelect: 'none',
   },
-  // The monument cut, its lines at the headline's own pitch.
+  // The brand face, its lines at the headline's own pitch.
   line: {
-    fontFamily: font['monument-family'],
-    fontStretch: font['monument-width'],
-    fontWeight: font['monument-weight'],
+    fontFamily: font['brand-family'],
+    fontWeight: font['brand-weight'],
     lineHeight: hero['headline-pitch'],
   },
   cta: {

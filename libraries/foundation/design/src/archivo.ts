@@ -25,11 +25,6 @@ export const BODY_CUT: Cut = { wght: 400, wdth: 100 };
  */
 export const DISPLAY_CUT: Cut = { wght: 700, wdth: 75 };
 
-/**
- * The monument cut: Black, Extra Condensed.
- */
-export const MONUMENT_CUT: Cut = { wght: 900, wdth: 62.5 };
-
 // The files' folder, from this module's own path: a bundler would turn `new URL(…, import.meta.url)`
 // into a served asset URL, where these need paths on disk.
 const FONT_FOLDER = join(dirname(fileURLToPath(import.meta.url)), 'font');

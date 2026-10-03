@@ -7,9 +7,10 @@
     "./*.stylex": "./src/*.stylex.ts",
     "./font.css": "./src/font/archivo.css",
     "./archivo": "./src/archivo.ts",
-    "./archivo-capitals": "./src/archivo-capitals.ts",
-    "./archivo-latin.woff2": "./src/font/archivo-latin.woff2",
-    "./archivo-latin-ext.woff2": "./src/font/archivo-latin-ext.woff2"
+    "./brand-font.css": "./src/font/anton.css",
+    "./anton": "./src/anton.ts",
+    "./anton-latin.woff2": "./src/font/anton-latin.woff2",
+    "./anton-latin-ext.woff2": "./src/font/anton-latin-ext.woff2"
   },
   "devDependencies": {
     "@babel/core": "7.29.7",

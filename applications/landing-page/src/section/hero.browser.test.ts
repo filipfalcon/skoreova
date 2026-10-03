@@ -1,25 +1,21 @@
-import latinFile from '@skoreova/design/archivo-latin.woff2?url';
-import latinExtFile from '@skoreova/design/archivo-latin-ext.woff2?url';
+import latinFile from '@skoreova/design/anton-latin.woff2?url';
+import latinExtFile from '@skoreova/design/anton-latin-ext.woff2?url';
 import { expect, test } from 'vite-plus/test';
 
 import { HEADLINE_LINES } from './hero';
 import { hero } from './hero.stylex';
 
-// The headline's pitch, recomputed from its text at the monument cut. fontkit reads a WOFF2 file's outlines only at its default instance, so the ink is measured in the browser, from the pixels a canvas draws: the edges where coverage reaches half. A canvas in one engine ignores a requested width, so the files are drawn through a face that declares the monument cut alone, which the engine clamps the width axis to.
+// The headline's pitch, recomputed from its text in the brand face. The ink is measured in the browser, from the pixels a canvas draws: the edges where coverage reaches half, since one engine's canvas reports an advance box, not ink, for a text's left and right bounds. The files are drawn through a face of their own, as the page's stylesheet is not loaded here.
 const SIZE = 1000;
 const TRACKING = 0.05;
-const PROBE = 'Archivo Monument Probe';
+const PROBE = 'Anton Probe';
 
 const loadProbe = async (): Promise<void> => {
   for (const [file, range] of [
     [latinFile, 'U+0000-00FF'],
     [latinExtFile, 'U+0100-024F'],
   ] as const) {
-    const face = new FontFace(PROBE, `url(${file})`, {
-      weight: '900',
-      stretch: '62.5%',
-      unicodeRange: range,
-    });
+    const face = new FontFace(PROBE, `url(${file})`, { weight: '400', unicodeRange: range });
     document.fonts.add(await face.load());
   }
 };
@@ -52,7 +48,7 @@ test('is the closest the lines’ ink comes, plus the mean gap between letters',
   const origin = { x: SIZE, y: 1.4 * SIZE };
   const draw = (text: string): void => {
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.font = `900 ${SIZE}px '${PROBE}'`;
+    context.font = `400 ${SIZE}px '${PROBE}'`;
     context.fillText(text, origin.x, origin.y);
   };
   // A text's ink box in em, from the origin it is drawn at.

@@ -2,6 +2,8 @@
 /* Archivo's faces and their fallbacks, in the stylesheet the document's head links, so the
    browser learns them with the HTML rather than after the module graph. */
 @import '@skoreova/design/font.css';
+/* Anton, the brand face, for the hero's headline; declared here, fetched only when drawn. */
+@import '@skoreova/design/brand-font.css';
 
 /* THE CASCADE ORDER, declared once: Tailwind's layers (theme, then base with
    its preflight reset, components, utilities), then StyleX. Layer order is

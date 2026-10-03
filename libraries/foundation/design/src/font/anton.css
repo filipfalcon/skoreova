@@ -1,0 +1,63 @@
+/* Anton, the brand face, as Google Fonts serves it (SIL Open Font License 1.1, anton-OFL.txt): one
+   static Regular file per subset, set in the hero's headline alone. The browser fetches a subset's
+   file only when the page draws a character in its range; the values below are checked against
+   the files by src/font.test.ts. */
+
+/* latin-ext */
+@font-face {
+  font-family: 'Anton';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./anton-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+/* latin */
+@font-face {
+  font-family: 'Anton';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./anton-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* The fallbacks stand in until Anton arrives, each a condensed system face scaled to Anton's
+   average capital advance, carrying Anton's ascent, descent and line gap, so the swap does not jump.
+   Impact (macOS, Windows) first, then Arial Narrow Bold, then Arial Bold (or Liberation Sans Bold).
+   Each is declared at Anton's one weight, so none is drawn bolder by synthesis. */
+@font-face {
+  font-family: 'Anton Fallback Impact';
+  font-weight: 400;
+  src: local('Impact');
+  size-adjust: 93.89%;
+  ascent-override: 125.28%;
+  descent-override: 35.05%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Anton Fallback Narrow';
+  font-weight: 400;
+  src: local('Arial Narrow Bold'), local('ArialNarrow-Bold');
+  size-adjust: 83.6%;
+  ascent-override: 140.7%;
+  descent-override: 39.37%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Anton Fallback';
+  font-weight: 400;
+  src: local('Arial Bold'), local('Arial-BoldMT'), local('Liberation Sans Bold');
+  size-adjust: 68.55%;
+  ascent-override: 171.61%;
+  descent-override: 48.01%;
+  line-gap-override: 0%;
+}
