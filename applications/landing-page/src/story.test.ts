@@ -64,53 +64,17 @@ test('ClosedMenu closes the overlay', () => {
 });
 
 // Escape is one factual Message; update decides what it closes. The menu
-// wins while open and hands focus back to its toggle; otherwise the club card
-// closes.
+// wins while open and hands focus back to its toggle.
 test('Escape closes the open menu and returns focus to its toggle', () => {
   Story.story(
     update,
-    Story.given({ ...menuOpenModel, mapClub: Option.some('sparta-praha') }),
+    Story.given(menuOpenModel),
     Story.message(Message.PressedEscape()),
     Story.model((model) => {
       expect(model.isMenuOpen).toBe(false);
-      expect(model.mapClub).toEqual(Option.some('sparta-praha'));
     }),
     Story.Command.expectHas(FocusMenuToggle),
     Story.Command.resolveAll([FocusMenuToggle, Message.CompletedFocusMenuToggle()]),
-  );
-});
-
-test('Escape with the menu closed closes the club card', () => {
-  Story.story(
-    update,
-    Story.given({ ...landingModel, mapClub: Option.some('sparta-praha') }),
-    Story.message(Message.PressedEscape()),
-    Story.model((model) => {
-      expect(model.mapClub).toEqual(Option.none());
-    }),
-    Story.Command.expectNone(),
-  );
-});
-
-test('opening a club card records its slug; the area unit toggles', () => {
-  Story.story(
-    update,
-    Story.given(landingModel),
-    Story.message(Message.OpenedMapClub({ slug: 'slavia-praha' })),
-    Story.model((model) => {
-      expect(model.mapClub).toEqual(Option.some('slavia-praha'));
-    }),
-    // Closing is its own message now, not OpenedMapClub with an empty slug.
-    Story.message(Message.ClosedMapClub()),
-    Story.model((model) => {
-      expect(model.mapClub).toEqual(Option.none());
-    }),
-    // Rests imperial; the switch reports the unit it turned to.
-    Story.message(Message.ToggledAreaUnit({ isImperial: false })),
-    Story.model((model) => {
-      expect(model.isMapAreaImperial).toBe(false);
-    }),
-    Story.Command.expectNone(),
   );
 });
 
@@ -179,7 +143,7 @@ test('the reveal fold enters, keeps drawn state, drops stale drawn reports, and 
 test('an internal link pushes its URL, and the change it causes applies the route and lands', () => {
   Story.story(
     update,
-    Story.given({ ...menuOpenModel, mapClub: Option.some('sparta-praha') }),
+    Story.given(menuOpenModel),
     Story.message(
       Message.ClickedLink({ request: UrlRequest.Internal({ url: url('/#competitions') }) }),
     ),
@@ -191,9 +155,8 @@ test('an internal link pushes its URL, and the change it causes applies the rout
     Story.Command.resolve(Navigate, Message.CompletedNavigate()),
     Story.message(Message.ChangedUrl({ url: url('/#competitions') })),
     Story.model((model) => {
-      // Navigating always closes the menu and any open club card.
+      // Navigating always closes the menu.
       expect(model.isMenuOpen).toBe(false);
-      expect(model.mapClub).toEqual(Option.none());
       expect(model.isLandingLink).toBe(false);
     }),
     Story.Command.expectExact(

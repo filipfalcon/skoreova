@@ -68,7 +68,7 @@ const parseRevealDelaySeconds = (element: HTMLElement | null): number => {
 // would swallow the comma into the number and render back without it.
 const COUNT_PATTERN = /^([^\d]*)(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)([\s\S]*)$/;
 
-export interface CountShape {
+interface CountShape {
   readonly prefix: string;
   readonly value: number;
   readonly suffix: string;
@@ -79,10 +79,7 @@ export interface CountShape {
   readonly grouped: boolean;
 }
 
-// Exported for count-up.test.ts: the defect these two carry is a WRONG NUMBER
-// mid-animation, which no round trip at rest can see — "1.51" parsed as 1 with
-// the literal suffix ".51" still reassembles into "1.51" when it settles.
-export const parseCount = (text: string): CountShape | undefined => {
+const parseCount = (text: string): CountShape | undefined => {
   const match = text.match(COUNT_PATTERN);
   if (!match) return undefined;
   const digits = match[2] ?? '0';
@@ -97,10 +94,7 @@ export const parseCount = (text: string): CountShape | undefined => {
 
 // Takes only the SHAPE fields, so the live CountUp — whose own number lives
 // in `target` and whose displayed one is mid-flight — can format through it.
-export const formatCount = (
-  shape: Pick<CountShape, 'decimals' | 'grouped'>,
-  value: number,
-): string =>
+const formatCount = (shape: Pick<CountShape, 'decimals' | 'grouped'>, value: number): string =>
   value.toLocaleString('en-US', {
     minimumFractionDigits: shape.decimals,
     maximumFractionDigits: shape.decimals,
@@ -108,9 +102,7 @@ export const formatCount = (
   });
 
 // The PEAK a count flies to before settling, in the number’s own least
-// significant unit. Pure and exported because it is the part of the animation
-// that has been wrong twice and the part no screenshot can catch: it only
-// exists between the first frame and the last.
+// significant unit; it exists only between the first frame and the last.
 //
 // The reach scales with the NUMBER’S SIZE (scaling by the DELTA was tried twice
 // and read as stutter), floored bold enough that a 0↔1 land counter still pops
@@ -123,11 +115,7 @@ export const formatCount = (
 const OVERSHOOT_FLOOR_QUANTA = 5;
 const OVERSHOOT_CAP_QUANTA = 1000;
 
-export const countPeak = (
-  shape: Pick<CountShape, 'decimals'>,
-  from: number,
-  target: number,
-): number => {
+const countPeak = (shape: Pick<CountShape, 'decimals'>, from: number, target: number): number => {
   const quantum = 10 ** -shape.decimals;
   const highest = Math.max(from, target);
   const scaled = Math.round((highest * 0.12) / quantum) * quantum;

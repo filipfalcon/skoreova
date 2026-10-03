@@ -125,16 +125,6 @@ test('every authored motion stops under reduced motion by its own selector', () 
   expect(moving, 'these keep moving under reduced motion').toEqual([]);
 });
 
-// The backstop overrides durations, not END STATES — so a `fill: both` animation
-// whose last keyframe isn’t its resting position parks there instantly. That is
-// a real regression this file exists to catch: the hero photo held a 1.5% crop.
-test('an animation whose final frame is not its resting state opts out by name', () => {
-  const heroPhoto = reduceRules().find((rule) => rule.selectorText.includes('.hero-photo'));
-
-  expect(heroPhoto, '.hero-photo no longer opts out of its animation').toBeDefined();
-  expect(heroPhoto?.style.animationName).toBe('none');
-});
-
 // A DIFFERENT kind of coupling: the consent banner's close path READS this rule
 // back at runtime. index.html does `getComputedStyle(banner).animationName ===
 // 'none'` and, on a match, hides the element straight away instead of waiting

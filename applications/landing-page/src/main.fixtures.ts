@@ -25,10 +25,3 @@ export const landingModel = Model.make({
 
 // The full-screen menu overlay open.
 export const menuOpenModel = Model.make({ ...landingModel, isMenuOpen: true });
-
-// The map filtered to the second league, with a club card open over it.
-export const secondLeagueMapModel = Model.make({
-  ...landingModel,
-  mapLeague: 'Second',
-  mapClub: Option.some('sparta-praha'),
-});

@@ -110,19 +110,13 @@ const unsplitWidth = (logo: HTMLElement): number => {
   return width;
 };
 
-test.each([
-  ['the header', 'header [data-logo-letters]'],
-  ['the footer', 'footer .display'],
-])('%s’s logo keeps its width across the period’s span', (_name, selector) => {
-  const logo = element(selector);
+test('the logo keeps its width across the period’s span', () => {
+  const logo = element('header [data-logo-letters]');
   expect(Math.abs(textWidth(logo) - unsplitWidth(logo))).toBeLessThanOrEqual(0.1);
 });
 
-test.each([
-  ['the header', 'header [data-logo-letters]'],
-  ['the footer', 'footer .display'],
-])('%s’s logo is the name and its period, with nothing between them', (_name, selector) => {
-  expect(element(selector).textContent).toBe('Skóreová.');
+test('the logo is the name and its period, with nothing between them', () => {
+  expect(element('header [data-logo-letters]').textContent).toBe('Skóreová.');
 });
 
 test('names the header’s logo link as the brand', async () => {

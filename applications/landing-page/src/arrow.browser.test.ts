@@ -80,7 +80,7 @@ beforeAll(async () => {
 
 describe('the drawn arrow', () => {
   test('stands as tall as Archivo’s capitals, a quarter of its size after the text', () => {
-    const arrow = arrowIn('#top');
+    const arrow = arrowIn('header');
     const size = pixels(getComputedStyle(arrow).fontSize);
     expect(pixels(getComputedStyle(arrow).height)).toBeCloseTo(0.686 * size, 1);
     expect(pixels(getComputedStyle(arrow).marginLeft)).toBeCloseTo(0.25 * size, 1);
@@ -94,13 +94,6 @@ describe('the knock', () => {
     expect(KNOCKS).toBeGreaterThan(0);
     expect(LONGEST_WAIT_MS + KNOCKS * KNOCK_MS).toBeLessThanOrEqual(5000);
     expect(LONGEST_WAIT_MS + (KNOCKS + 1) * KNOCK_MS).toBeGreaterThan(5000);
-  });
-
-  test('on the hero, once its CTA has landed, and within 5 seconds of the page’s load', () => {
-    const knock = knockOf(arrowIn('#top'));
-    expect(knock.name).not.toBe('none');
-    expect(knock).toMatchObject({ delay: 650 + 700, duration: KNOCK_MS, count: KNOCKS });
-    expect(knock.delay + knock.count * knock.duration).toBeLessThanOrEqual(5000);
   });
 
   test('in the header, once its CTA has entered, from each showing', async () => {

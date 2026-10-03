@@ -9,16 +9,11 @@ import type { Message } from '../message';
 import { ObserveHeroPastHeader } from '../motion';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylex-attributes';
 
-/**
- * The headline's three lines, as written; the display cut sets them in capitals.
- */
-export const HEADLINE_LINES = ['Discover', 'Her game', 'In Czechia'] as const;
+// The headline's three lines, as written; the display cut sets them in capitals.
+const HEADLINE_LINES = ['Discover', 'Her game', 'In Czechia'] as const;
 
-/**
- * The widest headline line's advance, in em, at the display cut with caps tracking: "In Czechia",
- * 5.0953em, against "Discover" at 4.5913em and "Her game" at 4.6705em.
- */
-export const HEADLINE_WIDEST_EM = 5.0953;
+// The widest headline line's advance, in em, at the display cut with caps tracking: "In Czechia", 5.0953em, against "Discover" at 4.5913em and "Her game" at 4.6705em.
+const HEADLINE_WIDEST_EM = 5.0953;
 
 const HEADER_HEIGHT = layout['--layout-header-height'];
 const HERO_HEIGHT = `calc(100lvh - ${HEADER_HEIGHT})`;

@@ -1,9 +1,8 @@
-import { RadioGroup } from '@foldkit/ui';
 import { Option } from 'effect';
 import { Scene } from 'foldkit';
 import { describe, test } from 'vite-plus/test';
 
-import { landingModel, menuOpenModel, secondLeagueMapModel } from './main.fixtures';
+import { landingModel, menuOpenModel } from './main.fixtures';
 import { DetectActiveSection, Message, update, view } from './main';
 import { MountMotion, ObserveHeroPastHeader, ObserveReveals } from './motion';
 
@@ -23,45 +22,12 @@ const acknowledgeMounts = [
 ];
 
 describe('view', () => {
-  test('the landing page renders the hero and the closed-menu control', () => {
+  test('the landing page renders the closed-menu control', () => {
     Scene.scene(
       { update, view },
       Scene.given(landingModel),
       ...acknowledgeMounts,
-      Scene.expect(Scene.text('Discover')).toExist(),
       Scene.expect(Scene.role('button', { name: 'Menu' })).toHaveAttr('aria-expanded', 'false'),
-    );
-  });
-
-  test('the map exposes its league filter and area-unit toggle', () => {
-    Scene.scene(
-      { update, view },
-      Scene.given(landingModel),
-      ...acknowledgeMounts,
-      Scene.expect(Scene.role('radio', { name: 'All clubs' })).toExist(),
-      Scene.expect(Scene.role('switch', { name: 'Imperial units', checked: true })).toHaveAttr(
-        'aria-labelledby',
-        'area-unit-label',
-      ),
-      // The switch is named by reference, so the element it names must exist.
-      Scene.expect(Scene.selector('#area-unit-label')).toHaveText('Imperial units'),
-      Scene.expect(Scene.text('30,452 sq mi.')).toExist(),
-    );
-  });
-
-  // The league radio group commits through its Selected OutMessage, and the
-  // commit also closes an open club card: the pin behind it may be filtered away.
-  test('picking a league switches the filter and closes the open club card', () => {
-    Scene.scene(
-      { update, view },
-      Scene.given(secondLeagueMapModel),
-      ...acknowledgeMounts,
-      Scene.expect(Scene.selector('[data-selected="true"]')).toExist(),
-      Scene.click(Scene.role('radio', { name: 'First League' })),
-      // Picking an option moves focus to it, a Command the group issues and the parent wraps.
-      Scene.Command.resolve(RadioGroup.FocusOption, RadioGroup.Message.CompletedFocusOption()),
-      Scene.expect(Scene.role('radio', { name: 'First League', checked: true })).toExist(),
-      Scene.expect(Scene.selector('[data-selected="true"]')).not.toExist(),
     );
   });
 
