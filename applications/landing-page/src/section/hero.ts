@@ -57,10 +57,12 @@ const styles = stylex.create({
     textAlign: 'center',
     userSelect: 'none',
   },
-  // The brand face, its lines at the scale's leading rule, the size plus space 2xs. Anton's capitals ink no closer than 0.876em between adjacent lines of the headline, less than 1em and so less than the line height at any size: the lines never collide.
+  // The brand face in capitals at the caps tracking, the setting the widest line's 4.4399em is measured in, its lines at the scale's leading rule, the size plus space 2xs. Anton's capitals ink no closer than 0.876em between adjacent lines of the headline, less than 1em and so less than the line height at any size: the lines never collide.
   line: {
     fontFamily: font['brand-family'],
     fontWeight: font['brand-weight'],
+    textTransform: 'uppercase',
+    letterSpacing: font['caps-tracking'],
     lineHeight: `calc(1em + ${space['2xs']})`,
   },
   cta: {
@@ -154,7 +156,7 @@ export const view = (h: HtmlBuilder<Message>): Html =>
                     [
                       h.span(
                         [
-                          ...getStyleXAttributesWith(h, 'hero-line display block', styles.line),
+                          ...getStyleXAttributesWith(h, 'hero-line block', styles.line),
                           h.Style({ '--hero-delay': '0.15s' }),
                         ],
                         [HEADLINE_LINES[0]],
@@ -173,7 +175,7 @@ export const view = (h: HtmlBuilder<Message>): Html =>
                     [
                       h.span(
                         [
-                          ...getStyleXAttributesWith(h, 'hero-neon display block', styles.line),
+                          ...getStyleXAttributesWith(h, 'hero-neon block', styles.line),
                           h.Style({ '--hero-delay': '0.25s' }),
                         ],
                         // ONE glow filter for the whole line — the only structure
@@ -202,7 +204,7 @@ export const view = (h: HtmlBuilder<Message>): Html =>
                     [
                       h.span(
                         [
-                          ...getStyleXAttributesWith(h, 'hero-line display block', styles.line),
+                          ...getStyleXAttributesWith(h, 'hero-line block', styles.line),
                           h.Style({ '--hero-delay': '0.3s' }),
                         ],
                         [HEADLINE_LINES[2]],
