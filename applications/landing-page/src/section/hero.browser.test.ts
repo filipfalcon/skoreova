@@ -9,6 +9,9 @@ import { hero } from './hero.stylex';
 const SIZE = 1000;
 const TRACKING = 0.05;
 const PROBE = 'Anton Probe';
+// The token is the larger engine's measurement rounded to three decimals, so another engine's lies below it by up to one canvas pixel more than the rounding.
+const ROUNDING = 0.0005;
+const PIXEL = 1 / SIZE;
 
 const loadProbe = async (): Promise<void> => {
   for (const [file, range] of [
@@ -38,7 +41,7 @@ interface Ink {
   readonly descent: number;
 }
 
-test('is the closest the lines’ ink comes, plus the mean gap between letters', async () => {
+test('is the closest the lines’ ink comes, plus the mean gap between words', async () => {
   await loadProbe();
   const canvas = document.createElement('canvas');
   canvas.width = 6 * SIZE;
@@ -81,17 +84,21 @@ test('is the closest the lines’ ink comes, plus the mean gap between letters',
     ...ink.slice(1).map((lower, index) => (ink[index]?.descent ?? 0) + lower.ascent),
   );
 
-  // Adjacent letters within words: the second's ink left of its origin, set at the pair's kerned advance plus the tracking.
+  // Across each space: the next word's first letter's ink left of its origin, set at the kerned advance of the letter, the space and the letter, plus the tracking on the letter before the space and on the space.
   const gaps = lines.flatMap((line) =>
-    line.split(' ').flatMap((word) =>
-      [...word].slice(1).map((second, index) => {
-        const first = word[index] ?? '';
-        const offset = advance(first + second) - advance(second) + TRACKING;
+    line
+      .split(' ')
+      .slice(1)
+      .map((word, index) => {
+        const first = line.split(' ')[index]?.at(-1) ?? '';
+        const second = word[0] ?? '';
+        const offset = advance(`${first} ${second}`) - advance(second) + 2 * TRACKING;
         return offset + inkOf(second).left - inkOf(first).right;
       }),
-    ),
   );
   const gap = gaps.reduce((sum, value) => sum + value, 0) / gaps.length;
 
-  expect(Math.abs(closest + gap - tokenPitch())).toBeLessThanOrEqual(0.001);
+  const pitch = closest + gap;
+  expect(pitch).toBeLessThanOrEqual(tokenPitch() + ROUNDING);
+  expect(tokenPitch() - pitch).toBeLessThanOrEqual(PIXEL + ROUNDING);
 });

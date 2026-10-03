@@ -52,7 +52,7 @@ const styles = stylex.create({
     marginTop: { default: '36svh', [SHORT_WINDOW]: 'auto', [SM]: 'auto' },
     paddingInline: grid.gutter,
   },
-  // The smaller of two sizes. By width, the widest line fills the column: 100cqi ÷ 4.4399. By height, the lockup fits the hero, 100lvh − header height: three lines at the headline pitch, 0.981em each, space l to the CTA, the CTA's 4rem, space l below it and one line of the scroll cue at step −2, so a line may take (hero height − 2 × l − 4rem − the cue's leading) ÷ (3 × 0.981).
+  // The smaller of two sizes. By width, the widest line fills the column: 100cqi ÷ 4.4399. By height, the lockup fits the hero, 100lvh − header height: three lines at the headline pitch, 1.27em each, space l to the CTA, the CTA's 4rem, space l below it and one line of the scroll cue at step −2, so a line may take (hero height − 2 × l − 4rem − the cue's leading) ÷ (3 × 1.27).
   headline: {
     fontSize: `min(calc(100cqi / ${HEADLINE_WIDEST_EM}), calc((${HERO_HEIGHT} - 2 * ${space.l} - ${CTA_HEIGHT} - ${leading['step--2']}) / (3 * ${hero['headline-pitch']})))`,
     textAlign: 'center',
