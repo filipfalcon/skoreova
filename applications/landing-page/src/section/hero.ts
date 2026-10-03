@@ -7,11 +7,14 @@ import heroImage from '../assets/hero.webp';
 import { platformArrow, styles as arrowStyles } from '../arrow';
 import { platformUrl } from '../data';
 import type { Message } from '../message';
+import { hero } from './hero.stylex';
 import { ObserveHeroPastHeader } from '../motion';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylex-attributes';
 
-// The headline's three lines, as written; the display cut sets them in capitals.
-const HEADLINE_LINES = ['Discover', 'Her game', 'In Czechia'] as const;
+/**
+ * The headline's three lines, as written; the monument cut sets them in capitals.
+ */
+export const HEADLINE_LINES = ['Discover', 'Her game', 'In Czechia'] as const;
 
 // The widest headline line's advance, in em, at the monument cut with caps tracking: "In Czechia", 4.6788em, against "Discover" at 4.1900em and "Her game" at 4.2601em.
 const HEADLINE_WIDEST_EM = 4.6788;
@@ -49,18 +52,18 @@ const styles = stylex.create({
     marginTop: { default: '36svh', [SHORT_WINDOW]: 'auto', [SM]: 'auto' },
     paddingInline: grid.gutter,
   },
-  // The smaller of two sizes. By width, the widest line fills the column: 100cqi ÷ 4.6788. By height, the lockup fits the hero, 100lvh − header height: three lines at the caps leading, 1.107em each, space l to the CTA, the CTA's 4rem, space l below it and one line of the scroll cue at step −2, so a line may take (hero height − 2 × l − 4rem − the cue's leading) ÷ (3 × 1.107).
+  // The smaller of two sizes. By width, the widest line fills the column: 100cqi ÷ 4.6788. By height, the lockup fits the hero, 100lvh − header height: three lines at the headline pitch, 0.82em each, space l to the CTA, the CTA's 4rem, space l below it and one line of the scroll cue at step −2, so a line may take (hero height − 2 × l − 4rem − the cue's leading) ÷ (3 × 0.82).
   headline: {
-    fontSize: `min(calc(100cqi / ${HEADLINE_WIDEST_EM}), calc((${HERO_HEIGHT} - 2 * ${space.l} - ${CTA_HEIGHT} - ${leading['step--2']}) / (3 * ${font['caps-leading']})))`,
+    fontSize: `min(calc(100cqi / ${HEADLINE_WIDEST_EM}), calc((${HERO_HEIGHT} - 2 * ${space.l} - ${CTA_HEIGHT} - ${leading['step--2']}) / (3 * ${hero['headline-pitch']})))`,
     textAlign: 'center',
     userSelect: 'none',
   },
-  // The monument cut, its lines at the caps leading.
+  // The monument cut, its lines at the headline's own pitch.
   line: {
     fontFamily: font['monument-family'],
     fontStretch: font['monument-width'],
     fontWeight: font['monument-weight'],
-    lineHeight: font['caps-leading'],
+    lineHeight: hero['headline-pitch'],
   },
   cta: {
     display: 'flex',
