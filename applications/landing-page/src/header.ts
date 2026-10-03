@@ -1,14 +1,14 @@
+import { Button } from '@foldkit/ui';
 import { brand, chrome, color, focus } from '@skoreova/design/color.stylex';
 import { font } from '@skoreova/design/font.stylex';
 import { layer } from '@skoreova/design/layer.stylex';
 import { duration, easing } from '@skoreova/design/motion.stylex';
 import { grid, layout, leading, space, type } from '@skoreova/design/scale.stylex';
-import { Button } from '@foldkit/ui';
 import * as stylex from '@stylexjs/stylex';
 import { Option } from 'effect';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
-import { platformArrow, styles as arrowStyles } from './arrow';
+import { styles as arrowStyles, platformArrow } from './arrow';
 import { logoWords, platformUrl } from './data';
 import { MAIN_CONTENT_ID } from './main-content';
 import { menuGlyph } from './menu-glyph';

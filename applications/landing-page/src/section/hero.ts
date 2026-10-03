@@ -1,3 +1,4 @@
+import { grid, layout, leading, space, type } from '@skoreova/design/scale.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { Html, HtmlBuilder } from 'foldkit/html';
 
@@ -6,36 +7,76 @@ import { platformArrow, styles as arrowStyles } from '../arrow';
 import { platformUrl } from '../data';
 import type { Message } from '../message';
 import { ObserveHeroPastHeader } from '../motion';
-import { getStyleXAttributesWith } from '../stylex-attributes';
+import { getStyleXAttributes, getStyleXAttributesWith } from '../stylex-attributes';
 
-// ONE continuous size curve across every width — no breakpoint tiers, so
-// the lockup never steps when the viewport crosses a boundary. Three legs:
-// the linear blend (4.2219vw + 59.17px) runs 75px at 375 — the phone size
-// the design was approved at — up to 102.4px at 1024; from there the max()
-// hands over to the plain 10vw desktop slope (the two legs are equal at
-// exactly 1024, so the handoff is seamless); and the 12svh min() caps the
-// whole thing by HEIGHT — the hero is a fixed one-viewport box with
-// overflow-hidden, and on wide-but-short windows an uncapped line grows
-// past what the box can hold and the CTA + scroll cue get clipped off its
-// bottom. The cap has two tiers only because the LAYOUT does. Below sm
-// the headline starts at 36svh (under the players' chins), so a line may
-// take at most a third of what that leaves: (100svh - 3.5rem header)
-// - 36svh - ~151px of CTA + gaps + cue = 64svh - 207px, i.e. 21.33svh -
-// 69px per line — a fixed percentage can't express this (12svh fit
-// ~700px-tall windows and overflowed 550px ones). From sm the lockup
-// parks at the bottom of the frame, the 36svh headroom is free, and a
-// plain 16svh holds at any height the bottom-parked layout produces —
-// which is why the sub-600px-tall windows that bottom-park the phone
-// layout (the max-height variant on the h1) carry the 16svh cap too: the
-// derived cap models the 36svh start, and keeping it after the start is
-// gone reopened a size jump at the sm boundary on short windows. At the
-// 640 boundary the active leg is the blend on both sides, so the cap
-// swap itself moves nothing.
-const heroText =
-  'text-[min(max(4.2219vw_+_59.17px,10vw),21.33svh_-_69px)] [@media(max-height:37.5rem)]:text-[min(max(4.2219vw_+_59.17px,10vw),16svh)] sm:text-[min(max(4.2219vw_+_59.17px,10vw),16svh)]';
+/**
+ * The headline's three lines, as written; the display cut sets them in capitals.
+ */
+export const HEADLINE_LINES = ['Discover', 'Her game', 'In Czechia'] as const;
+
+/**
+ * The widest headline line's advance, in em, at the display cut with caps tracking: "In Czechia",
+ * 5.0953em, against "Discover" at 4.5913em and "Her game" at 4.6705em.
+ */
+export const HEADLINE_WIDEST_EM = 5.0953;
+
+const HEADER_HEIGHT = layout['--layout-header-height'];
+const HERO_HEIGHT = `calc(100lvh - ${HEADER_HEIGHT})`;
+// The CTA's box, from its own styling: py-4 above and below one text-2xl line, 1rem + 2rem + 1rem = 4rem.
+const CTA_HEIGHT = 'calc(8 * var(--spacing) + var(--text-2xl) * var(--text-2xl--line-height))';
+const SHORT_WINDOW = '@media (max-height: 37.5rem)';
+const SM = '@media (min-width: 40rem)';
+
+const styles = stylex.create({
+  // Starts under the fixed bar, so the photo never slides beneath it, and fills the viewport below it.
+  hero: {
+    position: 'relative',
+    marginTop: HEADER_HEIGHT,
+    height: HERO_HEIGHT,
+    overflow: 'hidden',
+  },
+  // The lockup's column; at sm, and on short windows at any width, it keeps space l below the CTA.
+  lockup: {
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    paddingBottom: { default: 0, [SHORT_WINDOW]: space.l, [SM]: space.l },
+  },
+  // The page's content column, whose inline size the headline's lines fill. On phones it starts at 36svh, under the players' chins; from sm, and on short windows at any width, it parks at the bottom of the frame.
+  column: {
+    containerType: 'inline-size',
+    boxSizing: 'border-box',
+    width: '100%',
+    maxWidth: grid['max-width'],
+    marginInline: 'auto',
+    marginTop: { default: '36svh', [SHORT_WINDOW]: 'auto', [SM]: 'auto' },
+    paddingInline: grid.gutter,
+  },
+  // The smaller of two sizes. By width, the widest line fills the column: 100cqi ÷ 5.0953. By height, the lockup fits the hero, 100lvh − header height: three lines of 1em + 2xs, space l to the CTA, the CTA's 4rem, space l below it and one line of the scroll cue at step −2, so a line may take (hero height − 2 × l − 4rem − the cue's leading − 3 × 2xs) ÷ 3.
+  headline: {
+    fontSize: `min(calc(100cqi / ${HEADLINE_WIDEST_EM}), calc((${HERO_HEIGHT} - 2 * ${space.l} - ${CTA_HEIGHT} - ${leading['step--2']} - 3 * ${space['2xs']}) / 3))`,
+    textAlign: 'center',
+    userSelect: 'none',
+  },
+  // The leading rule: each line is its size plus 2xs.
+  line: {
+    lineHeight: `calc(1em + ${space['2xs']})`,
+  },
+  cta: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginTop: space.l,
+  },
+  cue: {
+    fontSize: type['step--2'],
+    lineHeight: leading['step--2'],
+  },
+});
+
 // The mask just clips the slide-up intro; the old headroom padding was only
 // for the (removed) Mexican-wave letters jumping above the line.
-const heroMask = `overflow-hidden ${heroText}`;
+const heroMask = 'overflow-hidden';
 
 export const view = (h: HtmlBuilder<Message>): Html =>
   h.section(
@@ -44,16 +85,13 @@ export const view = (h: HtmlBuilder<Message>): Html =>
       // Reports to the Model when the hero slips under the fixed header, so
       // the header’s persistent CTA can take over (see ObserveHeroPastHeader).
       h.OnMount(ObserveHeroPastHeader()),
-      // Starts below the fixed header — the photo must not slide under the
-      // bar, or the players lose their heads. `lvh` (largest viewport) so the
+      // `lvh` (largest viewport) so the
       // hero always reaches the very bottom on mobile Safari: with `svh` the
       // hero equals the *smallest* viewport, so when the toolbars collapse to
       // their slim floating state the visible area is taller and the next
       // (paper) section peeks in under the URL bar. `lvh` is static (unlike
       // `dvh`), so it doesn’t reflow as the toolbar hides while scrolling.
-      h.Class(
-        'relative mt-14 h-[calc(100lvh-3.5rem)] overflow-hidden md:mt-16 md:h-[calc(100lvh-4rem)]',
-      ),
+      ...getStyleXAttributes(h, styles.hero),
     ],
     [
       // Parallax layer anchored to the section’s top edge, overshooting only
@@ -103,70 +141,73 @@ export const view = (h: HtmlBuilder<Message>): Html =>
         // No bottom padding below sm — the scroll cue centers itself in the
         // leftover space below the CTA (my-auto), and any padding here would
         // skew that split toward the top.
-        [h.Class('relative flex h-full flex-col [@media(max-height:37.5rem)]:pb-8 sm:pb-8')],
+        [...getStyleXAttributes(h, styles.lockup)],
         [
-          // On phones the portrait crop leaves the players' faces in the top
-          // ~40% — the headline starts right under their chins so the hook
-          // is on screen immediately. From `sm` up the photo is landscape
-          // and `mt-auto` parks the headline near the bottom instead — and
-          // so do sub-600px-tall windows at ANY width: the 36svh start plus
-          // three capped lines leaves the in-flow scroll cue nothing to
-          // live on there, and parking frees the start for it.
-          h.h1(
-            // Barely any side padding on phones so the headline runs almost
-            // edge to edge. `gap` gives the three lines air (Anton’s 0.92
-            // leading packs them tight on its own) — fixed on phones so the
-            // lockup doesn’t loosen/tighten with viewport width.
+          h.div(
+            [...getStyleXAttributes(h, styles.column)],
             [
-              h.Class(
-                'mt-[36svh] flex flex-col gap-2.5 px-0 text-center select-none [@media(max-height:37.5rem)]:mt-auto sm:mt-auto sm:gap-[1vw] md:px-2',
-              ),
-            ],
-            [
-              h.span(
-                [h.Class(`${heroMask} block text-paper`)],
+              h.h1(
+                [...getStyleXAttributes(h, styles.headline)],
                 [
                   h.span(
-                    [h.Class('hero-line display block'), h.Style({ '--hero-delay': '0.15s' })],
-                    ['Discover'],
-                  ),
-                ],
-              ),
-              // No clipping mask here (unlike its siblings) — the neon halo
-              // needs to bleed past the line box, and the mask’s slide-up
-              // intro is replaced by a neon power-on flicker anyway.
-              // Two spans: the outer flickers (opacity, promoted to its own
-              // layer so it’s cheap and doesn’t re-rasterize the glow); the
-              // inner carries the neon tubes + glow filter and is NOT promoted
-              // — WebKit renders a big drop-shadow badly on a forced layer.
-              h.span(
-                [h.Class(`${heroText} block`)],
-                [
-                  h.span(
-                    [h.Class('hero-neon display block'), h.Style({ '--hero-delay': '0.25s' })],
-                    // ONE glow filter for the whole line — the only structure
-                    // WebKit renders sharp. The per-word ignition (motion.ts
-                    // stepping `.hero-neon-late`) runs on non-WebKit engines
-                    // only: on iOS/Safari every variant broke the glow — a
-                    // second filtered layer (even fully static), opacity on a
-                    // wrapper above the second filter, visibility toggles —
-                    // so WebKit ignites the whole sign as one piece instead
-                    // and never touches anything at or below the filter.
+                    [h.Class(`${heroMask} block text-paper`)],
                     [
                       h.span(
-                        [h.Class('hero-glam')],
-                        [h.span([], ['Her']), ' ', h.span([h.Class('hero-neon-late')], ['game'])],
+                        [
+                          ...getStyleXAttributesWith(h, 'hero-line display block', styles.line),
+                          h.Style({ '--hero-delay': '0.15s' }),
+                        ],
+                        [HEADLINE_LINES[0]],
                       ),
                     ],
                   ),
-                ],
-              ),
-              h.span(
-                [h.Class(`${heroMask} block text-paper`)],
-                [
+                  // No clipping mask here (unlike its siblings) — the neon halo
+                  // needs to bleed past the line box, and the mask’s slide-up
+                  // intro is replaced by a neon power-on flicker anyway.
+                  // Two spans: the outer flickers (opacity, promoted to its own
+                  // layer so it’s cheap and doesn’t re-rasterize the glow); the
+                  // inner carries the neon tubes + glow filter and is NOT promoted
+                  // — WebKit renders a big drop-shadow badly on a forced layer.
                   h.span(
-                    [h.Class('hero-line display block'), h.Style({ '--hero-delay': '0.3s' })],
-                    ['In Czechia'],
+                    [h.Class('block')],
+                    [
+                      h.span(
+                        [
+                          ...getStyleXAttributesWith(h, 'hero-neon display block', styles.line),
+                          h.Style({ '--hero-delay': '0.25s' }),
+                        ],
+                        // ONE glow filter for the whole line — the only structure
+                        // WebKit renders sharp. The per-word ignition (motion.ts
+                        // stepping `.hero-neon-late`) runs on non-WebKit engines
+                        // only: on iOS/Safari every variant broke the glow — a
+                        // second filtered layer (even fully static), opacity on a
+                        // wrapper above the second filter, visibility toggles —
+                        // so WebKit ignites the whole sign as one piece instead
+                        // and never touches anything at or below the filter.
+                        [
+                          h.span(
+                            [h.Class('hero-glam')],
+                            [
+                              h.span([], ['Her']),
+                              ' ',
+                              h.span([h.Class('hero-neon-late')], ['game']),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  h.span(
+                    [h.Class(`${heroMask} block text-paper`)],
+                    [
+                      h.span(
+                        [
+                          ...getStyleXAttributesWith(h, 'hero-line display block', styles.line),
+                          h.Style({ '--hero-delay': '0.3s' }),
+                        ],
+                        [HEADLINE_LINES[2]],
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -177,7 +218,7 @@ export const view = (h: HtmlBuilder<Message>): Html =>
           // copy once the hero scrolls away.
           h.div(
             [
-              h.Class('hero-fade mt-9 flex justify-center md:mt-7'),
+              ...getStyleXAttributesWith(h, 'hero-fade', styles.cta),
               h.Style({ '--hero-delay': '0.65s' }),
             ],
             [
@@ -209,8 +250,10 @@ export const view = (h: HtmlBuilder<Message>): Html =>
           // split the leftover space and shove the parked lockup back up.
           h.div(
             [
-              h.Class(
-                'hero-fade pointer-events-none my-auto flex items-end justify-center px-5 text-[10px] tracking-[0.2em] uppercase text-paper/60 select-none [@media(max-height:37.5rem)]:absolute [@media(max-height:37.5rem)]:inset-x-0 [@media(max-height:37.5rem)]:bottom-2 [@media(max-height:37.5rem)]:my-0 sm:absolute sm:inset-x-0 sm:bottom-2 sm:my-0 sm:justify-between sm:px-3',
+              ...getStyleXAttributesWith(
+                h,
+                'hero-fade pointer-events-none my-auto flex items-end justify-center px-5 tracking-[0.2em] uppercase text-paper/60 select-none [@media(max-height:37.5rem)]:absolute [@media(max-height:37.5rem)]:inset-x-0 [@media(max-height:37.5rem)]:bottom-2 [@media(max-height:37.5rem)]:my-0 sm:absolute sm:inset-x-0 sm:bottom-2 sm:my-0 sm:justify-between sm:px-3',
+                styles.cue,
               ),
               h.Style({ '--hero-delay': '0.85s' }),
             ],

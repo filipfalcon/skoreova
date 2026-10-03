@@ -1400,8 +1400,7 @@ export const ObserveHeroPastHeader = Mount.defineStream('ObserveHeroPastHeader',
             // The fixed header’s own height is the observer’s top inset: the
             // hero counts as "past" the instant its bottom crosses under the
             // bar, not once it clears the whole viewport. Measured once at
-            // mount (3.5rem on phones, 4rem from md up) — a mid-session
-            // breakpoint cross is rare enough not to warrant re-observing.
+            // mount: the bar is the header-height token at every width.
             const headerHeight =
               document.querySelector('header')?.getBoundingClientRect().height ?? 64;
             const observer = new IntersectionObserver(
