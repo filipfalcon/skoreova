@@ -9,18 +9,18 @@
     "preview": "vp preview"
   },
   "dependencies": {
-    "@effect/platform-browser": "4.0.0-rc.117",
-    "@foldkit/ui": "0.164.0",
+    "@effect/platform-browser": "4.0.0",
+    "@foldkit/ui": "0.166.0",
     "@fontsource-variable/archivo": "5.2.8",
     "@fontsource/anton": "5.2.7",
     "@skoreova/design": "0.0.0",
     "@stylexjs/stylex": "0.19.0",
-    "effect": "4.0.0-rc.117",
-    "foldkit": "0.164.0"
+    "effect": "4.0.0",
+    "foldkit": "0.166.0"
   },
   "devDependencies": {
-    "@foldkit/devtools": "0.164.0",
-    "@foldkit/vite-plugin": "0.25.0",
+    "@foldkit/devtools": "0.166.0",
+    "@foldkit/vite-plugin": "0.26.1",
     "@stylexjs/unplugin": "0.19.0",
     "@vitest/browser-playwright": "5.0.1",
     "playwright": "1.61.1",
