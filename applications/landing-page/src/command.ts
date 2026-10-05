@@ -7,6 +7,7 @@ import { load as loadUrl, pushUrl } from 'foldkit/navigation';
 
 import { Message } from './message';
 import { menuEntries } from './data';
+import { fittingLogoWords } from './header';
 
 // COMMAND
 
@@ -168,6 +169,22 @@ export const DetectActiveSection = Command.define('DetectActiveSection', {
   }),
 });
 
+/**
+ * Reads which logo words the header row has room for, once the render in flight has committed.
+ *
+ * The row's room depends on what the committed render put in it, the header CTA included; a read
+ * before the commit measures the row as it was. The read is interruptible: one still running when
+ * its turn ends never reports.
+ */
+export const MeasureFittingLogoWords = Command.define('MeasureFittingLogoWords', {
+  messages: [Message.CompletedMeasureFittingLogoWords],
+  interrupt: true,
+  execute: Effect.gen(function* () {
+    yield* Render.afterCommit;
+    return Message.CompletedMeasureFittingLogoWords({ fitting: fittingLogoWords() });
+  }),
+});
+
 // CALL-SITE FACTORIES
 //
 // Verb-named wrappers over the PascalCase definitions above — `update`
@@ -186,3 +203,14 @@ export const load = (href: string): Command.Command<Message> => Load({ href });
 export const detectActiveSection = (): Command.Command<Message> => DetectActiveSection();
 
 export const focusMenuToggle = (): Command.Command<Message> => FocusMenuToggle();
+
+/**
+ * The call-site factory of MeasureFittingLogoWords.
+ */
+export const measureFittingLogoWords = (): Command.Command<Message> => MeasureFittingLogoWords();
+
+/**
+ * The Command that stops a MeasureFittingLogoWords still in flight.
+ */
+export const cancelMeasureFittingLogoWords = (): Command.Command<Message> =>
+  MeasureFittingLogoWords.Interrupt(() => Message.CompletedCancelMeasureFittingLogoWords());

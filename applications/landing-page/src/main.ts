@@ -12,7 +12,15 @@ import { logoWords } from './data';
 import type { Model, RevealState } from './model';
 import { Message } from './message';
 import { MAP_LEAGUE_GROUP_ID, MapLeagueRadioGroup } from './radio-groups';
-import { detectActiveSection, focusMenuToggle, landOnLink, load, navigate } from './command';
+import {
+  cancelMeasureFittingLogoWords,
+  detectActiveSection,
+  focusMenuToggle,
+  landOnLink,
+  load,
+  measureFittingLogoWords,
+  navigate,
+} from './command';
 
 // The app entry: init, the update reducer, and the re-exports that keep the
 // public surface (Model, messages, subscriptions, view) at ./main.
@@ -160,12 +168,23 @@ export const update = (model: Model, message: Message) =>
     DetectedHeroPastHeader: ({ past }) => ({
       model: modifyFields(model, { heroPastHeader: () => past }),
     }),
-    // An idle turn shows the next word the header has room for, in the list's
+    // An idle turn starts by measuring the header's room for a word after the
+    // render commits. Only an idle reader between turns, or one just gone idle,
+    // takes a turn.
+    ReachedIdleTurn: () =>
+      model.idleState === 'Turn' || model.idleState === 'Measuring'
+        ? { model }
+        : {
+            model: modifyFields(model, { idleState: () => 'Measuring' as const }),
+            commands: [measureFittingLogoWords()],
+          },
+    // The turn shows the next word the header has room for, in the list's
     // order from the one due, cycling; where none fits, the turn passes with
-    // the logo as it is. Only an idle reader between turns, or one just gone
-    // idle, takes a turn.
-    ReachedIdleTurn: ({ fitting }) => {
-      if (model.idleState === 'Turn') return { model };
+    // the logo as it is. A measurement outside Measuring is stale: it finished
+    // before the cancel reached it, which then finds nothing to stop and the
+    // result dispatches anyway.
+    CompletedMeasureFittingLogoWords: ({ fitting }) => {
+      if (model.idleState !== 'Measuring') return { model };
       const due = Array.findFirst(
         Array.makeBy(
           logoWords.length,
@@ -185,6 +204,9 @@ export const update = (model: Model, message: Message) =>
         }),
       };
     },
+    // Whether the cancel stopped a measurement or found it already finished,
+    // the cycle has moved on.
+    CompletedCancelMeasureFittingLogoWords: () => ({ model }),
     // The turn's 3 seconds ran out: the logo is itself for the rest of it.
     EndedIdleTurn: () =>
       model.idleState === 'Turn'
@@ -195,25 +217,29 @@ export const update = (model: Model, message: Message) =>
             }),
           }
         : { model },
-    // Activity ends a showing word at once, and starts the idle count afresh.
+    // Activity ends a showing word, or the measurement for one, at once, and
+    // starts the idle count afresh.
     ResumedActivity: () => ({
       model: modifyFields(model, {
         idleState: () => 'Active' as const,
         shownLogoWord: () => Option.none(),
       }),
+      commands: model.idleState === 'Measuring' ? [cancelMeasureFittingLogoWords()] : [],
     }),
     // The OS setting, on subscribe and on every flip. The view force-reveals
     // everything while it is set, and the wheel subscription follows it. The
     // motion mounts follow the query themselves; when motion comes back,
     // their rebuilt observers report every target's state afresh, so the
     // reveal record needs no reset here — a reset would race those reports.
-    // Reduced motion also stops the logo's easter egg, a showing word included.
+    // Reduced motion also stops the logo's easter egg, a showing word or the
+    // measurement for one included.
     ChangedReducedMotion: ({ reduce }) => ({
       model: modifyFields(model, {
         prefersReducedMotion: () => reduce,
         idleState: (state) => (reduce ? ('Active' as const) : state),
         shownLogoWord: (shown) => (reduce ? Option.none() : shown),
       }),
+      commands: reduce && model.idleState === 'Measuring' ? [cancelMeasureFittingLogoWords()] : [],
     }),
     // The reveal observers' report, and the only message that moves a
     // target between reveal states. `revealed`

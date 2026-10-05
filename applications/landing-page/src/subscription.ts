@@ -7,7 +7,6 @@ import { Dom, Subscription } from 'foldkit';
 
 import type { Model } from './model';
 import { Message } from './message';
-import { fittingLogoWords } from './header';
 import { IdleState } from './model';
 import { REDUCED_MOTION_QUERY } from './motion';
 
@@ -50,8 +49,8 @@ const IDLE_AFTER_SECONDS = 30;
 const TURN_SECONDS = 3;
 const REST_SECONDS = 12;
 
-// A turn reports the words the header has room for at that moment.
-const reachedTurn = (): Message => Message.ReachedIdleTurn({ fitting: fittingLogoWords() });
+// A turn's report carries nothing: update measures the header's room after the render commits.
+const reachedTurn = (): Message => Message.ReachedIdleTurn();
 
 // SUBSCRIPTIONS
 
@@ -186,8 +185,9 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
   ),
   // The logo's idle cycle, one stream per state, none under reduced motion.
   // Active: half a minute after the last activity (or the start), the first
-  // turn. Turn: its 3 seconds end it. Resting: 12 seconds on, the next turn.
-  // Activity ends a turn or a rest at once.
+  // turn. Measuring: only activity, which cancels the turn being measured.
+  // Turn: its 3 seconds end it. Resting: 12 seconds on, the next turn.
+  // Activity ends a measurement, a turn or a rest at once.
   idle: entry(
     { idleState: IdleState, prefersReducedMotion: Schema.Boolean },
     {
@@ -205,6 +205,8 @@ export const subscriptions = Subscription.make<Model, Message>()((entry) => ({
               Stream.take(1),
               Stream.map(reachedTurn),
             );
+          case 'Measuring':
+            return resumed.pipe(Stream.take(1));
           case 'Turn':
             return Stream.merge(
               afterVisibleSeconds(TURN_SECONDS).pipe(Stream.map(() => Message.EndedIdleTurn())),

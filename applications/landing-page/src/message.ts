@@ -46,12 +46,15 @@ export const Message = defineMessageUnion({
   // (transitionend) or a downward-only pen re-entered from below. See
   // ObserveReveals in motion.ts.
   // The idle subscription's reports: an idle turn came (after half a minute
-  // without scroll, pointer, key or touch activity, then every 15 seconds),
-  // with the words the header has room for right now; the turn's 3 seconds
-  // ran out; activity came back.
-  ReachedIdleTurn: { fitting: Schema.Array(Schema.Number) },
+  // without scroll, pointer, key or touch activity, then every 15 seconds);
+  // the turn's 3 seconds ran out; activity came back.
+  ReachedIdleTurn: {},
   EndedIdleTurn: {},
   ResumedActivity: {},
+  // The words the header row has room for, read once the turn's render has
+  // committed. See MeasureFittingLogoWords.
+  CompletedMeasureFittingLogoWords: { fitting: Schema.Array(Schema.Number) },
+  CompletedCancelMeasureFittingLogoWords: {},
   ChangedReveals: {
     revealed: Schema.Array(Schema.String),
     concealed: Schema.Array(Schema.String),

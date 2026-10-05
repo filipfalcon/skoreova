@@ -3,6 +3,7 @@ import { Option } from 'effect';
 import { Scene, Story } from 'foldkit';
 import { describe, expect, test } from 'vite-plus/test';
 
+import { MeasureFittingLogoWords, cancelMeasureFittingLogoWords } from './command';
 import { logoWords } from './data';
 import { styles } from './header';
 import { landingModel } from './main.fixtures';
@@ -13,10 +14,22 @@ import type { StyleXStyle } from './stylex-attributes';
 
 // The logo's idle easter egg: half a minute without activity brings the first turn, then a turn
 // every 15 seconds, each showing the next word the header has room for, for 3 of them. The idle
-// subscription keeps the time and measures the room; update only moves the cycle, reading no clock
-// and drawing no chance.
+// subscription keeps the time, a Command measures the room once the turn's render commits, and
+// update only moves the cycle, reading no clock and drawing no chance.
 
 const EVERY_WORD = logoWords.map((_word, index) => index);
+
+// A turn as update sees it: the subscription's report, the measurement it asks for, and the
+// measurement's result with the given words fitting.
+const turn = (fitting: ReadonlyArray<number>) => [
+  Story.message(Message.ReachedIdleTurn()),
+  Story.model((model: Model) => expect(model.idleState).toBe('Measuring')),
+  Story.Command.expectExact(MeasureFittingLogoWords),
+  Story.Command.resolve(
+    MeasureFittingLogoWords,
+    Message.CompletedMeasureFittingLogoWords({ fitting }),
+  ),
+];
 
 describe('the idle cycle', () => {
   test('shows each word in turn, turn after turn, and wraps around', () => {
@@ -24,7 +37,7 @@ describe('the idle cycle', () => {
       update,
       Story.given(landingModel),
       ...logoWords.flatMap((_word, index) => [
-        Story.message(Message.ReachedIdleTurn({ fitting: EVERY_WORD })),
+        ...turn(EVERY_WORD),
         Story.model((model: Model) => {
           expect(model.idleState).toBe('Turn');
           expect(model.shownLogoWord).toEqual(Option.some(index));
@@ -35,7 +48,7 @@ describe('the idle cycle', () => {
           expect(model.shownLogoWord).toEqual(Option.none());
         }),
       ]),
-      Story.message(Message.ReachedIdleTurn({ fitting: EVERY_WORD })),
+      ...turn(EVERY_WORD),
       Story.model((model) => expect(model.shownLogoWord).toEqual(Option.some(0))),
     );
   });
@@ -45,13 +58,13 @@ describe('the idle cycle', () => {
       update,
       Story.given(landingModel),
       // Slay is due; only Queen and Icon fit.
-      Story.message(Message.ReachedIdleTurn({ fitting: [2, 3] })),
+      ...turn([2, 3]),
       Story.model((model) => {
         expect(model.shownLogoWord).toEqual(Option.some(2));
         expect(model.nextLogoWord).toBe(3);
       }),
       Story.message(Message.EndedIdleTurn()),
-      Story.message(Message.ReachedIdleTurn({ fitting: [] })),
+      ...turn([]),
       Story.model((model) => {
         expect(model.idleState).toBe('Turn');
         expect(model.shownLogoWord).toEqual(Option.none());
@@ -59,7 +72,7 @@ describe('the idle cycle', () => {
       }),
       Story.message(Message.EndedIdleTurn()),
       // From Icon on, Slay is the next that fits.
-      Story.message(Message.ReachedIdleTurn({ fitting: [0] })),
+      ...turn([0]),
       Story.model((model) => expect(model.shownLogoWord).toEqual(Option.some(0))),
     );
   });
@@ -68,7 +81,7 @@ describe('the idle cycle', () => {
     Story.story(
       update,
       Story.given(landingModel),
-      Story.message(Message.ReachedIdleTurn({ fitting: EVERY_WORD })),
+      ...turn(EVERY_WORD),
       Story.message(Message.ResumedActivity()),
       Story.model((model) => {
         expect(model.idleState).toBe('Active');
@@ -77,7 +90,7 @@ describe('the idle cycle', () => {
       // A late end of the turn it already left changes nothing.
       Story.message(Message.EndedIdleTurn()),
       Story.model((model) => expect(model.idleState).toBe('Active')),
-      Story.message(Message.ReachedIdleTurn({ fitting: EVERY_WORD })),
+      ...turn(EVERY_WORD),
       Story.model((model) => expect(model.shownLogoWord).toEqual(Option.some(1))),
     );
   });
@@ -86,9 +99,83 @@ describe('the idle cycle', () => {
     Story.story(
       update,
       Story.given(landingModel),
-      Story.message(Message.ReachedIdleTurn({ fitting: EVERY_WORD })),
-      Story.message(Message.ReachedIdleTurn({ fitting: EVERY_WORD })),
+      ...turn(EVERY_WORD),
+      Story.message(Message.ReachedIdleTurn()),
+      Story.Command.expectNone(),
+      Story.model((model) => {
+        expect(model.idleState).toBe('Turn');
+        expect(model.shownLogoWord).toEqual(Option.some(0));
+      }),
+    );
+  });
+
+  test('a turn reported while measuring changes nothing', () => {
+    Story.story(
+      update,
+      Story.given(landingModel),
+      Story.message(Message.ReachedIdleTurn()),
+      Story.message(Message.ReachedIdleTurn()),
+      Story.Command.expectExact(MeasureFittingLogoWords),
+      Story.model((model) => expect(model.idleState).toBe('Measuring')),
+      Story.Command.resolve(
+        MeasureFittingLogoWords,
+        Message.CompletedMeasureFittingLogoWords({ fitting: EVERY_WORD }),
+      ),
       Story.model((model) => expect(model.shownLogoWord).toEqual(Option.some(0))),
+    );
+  });
+
+  test('activity while measuring cancels the measurement', () => {
+    Story.story(
+      update,
+      Story.given(landingModel),
+      Story.message(Message.ReachedIdleTurn()),
+      Story.message(Message.ResumedActivity()),
+      Story.Command.expectHas(cancelMeasureFittingLogoWords()),
+      Story.Command.resolve(
+        cancelMeasureFittingLogoWords(),
+        Message.CompletedCancelMeasureFittingLogoWords(),
+      ),
+      Story.model((model) => {
+        expect(model.idleState).toBe('Active');
+        expect(model.shownLogoWord).toEqual(Option.none());
+        expect(model.nextLogoWord).toBe(landingModel.nextLogoWord);
+      }),
+    );
+  });
+
+  test('reduced motion while measuring cancels the measurement', () => {
+    Story.story(
+      update,
+      Story.given(landingModel),
+      Story.message(Message.ReachedIdleTurn()),
+      Story.message(Message.ChangedReducedMotion({ reduce: true })),
+      Story.Command.resolve(
+        cancelMeasureFittingLogoWords(),
+        Message.CompletedCancelMeasureFittingLogoWords(),
+      ),
+      Story.model((model) => {
+        expect(model.idleState).toBe('Active');
+        expect(model.shownLogoWord).toEqual(Option.none());
+      }),
+    );
+  });
+
+  test('a measurement that finished before the cancel reached it is ignored', () => {
+    Story.story(
+      update,
+      Story.given(landingModel),
+      Story.message(Message.ReachedIdleTurn()),
+      Story.message(Message.ResumedActivity()),
+      Story.Command.resolve(
+        cancelMeasureFittingLogoWords(),
+        Message.CompletedCancelMeasureFittingLogoWords(),
+      ),
+      Story.message(Message.CompletedMeasureFittingLogoWords({ fitting: EVERY_WORD })),
+      Story.model((model) => {
+        expect(model.idleState).toBe('Active');
+        expect(model.shownLogoWord).toEqual(Option.none());
+      }),
     );
   });
 
@@ -96,7 +183,7 @@ describe('the idle cycle', () => {
     Story.story(
       update,
       Story.given(landingModel),
-      Story.message(Message.ReachedIdleTurn({ fitting: EVERY_WORD })),
+      ...turn(EVERY_WORD),
       Story.message(Message.ChangedReducedMotion({ reduce: true })),
       Story.model((model) => {
         expect(model.idleState).toBe('Active');
@@ -114,6 +201,16 @@ const acknowledgeMounts = [
     Message.ChangedReveals({ revealed: [], concealed: [], drawn: [] }),
   ),
   Scene.Mount.resolve(ObserveHeroPastHeader, Message.DetectedHeroPastHeader({ past: false })),
+];
+
+// A turn in the scene: the subscription's report, then the measurement resolving with every word
+// fitting.
+const sceneTurn = [
+  Scene.Subscription.emit(Message.ReachedIdleTurn()),
+  Scene.Command.resolve(
+    MeasureFittingLogoWords,
+    Message.CompletedMeasureFittingLogoWords({ fitting: EVERY_WORD }),
+  ),
 ];
 
 const logo = Scene.role('link', { name: 'Skóreová, home' });
@@ -143,7 +240,7 @@ describe('the logo’s swap', () => {
       Scene.expect(Scene.within(logo, Scene.text('Skóreová'))).toExist(),
       Scene.expect(letters).not.toHaveClass(AWAY),
       Scene.expect(variant(0)).not.toHaveClass(SHOWN),
-      Scene.Subscription.emit(Message.ReachedIdleTurn({ fitting: EVERY_WORD })),
+      ...sceneTurn,
       Scene.expect(logo).toExist(),
       Scene.expect(letters).toHaveClass(AWAY),
       Scene.expect(variant(0)).toHaveClass(SHOWN),
@@ -151,7 +248,7 @@ describe('the logo’s swap', () => {
       Scene.Subscription.emit(Message.EndedIdleTurn()),
       Scene.expect(letters).not.toHaveClass(AWAY),
       Scene.expect(variant(0)).not.toHaveClass(SHOWN),
-      Scene.Subscription.emit(Message.ReachedIdleTurn({ fitting: EVERY_WORD })),
+      ...sceneTurn,
       Scene.expect(logo).toExist(),
       Scene.expect(variant(1)).toHaveClass(SHOWN),
       Scene.expectAll(Scene.all.selector('[aria-live]')).toHaveCount(0),

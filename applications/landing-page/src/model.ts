@@ -16,9 +16,11 @@ export const MapLeague = Schema.Literals(['All', 'First', 'Second']);
 export type MapLeague = typeof MapLeague.Type;
 
 // Where the reader is in the logo's idle cycle: Active while they use the page;
-// once idle, a Turn of 3 seconds (a variant, where one fits) and then Resting
-// for 12, turn after turn, until activity makes them Active again.
-export const IdleState = Schema.Literals(['Active', 'Turn', 'Resting']);
+// once idle, Measuring the header's room for a word until the render commits,
+// then a Turn of 3 seconds (a variant, where one fits) and then Resting for 12,
+// turn after turn, until activity makes them Active again. A measurement that
+// reports outside Measuring belongs to a turn activity already ended.
+export const IdleState = Schema.Literals(['Active', 'Measuring', 'Turn', 'Resting']);
 export type IdleState = typeof IdleState.Type;
 
 export const Model = Schema.Struct({

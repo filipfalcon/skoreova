@@ -184,7 +184,8 @@ export const styles = stylex.create({
   },
   // The idle easter egg (logoWords in data.ts): the logo's own letters give way to a variant drawn
   // over them, out of flow, so the link keeps its box and the bar never shifts; a variant wider than
-  // the letters reaches right, into the row's free space, only where it fits (fittingLogoWords).
+  // the letters reaches right, into the row's free space, only where it fits the row as the committed
+  // render left it (fittingLogoWords).
   // The swap is a state change; the egg does not run under reduced motion at all.
   letters: {
     transition: { default: `opacity ${STATE_CHANGE}`, [REDUCED_MOTION]: 'none' },
