@@ -1021,7 +1021,7 @@ body {
   -webkit-text-stroke: 0.024em #ffe6f2;
   filter: drop-shadow(0 0 0.014em #ffffff) drop-shadow(0 0 0.06em #ff8ec4)
     drop-shadow(0 0 0.24em var(--color-pink)) drop-shadow(0 0 0.7em var(--color-pink))
-    drop-shadow(0 0 1.3em rgba(255, 47, 142, 0.7));
+    drop-shadow(0 0 var(--hero-glow-reach) rgba(255, 47, 142, 0.7));
 }
 
 /* ------------------------------------------------------------------ */

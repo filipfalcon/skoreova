@@ -1,3 +1,4 @@
+import { color } from '@skoreova/design/color.stylex';
 import { font } from '@skoreova/design/font.stylex';
 import { grid, layout, leading, space, type } from '@skoreova/design/scale.stylex';
 import * as stylex from '@stylexjs/stylex';
@@ -7,6 +8,7 @@ import heroImage from '../assets/hero.webp';
 import { platformArrow, styles as arrowStyles } from '../arrow';
 import { platformUrl } from '../data';
 import type { Message } from '../message';
+import { hero } from './hero.stylex';
 import { ObserveHeroPastHeader } from '../motion';
 import { getStyleXAttributes, getStyleXAttributesWith } from '../stylex-attributes';
 
@@ -54,13 +56,27 @@ const styles = stylex.create({
   // The smaller of two sizes. By width, the widest line fills the column: 100cqi ÷ 4.4399. By height, the lockup fits the hero, 100lvh − header height: three lines at the size plus space 2xs each, space l to the CTA, the CTA's 4rem, space l below it and one line of the scroll cue at step −2, so 3 × (size + 2xs) = hero height − 2 × l − 4rem − the cue's leading, and size = (hero height − 2 × l − 4rem − the cue's leading − 3 × 2xs) ÷ 3.
   headline: {
     fontSize: `min(calc(100cqi / ${HEADLINE_WIDEST_EM}), calc((${HERO_HEIGHT} - 2 * ${space.l} - ${CTA_HEIGHT} - ${leading['step--2']} - 3 * ${space['2xs']}) / 3))`,
+    position: 'relative',
+    isolation: 'isolate',
     textAlign: 'center',
     userSelect: 'none',
+    // The scrim, behind the headline alone: the hero's full width, at full opacity over the headline's box, fading linearly to nothing over the glow's reach above and below it.
+    '::before': {
+      content: '""',
+      position: 'absolute',
+      zIndex: -1,
+      insetBlock: `calc(-1 * ${hero['--hero-glow-reach']})`,
+      insetInline: 'calc(50% - 50vw)',
+      backgroundImage: `linear-gradient(to bottom, transparent, ${color.scrim} ${hero['--hero-glow-reach']}, ${color.scrim} calc(100% - ${hero['--hero-glow-reach']}), transparent)`,
+      opacity: hero['scrim-opacity'],
+      pointerEvents: 'none',
+    },
   },
   // The brand face in capitals at the caps tracking, the setting the widest line's 4.4399em is measured in, its lines at the scale's leading rule, the size plus space 2xs. Anton's capitals ink no closer than 0.876em between adjacent lines of the headline, less than 1em and so less than the line height at any size: the lines never collide.
   line: {
     fontFamily: font['brand-family'],
     fontWeight: font['brand-weight'],
+    color: color['on-surface'],
     textTransform: 'uppercase',
     letterSpacing: font['caps-tracking'],
     lineHeight: `calc(1em + ${space['2xs']})`,
@@ -122,11 +138,6 @@ export const view = (h: HtmlBuilder<Message>): Html =>
           ]),
         ],
       ),
-      // Darkening overlay — a sibling of the parallax layer, not a child, so
-      // it always covers the whole hero. Inside the layer it moved with the
-      // parallax, and when the offset pushed the layer down it left a thin
-      // undimmed strip of the bright photo at the hero’s top edge.
-      h.div([h.Class('absolute inset-0 bg-ink/50')]),
       // Bottom scrim — a light ink gradient rising from the base so the
       // corner captions read against the photo’s bright areas (the white
       // shorts), while fading out fast enough to leave the picture’s
@@ -152,7 +163,7 @@ export const view = (h: HtmlBuilder<Message>): Html =>
                 [...getStyleXAttributes(h, styles.headline)],
                 [
                   h.span(
-                    [h.Class(`${heroMask} block text-paper`)],
+                    [h.Class(`${heroMask} block`)],
                     [
                       h.span(
                         [
@@ -200,7 +211,7 @@ export const view = (h: HtmlBuilder<Message>): Html =>
                     ],
                   ),
                   h.span(
-                    [h.Class(`${heroMask} block text-paper`)],
+                    [h.Class(`${heroMask} block`)],
                     [
                       h.span(
                         [
