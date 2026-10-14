@@ -4,6 +4,7 @@ import { Mount } from 'foldkit';
 
 import { millisecondsOf, propertyOf } from './duration';
 import { INTRO_SETTLE } from './intro';
+import { LATE_WORD_ON, POWER_ON } from './neon-ignition';
 import { Message } from './message';
 
 // The page’s scroll and pointer choreography, in two mounts. The PER-FRAME
@@ -876,37 +877,6 @@ const setUpMotion = (root: HTMLElement, reduceMotion: boolean): (() => void) => 
     } else {
       let neonFrame = 0;
 
-      // WCAG 2.3.1 counts a half flash only for a change of 10% or more in relative luminance; a tube at L = 1 over the darkest scrimmed ground, L ≈ 0.036, moves by Δopacity × 0.964, so a dip that holds 0.9 changes it by at most 0.0964 and is no flash.
-      const NON_FLASH_DIP = 0.9;
-      // "Her" igniting: one deep strike (~45ms phases), then a shallow
-      // sag that holds the flash count down, then the final one holds.
-      // Every "on" is full brightness. The whole pattern is shifted late so
-      // "Her" settles just ~110ms before "game" answers — the photo gets a
-      // beat alone, then the sign ignites in one cascade.
-      const powerOn: ReadonlyArray<readonly [number, number]> = [
-        [0, 0],
-        [120, 1],
-        [165, 0.1],
-        [210, 1],
-        [255, NON_FLASH_DIP],
-        [390, 1],
-      ];
-      // The "game" segment is wired separately, like on a real sign: it stays
-      // dark while "Her" strikes, then lights and stutters through three
-      // shallow sags before it holds, from the lead plus 950ms on the intro
-      // clock. Across the whole sign, one 10° field, no 1000ms window holds
-      // more than four deep transitions, two flashes. Once lit, the sign stays
-      // lit.
-      const lateWordOn: ReadonlyArray<readonly [number, number]> = [
-        [0, 0],
-        [500, 1],
-        [570, NON_FLASH_DIP],
-        [700, 1],
-        [745, NON_FLASH_DIP],
-        [810, 1],
-        [870, NON_FLASH_DIP],
-        [950, 1],
-      ];
       neon.style.opacity = '0';
 
       // The ignition runs on the intro’s own clock, not wall-clock timers:
@@ -917,15 +887,15 @@ const setUpMotion = (root: HTMLElement, reduceMotion: boolean): (() => void) => 
       // start keeps the two on one timeline, past the settle’s end too. The
       // lead, medium1, is part of the same timeline.
       const NEON_LEAD = millisecondsOf(propertyOf(duration.medium1));
-      interface NeonStep {
+      interface IgnitionStep {
         readonly at: number;
         readonly element: HTMLElement;
         readonly opacity: number;
       }
-      const ignitionSteps: ReadonlyArray<NeonStep> = [
-        ...powerOn.map(([ms, opacity]) => ({ at: NEON_LEAD + ms, element: neon, opacity })),
+      const ignitionSteps: ReadonlyArray<IgnitionStep> = [
+        ...POWER_ON.map(([ms, opacity]) => ({ at: NEON_LEAD + ms, element: neon, opacity })),
         ...(lateWord
-          ? lateWordOn.map(([ms, opacity]) => ({
+          ? LATE_WORD_ON.map(([ms, opacity]) => ({
               at: NEON_LEAD + ms,
               element: lateWord,
               opacity,

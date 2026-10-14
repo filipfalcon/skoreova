@@ -27,8 +27,11 @@ const HERO_PHOTO_ASPECT = HERO_PHOTO_WIDTH / HERO_PHOTO_HEIGHT;
  */
 export const HEADLINE_LINES = ['Discover', 'Her game', 'In Czechia'] as const;
 
-// The widest headline line's advance, in em, in the brand face with caps tracking: "In Czechia", 4.4399em, against "Discover" at 3.8990em and "Her game" at 4.1495em.
-const HEADLINE_WIDEST_EM = 4.4399;
+/**
+ * The widest headline line's advance, in em, in the brand face with caps tracking: "In Czechia",
+ * 4.4399em, against "Discover" at 3.8990em and "Her game" at 4.1495em.
+ */
+export const HEADLINE_WIDEST_EM = 4.4399;
 
 const HEADER_HEIGHT = layout['--layout-header-height'];
 const HERO_HEIGHT = `calc(100lvh - ${HEADER_HEIGHT})`;

@@ -1,19 +1,21 @@
 import { Runtime } from 'foldkit';
-import { expect, test } from 'vite-plus/test';
+import { beforeAll, expect, test } from 'vite-plus/test';
 import { page } from 'vite-plus/test/browser';
 
 import { color } from '@skoreova/design/color.stylex';
+import { grid, leading, space } from '@skoreova/design/scale.stylex';
 
 import { Model, init, routing, update, view } from '../main';
 import '../styles.css';
+import { HEADLINE_LINES, HEADLINE_WIDEST_EM } from './hero';
 import { hero } from './hero.stylex';
 
-// The scrim's two opacities, recomputed. The base's is solved from on-surface alone: the least, in thousandths, at which it keeps WCAG 1.4.3's 3:1 for large text over pure white under the scrim. The band's is measured: the least, in thousandths, at which, over the base, every fully covered glyph pixel of the headline's plain lines keeps 3:1 against the nearest pixel outside its glyph, the neon lit and its glow washing over both lines, with the photo replaced by pure white, the brightest it can be. Measured in the painted page at the scale's narrowest and widest viewports.
+// The scrim's two opacities, recomputed. The base's is solved from on-surface alone: the least, in thousandths, at which it keeps WCAG 1.4.3's 3:1 for large text over pure white under the scrim. The band's is measured: the least, in thousandths, at which, over the base, every fully covered glyph pixel of the headline's plain lines keeps 3:1 against the nearest pixel outside its glyph, the neon lit and its glow washing over both lines, with the photo replaced by pure white, the brightest it can be. Measured in the painted page at a phone's viewport, where the width rule sizes the headline, and a laptop's, where the height rule does.
 const LARGE_TEXT_RATIO = 3;
 // The engines' glows differ: the band's least opacity is 0.524 in one and 0.630 in the other, and the token is the larger.
 const ENGINE_SPREAD = 0.11;
 const VIEWPORTS = [
-  [320, 709],
+  [320, 770],
   [1280, 720],
 ] as const;
 
@@ -144,23 +146,39 @@ const minimumRatio = (shot: ImageData, pairs: Map<number, number>): number => {
 // The custom property behind a StyleX var, `var(--name)`.
 const propertyOf = (reference: string): string => reference.slice(4, -1);
 
+const headline = (): HTMLElement => {
+  const element = section().querySelector('h1');
+  if (element === null) throw new Error('the headline is not rendered');
+  return element;
+};
+
+const headlineSize = (): number => Number.parseFloat(getComputedStyle(headline()).fontSize);
+
+const waitUntil = async (predicate: () => boolean, timeout: number): Promise<void> => {
+  const start = performance.now();
+  while (!predicate()) {
+    if (performance.now() - start > timeout) throw new Error('waitUntil timed out');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+};
+
+beforeAll(async () => {
+  const root = document.createElement('div');
+  root.id = 'root';
+  document.body.append(root);
+  Runtime.run(Runtime.makeApplication({ Model, init, update, view, container: root, routing }));
+  await waitUntil(() => document.querySelectorAll('#top .hero-line').length === 2, 3000);
+  await document.fonts.load("400 100px 'Anton'");
+  await document.fonts.ready;
+  addStyle(STAGE);
+  // StyleX serves its rules on a timer; the headline is sized by them, at 64px or more at any viewport here.
+  await waitUntil(() => headlineSize() > 60, 10000);
+});
+
 test(
   'the scrim is the least over white at which every glow-lit headline glyph keeps 3:1',
   { timeout: 180000 },
   async () => {
-    const root = document.createElement('div');
-    root.id = 'root';
-    document.body.append(root);
-    Runtime.run(Runtime.makeApplication({ Model, init, update, view, container: root, routing }));
-    await expect.poll(() => document.querySelectorAll('#top .hero-line').length).toBe(2);
-    await document.fonts.load("400 100px 'Anton'");
-    await document.fonts.ready;
-    addStyle(STAGE);
-    // StyleX serves its rules on a timer; the headline is sized by them, by width, at 64px or more at any viewport here.
-    const headlineSize = (): number =>
-      Number.parseFloat(getComputedStyle(section().querySelector('h1') ?? section()).fontSize);
-    await expect.poll(headlineSize, { timeout: 10000 }).toBeGreaterThan(60);
-
     const tokens = getComputedStyle(document.documentElement);
     const baseOpacity = Number(tokens.getPropertyValue(propertyOf(hero['scrim-base-opacity'])));
     const tokenOpacity = Number(tokens.getPropertyValue(propertyOf(hero['scrim-band-opacity'])));
@@ -211,5 +229,110 @@ test(
     expect(needed).toBeLessThanOrEqual(tokenOpacity);
     expect(tokenOpacity - needed).toBeLessThan(ENGINE_SPREAD);
     for (const minimum of atToken) expect(minimum).toBeGreaterThanOrEqual(LARGE_TEXT_RATIO);
+  },
+);
+
+// A length a value resolves to in the hero, in px.
+const lengthOf = (value: string): number => {
+  const probe = document.createElement('div');
+  probe.style.cssText = `position: absolute; width: ${value};`;
+  section().append(probe);
+  const width = probe.getBoundingClientRect().width;
+  probe.remove();
+  return width;
+};
+
+// A headline line's advance at the given size, in px: a copy of the line, in its own setting, laid out as wide as its text.
+const advanceOf = (line: Element, size: number): number => {
+  const copy = line.cloneNode(true);
+  if (!(copy instanceof HTMLElement)) throw new Error('the line is not an element');
+  copy.style.cssText = `position: absolute; display: inline-block; font-size: ${size}px; white-space: nowrap; visibility: hidden;`;
+  headline().append(copy);
+  const width = copy.getBoundingClientRect().width;
+  copy.remove();
+  return width;
+};
+
+const headlineLines = (): ReadonlyArray<Element> =>
+  Array.from(section().querySelectorAll('.hero-line, .hero-neon'));
+
+// The widest line's advance is stated to four places, so its rounding is at most 0.00005em; at 1000px, layout's 1/64px units add at most 0.000016em. A font, tracking or text change moves it by far more.
+const MEASURE_SIZE = 1000;
+const WIDEST_TOLERANCE_EM = 0.0001;
+
+test('the widest headline line is "In Czechia", 4.4399em in the brand face at caps tracking', () => {
+  const advances = headlineLines().map((line) => ({
+    text: line.textContent ?? '',
+    em: advanceOf(line, MEASURE_SIZE) / MEASURE_SIZE,
+  }));
+  expect(advances.map(({ text }) => text)).toEqual([...HEADLINE_LINES]);
+  const widest = Math.max(...advances.map(({ em }) => em));
+  expect(advances.find(({ em }) => em === widest)?.text).toBe('In Czechia');
+  expect(Math.abs(widest - HEADLINE_WIDEST_EM)).toBeLessThan(WIDEST_TOLERANCE_EM);
+});
+
+// Layout snaps to 1/64px in either engine, and every edge below is a sum of a few such boxes.
+const LAYOUT_TOLERANCE_PX = 0.1;
+
+const expectNear = (what: string, actual: number, expected: number): void => {
+  expect(Math.abs(actual - expected), `${what}: ${actual} against ${expected}`).toBeLessThan(
+    LAYOUT_TOLERANCE_PX,
+  );
+};
+
+test.each([
+  { width: 320, height: 770, binds: 'width' },
+  { width: 1280, height: 720, binds: 'height' },
+] as const)(
+  'the lockup stacks from the hero foot at $width × $height, its size bound by $binds',
+  async ({ width, height, binds }) => {
+    await page.viewport(width, height);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    await nextFrames(2);
+    const [gutter, l, twoXs, cueLeading] = [
+      grid.gutter,
+      space.l,
+      space['2xs'],
+      leading['step--2'],
+    ].map(lengthOf);
+    const size = headlineSize();
+    const pitch = size + (twoXs ?? 0);
+
+    const heroBox = section().getBoundingClientRect();
+    const cta = section().querySelector('a');
+    // The cue, the innermost box holding the captions, inside its band.
+    const cue = Array.from(section().querySelectorAll('div'))
+      .filter((element) => element.textContent?.startsWith('Independent media'))
+      .at(-1);
+    if (cta === null || cue === undefined) throw new Error('the lockup is not rendered');
+    const ctaBox = cta.getBoundingClientRect();
+    const cueBox = cue.getBoundingClientRect();
+    const headlineBox = headline().getBoundingClientRect();
+
+    // From the bottom: the gutter, the cue's line, space l, the CTA one line pitch tall, space l, three lines of one pitch each.
+    expectNear('the gutter', heroBox.bottom - cueBox.bottom, gutter ?? 0);
+    expectNear("the cue's line", cueBox.height, cueLeading ?? 0);
+    expectNear('the space below the CTA', cueBox.top - ctaBox.bottom, l ?? 0);
+    expectNear("the CTA's height", ctaBox.height, pitch);
+    expectNear('the space above the CTA', ctaBox.top - headlineBox.bottom, l ?? 0);
+    expectNear("the headline's height", headlineBox.height, 3 * pitch);
+
+    // The size is the lesser of the width rule, the widest line filling the column, and the height rule, the lockup filling the hero.
+    const column = headline().parentElement;
+    if (column === null) throw new Error('the headline has no column');
+    const columnStyle = getComputedStyle(column);
+    const measure =
+      column.clientWidth -
+      Number.parseFloat(columnStyle.paddingLeft) -
+      Number.parseFloat(columnStyle.paddingRight);
+    const byWidth = measure / HEADLINE_WIDEST_EM;
+    const byHeight =
+      (heroBox.height - 2 * (l ?? 0) - (cueLeading ?? 0) - (gutter ?? 0)) / 4 - (twoXs ?? 0);
+    expectNear("the headline's size", size, Math.min(byWidth, byHeight));
+    expect(binds === 'width' ? byWidth < byHeight : byHeight < byWidth).toBe(true);
+
+    // The CTA spans the headline's measure, its widest line.
+    const widest = Math.max(...headlineLines().map((line) => advanceOf(line, size)));
+    expectNear("the CTA's width", ctaBox.width, widest);
   },
 );
