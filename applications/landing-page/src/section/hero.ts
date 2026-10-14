@@ -64,7 +64,10 @@ const ENTER = easing['emphasized-decelerate'];
 const STAGGER = duration.short3;
 const DISCOVER_STEP = 1;
 const IN_CZECHIA_STEP = 2;
-const CTA_STEP = 3;
+/**
+ * The CTA's place in the intro's stagger: it fades up after this many steps of short3.
+ */
+export const CTA_STEP = 3;
 const CUE_STEP = 4;
 const delayOf = (step: number): string => `calc(${step} * ${STAGGER})`;
 

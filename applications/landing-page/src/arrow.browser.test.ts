@@ -2,9 +2,13 @@ import { Runtime } from 'foldkit';
 import { beforeAll, describe, expect, test } from 'vite-plus/test';
 import { page } from 'vite-plus/test/browser';
 
+import { duration } from '@skoreova/design/motion.stylex';
+
 import { platformUrl } from './data';
 import { Model, init, routing, subscriptions, update, view } from './main';
 import { KNOCKS, KNOCK_MS, LONGEST_WAIT_MS } from './arrow';
+import { millisecondsOf, propertyOf } from './duration';
+import { CTA_STEP } from './section/hero';
 import './styles.css';
 
 // The platform CTAs' arrows as the browser resolves their styles: the drawn arrow's size from the
@@ -96,6 +100,19 @@ describe('the knock', () => {
     expect(LONGEST_WAIT_MS + (KNOCKS + 1) * KNOCK_MS).toBeGreaterThan(5000);
   });
 
+  test('in the hero, once its CTA has landed, ending within 5 seconds of the load', () => {
+    // The CTA's place in the stagger, then its fade.
+    const landing =
+      CTA_STEP * millisecondsOf(propertyOf(duration.short3)) +
+      millisecondsOf(propertyOf(duration['extra-long1']));
+    expect(landing).toBe(1150);
+    const knock = knockOf(arrowIn('#top'));
+    expect(knock.name).not.toBe('none');
+    expect(knock).toMatchObject({ delay: landing, duration: KNOCK_MS, count: KNOCKS });
+    expect(knock.delay).toBeLessThanOrEqual(LONGEST_WAIT_MS);
+    expect(knock.delay + KNOCKS * KNOCK_MS).toBeLessThanOrEqual(5000);
+  });
+
   test('in the header, once its CTA has entered, from each showing', async () => {
     expect(knockOf(arrowIn('header')).name).toBe('none');
 
@@ -117,7 +134,9 @@ describe('the knock', () => {
       .poll(() => knockOf(arrowIn('#menu-overlay')).name, { timeout: 3000 })
       .not.toBe('none');
     const knock = knockOf(arrowIn('#menu-overlay'));
-    expect(knock).toMatchObject({ delay: LONGEST_WAIT_MS, duration: KNOCK_MS, count: KNOCKS });
+    // (8 − 1) × 80ms + 280ms: the cascade's steps for the entries below it, then its fall.
+    expect(knock).toMatchObject({ delay: 840, duration: KNOCK_MS, count: KNOCKS });
+    expect(knock.delay).toBeLessThanOrEqual(LONGEST_WAIT_MS);
 
     await page.getByRole('button', { name: 'Menu', exact: true, expanded: true }).click();
     await expect.poll(() => knockOf(arrowIn('#menu-overlay')).name, { timeout: 3000 }).toBe('none');

@@ -35,18 +35,19 @@ export const KNOCK_LEG_MS = 200;
 export const KNOCK_MS = 8 * KNOCK_LEG_MS;
 
 /**
- * The longest wait from a trigger to the first knock, in milliseconds. An arrow knocks once its CTA
- * has arrived: the header's 400ms after it is shown (its entrance, Material 3's medium4), the
- * hero's as it lands, and the menu's once its Platform entry, the last of the menu's falling
- * entries, lands (8 − 1) × 80ms + 280ms = 840ms after the menu opens (the cascade in styles.css).
+ * The longest wait from a trigger to the first knock, in milliseconds: the hero's. An arrow knocks
+ * once its CTA has arrived: the header's 400ms after it is shown (its entrance, Material 3's
+ * medium4), the menu's once its Platform entry, the last of the menu's falling entries, lands (8 − 1)
+ * × 80ms + 280ms = 840ms after the menu opens (the cascade in styles.css), and the hero's as it
+ * lands, its fade's delay of 3 × short3 and its extra-long1 fade, 450ms + 700ms = 1150ms after the
+ * page loads.
  */
-export const LONGEST_WAIT_MS = 840;
+export const LONGEST_WAIT_MS = 1150;
 
 /**
  * The knocks each trigger plays: as many whole knocks as fit after the longest wait within WCAG
- * 2.2.2's 5 seconds. ⌊(5000 − 840) / 1600⌋ = ⌊2.6⌋ = 2, the menu's ending 840 + 2 × 1600 = 4040ms
- * after it opens. The hero's end within 5 seconds of the page's load too: its CTA lands at 450ms +
- * 700ms, and 1150 + 3200 = 4350ms.
+ * 2.2.2's 5 seconds. ⌊(5000 − 1150) / 1600⌋ = ⌊2.4⌋ = 2, the hero's ending 1150 + 2 × 1600 = 4350ms
+ * after the page loads.
  */
 export const KNOCKS = Math.floor((MOTION_LIMIT_MS - LONGEST_WAIT_MS) / KNOCK_MS);
 
