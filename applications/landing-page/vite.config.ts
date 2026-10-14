@@ -1,6 +1,8 @@
 import { foldkit } from '@foldkit/vite-plugin';
 import stylex from '@stylexjs/unplugin';
 import tailwindcss from '@tailwindcss/vite';
+import { statSync } from 'node:fs';
+
 import type { Plugin } from 'vite';
 import { build } from 'vite';
 import { defineConfig } from 'vite-plus';
@@ -33,7 +35,22 @@ const isUnderAlchemy = process.env['ALCHEMY_CLOUDFLARE_VITE_INJECTED'] === '1';
 
 const placeholderFor = (entry: string): string => `<!-- @inline ${entry} -->`;
 
-const bundleEntry = async (root: string, entry: string): Promise<string> => {
+// A bundled entry, with each source file it was built from and that file's modification time.
+interface Bundled {
+  readonly code: string;
+  readonly sources: ReadonlyMap<string, number>;
+}
+
+// The modification time of a file, or undefined once it is gone.
+const modifiedAt = (file: string): number | undefined => {
+  try {
+    return statSync(file).mtimeMs;
+  } catch {
+    return undefined;
+  }
+};
+
+const bundleEntry = async (root: string, entry: string): Promise<Bundled> => {
   const result = await build({
     // No StyleX plugin, nor any other: the inlined entries are analytics modules that render nothing, so no stylex call is reachable from them.
     configFile: false,
@@ -58,58 +75,79 @@ const bundleEntry = async (root: string, entry: string): Promise<string> => {
   if (chunk === undefined || !('code' in chunk)) {
     throw new Error(`inlineConsent: ${entry} produced no chunk.`);
   }
-  return chunk.code;
+  // Virtual modules, \0-prefixed, have no file to change.
+  const files = chunk.moduleIds.filter((id) => !id.startsWith('\0'));
+  return {
+    code: chunk.code,
+    sources: new Map(files.map((file) => [file, modifiedAt(file) ?? Number.NaN])),
+  };
 };
 
-// Deliberately NOT cached: in dev every edit is a full reload (the foldkit
-// plugin cannot hot-swap an Elm runtime), so a cache would have to be
-// invalidated on changes to any module the inlined entry reaches. Rebuilding
-// costs a few hundred ms on a reload that is already doing a full page load,
-// and it can never go stale. In a production build this runs exactly once.
-const inlineConsent = (root: string): Plugin => ({
-  name: 'skoreova:inline-consent',
-  transformIndexHtml: {
-    order: 'post',
-    handler: async (html: string): Promise<string> => {
-      let out = html;
-      for (const { entry, after } of INLINE_ENTRIES) {
-        const placeholder = placeholderFor(entry);
-        // THROW rather than pass the html through. A missing placeholder used to
-        // be a silent no-op: the build succeeded and the page shipped without
-        // consent defaults or without the banner, with nothing visibly different.
-        // An HTML comment looks deletable and a reflow could break the match, so
-        // the failure has to be loud.
-        //
-        // Both checks read `html`, never the partly-rewritten `out`: an already
-        // inlined bundle carries the selectors it queries as string literals,
-        // which would satisfy a later entry’s `after` from inside a <script>.
-        const occurrences = html.split(placeholder).length - 1;
-        if (occurrences !== 1) {
-          throw new Error(
-            `inlineConsent: expected exactly one ${placeholder} in index.html, found ${occurrences}.`,
-          );
-        }
-        // The bundle is a blocking classic script, so it runs against the
-        // document as parsed so far. Ahead of the markup it queries, every
-        // lookup returns null and the feature is silently absent — the banner
-        // never binds, the page still builds and still boots.
-        if (after !== undefined) {
-          const markupAt = html.indexOf(after);
-          if (markupAt === -1) {
-            throw new Error(`inlineConsent: ${entry} needs ${after} in index.html; it is missing.`);
-          }
-          if (markupAt > html.indexOf(placeholder)) {
+// A bundle is current while every file it was built from is unchanged; an edit to any of them, a
+// new import included (its importer is one of them), or a deleted file rebuilds it.
+const isCurrent = (bundled: Bundled): boolean =>
+  [...bundled.sources].every(([file, time]) => modifiedAt(file) === time);
+
+// Cached per entry, and rebuilt only when a file the bundle was built from has changed: in dev the
+// html is transformed on every page load, and a rebuild took 0.6–1.4s of each reload's time to
+// first byte. The bundle's own module list is the invalidation set, so the cache cannot go stale.
+// In a production build this runs exactly once.
+const inlineConsent = (root: string): Plugin => {
+  const bundles = new Map<string, Bundled>();
+  const bundled = async (entry: string): Promise<string> => {
+    const cached = bundles.get(entry);
+    if (cached !== undefined && isCurrent(cached)) return cached.code;
+    const fresh = await bundleEntry(root, entry);
+    bundles.set(entry, fresh);
+    return fresh.code;
+  };
+  return {
+    name: 'skoreova:inline-consent',
+    transformIndexHtml: {
+      order: 'post',
+      handler: async (html: string): Promise<string> => {
+        let out = html;
+        for (const { entry, after } of INLINE_ENTRIES) {
+          const placeholder = placeholderFor(entry);
+          // THROW rather than pass the html through. A missing placeholder used to
+          // be a silent no-op: the build succeeded and the page shipped without
+          // consent defaults or without the banner, with nothing visibly different.
+          // An HTML comment looks deletable and a reflow could break the match, so
+          // the failure has to be loud.
+          //
+          // Both checks read `html`, never the partly-rewritten `out`: an already
+          // inlined bundle carries the selectors it queries as string literals,
+          // which would satisfy a later entry’s `after` from inside a <script>.
+          const occurrences = html.split(placeholder).length - 1;
+          if (occurrences !== 1) {
             throw new Error(
-              `inlineConsent: ${placeholder} precedes ${after} in index.html; ${entry} reads that markup and would find nothing.`,
+              `inlineConsent: expected exactly one ${placeholder} in index.html, found ${occurrences}.`,
             );
           }
+          // The bundle is a blocking classic script, so it runs against the
+          // document as parsed so far. Ahead of the markup it queries, every
+          // lookup returns null and the feature is silently absent — the banner
+          // never binds, the page still builds and still boots.
+          if (after !== undefined) {
+            const markupAt = html.indexOf(after);
+            if (markupAt === -1) {
+              throw new Error(
+                `inlineConsent: ${entry} needs ${after} in index.html; it is missing.`,
+              );
+            }
+            if (markupAt > html.indexOf(placeholder)) {
+              throw new Error(
+                `inlineConsent: ${placeholder} precedes ${after} in index.html; ${entry} reads that markup and would find nothing.`,
+              );
+            }
+          }
+          out = out.replace(placeholder, `<script>\n${await bundled(entry)}\n</script>`);
         }
-        out = out.replace(placeholder, `<script>\n${await bundleEntry(root, entry)}\n</script>`);
-      }
-      return out;
+        return out;
+      },
     },
-  },
-});
+  };
+};
 
 // A <link rel="stylesheet"> is the built page's only render-blocking request: nothing paints until it arrives, a full round trip after the HTML. Replacing the tag with a <style> element holding the emitted CSS removes that request, at the cost of re-sending the CSS with every document instead of caching it separately — the right trade for a single-stylesheet SPA that fetches its document once per session.
 const inlineStylesheet = (): Plugin => ({
@@ -305,8 +343,8 @@ export default defineConfig({
   },
   optimizeDeps: {
     entries: ['src/entry.ts'],
-    // The plugin's per-module transform injects the foldkit/brand import, so the optimizer's crawl never sees it. Left undeclared, the first page load on a cold cache (fresh install, changed lockfile) discovers it, re-optimizes, and reloads the page. The browser test suite declares it separately in vite.browser.config.ts, which does not inherit this file.
-    include: ['foldkit/brand'],
+    // The plugin's per-module transform injects the foldkit/brand import, so the optimizer's crawl never sees it. Left undeclared, the first page load on a cold cache (fresh install, changed lockfile) discovers it, re-optimizes, and reloads the page. effect/http and @effect/platform-browser are imported by foldkit alone, which the plugin keeps out of pre-bundling, so the crawl never reaches them either; served unbundled, each pulled a second copy of effect's modules into the page, 195 requests and 17 MB for effect/http, 166 and 16 MB for @effect/platform-browser. foldkit's other bare imports are the app's own (effect, effect/Function) or never reach the browser. The browser test suite declares both separately in vite.browser.config.ts, which does not inherit this file.
+    include: ['foldkit/brand', 'effect/http', '@effect/platform-browser'],
   },
   test: {
     name: 'landing-page',

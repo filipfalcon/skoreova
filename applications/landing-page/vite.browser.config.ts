@@ -31,8 +31,8 @@ import { stylexOptions } from './vite.config';
 export default defineConfig({
   plugins: [stylex.vite(stylexOptions), ...tailwindcss(), ...foldkit()],
   optimizeDeps: {
-    // The optimizer's initial crawl can only find imports that appear in source, and foldkit/brand arrives injected by the plugin's per-module transform instead. Left undeclared, a cold cache (fresh install, changed lockfile) discovers it mid-run and the re-optimization's full-page reload tears down the running suite. The devtools overlay's own imports are declared by the plugin itself since @foldkit/vite-plugin 0.20.1.
-    include: ['foldkit/brand'],
+    // The optimizer's initial crawl can only find imports that appear in source, and foldkit/brand arrives injected by the plugin's per-module transform instead. Left undeclared, a cold cache (fresh install, changed lockfile) discovers it mid-run and the re-optimization's full-page reload tears down the running suite. effect/http and @effect/platform-browser are imported by foldkit alone, which the plugin keeps out of pre-bundling, so the crawl misses them the same way. The devtools overlay's own imports are declared by the plugin itself since @foldkit/vite-plugin 0.20.1.
+    include: ['foldkit/brand', 'effect/http', '@effect/platform-browser'],
   },
   test: {
     name: 'landing-page-browser',
