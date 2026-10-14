@@ -871,45 +871,39 @@ const setUpMotion = (root: HTMLElement, reduceMotion: boolean): (() => void) => 
     if (reduceMotion) {
       neon.style.opacity = '1';
     } else {
-      const neonTimers: Array<number> = [];
       let neonFrame = 0;
 
-      // "Her" igniting: two ULTRA-fast strikes (~45ms phases), a beat, then
-      // the final one holds. Every "on" is full brightness — brightness play
-      // is reserved for the winks after the sign is lit. The whole pattern is
-      // shifted late so "Her" settles just ~110ms before "game" answers —
-      // the photo gets a beat alone, then the sign ignites in one cascade.
+      // WCAG 2.3.1 counts a half flash only for a change of 10% or more in relative luminance; a tube at L = 1 over the darkest scrimmed ground, L ≈ 0.036, moves by Δopacity × 0.964, so a dip that holds 0.9 changes it by at most 0.0964 and is no flash.
+      const NON_FLASH_DIP = 0.9;
+      // "Her" igniting: one deep strike (~45ms phases), then a shallow
+      // sag that holds the flash count down, then the final one holds.
+      // Every "on" is full brightness. The whole pattern is shifted late so
+      // "Her" settles just ~110ms before "game" answers — the photo gets a
+      // beat alone, then the sign ignites in one cascade.
       const powerOn: ReadonlyArray<readonly [number, number]> = [
         [0, 0],
         [120, 1],
         [165, 0.1],
         [210, 1],
-        [255, 0.12],
+        [255, NON_FLASH_DIP],
         [390, 1],
       ];
       // The "game" segment is wired separately, like on a real sign: it stays
-      // dark while "Her" strikes, then runs a four-blink pattern — blink,
-      // ~130ms dark, blink, ultra-light pause, blink, ~60ms dark, final
-      // blink. The final one lands at 250 + 950 = 1200ms on the intro
-      // clock: the exact moment the photo’s settle (`hero-photo`, 1.2s)
-      // comes to rest, and holds.
+      // dark while "Her" strikes, then lights and stutters through three
+      // shallow sags before it holds, from the lead plus 950ms on the intro
+      // clock. Across the whole sign, one 10° field, no 1000ms window holds
+      // more than four deep transitions, two flashes. Once lit, the sign stays
+      // lit.
       const lateWordOn: ReadonlyArray<readonly [number, number]> = [
         [0, 0],
         [500, 1],
-        [570, 0.1],
+        [570, NON_FLASH_DIP],
         [700, 1],
-        [745, 0.1],
+        [745, NON_FLASH_DIP],
         [810, 1],
-        [870, 0.14],
+        [870, NON_FLASH_DIP],
         [950, 1],
       ];
-      // The idle wink, once the sign is fully lit: the WHOLE sign sags and
-      // recovers — one brightness dip, never a blackout, never per-segment.
-      const wink: ReadonlyArray<readonly [number, number]> = [
-        [0, 0.55],
-        [200, 1],
-      ];
-
       neon.style.opacity = '0';
 
       // The ignition runs on the PHOTO INTRO’s own clock, not wall-clock
@@ -935,20 +929,6 @@ const setUpMotion = (root: HTMLElement, reduceMotion: boolean): (() => void) => 
           : []),
       ].sort((a, b) => a.at - b.at);
 
-      // First wink a while after ignition, then every ~10–18s (jittered) —
-      // frequent enough that a viewer idling on the hero catches one. Winks
-      // are relative to "now", so plain timers are fine here.
-      const scheduleWink = (delay: number): void => {
-        neonTimers.push(
-          window.setTimeout(() => {
-            for (const [ms, opacity] of wink) {
-              neonTimers.push(window.setTimeout(() => (neon.style.opacity = `${opacity}`), ms));
-            }
-            scheduleWink(10000 + Math.floor(Math.random() * 8000));
-          }, delay),
-        );
-      };
-
       let introAnimation: Animation | null = null;
       const mountedAt = performance.now();
       const introClock = (): number => {
@@ -972,23 +952,19 @@ const setUpMotion = (root: HTMLElement, reduceMotion: boolean): (() => void) => 
         const now = introClock();
         while (nextStep < ignitionSteps.length && (ignitionSteps[nextStep]?.at ?? 0) <= now) {
           const step = ignitionSteps[nextStep];
-          // Plain opacity for everything — including the "game" span’s dark
-          // phases at ~10%, so the unlit tube keeps a faint outline the way
-          // a real neon does. (This path never runs on WebKit; see above.)
+          // Plain opacity for every step; the dark phases at ~10% keep a
+          // faint outline of the unlit tube, the way a real neon does.
           if (step) step.element.style.opacity = `${step.opacity}`;
           nextStep += 1;
         }
         if (nextStep < ignitionSteps.length) {
           neonFrame = window.requestAnimationFrame(neonTick);
-        } else {
-          scheduleWink(8000);
         }
       };
       neonFrame = window.requestAnimationFrame(neonTick);
 
       cleanups.push(() => {
         window.cancelAnimationFrame(neonFrame);
-        for (const timer of neonTimers) window.clearTimeout(timer);
         neon.style.opacity = '1';
         if (lateWord) lateWord.style.opacity = '';
       });
