@@ -1,6 +1,9 @@
+import { duration } from '@skoreova/design/motion.stylex';
 import { Effect, Queue, Stream } from 'effect';
 import { Mount } from 'foldkit';
 
+import { millisecondsOf, propertyOf } from './duration';
+import { INTRO_SETTLE } from './intro';
 import { Message } from './message';
 
 // The page’s scroll and pointer choreography, in two mounts. The PER-FRAME
@@ -906,23 +909,24 @@ const setUpMotion = (root: HTMLElement, reduceMotion: boolean): (() => void) => 
       ];
       neon.style.opacity = '0';
 
-      // The ignition runs on the PHOTO INTRO’s own clock, not wall-clock
-      // timers: every frame reads the `hero-photo` CSS animation’s
-      // currentTime and fires the steps that are due. Timers drifted (mount
-      // lag, timer throttling) and kept landing the finale off the zoom
-      // settle; sampling the animation itself makes the two inseparable by
-      // construction. The 250ms lead is part of the same timeline.
-      const HERO_DELAY_MS = 250;
+      // The ignition runs on the intro’s own clock, not wall-clock timers:
+      // every frame reads the time since the photo settle started, the one
+      // finite animation on the intro’s marked element, and fires the steps
+      // that are due. Timers drifted (mount lag, timer throttling) and kept
+      // landing the ignition off the settle; reading the animation’s own
+      // start keeps the two on one timeline, past the settle’s end too. The
+      // lead, medium1, is part of the same timeline.
+      const NEON_LEAD = millisecondsOf(propertyOf(duration.medium1));
       interface NeonStep {
         readonly at: number;
         readonly element: HTMLElement;
         readonly opacity: number;
       }
       const ignitionSteps: ReadonlyArray<NeonStep> = [
-        ...powerOn.map(([ms, opacity]) => ({ at: HERO_DELAY_MS + ms, element: neon, opacity })),
+        ...powerOn.map(([ms, opacity]) => ({ at: NEON_LEAD + ms, element: neon, opacity })),
         ...(lateWord
           ? lateWordOn.map(([ms, opacity]) => ({
-              at: HERO_DELAY_MS + ms,
+              at: NEON_LEAD + ms,
               element: lateWord,
               opacity,
             }))
@@ -937,14 +941,14 @@ const setUpMotion = (root: HTMLElement, reduceMotion: boolean): (() => void) => 
         // animation never appears (it will on any styled page).
         introAnimation ??=
           root
-            .querySelector<HTMLElement>('.hero-photo')
+            .querySelector<HTMLElement>(`[data-${INTRO_SETTLE}]`)
             ?.getAnimations()
-            .find(
-              (animation) =>
-                animation instanceof CSSAnimation && animation.animationName === 'hero-photo',
-            ) ?? null;
-        const time = introAnimation?.currentTime;
-        return typeof time === 'number' ? time : performance.now() - mountedAt;
+            .find((animation) => animation.effect?.getTiming().iterations === 1) ?? null;
+        const startedAt = introAnimation?.startTime;
+        const timelineNow = document.timeline.currentTime;
+        return typeof startedAt === 'number' && typeof timelineNow === 'number'
+          ? timelineNow - startedAt
+          : performance.now() - mountedAt;
       };
 
       let nextStep = 0;

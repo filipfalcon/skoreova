@@ -1,5 +1,6 @@
 import { font } from '@skoreova/design/font.stylex';
 import { duration, easing } from '@skoreova/design/motion.stylex';
+import { space } from '@skoreova/design/scale.stylex';
 import * as stylex from '@stylexjs/stylex';
 import { inertHtml as ih } from 'foldkit/html';
 import type { Html } from 'foldkit/html';
@@ -44,8 +45,8 @@ export const LONGEST_WAIT_MS = 840;
 /**
  * The knocks each trigger plays: as many whole knocks as fit after the longest wait within WCAG
  * 2.2.2's 5 seconds. ⌊(5000 − 840) / 1600⌋ = ⌊2.6⌋ = 2, the menu's ending 840 + 2 × 1600 = 4040ms
- * after it opens. The hero's end within 5 seconds of the page's load too: its CTA lands at 650ms +
- * 700ms, and 1350 + 3200 = 4550ms.
+ * after it opens. The hero's end within 5 seconds of the page's load too: its CTA lands at 450ms +
+ * 700ms, and 1150 + 3200 = 4350ms.
  */
 export const KNOCKS = Math.floor((MOTION_LIMIT_MS - LONGEST_WAIT_MS) / KNOCK_MS);
 
@@ -91,6 +92,15 @@ export const styles = stylex.create({
   // After text, a 3xs share of its size apart.
   follows: {
     marginLeft: THREE_XS_SHARE,
+  },
+  // A call to action's icon, Material 3's icon in a button: a box one label size square, space 2xs
+  // after the label, never shrunk by a label that fills the button. The drawing is a filled
+  // silhouette in its view box, so it keeps its shape and weight at every size.
+  icon: {
+    width: '1em',
+    height: '1em',
+    flexShrink: 0,
+    marginLeft: space['2xs'],
   },
   // Pushed out, held, while the pointer is on the CTA, eased as a state change; never under reduced
   // motion.
@@ -147,9 +157,11 @@ export const displayArrowSolo: Html = drawnRightArrow('drawn-arrow');
  * hovered or pressed.
  *
  * @param knock The knock to play, or `false` while its trigger has not fired.
+ * @param placement How it sits beside its label: after display text by default, or as a call to
+ *   action's icon.
  */
-export const platformArrow = (knock: StyleXStyle): Html =>
-  drawnRightArrow('', styles.follows, styles.platform, knock);
+export const platformArrow = (knock: StyleXStyle, placement: StyleXStyle = styles.follows): Html =>
+  drawnRightArrow('', placement, styles.platform, knock);
 
 // The EXTERNAL-link mark (↗), for destinations outside our world (uefa.com,
 // social profiles) — the drawn right arrow stays reserved for our own

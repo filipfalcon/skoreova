@@ -20,7 +20,7 @@ const STATE_CHANGE = `${duration.short4} ${easing.standard}`;
 /**
  * The call to action's sizes, Material 3's button sizes on this scale's steps.
  */
-export type CtaSize = 'small' | 'medium';
+export type CtaSize = 'small' | 'medium' | 'large';
 
 /**
  * The call to action's variants, Material 3's filled and outlined buttons.
@@ -83,6 +83,20 @@ const styles = stylex.create({
     paddingBlock: space.s,
     paddingInline: space.m,
   },
+  // Material 3's Large button, 96dp tall with a 24dp Headline Small label and 48dp of inline
+  // padding: step 2's line plus space l above and below, 95.04px at the narrowest viewport and
+  // 121.25px at the widest, with space xl inline, exactly Material 3's at 320.
+  large: {
+    fontSize: type['step-2'],
+    lineHeight: leading['step-2'],
+    paddingBlock: space.l,
+    paddingInline: space.xl,
+  },
+  // A caller's block size for the box: the label's line, 1lh, centred in it, the block padding the
+  // rest.
+  blockSize: (size: string) => ({
+    paddingBlock: `calc((${size} - 1lh) / 2)`,
+  }),
 });
 
 /**
@@ -91,8 +105,8 @@ const styles = stylex.create({
  * while hovered or pressed; outlined, it has no container but an outline.
  *
  * @param h - The view's HTML builder.
- * @param options - The link's destination, its size and variant, and the attributes and styles its
- *   context adds.
+ * @param options - The link's destination, its size and variant, a block size its context sets in
+ *   place of the size's own, and the attributes and styles its context adds.
  * @param children - The label, and anything set beside it.
  */
 export const ctaLink = (
@@ -101,6 +115,7 @@ export const ctaLink = (
     readonly href: string;
     readonly size: CtaSize;
     readonly variant?: CtaVariant;
+    readonly blockSize?: string;
     readonly attributes?: ReadonlyArray<Attribute<Message>>;
     readonly styles?: ReadonlyArray<StyleXStyle>;
   },
@@ -118,6 +133,7 @@ export const ctaLink = (
         styles.link,
         options.variant === 'outlined' && styles.outlined,
         styles[options.size],
+        options.blockSize !== undefined && styles.blockSize(options.blockSize),
         ...(options.styles ?? []),
       ),
     ],

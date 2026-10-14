@@ -695,66 +695,6 @@ body {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* Hero intro — plays on load, no observer involved.                  */
-/* ------------------------------------------------------------------ */
-
-@keyframes hero-line-up {
-  from {
-    transform: translateY(110%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes hero-fade {
-  from {
-    opacity: 0;
-    transform: translateY(1rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes hero-photo {
-  from {
-    transform: scale(1.08);
-  }
-  /* Lands at the drift’s starting scale (not 1) so the handoff between the
-     two chained animations is seamless. */
-  to {
-    transform: scale(1.015);
-  }
-}
-
-/* The idle "Ken Burns" drift: an imperceptibly slow breathe that keeps the
-   hero from reading as a still for viewers who don’t scroll immediately.
-   Takes over the instant the intro settle ends (1.2s) and alternates forever. */
-@keyframes hero-drift {
-  from {
-    transform: scale(1.015);
-  }
-  to {
-    transform: scale(1.05);
-  }
-}
-
-.hero-line {
-  animation: hero-line-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: var(--hero-delay, 0.2s);
-}
-
-/* The fade's duration is a custom property so the hero CTA's arrow, inside
-   it, can wait for its landing (knockOnHeroLanding in arrow.ts). */
-.hero-fade {
-  --hero-fade-duration: 0.7s;
-  animation: hero-fade var(--hero-fade-duration) ease-out both;
-  animation-delay: var(--hero-delay, 1s);
-}
-
 /* The "why care" mascot’s idle float — a slow, subtle bob upward so she feels
    alive without pulling focus. Runs on the inner image; the wrapper owns the
    reveal slide, so the two transforms never collide. Bobs UP into the empty
@@ -919,7 +859,7 @@ body {
    `--cookie-banner-h` on <html>; the hero photo yields by exactly that
    height instead of being covered. Insets, not transform — the layer’s
    transform belongs to the scroll parallax and the photo’s to the
-   settle/drift — and both edges move together so the layer keeps its size
+   settle — and both edges move together so the layer keeps its size
    (top alone would shrink it and re-crop the photo). The section itself
    (fixed lvh height, overflow-hidden) never grows; the photo just slides
    down and crops at the bottom. Its timing is the banner’s own: the
@@ -935,94 +875,9 @@ body {
     transition:
       top var(--consent-enter),
       bottom var(--consent-enter);
-    top: var(--cookie-banner-h, 0px);
-    bottom: calc(-30% - var(--cookie-banner-h, 0px));
+    top: calc(var(--cookie-banner-h, 0px) - var(--hero-parallax-top));
+    bottom: calc(-1 * var(--hero-parallax-bottom) - var(--cookie-banner-h, 0px));
   }
-}
-
-.hero-photo {
-  /* The settle’s easing matters for the neon sync: the original
-     cubic-bezier(0.22, 1, 0.36, 1) spent its last ~700ms in an imperceptible
-     crawl, so the zoom LOOKED finished long before the neon finale landed on
-     the animation’s actual end. But a slow-start curve (0.55, 0, …) packed
-     the visible motion into the mid-flight window where page-load work drops
-     frames — it read as juddery. This one moves from the first frame, keeps
-     visible speed, and still stops definitively at the end. */
-  will-change: transform;
-  animation:
-    hero-photo 1.2s cubic-bezier(0.3, 0.4, 0.2, 1) both,
-    hero-drift 26s ease-in-out 1.2s infinite alternate;
-  /* Scale downward only — a centered zoom would crop the top of the photo
-     (the players' heads) during the intro settle, and the drift must never
-     eat into their faces either. */
-  transform-origin: top center;
-}
-
-/* Film grain for the hero photo: a tiled SVG fractal-noise texture (inline
-   data URI, desaturated to mono) blended over the image. Static by design —
-   it’s a texture, not an effect: cheap to paint once, and animating it would
-   force full-viewport repaints every frame. */
-.grain {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)'/%3E%3C/svg%3E");
-  background-size: 240px 240px;
-  mix-blend-mode: overlay;
-  opacity: 0.5;
-}
-
-/* "Her game" — an old-school pink neon sign, in two spans:
-
-   .hero-neon (outer) owns the flicker — its opacity is stepped from JS
-     (motion.ts), never a CSS animation.
-   .hero-glam (inner) owns the neon tubes + glow.
-
-   Anton is a heavy filled face, so solid letters + shadow read as "bold
-   blur"; real signs are bent from thin TUBES, so the letters are hollow
-   (transparent fill + a light text-stroke = the tube) and the halo is a stack
-   of drop-shadows hugging that stroke. WebKit renders a big drop-shadow badly
-   (a coarse box) on ANY composited layer, so neither element may be promoted
-   (no will-change/transform) and the flicker must not use a running CSS
-   animation — hence the JS stepping. Sizes are in `em` to scale with the
-   headline. */
-.hero-neon {
-  /* Painted above BOTH neighboring lines so the glow reflection washes over
-     DISCOVER and IN CZECHIA equally (DOM order alone only lit the line above). */
-  position: relative;
-  z-index: 1;
-  /* The power-on and occasional winks are driven from JS (see motion.ts) by
-     setting opacity in discrete steps — NOT a CSS animation, which would keep
-     the element composited and degrade the glow on WebKit. This is just the
-     resting/fallback value for when that script hasn’t run. */
-  opacity: 1;
-}
-
-/* motion.ts blacks this element out and then ignites it — but only once the
-   bundle has arrived. The document paints well before that now the page is
-   server-rendered, so the unguarded fallback above would show the sign already
-   lit, black it out when the bundle lands, and ignite it: a flicker that could
-   not happen while nothing painted before JS. Starting dark wherever scripting
-   is available means the sign only ever powers ON.
-
-   Order matters and specificity does not — a media query adds none, so this
-   wins over the rule above by sitting after it. Nothing here fights motion.ts:
-   the steps it sets are inline styles, which outrank both.
-
-   What each reader gets: no JS, or a browser too old to know `scripting`, falls
-   through to the lit fallback (no ignition, nothing missing). The exposure this
-   adds is the reader who HAS scripting but never receives the bundle — the sign
-   stays dark and the h1's middle line renders blank, though its text is still in
-   the markup for anything that reads rather than paints. */
-@media (scripting: enabled) {
-  .hero-neon {
-    opacity: 0;
-  }
-}
-
-.hero-glam {
-  color: transparent;
-  -webkit-text-stroke: 0.024em #ffe6f2;
-  filter: drop-shadow(0 0 0.014em #ffffff) drop-shadow(0 0 0.06em #ff8ec4)
-    drop-shadow(0 0 0.24em var(--color-pink)) drop-shadow(0 0 0.7em var(--color-pink))
-    drop-shadow(0 0 var(--hero-glow-reach) rgba(255, 47, 142, 0.7));
 }
 
 /* ------------------------------------------------------------------ */
@@ -1318,8 +1173,6 @@ body {
   }
 
   /* Every keyframe animation stops by name, each at its resting state. */
-  .hero-line,
-  .hero-fade,
   .idle-float,
   .idle-float-lg,
   .marquee-track,
@@ -1342,19 +1195,6 @@ body {
 
   [data-reveal='draw'] {
     stroke-dashoffset: 0;
-  }
-
-  /* THE BACKSTOP’S BLIND SPOT: it overrides durations, not END STATES.
-     `hero-photo` is `fill: both` and its final frame is deliberately mid-travel
-     — scale(1.015), the hand-off point for the drift that follows — so running
-     it instantly parks the photo there: a permanent 1.5% crop off
-     `transform-origin: top center` for a reader who asked for no motion, with a
-     full-viewport compositing layer held open behind it. The longhand
-     `animation-name` is what the backstop can’t reach, and using it here keeps
-     the duration overrides visible rather than shadowed by a shorthand. */
-  .hero-photo {
-    animation-name: none;
-    will-change: auto;
   }
 }
 
