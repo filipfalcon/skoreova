@@ -1,5 +1,5 @@
 import { Button } from '@foldkit/ui';
-import { brand, chrome, color, focus } from '@skoreova/design/color.stylex';
+import { brand, chrome, color } from '@skoreova/design/color.stylex';
 import { font } from '@skoreova/design/font.stylex';
 import { layer } from '@skoreova/design/layer.stylex';
 import { duration, easing } from '@skoreova/design/motion.stylex';
@@ -11,6 +11,9 @@ import type { Html, HtmlBuilder } from 'foldkit/html';
 import { styles as arrowStyles, platformArrow } from './arrow';
 import { logoWords, platformUrl } from './data';
 import { MAIN_CONTENT_ID } from './main-content';
+import { ctaLink } from './cta';
+import { displayCut } from './display-cut';
+import { focusRing } from './focus-ring';
 import { menuGlyph } from './menu-glyph';
 import { glyph } from './menu-glyph.stylex';
 import { Message } from './message';
@@ -53,14 +56,6 @@ const NO_ROOM_FOR_LEAD = `@container (max-width: ${LEAD_GIVES_WAY_REM}rem)`;
 const NO_ROOM_FOR_ARROW = `@container (max-width: ${ARROW_GIVES_WAY_REM}rem)`;
 const NO_ROOM_FOR_CTA = `@container (max-width: ${CTA_GIVES_WAY_REM}rem)`;
 
-// Archivo's display cut, in capitals tracked at the caps tracking, with the display cut's fallbacks.
-const DISPLAY_CUT = {
-  fontFamily: font['display-family'],
-  fontStretch: font['display-width'],
-  fontWeight: font['display-weight'],
-  letterSpacing: font['caps-tracking'],
-} as const;
-
 // Archivo's body cut.
 const BODY_CUT = {
   fontFamily: font.family,
@@ -84,14 +79,6 @@ const LEAVING = `${duration.short4} ${easing['emphasized-accelerate']}`;
 // of the notch.
 const gutter = (side: 'left' | 'right'): string =>
   `calc(${grid.gutter} + env(safe-area-inset-${side}))`;
-
-// The one focus ring every control draws.
-const FOCUS_RING = {
-  outlineStyle: { default: null, ':focus-visible': 'solid' },
-  outlineWidth: { default: null, ':focus-visible': focus.width },
-  outlineColor: { default: null, ':focus-visible': focus.color },
-  outlineOffset: { default: null, ':focus-visible': focus.offset },
-} as const;
 
 // The CTA's fade and colors, which stay under reduced motion: the fade on the given motion, the
 // colors as a state change, and the visibility leg delayed by `visibilityDelay`.
@@ -158,7 +145,6 @@ export const styles = stylex.create({
     fontSize: type['step-0'],
     lineHeight: leading['step-0'],
     textDecoration: 'none',
-    ...FOCUS_RING,
   },
   // The logo, a brand asset: its own fixed colors in every state, and its capitals as tall as the
   // menu glyph's drawn bars. The glyph's 24 × 20 drawing takes its icon box's width, so it stands
@@ -170,14 +156,12 @@ export const styles = stylex.create({
     display: 'inline-flex',
     alignItems: 'center',
     minHeight: HIT,
-    ...DISPLAY_CUT,
     fontSize: `calc(${layout.icon} * ${glyph.height} / ${glyph.width} / ${font['cap-height']})`,
     lineHeight: HIT,
     textTransform: 'uppercase',
     whiteSpace: 'nowrap',
     textDecoration: 'none',
     color: brand['logo-type'],
-    ...FOCUS_RING,
   },
   period: {
     color: brand['logo-mark'],
@@ -227,37 +211,6 @@ export const styles = stylex.create({
     alignItems: 'center',
     columnGap: space.xs,
     flexShrink: 0,
-  },
-  // Its box is step 0's line plus 2xs above and below: 40px at the narrowest viewport, 50px at the
-  // widest.
-  cta: {
-    position: 'relative',
-    display: 'inline-flex',
-    alignItems: 'center',
-    paddingBlock: space['2xs'],
-    paddingInline: space.s,
-    ...DISPLAY_CUT,
-    fontSize: type['step-0'],
-    lineHeight: leading['step-0'],
-    textTransform: 'uppercase',
-    whiteSpace: 'nowrap',
-    textDecoration: 'none',
-    color: color['on-primary-container'],
-    backgroundColor: {
-      default: color['primary-container'],
-      ':active': color['on-surface'],
-      ':hover': { default: null, [HOVER]: color['on-surface'] },
-    },
-    ...FOCUS_RING,
-    // Where the box is shorter than a touch target, its pointer target reaches out to one,
-    // centred; where it is taller, the box itself is the target.
-    '::before': {
-      content: '""',
-      position: 'absolute',
-      top: `min(0px, calc(50% - ${HIT} / 2))`,
-      bottom: `min(0px, calc(50% - ${HIT} / 2))`,
-      insetInline: 0,
-    },
   },
   // Hidden while the hero, with its own CTA, is on screen. A real `visibility: hidden`, so the link
   // leaves the tab order and the accessibility tree rather than lurking invisibly in both. It also
@@ -321,7 +274,6 @@ export const styles = stylex.create({
       ':hover': { default: null, [HOVER]: color.primary },
     },
     transition: `color ${STATE_CHANGE}`,
-    ...FOCUS_RING,
   },
 });
 
@@ -356,7 +308,10 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html => {
         [...getStyleXAttributes(h, styles.row)],
         [
           h.a(
-            [h.Href(`#${MAIN_CONTENT_ID}`), ...getStyleXAttributes(h, styles.skipLink)],
+            [
+              h.Href(`#${MAIN_CONTENT_ID}`),
+              ...getStyleXAttributes(h, focusRing.ring, styles.skipLink),
+            ],
             ['Skip to content'],
           ),
           h.a(
@@ -367,7 +322,7 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html => {
               h.Id(LOGO_ID),
               h.Href(homeRouter()),
               h.AriaLabel('Skóreová, home'),
-              ...getStyleXAttributes(h, styles.wordmark),
+              ...getStyleXAttributes(h, displayCut.cut, focusRing.ring, styles.wordmark),
             ],
             [
               h.span(
@@ -406,19 +361,16 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html => {
               // rides `model.heroPastHeader`, which the hero observer feeds (see
               // ObserveHeroPastHeader), so a header re-render cannot wipe it. Each showing knocks
               // the arrow anew.
-              h.a(
-                [
-                  h.Href(platformUrl),
+              ctaLink(
+                h,
+                {
+                  href: platformUrl,
+                  size: 'small',
                   // Hidden, it is also inert: out of the focus order and the accessibility tree
                   // whatever its styles do.
-                  ...(model.heroPastHeader ? [] : [h.Inert(true)]),
-                  ...getStyleXAttributes(
-                    h,
-                    stylex.defaultMarker(),
-                    styles.cta,
-                    model.heroPastHeader ? styles.ctaShown : styles.ctaHidden,
-                  ),
-                ],
+                  attributes: model.heroPastHeader ? [] : [h.Inert(true)],
+                  styles: [model.heroPastHeader ? styles.ctaShown : styles.ctaHidden],
+                },
                 [
                   h.span([...getStyleXAttributes(h, styles.ctaLead)], ['Enter ']),
                   'Platform',
@@ -442,7 +394,7 @@ export const headerView = (model: Model, h: HtmlBuilder<Message>): Html => {
                         h.AriaLabel('Menu'),
                         h.AriaExpanded(model.isMenuOpen),
                         h.AriaControls('menu-overlay'),
-                        ...getStyleXAttributes(h, styles.menuButton),
+                        ...getStyleXAttributes(h, focusRing.ring, styles.menuButton),
                       ],
                       [menuGlyph(model.isMenuOpen, h)],
                     ),
