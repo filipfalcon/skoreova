@@ -4,6 +4,7 @@ import { layout, leading, space, type } from '@skoreova/design/scale.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { Attribute, Html, HtmlBuilder } from 'foldkit/html';
 
+import { cta } from './cta.stylex';
 import { displayCut } from './display-cut';
 import { focusRing } from './focus-ring';
 import type { Message } from './message';
@@ -20,6 +21,11 @@ const STATE_CHANGE = `${duration.short4} ${easing.standard}`;
  * The call to action's sizes, Material 3's button sizes on this scale's steps.
  */
 export type CtaSize = 'small' | 'medium';
+
+/**
+ * The call to action's variants, Material 3's filled and outlined buttons.
+ */
+export type CtaVariant = 'filled' | 'outlined';
 
 const styles = stylex.create({
   link: {
@@ -38,6 +44,22 @@ const styles = stylex.create({
       ':hover': { default: null, [HOVER]: color['on-surface'] },
     },
     transition: `background-color ${STATE_CHANGE}, color ${STATE_CHANGE}`,
+  },
+  // Material 3's outlined button: no container, an outline in the outline role inside the box, so
+  // both variants are one size, and its label on-surface, filled on-surface under a surface label
+  // while hovered or pressed.
+  outlined: {
+    boxShadow: `inset 0 0 0 ${cta['outline-width']} ${color.outline}`,
+    color: {
+      default: color['on-surface'],
+      ':active': color.surface,
+      ':hover': { default: null, [HOVER]: color.surface },
+    },
+    backgroundColor: {
+      default: 'transparent',
+      ':active': color['on-surface'],
+      ':hover': { default: null, [HOVER]: color['on-surface'] },
+    },
   },
   // Material 3's Small button, 40dp tall with 16dp of inline padding: step 0's line plus space 2xs
   // above and below, 40px at the narrowest viewport and 50px at the widest.
@@ -64,12 +86,13 @@ const styles = stylex.create({
 });
 
 /**
- * A call to action: a link set as a button, in the display cut's tracked capitals. Its container is
- * primary and its label on-primary-container, the container on-surface while hovered or pressed.
+ * A call to action: a link set as a button, in the display cut's tracked capitals. Filled, the
+ * default, its container is primary and its label on-primary-container, the container on-surface
+ * while hovered or pressed; outlined, it has no container but an outline.
  *
  * @param h - The view's HTML builder.
- * @param options - The link's destination, its size, and the attributes and styles its context
- *   adds.
+ * @param options - The link's destination, its size and variant, and the attributes and styles its
+ *   context adds.
  * @param children - The label, and anything set beside it.
  */
 export const ctaLink = (
@@ -77,6 +100,7 @@ export const ctaLink = (
   options: {
     readonly href: string;
     readonly size: CtaSize;
+    readonly variant?: CtaVariant;
     readonly attributes?: ReadonlyArray<Attribute<Message>>;
     readonly styles?: ReadonlyArray<StyleXStyle>;
   },
@@ -92,6 +116,7 @@ export const ctaLink = (
         displayCut.cut,
         focusRing.ring,
         styles.link,
+        options.variant === 'outlined' && styles.outlined,
         styles[options.size],
         ...(options.styles ?? []),
       ),

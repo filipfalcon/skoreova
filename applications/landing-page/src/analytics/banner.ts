@@ -1,5 +1,6 @@
 import { Effect, Option } from 'effect';
 
+import { millisecondsOf } from '../duration';
 import { type ConsentChoice } from './config';
 import { applyChoice, forgetChoice, writeChoice } from './consent';
 
@@ -56,7 +57,7 @@ export const setUpBanner = (
     yield* onChoice('cookie-consent-decline', 'denied');
 
     if (Option.isNone(stored)) {
-      // Enter only after the hero's intro has fully played out. The photo settle (keyframes `hero-photo`, 2.4s) is its longest beat and the corner captions land ~0.2s later, so wait for the settle's end plus a small breath. The timer is the fallback for pages without a hero, reduced motion (the animation runs to its end frame in ~0, so animationend can fire far sooner than this timer), or a failed app boot.
+      // Enter only after the hero's intro has fully played out. The photo settle (keyframes `hero-photo`, 2.4s) is its longest beat and the corner captions land ~0.2s later, so wait for the settle's end plus the breath of long2 the banner's tokens carry. The timer is the fallback for pages without a hero, reduced motion (the animation runs to its end frame in ~0, so animationend can fire far sooner than this timer), or a failed app boot.
       let shown = false;
       const reveal = (): void => {
         if (shown) return;
@@ -64,7 +65,9 @@ export const setUpBanner = (
         Effect.runSync(show);
       };
       document.addEventListener('animationend', (event) => {
-        if (event.animationName === 'hero-photo') setTimeout(reveal, 500);
+        if (event.animationName === 'hero-photo') {
+          setTimeout(reveal, millisecondsOf('--consent-reveal-delay'));
+        }
       });
       setTimeout(reveal, 4000);
     }

@@ -3,6 +3,8 @@ import { Runtime } from 'foldkit';
 
 import { isMeasurementOff } from '#analytics/config';
 import { crashView } from './crash';
+// The cookie banner's values, which its rules in styles.css read by name.
+import './consent-banner.stylex';
 import { Message, Model, init, routing, subscriptions, update, view } from './main';
 
 // Error monitoring ONLY — no tracing, no replay, no PII beyond Sentry’s

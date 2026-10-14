@@ -76,7 +76,8 @@
          it must survive route changes, fire gtag consent updates (a side
          effect the Elm model shouldn’t own), and keep working even if the
          app fails to boot. Only the markup is here: the styles are at the
-         end of src/styles.css and the behaviour is src/analytics/banner.ts,
+         end of src/styles.css, reading their tokens by the names
+         src/consent-banner.stylex.ts gives them, and the behaviour is src/analytics/banner.ts,
          reached from the bundle inlined below at build time. Neither is part
          of the app bundle, so that independence holds. -->
     <aside id="cookie-consent" aria-label="Cookie consent" hidden>
